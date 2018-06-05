@@ -1,4 +1,4 @@
-TARGET = ../esysinfo
+TARGET = ../evisum
 
 OBJECTS = system.o process.o ui.o main.o
 
