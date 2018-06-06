@@ -626,6 +626,7 @@ _process_panel_update(void *data)
          if (pid && *pid == ui->selected_pid)
            {
               elm_list_item_selected_set(it, EINA_TRUE);
+              elm_list_item_bring_in(it);
               break;
            }
      }
