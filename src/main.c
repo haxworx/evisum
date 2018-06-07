@@ -22,7 +22,7 @@ _win_add(void)
 
    win = elm_win_util_standard_add("evisum", "evisum");
    icon = elm_icon_add(win);
-   elm_icon_standard_set(icon, "system-preferences");
+   elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
 
    evas_object_resize(win, 768 * elm_config_scale_get(), 420 * elm_config_scale_get());

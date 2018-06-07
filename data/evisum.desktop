@@ -1,0 +1,12 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Name=Evisum
+GenericName=System Activity
+GenericName[ru]=Активность системы
+Comment=System Activity
+Comment[ru]=Активность системы
+Exec=evisum
+Icon=evisum
+Categories=System
+StartupWMClass=evisum

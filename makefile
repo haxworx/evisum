@@ -9,9 +9,7 @@ ifeq ($(OSNAME), OpenBSD)
 	LDFLAGS += -I/usr/local/include -L/usr/local/lib -L/usr/X11R6/lib
 endif
 
-export CFLAGS = -g3 -ggdb3 -O0
-
-export PKGS = eina elementary
+export PKGS = elementary
 
 export LIBS
 
@@ -22,3 +20,8 @@ default:
 
 clean:
 	$(MAKE) -C src clean
+
+install:
+	cp data/evisum.png $(PREFIX)/share/icons
+	cp data/evisum.desktop $(PREFIX)/share/applications
+	cp evisum $(PREFIX)/bin
