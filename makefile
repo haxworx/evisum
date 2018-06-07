@@ -1,5 +1,7 @@
 LIBS=
 
+PREFIX= /usr/local
+
 OSNAME := $(shell uname -s)
 
 ifeq ($(OSNAME), OpenBSD)
@@ -7,7 +9,7 @@ ifeq ($(OSNAME), OpenBSD)
 	LDFLAGS += -I/usr/local/include -L/usr/local/lib -L/usr/X11R6/lib
 endif
 
-export CFLAGS = -g -ggdb3 -O
+export CFLAGS = -g3 -ggdb3 -O0
 
 export PKGS = eina elementary
 
