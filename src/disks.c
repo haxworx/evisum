@@ -77,15 +77,23 @@ disk_mount_point_get(const char *path)
 Eina_Bool
 disk_usage_get(const char *mountpoint, unsigned long *total, unsigned long *used)
 {
+#if defined(__linux__)
    struct statvfs stats;
-
-   *total = *used = 0;
 
    if (statvfs(mountpoint, &stats) < 0)
      return EINA_FALSE;
 
    *total = stats.f_frsize * stats.f_blocks;
    *used = stats.f_bsize * stats.f_bavail;
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   struct statfs stats;
+
+   if (statfs(mountpoint, &stats) < 0)
+     return EINA_FALSE;
+
+   *total = stats.f_bsize * stats.f_blocks;
+   *used = *total - (stats.f_bsize * stats.f_bfree);
+#endif
 
    return EINA_TRUE;
 }
@@ -146,7 +154,7 @@ disks_get(void)
         list = eina_list_append(list, strdup(mounts[i].f_mntfromname));
      }
 
-   list = list_sort(list, _cmp_cb);
+   list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
 
    return list;
 #elif defined(__OpenBSD__) || defined(__NetBSD__)

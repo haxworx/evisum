@@ -798,7 +798,7 @@ _progress_disk_format_cb(double val)
 {
    char buf[1024];
 
-   snprintf(buf, sizeof(buf), "%.2fM of %.1f M", (double) (_disk_used), (double) (_disk_total));
+   snprintf(buf, sizeof(buf), "%luM of %luM", _disk_used, _disk_total);
 
    return strdup(buf);
 }
