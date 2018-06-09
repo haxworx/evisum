@@ -25,7 +25,7 @@ _win_add(void)
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
 
-   evas_object_resize(win, 768 * elm_config_scale_get(), 620 * elm_config_scale_get());
+   evas_object_resize(win, 768 * elm_config_scale_get(), 500 * elm_config_scale_get());
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, NULL);
 
    elm_win_title_set(win, "System Information");

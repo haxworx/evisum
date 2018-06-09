@@ -811,9 +811,10 @@ _progress_disk_format_free_cb(char *str)
 }
 
 static void
-_ui_disk_add(Ui *ui, const char *mountpoint, unsigned long total, unsigned long used)
+_ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, unsigned long used)
 {
    Evas_Object *table, *hbox, *progress, *label;
+   double ratio, value;
 
    table = elm_table_add(ui->disk_activity);
    evas_object_size_hint_weight_set(table, 0, 0);
@@ -823,7 +824,7 @@ _ui_disk_add(Ui *ui, const char *mountpoint, unsigned long total, unsigned long 
    label = elm_label_add(table);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(label, mountpoint);
+   elm_object_text_set(label, eina_slstr_printf("%s on %s", path, mount));
    evas_object_show(label);
    elm_table_pack(table, label, 0, 0, 1, 1);
 
@@ -837,11 +838,14 @@ _ui_disk_add(Ui *ui, const char *mountpoint, unsigned long total, unsigned long 
    _disk_used = used;
    _disk_total = total;
 
-   double ratio = total / 100.0;
-   uint64_t have = total - used;
-   double value = used / ratio;
+   ratio = total / 100.0;
+   value = used / ratio;
 
-   elm_progressbar_value_set(progress, value / 100.0);
+   if (used == 0 && total == 0)
+     elm_progressbar_value_set(progress, 1.0);
+   else
+     elm_progressbar_value_set(progress, value / 100.0);
+
    evas_object_show(progress);
 
    elm_table_pack(table, progress, 0, 1, 1, 1);
@@ -861,15 +865,15 @@ _disk_view_update(Ui *ui)
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
-        char *mountpoint = disk_mount_point_get(path);
-        if (mountpoint)
+        char *mount = disk_mount_point_get(path);
+        if (mount)
           {
-             if (disk_usage_get(mountpoint, &total, &used))
+             if (disk_usage_get(mount, &total, &used))
                {
                   total >>= 20; used >>= 20;
-                  _ui_disk_add(ui, mountpoint, total,  used);
+                  _ui_disk_add(ui, path, mount, total,  used);
                }
-             free(mountpoint);
+             free(mount);
           }
 
         free(path);
@@ -879,11 +883,13 @@ _disk_view_update(Ui *ui)
 }
 
 static void
-_ui_system_view_add(Evas_Object *parent, Ui *ui)
+_ui_system_view_add(Ui *ui)
 {
-   Evas_Object *box, *hbox, *frame, *table;
+   Evas_Object *parent, *box, *hbox, *frame, *table;
    Evas_Object *progress, *button, *entry;
    Evas_Object *scroller;
+
+   parent = ui->content;
 
    ui->system_activity = box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -1149,10 +1155,12 @@ _ui_system_view_add(Evas_Object *parent, Ui *ui)
 }
 
 static void
-_ui_process_panel_add(Evas_Object *parent, Ui *ui)
+_ui_process_panel_add(Ui *ui)
 {
-   Evas_Object *panel, *box, *hbox, *frame, *scroller, *table;
+   Evas_Object *parent, *panel, *box, *hbox, *frame, *scroller, *table;
    Evas_Object *label, *list, *entry, *button;
+
+   parent = ui->content;
 
    ui->panel = panel = elm_panel_add(parent);
    evas_object_size_hint_weight_set(panel, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -1446,9 +1454,11 @@ _ui_process_panel_add(Evas_Object *parent, Ui *ui)
 }
 
 static void
-_ui_disk_view_add(Evas_Object *parent, Ui *ui)
+_ui_disk_view_add(Ui *ui)
 {
-   Evas_Object *box, *hbox, *frame, *scroller;
+   Evas_Object *parent, *box, *hbox, *frame, *scroller;
+
+   parent = ui->content;
 
    ui->disk_view = box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -1486,6 +1496,7 @@ _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
    ui = data;
 
    evas_object_show(ui->system_activity);
+   evas_object_show(ui->panel);
    evas_object_hide(ui->disk_view);
 }
 
@@ -1497,12 +1508,13 @@ _tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *ev
    ui = data;
    evas_object_show(ui->disk_view);
    evas_object_hide(ui->system_activity);
+   evas_object_hide(ui->panel);
 }
 
 static Evas_Object *
 _ui_tabs_add(Evas_Object *parent, Ui *ui)
 {
-   Evas_Object *table, *hbox, *frame, *button;
+   Evas_Object *table, *hbox, *pad, *frame, *button;
 
    ui->content = table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -1514,6 +1526,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, 0);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(frame, "Options");
+   elm_object_style_set(frame, "pad_medium");
    evas_object_show(frame);
 
    hbox = elm_box_add(parent);
@@ -1533,7 +1546,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(button, "Disk Activity");
+   elm_object_text_set(button, "Disk Usage");
    evas_object_show(button);
    elm_box_pack_end(hbox, button);
    evas_object_smart_callback_add(button, "clicked", _tab_disk_activity_clicked_cb, ui);
@@ -1542,10 +1555,17 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_table_pack(ui->content, frame, 0, 0, 1, 1);
 
    hbox = elm_box_add(parent);
-   evas_object_size_hint_weight_set(hbox, 0.5, 0);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_box_horizontal_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
+
+   pad = elm_box_add(parent);
+   evas_object_size_hint_weight_set(pad, 0.9, 0);
+   evas_object_size_hint_align_set(pad, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_horizontal_set(pad, EINA_TRUE);
+   evas_object_show(pad);
+   elm_box_pack_end(hbox, pad);
 
    button = elm_button_add(parent);
    evas_object_size_hint_weight_set(button, 0.1, 0);
@@ -1586,12 +1606,15 @@ ui_add(Evas_Object *parent)
 
    eina_lock_new(&_lock);
 
-   Evas_Object *content = _ui_tabs_add(parent, ui);
+   /* Create the tabs, content area and the rest */
+   _ui_tabs_add(parent, ui);
 
-   _ui_system_view_add(content, ui);
-   _ui_process_panel_add(content, ui);
-   _ui_disk_view_add(content, ui);
+   /* Setup the user interfeace */
+   _ui_system_view_add(ui);
+   _ui_process_panel_add(ui);
+   _ui_disk_view_add(ui);
 
+   /* Start polling the data */
    _disk_view_update(ui);
    _process_panel_update(ui);
 
