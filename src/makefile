@@ -1,6 +1,6 @@
 TARGET = ../evisum
 
-OBJECTS = system.o process.o ui.o main.o
+OBJECTS = system.o disks.o process.o ui.o main.o
 
 default: $(TARGET)
 
@@ -12,6 +12,9 @@ main.o: main.c
 
 system.o: system.c
 	$(CC) -c $(CFLAGS) system.c -o $@
+
+disks.o: disks.c
+	$(CC) -c $(CFLAGS) $(shell pkg-config --cflags $(PKGS)) disks.c -o $@
 
 process.o: process.c
 	$(CC) -c $(CFLAGS) $(shell pkg-config --cflags $(PKGS)) process.c -o $@

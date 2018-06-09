@@ -1,5 +1,6 @@
 #include "system.h"
 #include "process.h"
+#include "disks.h"
 #include "ui.h"
 #include <stdio.h>
 #include <sys/types.h>
@@ -13,6 +14,8 @@ static Eina_Lock _lock;
 
 static long _memory_total = 0;
 static long _memory_used = 0;
+
+static void _disk_view_update(Ui *ui);
 
 static void
 _system_stats(void *data, Ecore_Thread *thread)
@@ -57,6 +60,8 @@ _system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    elm_progressbar_value_set(ui->progress_cpu, (double)sys->cpu_usage / 100);
    elm_progressbar_value_set(ui->progress_mem, (double)((sys->mem_total / 100.0) * sys->mem_used) / 1000000);
+
+   _disk_view_update(ui);
 
 out:
    free(sys);
@@ -785,18 +790,106 @@ _entry_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
    ui->panel_visible = EINA_TRUE;
 }
 
+
+static unsigned long _disk_used = 0, _disk_total = 0;
+
+static char *
+_progress_disk_format_cb(double val)
+{
+   char buf[1024];
+
+   snprintf(buf, sizeof(buf), "%.2fM of %.1f M", (double) (_disk_used), (double) (_disk_total));
+
+   return strdup(buf);
+}
+
 static void
-_ui_main_view_add(Evas_Object *parent, Ui *ui)
+_progress_disk_format_free_cb(char *str)
+{
+   if (str)
+     free(str);
+}
+
+static void
+_ui_disk_add(Ui *ui, const char *mountpoint, unsigned long total, unsigned long used)
+{
+   Evas_Object *table, *hbox, *progress, *label;
+
+   table = elm_table_add(ui->disk_activity);
+   evas_object_size_hint_weight_set(table, 0, 0);
+   evas_object_size_hint_align_set(table, EVAS_HINT_FILL, 0);
+   evas_object_show(table);
+
+   label = elm_label_add(table);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(label, mountpoint);
+   evas_object_show(label);
+   elm_table_pack(table, label, 0, 0, 1, 1);
+
+   progress = elm_progressbar_add(table);
+   evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_progressbar_span_size_set(progress, 1.0);
+   elm_progressbar_unit_format_set(progress, "");
+   elm_progressbar_unit_format_function_set(progress, _progress_disk_format_cb, _progress_disk_format_free_cb);
+
+   _disk_used = used;
+   _disk_total = total;
+
+   double ratio = total / 100.0;
+   uint64_t have = total - used;
+   double value = used / ratio;
+
+   elm_progressbar_value_set(progress, value / 100.0);
+   evas_object_show(progress);
+
+   elm_table_pack(table, progress, 0, 1, 1, 1);
+
+   elm_box_pack_end(ui->disk_activity, table);
+}
+
+static void
+_disk_view_update(Ui *ui)
+{
+   Eina_List *disks;
+   char *path;
+   unsigned long total, used;
+
+   elm_box_clear(ui->disk_activity);
+
+   disks = disks_get();
+   EINA_LIST_FREE(disks, path)
+     {
+        char *mountpoint = disk_mount_point_get(path);
+        if (mountpoint)
+          {
+             if (disk_usage_get(mountpoint, &total, &used))
+               {
+                  total >>= 20; used >>= 20;
+                  _ui_disk_add(ui, mountpoint, total,  used);
+               }
+             free(mountpoint);
+          }
+
+        free(path);
+     }
+   if (disks)
+     free(disks);
+}
+
+static void
+_ui_system_view_add(Evas_Object *parent, Ui *ui)
 {
    Evas_Object *box, *hbox, *frame, *table;
    Evas_Object *progress, *button, *entry;
    Evas_Object *scroller;
 
-   box = elm_box_add(parent);
+   ui->system_activity = box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(box);
-   elm_object_content_set(parent, box);
+   elm_table_pack(ui->content, ui->system_activity, 0, 1, 1, 1);
 
    hbox = elm_box_add(box);
    evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
@@ -1045,20 +1138,6 @@ _ui_main_view_add(Evas_Object *parent, Ui *ui)
    evas_object_show(hbox);
    elm_box_pack_end(box, hbox);
 
-   box = elm_box_add(parent);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_box_horizontal_set(box, EINA_TRUE);
-   elm_box_pack_end(hbox, box);
-
-   button = elm_button_add(parent);
-   evas_object_size_hint_weight_set(button, 0.1, 0);
-   evas_object_size_hint_align_set(button, EVAS_HINT_FILL, 0);
-   elm_object_text_set(button, "Close");
-   elm_box_pack_end(hbox, button);
-   evas_object_show(button);
-   evas_object_smart_callback_add(button, "clicked", _btn_quit_clicked_cb, ui);
-
    evas_object_smart_callback_add(ui->btn_pid, "clicked", _btn_pid_clicked_cb, ui);
    evas_object_smart_callback_add(ui->btn_uid, "clicked", _btn_uid_clicked_cb, ui);
    evas_object_smart_callback_add(ui->btn_size, "clicked", _btn_size_clicked_cb, ui);
@@ -1080,7 +1159,7 @@ _ui_process_panel_add(Evas_Object *parent, Ui *ui)
    evas_object_size_hint_align_set(panel, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_panel_orient_set(panel, ELM_PANEL_ORIENT_BOTTOM);
    elm_panel_toggle(panel);
-   elm_object_content_set(parent, panel);
+   elm_object_content_set(ui->win, panel);
    evas_object_show(panel);
    evas_object_smart_callback_add(ui->panel, "scroll", _panel_scrolled_cb, ui);
 
@@ -1366,6 +1445,121 @@ _ui_process_panel_add(Evas_Object *parent, Ui *ui)
    evas_object_smart_callback_add(button, "clicked", _btn_kill_clicked_cb, ui);
 }
 
+static void
+_ui_disk_view_add(Evas_Object *parent, Ui *ui)
+{
+   Evas_Object *box, *hbox, *frame, *scroller;
+
+   ui->disk_view = box = elm_box_add(parent);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_pack(ui->content, ui->disk_view, 0, 1, 1, 1);
+   evas_object_hide(box);
+
+   ui->disk_activity = hbox = elm_box_add(box);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(hbox);
+
+   frame = elm_frame_add(box);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(frame, "Disk usage");
+   evas_object_show(frame);
+
+   scroller = elm_scroller_add(parent);
+   evas_object_size_hint_weight_set(scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(scroller, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_ON);
+   evas_object_show(scroller);
+   elm_object_content_set(scroller, hbox);
+
+   elm_object_content_set(frame, scroller);
+   elm_box_pack_end(box, frame);
+}
+
+static void
+_tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Ui *ui;
+
+   ui = data;
+
+   evas_object_show(ui->system_activity);
+   evas_object_hide(ui->disk_view);
+}
+
+static void
+_tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Ui *ui;
+
+   ui = data;
+   evas_object_show(ui->disk_view);
+   evas_object_hide(ui->system_activity);
+}
+
+static Evas_Object *
+_ui_tabs_add(Evas_Object *parent, Ui *ui)
+{
+   Evas_Object *table, *hbox, *frame, *button;
+
+   ui->content = table = elm_table_add(parent);
+   evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_content_set(parent, table);
+   evas_object_show(table);
+
+   frame = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, 0);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(frame, "Options");
+   evas_object_show(frame);
+
+   hbox = elm_box_add(parent);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   button = elm_button_add(hbox);
+   evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(button, "System Activity");
+   evas_object_show(button);
+   elm_box_pack_end(hbox, button);
+   evas_object_smart_callback_add(button, "clicked", _tab_system_activity_clicked_cb, ui);
+
+   button = elm_button_add(hbox);
+   evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(button, "Disk Activity");
+   evas_object_show(button);
+   elm_box_pack_end(hbox, button);
+   evas_object_smart_callback_add(button, "clicked", _tab_disk_activity_clicked_cb, ui);
+
+   elm_object_content_set(frame, hbox);
+   elm_table_pack(ui->content, frame, 0, 0, 1, 1);
+
+   hbox = elm_box_add(parent);
+   evas_object_size_hint_weight_set(hbox, 0.5, 0);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_FILL);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   button = elm_button_add(parent);
+   evas_object_size_hint_weight_set(button, 0.1, 0);
+   evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(button, "Close");
+   elm_box_pack_end(hbox, button);
+   evas_object_show(button);
+   evas_object_smart_callback_add(button, "clicked", _btn_quit_clicked_cb, ui);
+
+   elm_table_pack(ui->content, hbox, 0, 2, 1, 1);
+
+   return table;
+}
+
 void
 ui_add(Evas_Object *parent)
 {
@@ -1392,10 +1586,15 @@ ui_add(Evas_Object *parent)
 
    eina_lock_new(&_lock);
 
-   _ui_main_view_add(parent, ui);
-   _ui_process_panel_add(parent, ui);
+   Evas_Object *content = _ui_tabs_add(parent, ui);
 
+   _ui_system_view_add(content, ui);
+   _ui_process_panel_add(content, ui);
+   _ui_disk_view_add(content, ui);
+
+   _disk_view_update(ui);
    _process_panel_update(ui);
+
    ecore_thread_feedback_run(_system_stats, _system_stats_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
    ecore_thread_feedback_run(_system_process_list, _system_process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
 }

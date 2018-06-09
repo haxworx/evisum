@@ -46,6 +46,13 @@ typedef struct Ui
    Evas_Object *panel;
    Evas_Object *scroller;
 
+   Evas_Object *content;
+
+   Evas_Object *disk_view;
+   Evas_Object *disk_activity;
+
+   Evas_Object *system_activity;
+
    Evas_Object *progress_cpu;
    Evas_Object *progress_mem;
 
