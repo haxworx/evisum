@@ -7,7 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/statvfs.h>
+
+#if defined(__linux__)
+ #include <sys/vfs.h>
+#endif
 
 #if defined(__APPLE__) && defined(__MACH__)
 # define __MacOS__
@@ -77,15 +80,6 @@ disk_mount_point_get(const char *path)
 Eina_Bool
 disk_usage_get(const char *mountpoint, unsigned long *total, unsigned long *used)
 {
-#if defined(__linux__)
-   struct statvfs stats;
-
-   if (statvfs(mountpoint, &stats) < 0)
-     return EINA_FALSE;
-
-   *total = stats.f_frsize * stats.f_blocks;
-   *used = stats.f_bsize * stats.f_bavail;
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
    struct statfs stats;
 
    if (statfs(mountpoint, &stats) < 0)
@@ -93,7 +87,6 @@ disk_usage_get(const char *mountpoint, unsigned long *total, unsigned long *used
 
    *total = stats.f_bsize * stats.f_blocks;
    *used = *total - (stats.f_bsize * stats.f_bfree);
-#endif
 
    return EINA_TRUE;
 }
