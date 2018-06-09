@@ -214,17 +214,16 @@ disks_get(void)
 
    EINA_LIST_FREE(devs, name)
      {
-        name = l->data;
         if (!strncmp(name, "disk", 4))
           {
              snprintf(buf, sizeof(buf), "/dev/%s", name);
              list = eina_list_append(list, strdup(buf));
           }
-        l = l->next;
+        free(name);
      }
 
    if (devs)
-     list_free(devs);
+     eina_list_free(devs);
 
    list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
 
