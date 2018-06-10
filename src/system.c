@@ -66,10 +66,9 @@
 # include <vm/vm_param.h>
 #endif
 
-#define CPU_STATES        5
+#include "system.h"
 
-#define MAX_BATTERIES     5
-#define INVALID_TEMP      -999
+#define CPU_STATES        5
 
 /* Filter requests and results */
 #define RESULTS_CPU       0x01
@@ -82,54 +81,6 @@
 #define RESULTS_MEM_MB    0x40
 #define RESULTS_MEM_GB    0x80
 #define RESULTS_CPU_CORES 0x100
-
-typedef struct
-{
-   float         percent;
-   unsigned long total;
-   unsigned long idle;
-} cpu_core_t;
-
-typedef struct
-{
-   unsigned long total;
-   unsigned long used;
-   unsigned long cached;
-   unsigned long buffered;
-   unsigned long shared;
-   unsigned long swap_total;
-   unsigned long swap_used;
-} meminfo_t;
-
-typedef struct
-{
-   bool    have_ac;
-   int     battery_count;
-
-   double  charge_full;
-   double  charge_current;
-   uint8_t percent;
-
-   char    battery_names[256];
-   int    *bat_mibs[MAX_BATTERIES];
-   int     ac_mibs[5];
-} power_t;
-
-typedef struct results_t results_t;
-struct results_t
-{
-   int           cpu_count;
-   cpu_core_t  **cores;
-
-   meminfo_t     memory;
-
-   power_t       power;
-
-   unsigned long incoming;
-   unsigned long outgoing;
-
-   int           temperature;
-};
 
 static void
 _memsize_bytes_to_kb(unsigned long *bytes)
@@ -1158,6 +1109,49 @@ _results_cpu(cpu_core_t **cores, int cpu_count)
 }
 
 int
+system_temperature_cpu_get(void)
+{
+   int temp;
+
+   _temperature_cpu_get(&temp);
+
+   return temp;
+}
+
+void
+system_power_state_get(power_t *power)
+{
+   _power_state_get(power);
+}
+
+
+bool
+system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing)
+{
+   unsigned long first_in = 0, first_out = 0;
+   unsigned long last_in = 0, last_out = 0;
+#if defined(__linux__)
+   _linux_generic_network_status(&first_in, &first_out);
+   usleep(1000000);
+   _linux_generic_network_status(&last_in, &last_out);
+#elif defined(__OpenBSD__)
+   _openbsd_generic_network_status(&first_in, &first_out);
+   usleep(1000000);
+   _openbsd_generic_network_status(&last_in, &last_out);
+#elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
+   _freebsd_generic_network_status(&first_in, &first_out);
+   usleep(1000000);
+   _freebsd_generic_network_status(&last_in, &last_out);
+#else
+   return false;
+#endif
+   *incoming = last_in - first_in;
+   *outgoing = last_out - first_out;
+
+   return true;
+}
+
+int
 system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used)
 {
    results_t results;
@@ -1181,4 +1175,40 @@ system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used
 
    return results.cpu_count;
 }
+
+static void *_network_transfer_get_thread_cb(void *arg)
+{
+   results_t *results = arg;
+
+   _network_transfer_get(results);
+
+   return ((void *) 0);
+}
+
+void
+system_stats_all_get(results_t *results)
+{
+   void *ret;
+   pthread_t tid;
+   int error;
+
+   memset(results, 0, sizeof(results_t));
+
+   results->cores = _cpu_cores_state_get(&results->cpu_count);
+
+   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, results);
+   if (error)
+     _network_transfer_get(results);
+
+   _power_state_get(&results->power);
+
+   _temperature_cpu_get(&results->temperature);
+
+   if (!error)
+     {
+        ret = NULL;
+        pthread_join(tid, ret);
+     }
+}
+
 

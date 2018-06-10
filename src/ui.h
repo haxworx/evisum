@@ -50,8 +50,12 @@ typedef struct Ui
 
    Evas_Object *disk_view;
    Evas_Object *disk_activity;
-
+   Evas_Object *extra_view;
+   Evas_Object *extra_activity;
    Evas_Object *system_activity;
+
+   Eina_Bool    extra_visible;
+   Eina_Bool    disk_visible;
 
    Evas_Object *progress_cpu;
    Evas_Object *progress_mem;
