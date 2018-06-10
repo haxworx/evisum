@@ -1196,6 +1196,8 @@ system_stats_all_get(results_t *results)
 
    results->cores = _cpu_cores_state_get(&results->cpu_count);
 
+   _memory_usage_get(&results->memory);
+
    error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, results);
    if (error)
      _network_transfer_get(results);

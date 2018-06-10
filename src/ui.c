@@ -20,58 +20,7 @@ static void _disk_view_update(Ui *ui);
 static void _extra_view_update(Ui *ui, results_t *results);
 
 static void
-_system_stats(void *data, Ecore_Thread *thread)
-{
-   Ui *ui;
-   Sys_Stats *sys;
-   int i;
-
-   ui = data;
-
-   while (1)
-     {
-        sys = malloc(sizeof(Sys_Stats));
-        sys->cpu_count = system_cpu_memory_get(&sys->cpu_usage, &sys->mem_total, &sys->mem_used);
-
-        ecore_thread_feedback(thread, sys);
-
-        for (i = 0; i < ui->poll_delay * 2; i++)
-           {
-              if (ecore_thread_check(thread))
-                return;
-
-              usleep(500000);
-           }
-     }
-}
-
-static void
-_system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
-{
-   Ui *ui;
-   Sys_Stats *sys;
-
-   ui = data;
-   sys = msg;
-
-    if (ecore_thread_check(thread))
-      goto out;
-
-   _memory_total = sys->mem_total >>= 10;
-   _memory_used = sys->mem_used >>= 10;
-
-   elm_progressbar_value_set(ui->progress_cpu, (double)sys->cpu_usage / 100);
-   elm_progressbar_value_set(ui->progress_mem, (double)((sys->mem_total / 100.0) * sys->mem_used) / 1000000);
-
-   if (time(NULL) % 2)
-     _disk_view_update(ui);
-
-out:
-   free(sys);
-}
-
-static void
-_extra_stats(void *data, Ecore_Thread *thread)
+_system_stats_thread(void *data, Ecore_Thread *thread)
 {
    Ui *ui;
    int i;
@@ -95,24 +44,35 @@ _extra_stats(void *data, Ecore_Thread *thread)
 }
 
 static void
-_extra_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
+_system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
    Ui *ui;
    results_t *results;
+   double cpu_usage = 0.0;
    int i;
 
    ui = data;
    results = msg;
 
+   _disk_view_update(ui);
    _extra_view_update(ui, results);
 
    for (i = 0; i < results->cpu_count; i++)
      {
+        cpu_usage += results->cores[i]->percent;
+
         free(results->cores[i]);
      }
 
-   free(results->cores);
+   cpu_usage = cpu_usage / results->cpu_count;
 
+   _memory_total = results->memory.total >>= 10;
+   _memory_used = results->memory.used >>= 10;
+
+   elm_progressbar_value_set(ui->progress_cpu, (double) cpu_usage / 100);
+   elm_progressbar_value_set(ui->progress_mem, (double)((results->memory.total / 100.0) * results->memory.used) / 1000000);
+
+   free(results->cores);
    free(results);
 }
 
@@ -256,8 +216,6 @@ _sort_by_state(const void *p1, const void *p2)
 static void
 _fields_append(Ui *ui, Proc_Stats *proc)
 {
-   // FIXME: hiding self from the list until more efficient.
-   // It's not too bad but it pollutes a lovely list.
    if (ui->program_pid == proc->pid)
      return;
 
@@ -628,7 +586,6 @@ _process_panel_pids_update(Ui *ui)
    if (!ui->panel_visible)
      return;
 
-   // FIXME: something fishy going on here (mem-wise).
    list = proc_info_all_get();
    list = eina_list_sort(list, eina_list_count(list), _sort_by_pid);
 
@@ -1040,6 +997,7 @@ _extra_view_update(Ui *ui, results_t *results)
           elm_object_text_set(frame, "Battery (plugged in)");
         else
           elm_object_text_set(frame, "Battery");
+
         evas_object_show(frame);
 
         progress = elm_progressbar_add(frame);
@@ -1909,8 +1867,7 @@ ui_add(Evas_Object *parent)
    _disk_view_update(ui);
    _process_panel_update(ui);
 
-   ecore_thread_feedback_run(_system_stats, _system_stats_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
-   ecore_thread_feedback_run(_extra_stats, _extra_stats_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+   ecore_thread_feedback_run(_system_stats_thread, _system_stats_thread_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
    ecore_thread_feedback_run(_system_process_list, _system_process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
 }
 
