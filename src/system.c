@@ -1200,7 +1200,8 @@ system_stats_all_get(results_t *results)
    if (error)
      _network_transfer_get(results);
 
-   _power_state_get(&results->power);
+  if (_power_battery_count_get(&results->power))
+    _power_state_get(&results->power);
 
    _temperature_cpu_get(&results->temperature);
 
