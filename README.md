@@ -2,7 +2,7 @@
 
 System Information (EFL)
 
-This is a process monitor.
+This is a process monitor and system monitor.
 
 Currently have full engines for Linux, FreeBSD, OpenBSD and MacOS.
 
