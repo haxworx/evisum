@@ -117,14 +117,6 @@ typedef struct Ui
 
 } Ui;
 
-typedef struct Sys_Stats
-{
-   int    cpu_count;
-   double cpu_usage;
-   long   mem_total;
-   long   mem_used;
-} Sys_Stats;
-
 void
 ui_add(Evas_Object *win);
 

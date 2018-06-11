@@ -699,6 +699,8 @@ _process_panel_list_selected_cb(void *data, Evas_Object *obj, void *event_info E
 
    ui->selected_pid = atoi(text);
 
+   ui->pid_cpu_time = 0;
+
    _process_panel_update(ui);
 
    ui->timer_pid = ecore_timer_add(ui->poll_delay, _process_panel_update, ui);
