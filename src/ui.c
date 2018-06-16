@@ -21,6 +21,26 @@ static void _extra_view_update(Ui *ui, results_t *results);
 static void _cpu_view_update(Ui *ui, results_t *results);
 static void _memory_view_update(Ui *ui, results_t *results);
 
+void
+ui_shutdown(Ui *ui)
+{
+   evas_object_hide(ui->win);
+
+   if (ui->thread_system)
+     ecore_thread_cancel(ui->thread_system);
+
+   if (ui->thread_process)
+     ecore_thread_cancel(ui->thread_process);
+
+   if (ui->thread_system)
+     ecore_thread_wait(ui->thread_system, 1.0);
+
+   if (ui->thread_process)
+     ecore_thread_wait(ui->thread_process, 1.0);
+
+   ecore_main_loop_quit();
+}
+
 static void
 _system_stats_thread(void *data, Ecore_Thread *thread)
 {
@@ -387,6 +407,7 @@ _system_process_list(void *data, Ecore_Thread *thread)
           {
              if (ecore_thread_check(thread))
                return;
+
              usleep(500000);
           }
      }
@@ -559,15 +580,7 @@ _btn_quit_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
 {
    Ui *ui = data;
 
-   evas_object_hide(ui->win);
-
-   ecore_thread_cancel(ui->thread_system);
-   ecore_thread_cancel(ui->thread_process);
-
-   ecore_thread_wait(ui->thread_system, 1.0);
-   ecore_thread_wait(ui->thread_process, 1.0);
-
-   ecore_main_loop_quit();
+   ui_shutdown(ui);
 }
 
 static void
@@ -1318,7 +1331,6 @@ _ui_system_view_add(Ui *ui)
    frame = elm_frame_add(box);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(frame, "System Overview");
    elm_object_style_set(frame, "pad_small");
    elm_box_pack_end(box, frame);
    evas_object_show(frame);
@@ -2021,7 +2033,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(button, "System Activity");
+   elm_object_text_set(button, "General");
    evas_object_show(button);
    elm_box_pack_end(hbox, button);
    evas_object_smart_callback_add(button, "clicked", _tab_system_activity_clicked_cb, ui);
@@ -2087,7 +2099,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    return table;
 }
 
-void
+Ui *
 ui_add(Evas_Object *parent)
 {
    Ui *ui;
@@ -2131,5 +2143,7 @@ ui_add(Evas_Object *parent)
 
    ui->thread_system = ecore_thread_feedback_run(_system_stats_thread, _system_stats_thread_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
    ui->thread_process = ecore_thread_feedback_run(_system_process_list, _system_process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+
+   return ui;
 }
 

@@ -120,7 +120,11 @@ typedef struct Ui
 
 } Ui;
 
-void
+Ui *
 ui_add(Evas_Object *win);
+
+void
+ui_shutdown(Ui *ui);
+
 
 #endif
