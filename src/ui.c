@@ -559,6 +559,8 @@ _btn_quit_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
 {
    Ui *ui = data;
 
+   evas_object_hide(ui->win);
+
    ecore_thread_cancel(ui->thread_system);
    ecore_thread_cancel(ui->thread_process);
 
