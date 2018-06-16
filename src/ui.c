@@ -53,11 +53,11 @@ _system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    double cpu_usage = 0.0;
    int i;
 
-   if (ecore_thread_check(thread))
-     return;
-
    ui = data;
    results = msg;
+
+   if (ecore_thread_check(thread))
+     goto out;
 
    _cpu_view_update(ui, results);
    _memory_view_update(ui, results);
@@ -79,6 +79,7 @@ _system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    elm_progressbar_value_set(ui->progress_cpu, (double) cpu_usage / 100);
    elm_progressbar_value_set(ui->progress_mem, (double)((results->memory.total / 100.0) * results->memory.used) / 1000000);
 
+out:
    free(results->cores);
    free(results);
 }
@@ -556,9 +557,15 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
 static void
 _btn_quit_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   ecore_main_loop_quit();
+   Ui *ui = data;
 
-   elm_exit();
+   ecore_thread_cancel(ui->thread_system);
+   ecore_thread_cancel(ui->thread_process);
+
+   ecore_thread_wait(ui->thread_system, 1.0);
+   ecore_thread_wait(ui->thread_process, 1.0);
+
+   ecore_main_loop_quit();
 }
 
 static void
@@ -2120,7 +2127,7 @@ ui_add(Evas_Object *parent)
    _disk_view_update(ui);
    _process_panel_update(ui);
 
-   ecore_thread_feedback_run(_system_stats_thread, _system_stats_thread_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
-   ecore_thread_feedback_run(_system_process_list, _system_process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+   ui->thread_system = ecore_thread_feedback_run(_system_stats_thread, _system_stats_thread_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+   ui->thread_process = ecore_thread_feedback_run(_system_process_list, _system_process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
 }
 

@@ -50,9 +50,9 @@ main(int argc, char **argv)
 
    ecore_main_loop_begin();
 
-   eina_shutdown();
-   ecore_shutdown();
    elm_shutdown();
+   ecore_shutdown();
+   eina_shutdown();
 
    return 0;
 }
