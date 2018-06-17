@@ -9,6 +9,10 @@ ifeq ($(OSNAME), OpenBSD)
 	LDFLAGS += -I/usr/local/include -L/usr/local/lib -L/usr/X11R6/lib
 endif
 
+ifeq ($(OSNAME), FreeBSD)
+        LDFLAGS += -L/usr/local/lib
+endif
+
 export PKGS = elementary
 
 export LIBS
