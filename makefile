@@ -23,7 +23,7 @@ clean:
 
 install:
 	-mkdir -p $(PREFIX)/share/icons
-	-mkdir -p $(PREFIX)/share/icons
+	-mkdir -p $(PREFIX)/share/applications
 	-mkdir -p $(PREFIX)/bin
 	install -m 0644 data/evisum.png $(PREFIX)/share/icons
 	install -m 0644 data/evisum.desktop $(PREFIX)/share/applications
