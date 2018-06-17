@@ -1,6 +1,9 @@
 /* Copyright 2018. Alastair Poole <netstar@gmail.com>
    See LICENSE file for details.
 */
+
+#define VERSION "0.1.0"
+
 #include "process.h"
 #include "system.h"
 #include "ui.h"
@@ -41,13 +44,11 @@ _win_add(void)
 int
 main(int argc, char **argv)
 {
-   Evas_Object *win;
-
    eina_init();
    ecore_init();
    elm_init(argc, argv);
 
-   win = _win_add();
+   _win_add();
 
    ecore_main_loop_begin();
 
