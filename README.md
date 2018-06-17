@@ -6,14 +6,18 @@ This is a process monitor and system monitor.
 
 Currently have full engines for Linux, FreeBSD, OpenBSD and MacOS.
 
-Build:
+BUILD:
 
-make (or gmake)
+$ make (or gmake)
 
-Install:
+INSTALL (default PREFIX is /usr/local):
 
-make install
+$ make install
 
-or
+or as an example:
 
-make PREFIX=/my/prefix install
+$ make PREFIX=/usr install
+
+or even:
+
+$ make PREFIX=/opt install

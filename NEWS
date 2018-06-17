@@ -1,4 +1,13 @@
 ============
+Evisum 0.1.1
+============
+
+Fixes:
+
+    * Add fallback mechanism on Linux for disk-detection.
+    * Make life easier for packagers (thanks Juippis and OnlyHuman).
+
+============
 Evisum 0.1.0
 ============
 
