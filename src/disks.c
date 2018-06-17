@@ -232,14 +232,20 @@ disks_get(void)
    char *name;
    Eina_List *devs, *list;
    char buf[4096];
+   const char *disk_search = "/dev/disk/by-uuid";
+
+   devs = ecore_file_ls(disk_search);
+   if (!devs)
+     {
+        disk_search = "/dev/disk/by-path";
+        devs = ecore_file_ls(disk_search);
+     }
 
    list = NULL;
 
-   devs = ecore_file_ls("/dev/disk/by-path");
-
    EINA_LIST_FREE(devs, name)
      {
-        snprintf(buf, sizeof(buf), "/dev/disk/by-path/%s", name);
+        snprintf(buf, sizeof(buf), "%s/%s", disk_search, name);
         char *real = realpath(buf, NULL);
         if (real)
           {
