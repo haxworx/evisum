@@ -8,5 +8,5 @@ Comment=System Activity
 Comment[ru]=Системная активность
 Exec=evisum
 Icon=evisum
-Categories=System
+Categories=System;Monitor;
 StartupWMClass=evisum
