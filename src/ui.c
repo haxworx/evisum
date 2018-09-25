@@ -1347,7 +1347,7 @@ _ui_system_view_add(Ui *ui)
    ui->entry_pid = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='font=default:style=default size=12 align=center'");
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 0);
    evas_object_show(entry);
@@ -1363,7 +1363,7 @@ _ui_system_view_add(Ui *ui)
    ui->entry_uid = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='font=default:style=default size=12 align=center'");
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_editable_set(entry, 0);
    evas_object_show(entry);
    elm_table_pack(table, entry, 1, 0, 1, 1);
@@ -1378,7 +1378,7 @@ _ui_system_view_add(Ui *ui)
    ui->entry_size = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='font=default:style=default size=12 align=right'");
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 0);
    evas_object_show(entry);
@@ -1394,7 +1394,7 @@ _ui_system_view_add(Ui *ui)
    ui->entry_rss = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='font=default:style=default size=12 align=right'");
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 0);
    evas_object_show(entry);
@@ -1409,7 +1409,7 @@ _ui_system_view_add(Ui *ui)
 
    ui->entry_cmd = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 0);
    evas_object_show(entry);
@@ -1425,7 +1425,7 @@ _ui_system_view_add(Ui *ui)
    ui->entry_state = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='font=default:style=default size=12 align=center'");
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_single_line_set(entry, 1);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 0);
@@ -1443,7 +1443,7 @@ _ui_system_view_add(Ui *ui)
    ui->entry_cpu_usage = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='font=default:style=default size=12 align=center'");
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_single_line_set(entry, 1);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 0);
