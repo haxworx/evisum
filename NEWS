@@ -1,4 +1,16 @@
 ============
+Evisum 0.1.2
+============
+
+Fixes:
+
+    * Fix process list geometry on resize.
+    * Install icon in proper location.
+    * Fix .desktop file.
+    * Make installation instructions easier.
+    * Improve non-Linux builds.
+
+============
 Evisum 0.1.1
 ============
 
