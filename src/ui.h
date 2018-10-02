@@ -49,91 +49,89 @@ typedef enum
 
 typedef struct Ui
 {
-   Evas_Object *win;
-   Evas_Object *panel;
-   Evas_Object *scroller;
+   Evas_Object  *win;
+   Evas_Object  *panel;
+   Evas_Object  *scroller;
 
-   Evas_Object *content;
+   Evas_Object  *content;
 
-   Evas_Object *disk_view;
-   Evas_Object *disk_activity;
-   Evas_Object *cpu_view;
-   Evas_Object *cpu_activity;
-   Evas_Object *mem_view;
-   Evas_Object *mem_activity;
-   Evas_Object *extra_view;
-   Evas_Object *extra_activity;
-   Evas_Object *system_activity;
+   Evas_Object  *disk_view;
+   Evas_Object  *disk_activity;
+   Evas_Object  *cpu_view;
+   Evas_Object  *cpu_activity;
+   Evas_Object  *mem_view;
+   Evas_Object  *mem_activity;
+   Evas_Object  *extra_view;
+   Evas_Object  *extra_activity;
+   Evas_Object  *system_activity;
 
-   Eina_Bool    cpu_visible;
-   Eina_Bool    extra_visible;
-   Eina_Bool    disk_visible;
-   Eina_Bool    mem_visible;
+   Eina_Bool     cpu_visible;
+   Eina_Bool     extra_visible;
+   Eina_Bool     disk_visible;
+   Eina_Bool     mem_visible;
 
-   Evas_Object *progress_cpu;
-   Evas_Object *progress_mem;
+   Evas_Object  *progress_cpu;
+   Evas_Object  *progress_mem;
 
-   Evas_Object *entry_pid;
-   Evas_Object *entry_uid;
-   Evas_Object *entry_size;
-   Evas_Object *entry_rss;
-   Evas_Object *entry_cmd;
-   Evas_Object *entry_state;
-   Evas_Object *entry_cpu_usage;
+   Evas_Object  *entry_pid;
+   Evas_Object  *entry_uid;
+   Evas_Object  *entry_size;
+   Evas_Object  *entry_rss;
+   Evas_Object  *entry_cmd;
+   Evas_Object  *entry_state;
+   Evas_Object  *entry_cpu_usage;
 
-   Evas_Object *btn_pid;
-   Evas_Object *btn_uid;
-   Evas_Object *btn_size;
-   Evas_Object *btn_rss;
-   Evas_Object *btn_cmd;
-   Evas_Object *btn_state;
-   Evas_Object *btn_cpu_usage;
+   Evas_Object  *btn_pid;
+   Evas_Object  *btn_uid;
+   Evas_Object  *btn_size;
+   Evas_Object  *btn_rss;
+   Evas_Object  *btn_cmd;
+   Evas_Object  *btn_state;
+   Evas_Object  *btn_cpu_usage;
 
-   Evas_Object *entry_pid_cmd;
-   Evas_Object *entry_pid_user;
-   Evas_Object *entry_pid_pid;
-   Evas_Object *entry_pid_uid;
-   Evas_Object *entry_pid_cpu;
-   Evas_Object *entry_pid_threads;
-   Evas_Object *entry_pid_size;
-   Evas_Object *entry_pid_rss;
-   Evas_Object *entry_pid_nice;
-   Evas_Object *entry_pid_pri;
-   Evas_Object *entry_pid_state;
-   Evas_Object *entry_pid_cpu_usage;
+   Evas_Object  *entry_pid_cmd;
+   Evas_Object  *entry_pid_user;
+   Evas_Object  *entry_pid_pid;
+   Evas_Object  *entry_pid_uid;
+   Evas_Object  *entry_pid_cpu;
+   Evas_Object  *entry_pid_threads;
+   Evas_Object  *entry_pid_size;
+   Evas_Object  *entry_pid_rss;
+   Evas_Object  *entry_pid_nice;
+   Evas_Object  *entry_pid_pri;
+   Evas_Object  *entry_pid_state;
+   Evas_Object  *entry_pid_cpu_usage;
 
    Ecore_Thread *thread_system;
    Ecore_Thread *thread_process;
 
-   Ecore_Timer *timer_pid;
-   pid_t        selected_pid;
-   pid_t        program_pid;
+   Ecore_Timer  *timer_pid;
+   pid_t         selected_pid;
+   pid_t         program_pid;
 
-   Data_Unit    data_unit;
+   Data_Unit     data_unit;
 
 #define TEXT_FIELD_MAX 65535
-   char *fields[PROCESS_INFO_FIELDS];
+   char         *fields[PROCESS_INFO_FIELDS];
 
-   Evas_Object *list_pid;
+   Evas_Object  *list_pid;
 
-   Eina_Bool    first_run;
+   Eina_Bool     first_run;
 
-   int64_t      cpu_times[PID_MAX];
-   int64_t      pid_cpu_time;
+   int64_t       cpu_times[PID_MAX];
+   int64_t       pid_cpu_time;
 
-   int          poll_delay;
+   int           poll_delay;
 
-   Sort_Type    sort_type;
-   Eina_Bool    sort_reverse;
-   Eina_Bool    panel_visible;
-
+   Sort_Type     sort_type;
+   Eina_Bool     sort_reverse;
+   Eina_Bool     panel_visible;
 } Ui;
 
 Ui *
-ui_add(Evas_Object *win);
+ ui_add(Evas_Object *win);
 
 void
-ui_shutdown(Ui *ui);
-
+ ui_shutdown(Ui *ui);
 
 #endif

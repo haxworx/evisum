@@ -48,23 +48,23 @@ struct results_t
 
    unsigned long incoming;
    unsigned long outgoing;
-#define INVALID_TEMP      -999
+#define INVALID_TEMP -999
    int           temperature;
 };
 
 void
-system_stats_all_get(results_t *results);
+ system_stats_all_get(results_t *results);
 
 int
-system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used);
+ system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used);
 
 bool
-system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing);
+ system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing);
 
 int
-system_temperature_cpu_get(void);
+ system_temperature_cpu_get(void);
 
 void
-system_power_state_get(power_t *power);
+ system_power_state_get(power_t *power);
 
 #endif

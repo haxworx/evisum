@@ -167,7 +167,7 @@ disks_get(void)
    if ((sysctl(mib, miblen, drives, &len, NULL, 0)) == -1)
      {
         free(drives);
-	return NULL;
+        return NULL;
      }
 
    Eina_List *list = NULL;
@@ -176,21 +176,21 @@ disks_get(void)
    while (dev)
      {
         end = strchr(dev, ':');
-	if (!end) break;
+        if (!end) break;
 
         *end = '\0';
 
-	if (dev[0] == ',')
+        if (dev[0] == ',')
           dev++;
 
-	snprintf(buf, sizeof(buf), "/dev/%s", dev);
+        snprintf(buf, sizeof(buf), "/dev/%s", dev);
 
         list = eina_list_append(list, strdup(buf));
 
         end++;
-	dev = strchr(end, ',');
-	if (!dev) break;
-    }
+        dev = strchr(end, ',');
+        if (!dev) break;
+     }
 
    free(drives);
 
@@ -208,7 +208,7 @@ disks_get(void)
    char buf[4096];
    Eina_List *devs, *list;
 
-   list  = NULL;
+   list = NULL;
 
    devs = ecore_file_ls("/dev");
 
@@ -265,3 +265,4 @@ disks_get(void)
    return NULL;
 #endif
 }
+

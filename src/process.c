@@ -365,7 +365,7 @@ _process_list_openbsd_get(void)
 
    kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
 
-   EINA_LIST_FOREACH (list, l, p)
+   EINA_LIST_FOREACH(list, l, p)
      {
         for (int i = 0; i < pid_count; i++)
           {

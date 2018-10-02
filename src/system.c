@@ -155,7 +155,11 @@ _sysctlfromname(const char *name, void *mib, int depth, size_t *len)
 static int
 cpu_count(void)
 {
-   int cores = 0;
+   static int cores = 0;
+
+   if (cores != 0)
+     return cores;
+
 #if defined(__linux__)
    char buf[4096];
    FILE *f;
@@ -1124,7 +1128,6 @@ system_power_state_get(power_t *power)
    _power_state_get(power);
 }
 
-
 bool
 system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing)
 {
@@ -1176,13 +1179,14 @@ system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used
    return results.cpu_count;
 }
 
-static void *_network_transfer_get_thread_cb(void *arg)
+static void *
+_network_transfer_get_thread_cb(void *arg)
 {
    results_t *results = arg;
 
    _network_transfer_get(results);
 
-   return ((void *) 0);
+   return (void *)0;
 }
 
 void
@@ -1202,8 +1206,8 @@ system_stats_all_get(results_t *results)
    if (error)
      _network_transfer_get(results);
 
-  if (_power_battery_count_get(&results->power))
-    _power_state_get(&results->power);
+   if (_power_battery_count_get(&results->power))
+     _power_state_get(&results->power);
 
    _temperature_cpu_get(&results->temperature);
 
@@ -1213,5 +1217,4 @@ system_stats_all_get(results_t *results)
         pthread_join(tid, ret);
      }
 }
-
 

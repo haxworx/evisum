@@ -96,7 +96,7 @@ _system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    _memory_total = results->memory.total >>= 10;
    _memory_used = results->memory.used >>= 10;
 
-   elm_progressbar_value_set(ui->progress_cpu, (double) cpu_usage / 100);
+   elm_progressbar_value_set(ui->progress_cpu, (double)cpu_usage / 100);
    elm_progressbar_value_set(ui->progress_mem, (double)((results->memory.total / 100.0) * results->memory.used) / 1000000);
 
 out:
@@ -251,9 +251,11 @@ _data_unit_symbol_get(Data_Unit unit)
       case DATA_UNIT_KB:
         symbol = "K";
         break;
+
       case DATA_UNIT_MB:
         symbol = "M";
         break;
+
       case DATA_UNIT_GB:
         symbol = "G";
         break;
@@ -265,16 +267,16 @@ _data_unit_symbol_get(Data_Unit unit)
 static void
 _fields_append(Ui *ui, Proc_Stats *proc)
 {
-   const char *format;
+   const char *symbol;
    int64_t mem_size, mem_rss;
 
    if (ui->program_pid == proc->pid)
      return;
 
-   format = _data_unit_symbol_get(ui->data_unit);
+   symbol = _data_unit_symbol_get(ui->data_unit);
 
    mem_size = proc->mem_size;
-   mem_rss  = proc->mem_rss;
+   mem_rss = proc->mem_rss;
 
    if (ui->data_unit == DATA_UNIT_KB)
      {
@@ -284,7 +286,7 @@ _fields_append(Ui *ui, Proc_Stats *proc)
    else if (ui->data_unit == DATA_UNIT_MB)
      {
         mem_size >>= 20;
-        mem_rss >>= 10;
+        mem_rss >>= 20;
      }
    else
      {
@@ -294,8 +296,8 @@ _fields_append(Ui *ui, Proc_Stats *proc)
 
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_PID], eina_slstr_printf("<link>%d</link> <br>", proc->pid), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_UID], eina_slstr_printf("%d <br>", proc->uid), TEXT_FIELD_MAX);
-   eina_strlcat(ui->fields[PROCESS_INFO_FIELD_SIZE], eina_slstr_printf("%lld %c<br>", mem_size, *format), TEXT_FIELD_MAX);
-   eina_strlcat(ui->fields[PROCESS_INFO_FIELD_RSS], eina_slstr_printf("%lld %c<br>", mem_rss,  *format), TEXT_FIELD_MAX);
+   eina_strlcat(ui->fields[PROCESS_INFO_FIELD_SIZE], eina_slstr_printf("%lld %c<br>", mem_size, *symbol), TEXT_FIELD_MAX);
+   eina_strlcat(ui->fields[PROCESS_INFO_FIELD_RSS], eina_slstr_printf("%lld %c<br>", mem_rss, *symbol), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", proc->command), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_STATE], eina_slstr_printf("%s <br>", proc->state), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_CPU_USAGE], eina_slstr_printf("%.1f%% <br>", proc->cpu_usage), TEXT_FIELD_MAX);
@@ -401,19 +403,19 @@ _system_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, v
 
    list = proc_info_all_get();
 
-   EINA_LIST_FOREACH (list, l, proc)
+   EINA_LIST_FOREACH(list, l, proc)
      {
         int64_t time_prev = ui->cpu_times[proc->pid];
         proc->cpu_usage = 0;
         if (!ui->first_run && proc->cpu_time > time_prev)
           {
-             proc->cpu_usage = (double) (proc->cpu_time - time_prev) / ui->poll_delay;
+             proc->cpu_usage = (double)(proc->cpu_time - time_prev) / ui->poll_delay;
           }
      }
 
    list = _list_sort(ui, list);
 
-   EINA_LIST_FREE (list, proc)
+   EINA_LIST_FREE(list, proc)
      {
         _fields_append(ui, proc);
         ui->first_run = EINA_FALSE;
@@ -534,7 +536,6 @@ _btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
    elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
-
 static void
 _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
@@ -629,18 +630,6 @@ _btn_quit_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
 }
 
 static void
-_btn_about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
-{
-   Ui *ui;
-   Evas_Object *win;
-
-   ui = data;
-   win = ui->win;
-
-   printf("(c) Copyright 2018. Alastair Poole <netstar@gmail.com>\n");
-}
-
-static void
 _list_item_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    pid_t *pid = data;
@@ -707,13 +696,13 @@ _process_panel_update(void *data)
    list = elm_list_items_get(ui->list_pid);
    EINA_LIST_FOREACH(list, l, it)
      {
-         pid_t *pid = elm_object_item_data_get(it);
-         if (pid && *pid == ui->selected_pid)
-           {
-              elm_list_item_selected_set(it, EINA_TRUE);
-              elm_list_item_bring_in(it);
-              break;
-           }
+        pid_t *pid = elm_object_item_data_get(it);
+        if (pid && *pid == ui->selected_pid)
+          {
+             elm_list_item_selected_set(it, EINA_TRUE);
+             elm_list_item_bring_in(it);
+             break;
+          }
      }
 
    elm_object_text_set(ui->entry_pid_cmd, proc->command);
@@ -734,7 +723,7 @@ _process_panel_update(void *data)
 
    if (ui->pid_cpu_time && proc->cpu_time >= ui->pid_cpu_time)
      {
-        cpu_usage = (double) (proc->cpu_time - ui->pid_cpu_time) / ui->poll_delay;
+        cpu_usage = (double)(proc->cpu_time - ui->pid_cpu_time) / ui->poll_delay;
      }
 
    elm_object_text_set(ui->entry_pid_cpu_usage, eina_slstr_printf("%.1f%%", cpu_usage));
@@ -878,14 +867,15 @@ _disk_adjust(Data_Unit unit, unsigned long value)
 {
    if (unit == DATA_UNIT_KB)
      {
-	value <<= 10;
+        value >>= 10;
      }
    else if (unit == DATA_UNIT_MB)
      {
+        value >>= 20;
      }
    else if (unit == DATA_UNIT_GB)
      {
-        value >>= 10;
+        value >>= 30;
      }
 
    return value;
@@ -895,7 +885,7 @@ static void
 _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, unsigned long used)
 {
    Evas_Object *frame, *progress;
-   const char *format;
+   const char *symbol;
    double ratio, value;
 
    frame = elm_frame_add(ui->disk_activity);
@@ -909,10 +899,13 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, u
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
 
-   format = _data_unit_symbol_get(ui->data_unit);
+   symbol = _data_unit_symbol_get(ui->data_unit);
 
    elm_progressbar_unit_format_set(progress,
-                                   eina_slstr_printf("%lu%c of %lu%c", _disk_adjust(ui->data_unit, used), *format, _disk_adjust(ui->data_unit, total), *format));
+                                   eina_slstr_printf(
+                                   "%lu%c of %lu%c",
+                                   _disk_adjust(ui->data_unit, used), *symbol,
+                                   _disk_adjust(ui->data_unit, total), *symbol));
 
    elm_object_content_set(frame, progress);
 
@@ -949,8 +942,7 @@ _disk_view_update(Ui *ui)
           {
              if (disk_usage_get(mount, &total, &used))
                {
-                  total >>= 20; used >>= 20;
-                  _ui_disk_add(ui, path, mount, total,  used);
+                  _ui_disk_add(ui, path, mount, total, used);
                }
              free(mount);
           }
@@ -971,10 +963,10 @@ _progress_incoming_format_cb(double val)
    incoming = _results->incoming;
    if (incoming > 1048576)
      {
-       incoming /= 1048576;
-       unit = "MB/s";
+        incoming /= 1048576;
+        unit = "MB/s";
      }
-   else if (incoming  > 1024 && incoming < 1048576)
+   else if (incoming > 1024 && incoming < 1048576)
      {
         incoming /= 1024;
         unit = "KB/s";
@@ -1002,8 +994,8 @@ _progress_outgoing_format_cb(double val)
    outgoing = _results->outgoing;
    if (outgoing > 1048576)
      {
-       outgoing /= 1048576;
-       unit = "MB/s";
+        outgoing /= 1048576;
+        unit = "MB/s";
      }
    else if (outgoing > 1024 && outgoing < 1048576)
      {
@@ -1088,7 +1080,7 @@ static void
 _memory_view_update(Ui *ui, results_t *results)
 {
    Evas_Object *box, *frame, *progress;
-   const char *format;
+   const char *symbol;
    double ratio, value;
 
    if (!ui->mem_visible)
@@ -1096,7 +1088,7 @@ _memory_view_update(Ui *ui, results_t *results)
 
    elm_box_clear(ui->mem_activity);
 
-   format = _data_unit_symbol_get(ui->data_unit);
+   symbol = _data_unit_symbol_get(ui->data_unit);
 
    box = elm_box_add(ui->content);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -1113,7 +1105,11 @@ _memory_view_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    elm_progressbar_unit_format_set(progress,
-                                   eina_slstr_printf("%lu %c / %lu %c", _mem_adjust(ui->data_unit, results->memory.used), *format, _mem_adjust(ui->data_unit, results->memory.total), *format));
+                                   eina_slstr_printf(
+                                   "%lu %c / %lu %c",
+                                   _mem_adjust(ui->data_unit, results->memory.used), *symbol,
+                                   _mem_adjust(ui->data_unit, results->memory.total), *symbol));
+
    ratio = results->memory.total / 100.0;
    value = results->memory.used / ratio;
    elm_progressbar_value_set(progress, value / 100);
@@ -1130,8 +1126,11 @@ _memory_view_update(Ui *ui, results_t *results)
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
-   elm_progressbar_unit_format_set(progress,
-                                   eina_slstr_printf("%lu %c / %lu %c", _mem_adjust(ui->data_unit, results->memory.cached), *format, _mem_adjust(ui->data_unit, results->memory.total), *format));
+   elm_progressbar_unit_format_set(progress, eina_slstr_printf(
+                                   "%lu %c / %lu %c",
+                                   _mem_adjust(ui->data_unit, results->memory.cached), *symbol,
+                                   _mem_adjust(ui->data_unit, results->memory.total), *symbol));
+
    ratio = results->memory.total / 100.0;
    value = results->memory.cached / ratio;
    elm_progressbar_value_set(progress, value / 100);
@@ -1149,7 +1148,11 @@ _memory_view_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    elm_progressbar_unit_format_set(progress,
-                                   eina_slstr_printf("%lu %c / %lu %c", _mem_adjust(ui->data_unit, results->memory.buffered), *format, _mem_adjust(ui->data_unit,  results->memory.total), *format));
+                                   eina_slstr_printf(
+                                   "%lu %c / %lu %c",
+                                   _mem_adjust(ui->data_unit, results->memory.buffered), *symbol,
+                                   _mem_adjust(ui->data_unit, results->memory.total), *symbol));
+
    ratio = results->memory.total / 100.0;
    value = results->memory.buffered / ratio;
    elm_progressbar_value_set(progress, value / 100);
@@ -1167,7 +1170,11 @@ _memory_view_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    elm_progressbar_unit_format_set(progress,
-                                   eina_slstr_printf("%lu %c / %lu %c", _mem_adjust(ui->data_unit, results->memory.shared), *format, _mem_adjust(ui->data_unit, results->memory.total), *format));
+                                   eina_slstr_printf(
+                                   "%lu %c / %lu %c",
+                                   _mem_adjust(ui->data_unit, results->memory.shared), *symbol,
+                                   _mem_adjust(ui->data_unit, results->memory.total), *symbol));
+
    ratio = results->memory.total / 100.0;
    value = results->memory.shared / ratio;
    elm_progressbar_value_set(progress, value / 100);
@@ -1213,7 +1220,7 @@ _extra_view_update(Ui *ui, results_t *results)
         evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
         elm_progressbar_span_size_set(progress, 1.0);
         elm_progressbar_unit_format_set(progress, "%1.2f%%");
-        elm_progressbar_value_set(progress, (double) results->power.percent / 100);
+        elm_progressbar_value_set(progress, (double)results->power.percent / 100);
         evas_object_show(progress);
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);

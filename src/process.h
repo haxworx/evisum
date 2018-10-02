@@ -50,7 +50,7 @@ typedef struct _Proc_Stats
  * @return A list of proc_t members for all processes.
  */
 Eina_List *
-proc_info_all_get(void);
+ proc_info_all_get(void);
 
 /**
  * Query a process for its current state.
@@ -60,7 +60,7 @@ proc_info_all_get(void);
  * @return A proc_t pointer containing the process information.
  */
 Proc_Stats *
-proc_info_by_pid(int pid);
+ proc_info_by_pid(int pid);
 
 /**
  * @}

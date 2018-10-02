@@ -1,6 +1,6 @@
 /* Copyright 2018. Alastair Poole <netstar@gmail.com>
    See LICENSE file for details.
-*/
+ */
 
 #define VERSION "0.1.1"
 
