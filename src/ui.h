@@ -26,6 +26,13 @@ typedef enum
 
 typedef enum
 {
+   DATA_UNIT_KB,
+   DATA_UNIT_MB,
+   DATA_UNIT_GB,
+} Data_Unit;
+
+typedef enum
+{
    SORT_BY_NONE,
    SORT_BY_PID,
    SORT_BY_UID,
@@ -101,6 +108,8 @@ typedef struct Ui
    Ecore_Timer *timer_pid;
    pid_t        selected_pid;
    pid_t        program_pid;
+
+   Data_Unit    data_unit;
 
 #define TEXT_FIELD_MAX 65535
    char *fields[PROCESS_INFO_FIELDS];
