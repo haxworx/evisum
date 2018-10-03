@@ -60,6 +60,12 @@ _system_stats_thread(void *data, Ecore_Thread *thread)
              if (ecore_thread_check(thread))
                return;
 
+             if (ui->skip_wait)
+               {
+                  ui->skip_wait = EINA_FALSE;
+                  break;
+               }
+
              usleep(500000);
           }
      }
@@ -454,6 +460,12 @@ _system_process_list(void *data, Ecore_Thread *thread)
           {
              if (ecore_thread_check(thread))
                return;
+
+             if (ui->skip_wait)
+               {
+                  ui->skip_wait = EINA_FALSE;
+                  break;
+               }
 
              usleep(500000);
           }
@@ -2168,14 +2180,17 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
     if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k') && !ev->keyname[1])
      {
         ui->data_unit = DATA_UNIT_KB;
+        ui->skip_wait = EINA_TRUE;
      }
    else if ((ev->keyname[0] == 'M' || ev->keyname[0] == 'm') && !ev->keyname[1])
      {
         ui->data_unit = DATA_UNIT_MB;
+        ui->skip_wait = EINA_TRUE;
      }
    else if ((ev->keyname[0] == 'G' || ev->keyname[0] == 'g') && !ev->keyname[1])
      {
         ui->data_unit = DATA_UNIT_GB;
+        ui->skip_wait = EINA_TRUE;
      }
    else if (!strcmp(ev->keyname, "Escape"))
      {

@@ -117,6 +117,7 @@ typedef struct Ui
    Evas_Object  *list_pid;
 
    Eina_Bool     first_run;
+   Eina_Bool     skip_wait;
 
    int64_t       cpu_times[PID_MAX];
    int64_t       pid_cpu_time;
