@@ -38,6 +38,9 @@ ui_shutdown(Ui *ui)
    if (ui->thread_process)
      ecore_thread_wait(ui->thread_process, 1.0);
 
+
+   eina_lock_free(&_lock);
+
    ecore_main_loop_quit();
 }
 

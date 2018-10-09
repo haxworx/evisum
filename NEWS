@@ -1,4 +1,11 @@
 ============
+Evisum 0.2.0
+============
+
+   * Add variable unit display (K, M and G).
+   * Minor refactoring.
+
+============
 Evisum 0.1.2
 ============
 

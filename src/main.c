@@ -2,7 +2,7 @@
    See LICENSE file for details.
  */
 
-#define VERSION "0.1.1"
+#define VERSION "0.2.0"
 
 #include "process.h"
 #include "system.h"
