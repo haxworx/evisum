@@ -26,9 +26,9 @@ typedef enum
 
 typedef enum
 {
-   DATA_UNIT_KB,
-   DATA_UNIT_MB,
-   DATA_UNIT_GB,
+   DATA_UNIT_KB = 1,
+   DATA_UNIT_MB = 2,
+   DATA_UNIT_GB = 3,
 } Data_Unit;
 
 typedef enum
@@ -52,7 +52,6 @@ typedef struct Ui
    Evas_Object  *win;
    Evas_Object  *panel;
    Evas_Object  *scroller;
-
    Evas_Object  *content;
 
    Evas_Object  *disk_view;
@@ -110,6 +109,7 @@ typedef struct Ui
    pid_t         program_pid;
 
    Data_Unit     data_unit;
+   const char   *data_unit_symbol;
 
 #define TEXT_FIELD_MAX 65535
    char         *fields[PROCESS_INFO_FIELDS];
