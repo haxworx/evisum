@@ -24,6 +24,7 @@ default:
 	$(MAKE) -C src/tingle
 
 clean:
+	$(MAKE) -C src clean
 	$(MAKE) -C src/tingle clean
 
 install:
