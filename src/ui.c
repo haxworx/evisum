@@ -20,6 +20,8 @@ ui_shutdown(Ui *ui)
 {
    evas_object_hide(ui->win);
 
+   ui->shutting_down = EINA_TRUE;
+
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
 
@@ -1108,6 +1110,9 @@ _process_panel_update(void *data)
    double cpu_usage = 0.0;
 
    ui = data;
+
+   if (ui->shutting_down)
+     return ECORE_CALLBACK_CANCEL;
 
    proc = proc_info_by_pid(ui->selected_pid);
    if (!proc)

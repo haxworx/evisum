@@ -109,7 +109,6 @@ typedef struct Ui
    pid_t         program_pid;
 
    Data_Unit     data_unit;
-   const char   *data_unit_symbol;
 
 #define TEXT_FIELD_MAX 65535
    char         *fields[PROCESS_INFO_FIELDS];
@@ -127,6 +126,7 @@ typedef struct Ui
    Sort_Type     sort_type;
    Eina_Bool     sort_reverse;
    Eina_Bool     panel_visible;
+   Eina_Bool     shutting_down;
 } Ui;
 
 Ui *
