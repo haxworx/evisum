@@ -2,6 +2,9 @@
 Evisum 0.2.0
 ============
 
+   * Add command-line utility (tingle) to complement
+     evisum.
+   * Fix object destruction befor exitting main loop.
    * Add variable unit display (K, M and G).
    * Minor refactoring.
 

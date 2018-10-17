@@ -21,9 +21,10 @@ export LDFLAGS
 
 default:
 	$(MAKE) -C src
+	$(MAKE) -C src/tingle
 
 clean:
-	$(MAKE) -C src clean
+	$(MAKE) -C src/tingle clean
 
 install:
 	-mkdir -p $(PREFIX)/share/pixmaps
@@ -32,3 +33,4 @@ install:
 	install -m 0644 data/evisum.png $(PREFIX)/share/pixmaps
 	install -m 0644 data/evisum.desktop $(PREFIX)/share/applications
 	install -m 0755 evisum $(PREFIX)/bin
+	install -m 0755 src/tingle/tingle $(PREFIX)/bin

@@ -2,13 +2,10 @@
 
 System Information (EFL)
 
-This is a process monitor and system monitor.
+This is a process monitor and system monitor for Linux, macOS,
+FreeBSD, DragonFlyBSD and OpenBSD.
 
-Currently have full engines for Linux, FreeBSD, OpenBSD and MacOS.
-
-The plan is to rewrite the whole program to log system information
-over time to disk so we can do nice things with E and displaying
-system information (not duplicating loads of code).
+Includes 'tingle' a command-line utility for displaying sensor information.
 
 REQUIREMENTS:
 
@@ -32,3 +29,11 @@ $ make PREFIX=/usr install
 or even:
 
 $ make PREFIX=/opt install
+
+NOTES
+
+The plan is to rewrite the whole program to log system information
+over time to disk so we can do nice things with E and displaying
+system information (not duplicating loads of code).
+
+For information on tingle, see src/tingle/README.
