@@ -26,9 +26,9 @@ typedef enum
 
 typedef enum
 {
-   DATA_UNIT_KB = 1,
-   DATA_UNIT_MB = 2,
-   DATA_UNIT_GB = 3,
+   DATA_UNIT_KB = 'K',
+   DATA_UNIT_MB = 'M',
+   DATA_UNIT_GB = 'G',
 } Data_Unit;
 
 typedef enum
