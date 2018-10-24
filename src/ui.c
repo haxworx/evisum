@@ -94,49 +94,24 @@ _progressbar_value_force_set(Evas_Object *progressbar, double val)
 }
 
 static char *
-_progress_incoming_format(results_t *results)
-{
-   char buf[1024];
-   double incoming;
-   const char *unit = "B/s";
-
-   incoming = results->incoming;
-   if (incoming > 1048576)
-     {
-        incoming /= 1048576;
-        unit = "MB/s";
-     }
-   else if (incoming > 1024 && incoming < 1048576)
-     {
-        incoming /= 1024;
-        unit = "KB/s";
-     }
-
-   snprintf(buf, sizeof(buf), "%.2f %s", incoming, unit);
-
-   return strdup(buf);
-}
-
-static char *
-_progress_outgoing_format(results_t *results)
+_network_transfer_format(double rate)
 {
    char buf[1024];
    double outgoing;
    const char *unit = "B/s";
 
-   outgoing = results->outgoing;
-   if (outgoing > 1048576)
+   if (rate > 1048576)
      {
-        outgoing /= 1048576;
+        rate /= 1048576;
         unit = "MB/s";
      }
-   else if (outgoing > 1024 && outgoing < 1048576)
+   else if (rate > 1024 && rate < 1048576)
      {
-        outgoing /= 1024;
+        rate /= 1024;
         unit = "KB/s";
      }
 
-   snprintf(buf, sizeof(buf), "%.2f %s", outgoing, unit);
+   snprintf(buf, sizeof(buf), "%.2f %s", rate, unit);
 
    return strdup(buf);
 }
@@ -192,7 +167,7 @@ _extra_view_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
 
-   tmp = _progress_incoming_format(results);
+   tmp = _network_transfer_format(results->incoming);
    elm_progressbar_unit_format_set(progress, tmp);
    free(tmp);
 
@@ -216,7 +191,7 @@ _extra_view_update(Ui *ui, results_t *results)
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
-   tmp = _progress_outgoing_format(results);
+   tmp = _network_transfer_format(results->outgoing);
    elm_progressbar_unit_format_set(progress, tmp);
    free(tmp);
 
