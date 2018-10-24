@@ -10,7 +10,7 @@ HAVE_ALSA := $(shell if [ $(ALSA_TEST) -eq 0 ]; then echo "true"; else echo "fal
 UNAME := $(shell uname -s)
 
 ifeq ($(UNAME),Darwin)
-       CFLAGS += -framework AudioToolBox
+       CFLAGS += -framework CoreAudio
 else ifeq ($(UNAME),Linux)
        ifeq ($(HAVE_ALSA),true)
                CFLAGS += -lasound -DHAVE_ALSA=1
