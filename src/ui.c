@@ -2100,20 +2100,19 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (!ev || !ev->keyname)
      return;
 
-    if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k') && !ev->keyname[1])
+   ui->skip_wait = EINA_TRUE;
+
+   if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k') && !ev->keyname[1])
      {
         ui->data_unit = DATA_UNIT_KB;
-        ui->skip_wait = EINA_TRUE;
      }
    else if ((ev->keyname[0] == 'M' || ev->keyname[0] == 'm') && !ev->keyname[1])
      {
         ui->data_unit = DATA_UNIT_MB;
-        ui->skip_wait = EINA_TRUE;
      }
    else if ((ev->keyname[0] == 'G' || ev->keyname[0] == 'g') && !ev->keyname[1])
      {
         ui->data_unit = DATA_UNIT_GB;
-        ui->skip_wait = EINA_TRUE;
      }
    else if (!strcmp(ev->keyname, "Escape"))
      {
