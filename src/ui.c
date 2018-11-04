@@ -36,7 +36,6 @@ ui_shutdown(Ui *ui)
    ecore_main_loop_quit();
 }
 
-
 static void
 _system_stats_thread(void *data, Ecore_Thread *thread)
 {
