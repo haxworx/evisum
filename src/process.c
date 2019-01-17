@@ -43,76 +43,76 @@ _process_state_name(char state)
    switch (state)
      {
       case 'D':
-        statename = "DSLEEP";
+        statename = "dsleep";
         break;
 
       case 'I':
-        statename = "IDLE";
+        statename = "idle";
         break;
 
       case 'R':
-        statename = "RUN";
+        statename = "run";
         break;
 
       case 'S':
-        statename = "SLEEP";
+        statename = "sleep";
         break;
 
       case 'T':
       case 't':
-        statename = "STOP";
+        statename = "stop";
         break;
 
       case 'X':
-        statename = "DEAD";
+        statename = "dead";
         break;
 
       case 'Z':
-        statename = "ZOMB";
+        statename = "zomb";
         break;
      }
 #else
    switch (state)
      {
       case SIDL:
-        statename = "IDLE";
+        statename = "idle";
         break;
 
-      case SRUN:
-        statename = "RUN";
+      case Srun:
+        statename = "run";
         break;
 
-      case SSLEEP:
-        statename = "SLEEP";
+      case Ssleep:
+        statename = "sleep";
         break;
 
-      case SSTOP:
-        statename = "STOP";
+      case Sstop:
+        statename = "stop";
         break;
 
 #if !defined(__MacOS__)
 #if !defined(__OpenBSD__)
-      case SWAIT:
-        statename = "WAIT";
+      case Swait:
+        statename = "wait";
         break;
 
-      case SLOCK:
-        statename = "LOCK";
+      case Slock:
+        statename = "lock";
         break;
 
 #endif
-      case SZOMB:
-        statename = "ZOMB";
+      case Szomb:
+        statename = "zomb";
         break;
 
 #endif
 #if defined(__OpenBSD__)
-      case SDEAD:
-        statename = "DEAD";
+      case Sdead:
+        statename = "dead";
         break;
 
-      case SONPROC:
-        statename = "ONPROC";
+      case Sonproc:
+        statename = "onproc";
         break;
 #endif
      }
