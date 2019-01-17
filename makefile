@@ -28,6 +28,7 @@ clean:
 	$(MAKE) -C src/tingle clean
 
 install:
+	$(MAKE) default
 	-mkdir -p $(PREFIX)/share/pixmaps
 	-mkdir -p $(PREFIX)/share/applications
 	-mkdir -p $(PREFIX)/bin
