@@ -78,40 +78,40 @@ _process_state_name(char state)
         statename = "idle";
         break;
 
-      case Srun:
+      case SRUN:
         statename = "run";
         break;
 
-      case Ssleep:
+      case SSLEEP:
         statename = "sleep";
         break;
 
-      case Sstop:
+      case SSTOP:
         statename = "stop";
         break;
 
 #if !defined(__MacOS__)
 #if !defined(__OpenBSD__)
-      case Swait:
+      case SWAIT:
         statename = "wait";
         break;
 
-      case Slock:
+      case SLOCK:
         statename = "lock";
         break;
 
 #endif
-      case Szomb:
+      case SZOMB:
         statename = "zomb";
         break;
 
 #endif
 #if defined(__OpenBSD__)
-      case Sdead:
+      case SDEAD:
         statename = "dead";
         break;
 
-      case Sonproc:
+      case SONPROC:
         statename = "onproc";
         break;
 #endif
