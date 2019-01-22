@@ -1,7 +1,7 @@
 PROGRAM=tingle
 SOURCES=tingle.c
 CFLAGS=-O2 -Wall -pedantic -std=c99 -lpthread
-LDFLAGS=-lm
+LDFLAGS=-lm -pthread
 HAVE_ALSA := 0
 
 ALSA_TEST := $(shell pkg-config --exists alsa 1>&2 2>/dev/null; echo $$?)
