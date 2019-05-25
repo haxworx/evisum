@@ -322,24 +322,26 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
    memset(&cpu_times, 0, CPU_STATES * sizeof(struct cpustats));
    if (!ncpu)
      return;
-   if (ncpu == 1)
+
+   for (i = 0; i < ncpu; i++)
      {
-        core = cores[0];
-        int cpu_time_mib[] = { CTL_KERN, KERN_CPTIME };
+        core = cores[i];
+        int cpu_time_mib[] = { CTL_KERN, KERN_CPUSTATS, 0 };
         size = sizeof(struct cpustats);
-        if (sysctl(cpu_time_mib, 2, &cpu_times[0], &size, NULL, 0) < 0)
+        cpu_time_mib[2] = i;
+        if (sysctl(cpu_time_mib, 3, &cpu_times[i], &size, NULL, 0) < 0)
           return;
 
         total = 0;
         for (j = 0; j < CPU_STATES; j++)
-          total += cpu_times[0].cs_time[j];
+          total += cpu_times[i].cs_time[j];
 
-        idle = cpu_times[0].cs_time[CP_IDLE];
+        idle = cpu_times[i].cs_time[CP_IDLE];
 
         diff_total = total - core->total;
-        diff_idle = idle - core->idle;
         if (diff_total == 0) diff_total = 1;
 
+        diff_idle = idle - core->idle;
         ratio = diff_total / 100.0;
         used = diff_total - diff_idle;
         percent = used / ratio;
@@ -351,39 +353,6 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         core->percent = percent;
         core->total = total;
         core->idle = idle;
-     }
-   else if (ncpu > 1)
-     {
-        for (i = 0; i < ncpu; i++) {
-             core = cores[i];
-             int cpu_time_mib[] = { CTL_KERN, KERN_CPUSTATS, 0 };
-             size = sizeof(struct cpustats);
-             cpu_time_mib[2] = i;
-             if (sysctl(cpu_time_mib, 3, &cpu_times[i], &size, NULL, 0) < 0)
-               return;
-
-	     total = 0;
-             for (j = 0; j < CPU_STATES; j++)
-               total += cpu_times[i].cs_time[j];
-
-             idle = cpu_times[i].cs_time[CP_IDLE];
-
-             diff_total = total - core->total;
-             if (diff_total == 0) diff_total = 1;
-
-             diff_idle = idle - core->idle;
-             ratio = diff_total / 100.0;
-             used = diff_total - diff_idle;
-             percent = used / ratio;
-
-             if (percent > 100) percent = 100;
-             else if (percent < 0)
-               percent = 0;
-
-             core->percent = percent;
-             core->total = total;
-             core->idle = idle;
-          }
      }
 #elif defined(__linux__)
    char *buf, name[128];
