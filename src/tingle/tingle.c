@@ -326,8 +326,8 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
      {
         core = cores[0];
         int cpu_time_mib[] = { CTL_KERN, KERN_CPTIME };
-        size = CPU_STATES * sizeof(unsigned long);
-        if (sysctl(cpu_time_mib, 2, &cpu_times, &size, NULL, 0) < 0)
+        size = sizeof(struct cpustats);
+        if (sysctl(cpu_time_mib, 2, &cpu_times[0], &size, NULL, 0) < 0)
           return;
 
         total = 0;
