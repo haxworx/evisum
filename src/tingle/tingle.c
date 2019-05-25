@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2017, Al Poole <netstar@gmail.com>
+   Copyright (c) 2017, Alastair Poole <netstar@gmail.com>
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -60,6 +60,7 @@
 
 #if defined(__OpenBSD__) || defined(__NetBSD__)
 # include <sys/swap.h>
+# include <sys/sched.h>
 # include <sys/mount.h>
 # include <sys/sensors.h>
 # include <sys/audioio.h>
@@ -81,7 +82,11 @@
 # include <alsa/asoundlib.h>
 #endif
 
+#if defined(__OpenBSD__)
+# define CPU_STATES       6
+#else
 #define CPU_STATES        5
+#endif
 
 #define MAX_BATTERIES     5
 #define INVALID_TEMP      -999
@@ -118,12 +123,17 @@ typedef struct
 
 typedef struct
 {
+   double charge_full;
+   double charge_current;
+   uint8_t percent;
+} bat_t;
+
+typedef struct
+{
    bool    have_ac;
    int     battery_count;
 
-   double  charge_full;
-   double  charge_current;
-   uint8_t percent;
+   bat_t **batteries;
 
    char    battery_names[256];
    int    *bat_mibs[MAX_BATTERIES];
@@ -308,7 +318,8 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         core->idle = idle;
      }
 #elif defined(__OpenBSD__)
-   unsigned long cpu_times[CPU_STATES];
+   struct cpustats cpu_times[CPU_STATES];
+   memset(&cpu_times, 0, CPU_STATES * sizeof(struct cpustats));
    if (!ncpu)
      return;
    if (ncpu == 1)
@@ -321,9 +332,9 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 
         total = 0;
         for (j = 0; j < CPU_STATES; j++)
-          total += cpu_times[j];
+          total += cpu_times[0].cs_time[j];
 
-        idle = cpu_times[4];
+        idle = cpu_times[0].cs_time[CP_IDLE];
 
         diff_total = total - core->total;
         diff_idle = idle - core->idle;
@@ -345,17 +356,17 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
      {
         for (i = 0; i < ncpu; i++) {
              core = cores[i];
-             int cpu_time_mib[] = { CTL_KERN, KERN_CPTIME2, 0 };
-             size = CPU_STATES * sizeof(unsigned long);
+             int cpu_time_mib[] = { CTL_KERN, KERN_CPUSTATS, 0 };
+             size = sizeof(struct cpustats);
              cpu_time_mib[2] = i;
-             if (sysctl(cpu_time_mib, 3, &cpu_times, &size, NULL, 0) < 0)
+             if (sysctl(cpu_time_mib, 3, &cpu_times[i], &size, NULL, 0) < 0)
                return;
 
-             total = 0;
+	     total = 0;
              for (j = 0; j < CPU_STATES; j++)
-               total += cpu_times[j];
+               total += cpu_times[i].cs_time[j];
 
-             idle = cpu_times[4];
+             idle = cpu_times[i].cs_time[CP_IDLE];
 
              diff_total = total - core->total;
              if (diff_total == 0) diff_total = 1;
@@ -1033,6 +1044,14 @@ _power_battery_count_get(power_t *power)
 
    closedir(dir);
 #endif
+
+   power->batteries = malloc(power->battery_count * sizeof(bat_t **));
+
+   for (int i = 0; i < power->battery_count; i++)
+     {
+	power->batteries[i] = calloc(1, sizeof(bat_t));
+     }
+
    return power->battery_count;
 }
 
@@ -1040,6 +1059,7 @@ static void
 _battery_state_get(power_t *power, int *mib)
 {
 #if defined(__OpenBSD__) || defined(__NetBSD__)
+   static int index = 0;
    double charge_full = 0;
    double charge_current = 0;
    size_t slen = sizeof(struct sensor);
@@ -1073,13 +1093,14 @@ _battery_state_get(power_t *power, int *mib)
           charge_current = (double)snsr.value;
      }
 
-   power->charge_full += charge_full;
-   power->charge_current += charge_current;
+   power->batteries[index]->charge_full = charge_full;
+   power->batteries[index]->charge_current = charge_current;
+   ++index;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int value;
    size_t len = sizeof(value);
    if ((sysctl(mib, 4, &value, &len, NULL, 0)) != -1)
-     power->percent = value;
+     power->batteries[0]->percent = value;
 #elif defined(__linux__)
    char path[PATH_MAX];
    struct dirent *dh;
@@ -1121,8 +1142,8 @@ _battery_state_get(power_t *power, int *mib)
              charge_current = atol(buf);
              free(buf);
           }
-        power->charge_full += charge_full;
-        power->charge_current += charge_current;
+        power->batteries[i]->charge_full = charge_full;
+        power->batteries[i]->charge_current = charge_current;
         naming = NULL;
         i++;
      }
@@ -1171,10 +1192,12 @@ _power_state_get(power_t *power)
      _battery_state_get(power, power->bat_mibs[i]);
 
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__linux__)
-   double percent =
-     100 * (power->charge_current / power->charge_full);
-
-   power->percent = percent;
+   for (i = 0; i < power->battery_count; i++)
+     {
+        double percent =
+           100 * (power->batteries[i]->charge_current / power->batteries[i]->charge_full);
+        power->batteries[i]->percent = percent;
+     }
    power->have_ac = have_ac;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    len = sizeof(value);
@@ -1183,7 +1206,7 @@ _power_state_get(power_t *power)
         return;
      }
 
-   power->percent = value;
+   power->batteries[0]->percent = value;
 
 #endif
    for (i = 0; i < power->battery_count; i++)
@@ -1424,11 +1447,17 @@ results_pretty(results_t *results, int *order, int count)
         if (flags & RESULTS_PWR)
           {
              if (results->power.have_ac)
-               printf(" [AC]: %d%%", results->power.percent);
-             else if (results->power.battery_count == 0)
-               printf(" [DC]");
+	       printf(" [AC]");
              else
-               printf(" [DC]: %d%%", results->power.percent);
+	       printf(" [DC]");
+
+	     if (results->power.battery_count != 0)
+	       printf(":");
+
+             for (int i = 0; i < results->power.battery_count; i++)
+               {
+                  printf(" %d%%", results->power.batteries[i]->percent);
+               }
           }
 
      }
@@ -1498,7 +1527,13 @@ results_mem(meminfo_t *mem, int flags)
 static void
 results_power(power_t *power)
 {
-   printf("%d %d\n", power->have_ac, power->percent);
+   printf("%d", power->have_ac);
+   for (int i = 0; i < power->battery_count; i++)
+     {
+        printf(" %d", power->batteries[i]->percent);
+     }
+
+   printf("\n");
 }
 
 static void
@@ -1674,6 +1709,12 @@ main(int argc, char **argv)
    else
      {
         results_verbose(&results, order, j);
+     }
+
+   if (flags & RESULTS_PWR)
+     {
+	for (i = 0; i < results.power.battery_count; i++)
+          free(results.power.batteries[i]);
      }
 
    if (flags & RESULTS_CPU)

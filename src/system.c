@@ -54,6 +54,7 @@
 #endif
 
 #if defined(__OpenBSD__) || defined(__NetBSD__)
+# include <sys/sched.h>
 # include <sys/swap.h>
 # include <sys/mount.h>
 # include <sys/sensors.h>
@@ -68,7 +69,11 @@
 
 #include "system.h"
 
-#define CPU_STATES        5
+#if defined(__OpenBSD__)
+# define CPU_STATES      6
+#else
+# define CPU_STATES        5
+#endif
 
 /* Filter requests and results */
 #define RESULTS_CPU       0x01
@@ -244,7 +249,8 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         core->idle = idle;
      }
 #elif defined(__OpenBSD__)
-   unsigned long cpu_times[CPU_STATES];
+   struct cpustats cpu_times[CPU_STATES];
+   memset(&cpu_times, 0, CPU_STATES * sizeof(struct cpustats));
    if (!ncpu)
      return;
    if (ncpu == 1)
@@ -257,9 +263,9 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 
         total = 0;
         for (j = 0; j < CPU_STATES; j++)
-          total += cpu_times[j];
+          total += cpu_times[0].cs_time[j];
 
-        idle = cpu_times[4];
+        idle = cpu_times[0].cs_time[CP_IDLE];
 
         diff_total = total - core->total;
         diff_idle = idle - core->idle;
@@ -281,17 +287,17 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
      {
         for (i = 0; i < ncpu; i++) {
              core = cores[i];
-             int cpu_time_mib[] = { CTL_KERN, KERN_CPTIME2, 0 };
-             size = CPU_STATES * sizeof(unsigned long);
+             int cpu_time_mib[] = { CTL_KERN, KERN_CPUSTATS, 0 };
+             size = sizeof(struct cpustats);
              cpu_time_mib[2] = i;
-             if (sysctl(cpu_time_mib, 3, &cpu_times, &size, NULL, 0) < 0)
+             if (sysctl(cpu_time_mib, 3, &cpu_times[i], &size, NULL, 0) < 0)
                return;
 
              total = 0;
              for (j = 0; j < CPU_STATES; j++)
-               total += cpu_times[j];
+               total += cpu_times[i].cs_time[j];
 
-             idle = cpu_times[4];
+             idle = cpu_times[i].cs_time[CP_IDLE];
 
              diff_total = total - core->total;
              if (diff_total == 0) diff_total = 1;
