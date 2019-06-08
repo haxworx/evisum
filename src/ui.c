@@ -116,16 +116,16 @@ _network_transfer_format(double rate)
 }
 
 static void
-_extra_view_update(Ui *ui, results_t *results)
+_misc_view_update(Ui *ui, results_t *results)
 {
    Evas_Object *box, *frame, *progress;
    char *tmp;
    int i;
 
-   if (!ui->extra_visible)
+   if (!ui->misc_visible)
      return;
 
-   elm_box_clear(ui->extra_activity);
+   elm_box_clear(ui->misc_activity);
 
    box = elm_box_add(ui->content);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -204,7 +204,7 @@ _extra_view_update(Ui *ui, results_t *results)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   elm_box_pack_end(ui->extra_activity, box);
+   elm_box_pack_end(ui->misc_activity, box);
 }
 
 static unsigned long
@@ -342,6 +342,16 @@ _memory_view_update(Ui *ui, results_t *results)
    ratio = results->memory.total / 100.0;
    value = results->memory.shared / ratio;
    _progressbar_value_force_set(progress, value / 100);
+
+   progress = ui->progress_mem_swap;
+   elm_progressbar_unit_format_set(progress,
+                                   eina_slstr_printf(
+                                   "%lu %c / %lu %c",
+                                   _mem_adjust(ui->data_unit, results->memory.swap_total - results->memory.swap_used), ui->data_unit,
+                                   _mem_adjust(ui->data_unit, results->memory.swap_total), ui->data_unit));
+   ratio = results->memory.swap_total / 100.0;
+   value = (results->memory.swap_total - results->memory.swap_used) / ratio;
+   _progressbar_value_force_set(progress, value / 100);
 }
 
 static void
@@ -404,7 +414,7 @@ _system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    _cpu_view_update(ui, results);
    _memory_view_update(ui, results);
    _disk_view_update(ui);
-   _extra_view_update(ui, results);
+   _misc_view_update(ui, results);
 
    for (i = 0; i < results->cpu_count; i++)
      {
@@ -1456,6 +1466,7 @@ _ui_process_panel_add(Ui *ui)
    ui->list_pid = list = elm_list_add(frame);
    evas_object_size_hint_weight_set(list, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_align_set(list, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_scroller_gravity_set(list, 0.5, 0.0);
    evas_object_show(list);
    elm_object_content_set(frame, list);
    evas_object_smart_callback_add(ui->list_pid, "selected", _process_panel_list_selected_cb, ui);
@@ -1718,7 +1729,7 @@ _ui_disk_view_add(Ui *ui)
    frame = elm_frame_add(box);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(frame, "Disk usage");
+   elm_object_text_set(frame, "Storage Overview");
    evas_object_show(frame);
 
    scroller = elm_scroller_add(parent);
@@ -1733,19 +1744,19 @@ _ui_disk_view_add(Ui *ui)
 }
 
 static void
-_ui_extra_view_add(Ui *ui)
+_ui_misc_view_add(Ui *ui)
 {
    Evas_Object *parent, *box, *hbox, *frame, *scroller;
 
    parent = ui->content;
 
-   ui->extra_view = box = elm_box_add(parent);
+   ui->misc_view = box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_table_pack(ui->content, ui->extra_view, 0, 1, 1, 1);
+   elm_table_pack(ui->content, ui->misc_view, 0, 1, 1, 1);
    evas_object_hide(box);
 
-   ui->extra_activity = hbox = elm_box_add(box);
+   ui->misc_activity = hbox = elm_box_add(box);
    evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
    evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(hbox);
@@ -1788,7 +1799,7 @@ _ui_cpu_view_add(Ui *ui)
    frame = elm_frame_add(box);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(frame, "CPU");
+   elm_object_text_set(frame, "Processor Overview");
    evas_object_show(frame);
 
    scroller = elm_scroller_add(parent);
@@ -1823,7 +1834,7 @@ _ui_memory_view_add(Ui *ui)
    frame = elm_frame_add(box);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(frame, "Memory");
+   elm_object_text_set(frame, "Memory Overview");
    evas_object_show(frame);
 
    scroller = elm_scroller_add(parent);
@@ -1891,7 +1902,33 @@ _ui_memory_view_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
+   frame = elm_frame_add(box);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_object_text_set(frame, "Memory Swapped");
+   evas_object_show(frame);
+   ui->progress_mem_swap = progress = elm_progressbar_add(frame);
+   evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(progress);
+   elm_object_content_set(frame, progress);
+   elm_box_pack_end(box, frame);
+
+
+
    elm_box_pack_end(ui->mem_activity, box);
+}
+
+static void
+_tab_state_changed(Ui *ui, Evas_Object *btn_active)
+{
+   elm_object_disabled_set(ui->btn_general, EINA_FALSE);
+   elm_object_disabled_set(ui->btn_cpu, EINA_FALSE);
+   elm_object_disabled_set(ui->btn_mem, EINA_FALSE);
+   elm_object_disabled_set(ui->btn_storage, EINA_FALSE);
+   elm_object_disabled_set(ui->btn_misc, EINA_FALSE);
+
+   elm_object_disabled_set(btn_active, EINA_TRUE);
 }
 
 static void
@@ -1902,15 +1939,17 @@ _tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
    ui = data;
 
    ui->mem_visible = EINA_TRUE;
-   ui->extra_visible = EINA_FALSE;
+   ui->misc_visible = EINA_FALSE;
    ui->disk_visible = EINA_FALSE;
    ui->cpu_visible = EINA_FALSE;
+
+   _tab_state_changed(ui, obj);
 
    evas_object_show(ui->mem_view);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
    evas_object_hide(ui->disk_view);
-   evas_object_hide(ui->extra_view);
+   evas_object_hide(ui->misc_view);
    evas_object_hide(ui->cpu_view);
 }
 
@@ -1921,15 +1960,17 @@ _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 
    ui = data;
 
-   ui->extra_visible = EINA_FALSE;
+   ui->misc_visible = EINA_FALSE;
    ui->disk_visible = EINA_FALSE;
    ui->cpu_visible = EINA_FALSE;
    ui->mem_visible = EINA_FALSE;
 
+   _tab_state_changed(ui, obj);
+
    evas_object_show(ui->system_activity);
    evas_object_show(ui->panel);
    evas_object_hide(ui->disk_view);
-   evas_object_hide(ui->extra_view);
+   evas_object_hide(ui->misc_view);
    evas_object_hide(ui->cpu_view);
    evas_object_hide(ui->mem_view);
 }
@@ -1941,32 +1982,36 @@ _tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *ev
 
    ui = data;
 
-   ui->extra_visible = EINA_FALSE;
+   ui->misc_visible = EINA_FALSE;
    ui->disk_visible = EINA_TRUE;
    ui->cpu_visible = EINA_FALSE;
    ui->mem_visible = EINA_FALSE;
 
+   _tab_state_changed(ui, obj);
+
    evas_object_show(ui->disk_view);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
-   evas_object_hide(ui->extra_view);
+   evas_object_hide(ui->misc_view);
    evas_object_hide(ui->cpu_view);
    evas_object_hide(ui->mem_view);
 }
 
 static void
-_tab_extra_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui *ui;
 
    ui = data;
 
-   ui->extra_visible = EINA_TRUE;
+   ui->misc_visible = EINA_TRUE;
    ui->disk_visible = EINA_FALSE;
    ui->cpu_visible = EINA_FALSE;
    ui->mem_visible = EINA_FALSE;
 
-   evas_object_show(ui->extra_view);
+   _tab_state_changed(ui, obj);
+
+   evas_object_show(ui->misc_view);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
    evas_object_hide(ui->disk_view);
@@ -1982,12 +2027,14 @@ _tab_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
    ui = data;
 
    ui->mem_visible = EINA_FALSE;
-   ui->extra_visible = EINA_FALSE;
+   ui->misc_visible = EINA_FALSE;
    ui->disk_visible = EINA_FALSE;
    ui->cpu_visible = EINA_TRUE;
 
+   _tab_state_changed(ui, obj);
+
    evas_object_show(ui->cpu_view);
-   evas_object_hide(ui->extra_view);
+   evas_object_hide(ui->misc_view);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
    evas_object_hide(ui->disk_view);
@@ -2018,7 +2065,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_box_horizontal_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
 
-   button = elm_button_add(hbox);
+   ui->btn_general = button = elm_button_add(hbox);
+   elm_object_disabled_set(ui->btn_general, EINA_TRUE);
    evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(button, "General");
@@ -2026,7 +2074,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_box_pack_end(hbox, button);
    evas_object_smart_callback_add(button, "clicked", _tab_system_activity_clicked_cb, ui);
 
-   button = elm_button_add(hbox);
+   ui->btn_cpu = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(button, "CPU");
@@ -2034,7 +2082,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_box_pack_end(hbox, button);
    evas_object_smart_callback_add(button, "clicked", _tab_cpu_activity_clicked_cb, ui);
 
-   button = elm_button_add(hbox);
+   ui->btn_mem = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(button, "Memory");
@@ -2042,7 +2090,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_box_pack_end(hbox, button);
    evas_object_smart_callback_add(button, "clicked", _tab_memory_activity_clicked_cb, ui);
 
-   button = elm_button_add(hbox);
+   ui->btn_storage = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(button, "Storage");
@@ -2050,13 +2098,13 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_box_pack_end(hbox, button);
    evas_object_smart_callback_add(button, "clicked", _tab_disk_activity_clicked_cb, ui);
 
-   button = elm_button_add(hbox);
+   ui->btn_misc = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(button, "Misc");
    evas_object_show(button);
    elm_box_pack_end(hbox, button);
-   evas_object_smart_callback_add(button, "clicked", _tab_extra_clicked_cb, ui);
+   evas_object_smart_callback_add(button, "clicked", _tab_misc_clicked_cb, ui);
 
    elm_object_content_set(frame, hbox);
    elm_table_pack(ui->content, frame, 0, 0, 1, 1);
@@ -2134,7 +2182,7 @@ ui_add(Evas_Object *parent)
    ui->selected_pid = -1;
    ui->program_pid = getpid();
    ui->panel_visible = EINA_TRUE;
-   ui->disk_visible = ui->cpu_visible = ui->mem_visible = ui->extra_visible = EINA_TRUE;
+   ui->disk_visible = ui->cpu_visible = ui->mem_visible = ui->misc_visible = EINA_TRUE;
    ui->data_unit = DATA_UNIT_MB;
 
    memset(ui->cpu_times, 0, PID_MAX * sizeof(int64_t));
@@ -2156,7 +2204,7 @@ ui_add(Evas_Object *parent)
    _ui_cpu_view_add(ui);
    _ui_memory_view_add(ui);
    _ui_disk_view_add(ui);
-   _ui_extra_view_add(ui);
+   _ui_misc_view_add(ui);
 
    evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN, _evisum_key_down_cb, ui);
 

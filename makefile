@@ -29,10 +29,11 @@ clean:
 
 install:
 	$(MAKE) default
-	-mkdir -p $(PREFIX)/share/pixmaps
+	-mkdir -p $(PREFIX)/share/
 	-mkdir -p $(PREFIX)/share/applications
 	-mkdir -p $(PREFIX)/bin
-	install -m 0644 data/evisum.png $(PREFIX)/share/pixmaps
+	-mkdir -p $(PREFIX)/share/icons/hicolor/512x512/apps
+	install -m 0644 data/evisum.png $(PREFIX)/share/icons/hicolor/512x512/apps
 	install -m 0644 data/evisum.desktop $(PREFIX)/share/applications
 	install -m 0755 evisum $(PREFIX)/bin
 	install -m 0755 src/tingle/tingle $(PREFIX)/bin

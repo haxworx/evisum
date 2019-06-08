@@ -257,6 +257,17 @@ disks_get(void)
    if (devs)
      eina_list_free(devs);
 
+   devs = ecore_file_ls("/dev/mapper");
+   EINA_LIST_FREE(devs, name)
+     {
+        snprintf(buf, sizeof(buf), "/dev/mapper/%s", name);
+        list = eina_list_append(list, strdup(name));
+        free(name);
+     }
+
+   if (devs)
+     eina_list_free(devs);
+
    list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
 
    return list;

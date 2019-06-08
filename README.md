@@ -24,11 +24,11 @@ $ make install
 
 or as an example:
 
-$ make PREFIX=/usr install
+$ sudo make PREFIX=/usr install
 
 or even:
 
-$ make PREFIX=/opt install
+$ doas make PREFIX=/opt install
 
 NOTES
 

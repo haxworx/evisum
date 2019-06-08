@@ -54,18 +54,24 @@ typedef struct Ui
    Evas_Object  *scroller;
    Evas_Object  *content;
 
+   Evas_Object  *btn_general;
+   Evas_Object  *btn_cpu;
+   Evas_Object  *btn_mem;
+   Evas_Object  *btn_storage;
+   Evas_Object  *btn_misc;
+
    Evas_Object  *disk_view;
    Evas_Object  *disk_activity;
    Evas_Object  *cpu_view;
    Evas_Object  *cpu_activity;
    Evas_Object  *mem_view;
    Evas_Object  *mem_activity;
-   Evas_Object  *extra_view;
-   Evas_Object  *extra_activity;
+   Evas_Object  *misc_view;
+   Evas_Object  *misc_activity;
    Evas_Object  *system_activity;
 
    Eina_Bool     cpu_visible;
-   Eina_Bool     extra_visible;
+   Eina_Bool     misc_visible;
    Eina_Bool     disk_visible;
    Eina_Bool     mem_visible;
 
@@ -76,6 +82,7 @@ typedef struct Ui
    Evas_Object  *progress_mem_cached;
    Evas_Object  *progress_mem_buffered;
    Evas_Object  *progress_mem_shared;
+   Evas_Object  *progress_mem_swap;
 
    Evas_Object  *entry_pid;
    Evas_Object  *entry_uid;

@@ -22,11 +22,7 @@
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-/* Visit: http://haxlab.org */
-/* Build : cc -lm (file) -o (output) */
-/* What a shitstorm this turned into! hah! */
-
+#define VERSION "0.9.0"
 #define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -1593,7 +1589,17 @@ main(int argc, char **argv)
                     "        This is the default behaviour with no arguments.\n"
                     "        With other flags specify (in any order) which\n"
                     "        components to display in the status bar.\n"
+                    "      -v | -version | --version\n"
+                    "        Version information.\n"
                     "      -h | -help | --help\n" "        This help.\n");
+             exit(0);
+          }
+
+        if ((!strcmp(argv[i], "-v")) ||
+            (!strcmp(argv[i], "-version")) || (!strcmp(argv[i], "--version")))
+          {
+             printf("(c) Copyright 2017-2019. Alastair Poole (see COPYING for details)\n");
+             printf("Tingle version %s\n", VERSION);
              exit(0);
           }
 
