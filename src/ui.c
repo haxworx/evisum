@@ -347,10 +347,10 @@ _memory_view_update(Ui *ui, results_t *results)
    elm_progressbar_unit_format_set(progress,
                                    eina_slstr_printf(
                                    "%lu %c / %lu %c",
-                                   _mem_adjust(ui->data_unit, results->memory.swap_total - results->memory.swap_used), ui->data_unit,
+                                   _mem_adjust(ui->data_unit, results->memory.swap_used), ui->data_unit,
                                    _mem_adjust(ui->data_unit, results->memory.swap_total), ui->data_unit));
    ratio = results->memory.swap_total / 100.0;
-   value = (results->memory.swap_total - results->memory.swap_used) / ratio;
+   value = results->memory.swap_used / ratio;
    _progressbar_value_force_set(progress, value / 100);
 }
 

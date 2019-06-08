@@ -458,13 +458,14 @@ _memory_usage_get(meminfo_t *memory)
              fields++;
           }
 
+
         if (fields >= 8)
           break;
      }
 
    memory->cached += tmp_slab;
    memory->used = memory->total - tmp_free - memory->cached - memory->buffered;
-   memory->swap_used = memory->swap_total = swap_free;
+   memory->swap_used = memory->swap_total - swap_free;
 
    fclose(f);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
