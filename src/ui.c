@@ -637,12 +637,9 @@ _fields_append(Ui *ui, Proc_Stats *proc)
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_RSS], eina_slstr_printf("%lld %c<br>", mem_rss, ui->data_unit), TEXT_FIELD_MAX);
 
    // Make sure we don't wrap text if widget is too small.
-   if (proc->command && proc->command[0])
-     {
-        char *cmd = _entry_trim_text(ui->entry_cmd, proc->command);
-        eina_strlcat(ui->fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", cmd), TEXT_FIELD_MAX);
-        free(cmd);
-     }
+   char *cmd = _entry_trim_text(ui->entry_cmd, proc->command);
+   eina_strlcat(ui->fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", cmd), TEXT_FIELD_MAX);
+   free(cmd);
 
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_STATE], eina_slstr_printf("%s <br>", proc->state), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_CPU_USAGE], eina_slstr_printf("%.1f%% <br>", proc->cpu_usage), TEXT_FIELD_MAX);
