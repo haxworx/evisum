@@ -575,6 +575,35 @@ _sort_by_state(const void *p1, const void *p2)
    return strcmp(inf1->state, inf2->state);
 }
 
+static char *
+_entry_trim_text(Evas_Object *entry, const char *text)
+{
+   char *result;
+   unsigned int max;
+   int w, cw;
+
+   result = strdup(text);
+
+   evas_object_geometry_get(entry, NULL, NULL, &w, NULL);
+
+   Evas_Object *textblock = elm_entry_textblock_get(entry);
+   if (textblock && w > 0)
+     {
+        Evas_Textblock_Cursor *cursor = evas_object_textblock_cursor_get(textblock);
+        if ((evas_textblock_cursor_char_geometry_get(cursor,  NULL, NULL, &cw, NULL)) != -1)
+          {
+             if (cw > 0)
+               {
+                  max = (w / cw) - 3;
+                  if (strlen(result) > max)
+                    result[max] = '\0';
+               }
+          }
+     }
+
+   return result;
+}
+
 static void
 _fields_append(Ui *ui, Proc_Stats *proc)
 {
@@ -606,7 +635,15 @@ _fields_append(Ui *ui, Proc_Stats *proc)
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_UID], eina_slstr_printf("%d <br>", proc->uid), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_SIZE], eina_slstr_printf("%lld %c<br>", mem_size, ui->data_unit), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_RSS], eina_slstr_printf("%lld %c<br>", mem_rss, ui->data_unit), TEXT_FIELD_MAX);
-   eina_strlcat(ui->fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", proc->command), TEXT_FIELD_MAX);
+
+   // Make sure we don't wrap text if widget is too small.
+   if (proc->command && proc->command[0])
+     {
+        char *cmd = _entry_trim_text(ui->entry_cmd, proc->command);
+        eina_strlcat(ui->fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", cmd), TEXT_FIELD_MAX);
+        free(cmd);
+     }
+
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_STATE], eina_slstr_printf("%s <br>", proc->state), TEXT_FIELD_MAX);
    eina_strlcat(ui->fields[PROCESS_INFO_FIELD_CPU_USAGE], eina_slstr_printf("%.1f%% <br>", proc->cpu_usage), TEXT_FIELD_MAX);
 }
@@ -614,6 +651,7 @@ _fields_append(Ui *ui, Proc_Stats *proc)
 static void
 _fields_show(Ui *ui)
 {
+
    elm_object_text_set(ui->entry_pid, ui->fields[PROCESS_INFO_FIELD_PID]);
    elm_object_text_set(ui->entry_uid, ui->fields[PROCESS_INFO_FIELD_UID]);
    elm_object_text_set(ui->entry_size, ui->fields[PROCESS_INFO_FIELD_SIZE]);
