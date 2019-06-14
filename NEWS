@@ -1,4 +1,14 @@
 ============
+Evisum 0.2.2
+============
+
+   * Fix OpenBSD CPU usage (6.5+).
+   * Visual fixes.
+   * Add swapped memory item.
+   * Updated tingle command-line tool.
+   * Small bug fixes.
+
+============
 Evisum 0.2.0
 ============
 
