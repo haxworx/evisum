@@ -401,9 +401,9 @@ static void
 _system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
    Ui *ui;
+   Evas_Object *progress;
    results_t *results;
-   double cpu_usage = 0.0;
-   int i;
+   double ratio, value, cpu_usage = 0.0;
 
    ui = data;
    results = msg;
@@ -416,7 +416,7 @@ _system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    _disk_view_update(ui);
    _misc_view_update(ui, results);
 
-   for (i = 0; i < results->cpu_count; i++)
+   for (int i = 0; i < results->cpu_count; i++)
      {
         cpu_usage += results->cores[i]->percent;
 
@@ -427,11 +427,17 @@ _system_stats_thread_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    _progressbar_value_force_set(ui->progress_cpu, (double)cpu_usage / 100);
 
-   elm_progressbar_unit_format_set(ui->progress_mem, eina_slstr_printf("%ld %c out of %ld %c",
-                                  _mem_adjust(ui->data_unit, results->memory.used), ui->data_unit,
-                                  _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit));
+   progress = ui->progress_mem;
+   elm_progressbar_unit_format_set(progress,
+                                   eina_slstr_printf(
+                                   "%lu %c / %lu %c",
+                                   _mem_adjust(ui->data_unit, results->memory.used), ui->data_unit,
+                                   _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit));
 
-   _progressbar_value_force_set(ui->progress_mem, (double)((results->memory.total / 100.0) * results->memory.used) / 1000000000000);
+   ratio = results->memory.total / 100.0;
+   value = results->memory.used / ratio;
+
+   _progressbar_value_force_set(progress, value / 100);
 
 out:
    free(results->cores);
