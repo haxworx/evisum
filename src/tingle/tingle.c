@@ -314,7 +314,9 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         core->idle = idle;
      }
 #elif defined(__OpenBSD__)
-   struct cpustats cpu_times[CPU_STATES];
+   static struct cpustats cpu_times[CPU_STATES];
+   static int cpu_time_mib[] = { CTL_KERN, KERN_CPUSTATS, 0 };
+
    memset(&cpu_times, 0, CPU_STATES * sizeof(struct cpustats));
    if (!ncpu)
      return;
@@ -322,7 +324,6 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
    for (i = 0; i < ncpu; i++)
      {
         core = cores[i];
-        int cpu_time_mib[] = { CTL_KERN, KERN_CPUSTATS, 0 };
         size = sizeof(struct cpustats);
         cpu_time_mib[2] = i;
         if (sysctl(cpu_time_mib, 3, &cpu_times[i], &size, NULL, 0) < 0)
