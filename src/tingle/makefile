@@ -18,6 +18,6 @@ else ifeq ($(UNAME),Linux)
 endif
 
 default:
-	$(CC) $(CFLAGS) $(LDFLAGS) $(SOURCES) -o tingle
+	$(CC) $(SOURCES) $(CFLAGS) $(LDFLAGS) -o tingle
 clean:
 	-rm $(PROGRAM)
