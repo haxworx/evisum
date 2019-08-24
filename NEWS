@@ -1,4 +1,11 @@
 ============
+Evisum 0.2.4
+============
+
+   * Fix GUI on launch and shutdown.
+   * Fix tingle compilation (makefile).
+
+============
 Evisum 0.2.2
 ============
 

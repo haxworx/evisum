@@ -1,7 +1,10 @@
-#ifndef __UI_H__
+ #ifndef __UI_H__
 #define __UI_H__
 
 #include <Elementary.h>
+
+#define EVISUM_SIZE_WIDTH  500
+#define EVISUM_SIZE_HEIGHT 560
 
 typedef enum
 {
@@ -53,7 +56,7 @@ typedef struct Ui
    Evas_Object  *panel;
    Evas_Object  *scroller;
    Evas_Object  *content;
-
+#define TAB_BTN_SIZE 75
    Evas_Object  *btn_general;
    Evas_Object  *btn_cpu;
    Evas_Object  *btn_mem;
