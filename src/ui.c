@@ -15,7 +15,7 @@ static Eina_Lock _lock;
 void
 ui_shutdown(Ui *ui)
 {
-   evas_object_hide(ui->win);
+   evas_object_del(ui->win);
 
    ui->shutting_down = EINA_TRUE;
 

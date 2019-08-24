@@ -33,10 +33,10 @@ _win_add(void)
    evas_object_resize(win, 400 * elm_config_scale_get(), 450 * elm_config_scale_get());
    elm_win_title_set(win, "System Information");
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
-   evas_object_show(win);
 
    ui = ui_add(win);
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   evas_object_show(win);
 
    return win;
 }
