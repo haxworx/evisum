@@ -30,8 +30,8 @@ typedef struct
    double  charge_full;
    double  charge_current;
    uint8_t percent;
-#define MAX_BATTERIES 5
-   char    battery_names[256];
+#define MAX_BATTERIES 10
+   char    *battery_names[MAX_BATTERIES];
    int    *bat_mibs[MAX_BATTERIES];
    int     ac_mibs[5];
 } power_t;

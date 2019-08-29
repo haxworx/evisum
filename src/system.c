@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/sysctl.h>
@@ -337,7 +338,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
    count = HOST_CPU_LOAD_INFO_COUNT;
    mach_port = mach_host_self();
    if (host_processor_info(mach_port, PROCESSOR_CPU_LOAD_INFO, &cpu_count, (processor_info_array_t *)&load, &count) != KERN_SUCCESS)
-     exit(4 << 1);
+     exit(-1);
 
    for (i = 0; i < ncpu; i++) {
         core = cores[i];
@@ -785,6 +786,8 @@ _power_battery_count_get(power_t *power)
      }
 #elif defined(__linux__)
    struct dirent *dh;
+   struct stat st;
+   char path[PATH_MAX];
    DIR *dir;
 
    dir = opendir("/sys/class/power_supply");
@@ -793,9 +796,14 @@ _power_battery_count_get(power_t *power)
    while ((dh = readdir(dir)) != NULL)
      {
         if (dh->d_name[0] == '.') continue;
-        if (!strncmp(dh->d_name, "BAT", 3))
+
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", dh->d_name);
+        char *type = Fcontents(path);
+        if (type)
           {
-             power->battery_names[power->battery_count++] = (char)dh->d_name[3];
+             if (!strncmp(type, "Battery", 7))
+               power->battery_names[power->battery_count++] = strdup(dh->d_name);
+             free(type);
           }
      }
 
@@ -851,48 +859,65 @@ _battery_state_get(power_t *power, int *mib)
 #elif defined(__linux__)
    char path[PATH_MAX];
    struct dirent *dh;
+   struct stat st;
    DIR *dir;
    char *buf, *naming = NULL;
    int i = 0;
    unsigned long charge_full = 0;
    unsigned long charge_current = 0;
 
-   while (power->battery_names[i] != '\0')
+   while (i < power->battery_count)
      {
-        snprintf(path, sizeof(path), "/sys/class/power_supply/BAT%c", power->battery_names[i]);
+        naming = NULL;
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s", power->battery_names[i]);
+        stat(path, &st);
+
+        if (S_ISLNK(st.st_mode)) continue;
+        if (!S_ISDIR(st.st_mode)) continue;
+
         dir = opendir(path);
         if (!dir) return;
         while ((dh = readdir(dir)) != NULL)
           {
-             if (!strcmp(dh->d_name, "energy_full"))
-               {
-                  naming = "energy"; break;
-               }
-             else if (!strcmp(dh->d_name, "capacity_full"))
-               {
-                  naming = "capacity"; break;
-               }
+             char *e;
+             if (dh->d_name[0] == '.') continue;
+
+             if ((e = strstr(dh->d_name, "_full\0")))
+              {
+                 naming = strndup(dh->d_name, e - dh->d_name);
+                 break;
+              }
           }
         closedir(dir);
+
         if (!naming) continue;
-        snprintf(path, sizeof(path), "/sys/class/power_supply/BAT%c/%s_full", power->battery_names[i], naming);
+
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full", power->battery_names[i], naming);
         buf = Fcontents(path);
         if (buf)
           {
              charge_full = atol(buf);
              free(buf);
           }
-        snprintf(path, sizeof(path), "/sys/class/power_supply/BAT%c/%s_now", power->battery_names[i], naming);
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_now", power->battery_names[i], naming);
         buf = Fcontents(path);
         if (buf)
           {
              charge_current = atol(buf);
              free(buf);
           }
+
         power->charge_full += charge_full;
         power->charge_current += charge_current;
-        naming = NULL;
+
+        free(naming);
         i++;
+
+        if (i == MAX_BATTERIES)
+          {
+             fprintf(stderr, "Error: Should not be here!\n");
+             exit(-1);
+          }
      }
 #endif
 }
@@ -954,8 +979,14 @@ _power_state_get(power_t *power)
    power->percent = value;
 
 #endif
+
    for (i = 0; i < power->battery_count; i++)
-     if (power->bat_mibs[i]) free(power->bat_mibs[i]);
+     {
+        if (power->battery_names[i])
+          free(power->battery_names[i]);
+        if (power->bat_mibs[i])
+          free(power->bat_mibs[i]);
+     }
 }
 
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
