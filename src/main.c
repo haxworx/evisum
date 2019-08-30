@@ -11,7 +11,7 @@
 static void
 _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   exit(0)r;
+   exit(0);
 }
 
 static Evas_Object *
