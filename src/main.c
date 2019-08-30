@@ -2,23 +2,20 @@
    See LICENSE file for details.
  */
 
-#define VERSION "0.2.6"
+#define VERSION "0.2.3"
 
 #include "process.h"
 #include "system.h"
 #include "ui.h"
 
 static void
-_win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_win_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui *ui;
 
-   /*   ui = data;
-        ui_shutdown(ui); */
+   ui = data;
 
-   /* We can call exit here */
-
-   exit(0);
+   ui_shutdown(ui);
 }
 
 static Evas_Object *
