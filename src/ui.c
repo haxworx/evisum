@@ -137,10 +137,13 @@ _misc_view_update(Ui *ui, results_t *results)
         frame = elm_frame_add(box);
         evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
         evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+ 
+	char buf[256];
+	snprintf(buf, sizeof(buf), "Battery %d ", i);
         if (results->power.have_ac)
-          elm_object_text_set(frame, "Battery (plugged in)");
-        else
-          elm_object_text_set(frame, "Battery");
+	  strcat(buf, "(plugged in)");
+
+        elm_object_text_set(frame, buf);
 
         evas_object_show(frame);
 
