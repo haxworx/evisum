@@ -140,11 +140,10 @@ _misc_view_update(Ui *ui, results_t *results)
  
 	char buf[256];
 	snprintf(buf, sizeof(buf), "Battery %d ", i);
-        if (results->power.have_ac)
+        if (results->power.have_ac && i == 0)
 	  strcat(buf, "(plugged in)");
 
         elm_object_text_set(frame, buf);
-
         evas_object_show(frame);
 
         progress = elm_progressbar_add(frame);
@@ -156,7 +155,12 @@ _misc_view_update(Ui *ui, results_t *results)
         evas_object_show(progress);
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);
+
+	free(results->power.batteries[i]);
      }
+
+   if (results->power.batteries)
+     free(results->power.batteries);
 
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
