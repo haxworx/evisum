@@ -109,7 +109,12 @@ Fcontents(const char *path)
    char *buf;
    char byte[1];
    size_t count, bytes = 0;
-   FILE *f = fopen(path, "r");
+   struct stat st;
+   FILE *f;
+
+   if (stat(path, &st) < 0) return NULL;
+
+   f = fopen(path, "r");
    if (!f) return NULL;
 
    int n = 1024;
@@ -870,8 +875,8 @@ _battery_state_get(power_t *power, int *mib)
      {
         naming = NULL;
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s", power->battery_names[i]);
-        stat(path, &st);
 
+        if (stat(path, &st) < 0) continue;
         if (S_ISLNK(st.st_mode)) continue;
         if (!S_ISDIR(st.st_mode)) continue;
 
