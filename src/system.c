@@ -1005,12 +1005,7 @@ _power_state_get(power_t *power)
           free(power->battery_names[i]);
         if (power->bat_mibs[i])
           free(power->bat_mibs[i]);
-        if (power->batteries[i])
-          free(power->batteries[i]);
      }
-
-   if (power->batteries)
-     free(power->batteries);
 }
 
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
