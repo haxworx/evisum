@@ -50,7 +50,8 @@ _system_stats_thread(void *data, Ecore_Thread *thread)
         system_stats_all_get(results);
         ecore_thread_feedback(thread, results);
 
-        for (i = 0; i < ui->poll_delay * 2; i++)
+	// Let's wait 3/4 of a second before updating.
+        for (i = 0; i < 3; i++)
           {
              if (ecore_thread_check(thread))
                return;
@@ -61,7 +62,7 @@ _system_stats_thread(void *data, Ecore_Thread *thread)
                   break;
                }
 
-             usleep(500000);
+             usleep(250000);
           }
      }
 }
