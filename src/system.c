@@ -871,7 +871,7 @@ _battery_state_get(power_t *power, int *mib)
    unsigned long charge_full = 0;
    unsigned long charge_current = 0;
 
-   while (i < power->battery_count)
+   for (i = 0; i < power->battery_count; i++)
      {
         naming = NULL;
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s", power->battery_names[i]);
@@ -897,7 +897,6 @@ _battery_state_get(power_t *power, int *mib)
 
         if (!naming)
           {
-             i++;
              continue;
           }
 
@@ -920,7 +919,6 @@ _battery_state_get(power_t *power, int *mib)
         power->charge_current += charge_current;
 
         free(naming);
-        i++;
 
         if (i == MAX_BATTERIES)
           {

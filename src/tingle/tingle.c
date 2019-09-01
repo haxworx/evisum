@@ -1081,16 +1081,16 @@ _battery_state_get(power_t *power, int *mib)
    struct stat st;
    DIR *dir;
    char *buf, *naming;
-   int i = 0;
+   int i;
    unsigned long charge_full = 0;
    unsigned long charge_current = 0;
 
-   while (i < power->battery_count)
+   for (i = 0; i < power->battery_count; i++)
      {
         naming = NULL;
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s", power->battery_names[i]);
-        if (stat(path, &st) < 0) continue;
 
+        if (stat(path, &st) < 0) continue;
         if (S_ISLNK(st.st_mode)) continue;
         if (!S_ISDIR(st.st_mode)) continue;
 
@@ -1108,7 +1108,11 @@ _battery_state_get(power_t *power, int *mib)
           }
         closedir(dir);
 
-        if (!naming) continue;
+        if (!naming)
+	  {
+             continue;
+	  }
+
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full", power->battery_names[i], naming);
         buf = Fcontents(path);
         if (buf)
@@ -1127,7 +1131,6 @@ _battery_state_get(power_t *power, int *mib)
         power->batteries[i]->charge_current = charge_current;
 
         free(naming);
-        i++;
      }
 #endif
 }
