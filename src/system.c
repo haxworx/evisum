@@ -895,7 +895,11 @@ _battery_state_get(power_t *power, int *mib)
           }
         closedir(dir);
 
-        if (!naming) continue;
+        if (!naming)
+          {
+             i++;
+             continue;
+          }
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full", power->battery_names[i], naming);
         buf = Fcontents(path);
