@@ -140,7 +140,7 @@ _misc_view_update(Ui *ui, results_t *results)
         evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
  
 	char buf[256];
-	snprintf(buf, sizeof(buf), "Battery %d ", i);
+	snprintf(buf, sizeof(buf), "Battery %s ", results->power.battery_names[i]);
         if (results->power.have_ac && i == 0)
 	  strcat(buf, "(plugged in)");
 
@@ -157,6 +157,7 @@ _misc_view_update(Ui *ui, results_t *results)
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);
 
+	free(results->power.battery_names[i]);
 	free(results->power.batteries[i]);
      }
 

@@ -761,6 +761,7 @@ _power_battery_count_get(power_t *power)
                {
                   power->bat_mibs[power->battery_count] =
                     malloc(sizeof(int) * 5);
+                  power->battery_names[power->battery_count] = strdup(buf);
                   int *tmp = power->bat_mibs[power->battery_count++];
                   tmp[0] = mib[0];
                   tmp[1] = mib[1];
@@ -782,6 +783,7 @@ _power_battery_count_get(power_t *power)
         power->bat_mibs[power->battery_count] = malloc(sizeof(int) * 5);
         sysctlnametomib("hw.acpi.battery.life",
                         power->bat_mibs[power->battery_count], &len);
+	power->battery_names[0] = strdup("hw.acpi.battery.life");
         power->battery_count = 1;
      }
 
@@ -790,29 +792,27 @@ _power_battery_count_get(power_t *power)
         sysctlnametomib("hw.acpi.acline", power->ac_mibs, &len);
      }
 #elif defined(__linux__)
-   struct dirent *dh;
-   struct stat st;
    char path[PATH_MAX];
-   DIR *dir;
+   struct dirent **names;
+   int i, n;
 
-   dir = opendir("/sys/class/power_supply");
-   if (!dir) return 0;
+   n = scandir("/sys/class/power_supply", &names, 0, alphasort);
+   if (n < 0) return power->battery_count;
 
-   while ((dh = readdir(dir)) != NULL)
-     {
-        if (dh->d_name[0] == '.') continue;
-
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", dh->d_name);
+   for (i = 0; i < n; i++){
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", names[i]->d_name);
         char *type = Fcontents(path);
         if (type)
           {
              if (!strncmp(type, "Battery", 7))
-               power->battery_names[power->battery_count++] = strdup(dh->d_name);
+               power->battery_names[power->battery_count++] = strdup(names[i]->d_name);
              free(type);
           }
+
+	free(names[i]);
      }
 
-   closedir(dir);
+   free(names);
 #endif
 
    power->batteries = malloc(power->battery_count * sizeof(bat_t **));
@@ -1001,8 +1001,6 @@ _power_state_get(power_t *power)
 
    for (i = 0; i < power->battery_count; i++)
      {
-        if (power->battery_names[i])
-          free(power->battery_names[i]);
         if (power->bat_mibs[i])
           free(power->bat_mibs[i]);
      }
