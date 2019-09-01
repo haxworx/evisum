@@ -814,6 +814,13 @@ _power_battery_count_get(power_t *power)
 
    closedir(dir);
 #endif
+
+   power->batteries = malloc(power->battery_count * sizeof(bat_t **));
+   for (int i = 0; i < power->battery_count; i++)
+     {
+        power->batteries[i] = calloc(1, sizeof(bat_t));
+     }
+
    return power->battery_count;
 }
 
@@ -821,6 +828,7 @@ static void
 _battery_state_get(power_t *power, int *mib)
 {
 #if defined(__OpenBSD__) || defined(__NetBSD__)
+   static int index = 0;
    double charge_full = 0;
    double charge_current = 0;
    size_t slen = sizeof(struct sensor);
@@ -854,13 +862,14 @@ _battery_state_get(power_t *power, int *mib)
           charge_current = (double)snsr.value;
      }
 
-   power->charge_full += charge_full;
-   power->charge_current += charge_current;
+   power->batteries[index]->charge_full = charge_full;
+   power->batteries[index]->charge_current = charge_current;
+   ++index;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int value;
    size_t len = sizeof(value);
    if ((sysctl(mib, 4, &value, &len, NULL, 0)) != -1)
-     power->percent = value;
+     power->batteries[0]->percent = value;
 #elif defined(__linux__)
    char path[PATH_MAX];
    struct dirent *dh;
@@ -915,8 +924,8 @@ _battery_state_get(power_t *power, int *mib)
              free(buf);
           }
 
-        power->charge_full += charge_full;
-        power->charge_current += charge_current;
+        power->batteries[i]->charge_full = charge_full;
+        power->batteries[i]->charge_current = charge_current;
 
         free(naming);
 
@@ -971,10 +980,13 @@ _power_state_get(power_t *power)
      _battery_state_get(power, power->bat_mibs[i]);
 
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__linux__)
-   double percent =
-     100 * (power->charge_current / power->charge_full);
+   for (i = 0; i < power->battery_count; i++)
+     {
+        double percent =
+           100 * (power->batteries[i]->charge_current / power->batteries[i]->charge_full);
+        power->batteries[i]->percent = percent;
+     }
 
-   power->percent = percent;
    power->have_ac = have_ac;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    len = sizeof(value);
@@ -983,7 +995,7 @@ _power_state_get(power_t *power)
         return;
      }
 
-   power->percent = value;
+   power->batteries[0]->percent = value;
 
 #endif
 

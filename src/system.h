@@ -22,15 +22,21 @@ typedef struct
    unsigned long swap_used;
 } meminfo_t;
 
+#define MAX_BATTERIES 10
+typedef struct
+{
+   double charge_full;
+   double charge_current;
+   uint8_t percent;
+} bat_t;
+
 typedef struct
 {
    bool    have_ac;
    int     battery_count;
 
-   double  charge_full;
-   double  charge_current;
-   uint8_t percent;
-#define MAX_BATTERIES 10
+   bat_t  **batteries;
+
    char    *battery_names[MAX_BATTERIES];
    int    *bat_mibs[MAX_BATTERIES];
    int     ac_mibs[5];

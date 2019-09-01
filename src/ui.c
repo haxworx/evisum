@@ -132,7 +132,7 @@ _misc_view_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(box);
 
-   if (results->power.battery_count)
+   for (int i = 0; i < results->power.battery_count; i++)
      {
         frame = elm_frame_add(box);
         evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
@@ -149,7 +149,7 @@ _misc_view_update(Ui *ui, results_t *results)
         evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
         elm_progressbar_span_size_set(progress, 1.0);
         elm_progressbar_unit_format_set(progress, "%1.2f%%");
-        _progressbar_value_force_set(progress, (double)results->power.percent / 100);
+        _progressbar_value_force_set(progress, (double)results->power.batteries[i]->percent / 100);
         evas_object_show(progress);
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);
