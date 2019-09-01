@@ -1,5 +1,6 @@
-/* Copyright 2018. Alastair Poole <netstar@gmail.com>
-   See LICENSE file for details.
+/* 
+ * Copyright 2018-2019. Alastair Poole <netstar@gmail.com>
+ * See LICENSE file for details.
  */
 
 #define VERSION "0.2.6"
