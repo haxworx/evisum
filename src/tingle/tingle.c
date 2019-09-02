@@ -178,7 +178,7 @@ _memsize_kb_to_gb(unsigned long *bytes)
 
 #if defined(__linux__)
 static char *
-Fcontents(const char *path)
+file_contents(const char *path)
 {
    char *buf;
    char byte[1];
@@ -356,7 +356,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
    char *buf, name[128];
    int i;
 
-   buf = Fcontents("/proc/stat");
+   buf = file_contents("/proc/stat");
    if (!buf) return;
 
    for (i = 0; i < ncpu; i++) {
@@ -913,14 +913,14 @@ _temperature_cpu_get(int *temperature)
         if (!strncmp(dh->d_name, "thermal_zone", 12))
           {
              snprintf(path, sizeof(path), "/sys/class/thermal/%s/type", dh->d_name);
-             char *type = Fcontents(path);
+             char *type = file_contents(path);
              if (type)
                {
                   /* This should ensure we get the highest available core temperature */
                   if (strstr(type, "_pkg_temp"))
                     {
                        snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp", dh->d_name);
-                       char *value = Fcontents(path);
+                       char *value = file_contents(path);
                        if (value)
                          {
                             *temperature = atoi(value) / 1000;
@@ -1007,7 +1007,7 @@ _power_battery_count_get(power_t *power)
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", dh->d_name);
 
-        char *type = Fcontents(path);
+        char *type = file_contents(path);
         if (type)
           {
              if (!strncmp(type, "Battery", 7))
@@ -1030,50 +1030,54 @@ _power_battery_count_get(power_t *power)
 }
 
 static void
-_battery_state_get(power_t *power, int *mib)
+_battery_state_get(power_t *power)
 {
 #if defined(__OpenBSD__) || defined(__NetBSD__)
-   static int index = 0;
-   double charge_full = 0;
-   double charge_current = 0;
+   int *mib;
+   double charge_full, charge_current;
    size_t slen = sizeof(struct sensor);
    struct sensor snsr;
 
-   mib[3] = 7;
-   mib[4] = 0;
-
-   if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
-     charge_full = (double)snsr.value;
-
-   mib[3] = 7;
-   mib[4] = 3;
-
-   if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
-     charge_current = (double)snsr.value;
-
-   /* ACPI bug workaround... */
-   if (charge_current == 0 || charge_full == 0)
+   for (int i = 0; i < power->battery_count; i++)
      {
-        mib[3] = 8;
+        charge_full = charge_current = 0;
+
+        mib = power->bat_mibs[i];
+        mib[3] = 7;
         mib[4] = 0;
 
         if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
           charge_full = (double)snsr.value;
 
-        mib[3] = 8;
+        mib[3] = 7;
         mib[4] = 3;
 
         if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
           charge_current = (double)snsr.value;
-     }
 
-   power->batteries[index]->charge_full = charge_full;
-   power->batteries[index]->charge_current = charge_current;
-   ++index;
+        /* ACPI bug workaround... */
+        if (charge_current == 0 || charge_full == 0)
+          {
+             mib[3] = 8;
+             mib[4] = 0;
+
+             if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
+               charge_full = (double)snsr.value;
+
+             mib[3] = 8;
+             mib[4] = 3;
+
+             if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
+               charge_current = (double)snsr.value;
+          }
+
+        power->batteries[i]->charge_full = charge_full;
+        power->batteries[i]->charge_current = charge_current;
+     }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int value;
    size_t len = sizeof(value);
-   if ((sysctl(mib, 4, &value, &len, NULL, 0)) != -1)
+   if ((sysctl(power->bat_mibs[0], 4, &value, &len, NULL, 0)) != -1)
      power->batteries[0]->percent = value;
 #elif defined(__linux__)
    char path[PATH_MAX];
@@ -1114,14 +1118,14 @@ _battery_state_get(power_t *power, int *mib)
 	  }
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full", power->battery_names[i], naming);
-        buf = Fcontents(path);
+        buf = file_contents(path);
         if (buf)
           {
              charge_full = atol(buf);
              free(buf);
           }
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_now", power->battery_names[i], naming);
-        buf = Fcontents(path);
+        buf = file_contents(path);
         if (buf)
           {
              charge_current = atol(buf);
@@ -1165,7 +1169,7 @@ _power_state_get(power_t *power)
      }
    power->have_ac = value;
 #elif defined(__linux__)
-   buf = Fcontents("/sys/class/power_supply/AC/online");
+   buf = file_contents("/sys/class/power_supply/AC/online");
    if (buf)
      {
         have_ac = atoi(buf);
@@ -1173,8 +1177,7 @@ _power_state_get(power_t *power)
      }
 #endif
 
-   for (i = 0; i < power->battery_count; i++)
-     _battery_state_get(power, power->bat_mibs[i]);
+   _battery_state_get(power);
 
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__linux__)
    for (i = 0; i < power->battery_count; i++)
