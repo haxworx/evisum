@@ -1410,7 +1410,7 @@ results_pretty(results_t *results, int *order, int count)
                   outgoing /= 1024;
                   unit = "KB/s";
                }
-             printf(" [NET] %.2f/%.2f %s", incoming, outgoing, unit);
+             printf(" [NET]: %.2f/%.2f %s", incoming, outgoing, unit);
           }
 
         if (flags & RESULTS_TMP)
