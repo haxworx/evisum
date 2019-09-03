@@ -1,4 +1,17 @@
 ============
+Evisum 0.2.6
+============
+
+   * Add support for multiple batteries (GUI).
+   * Various refactoring.
+   * Increase responsiveness.
+   * GUI changes.
+   * Shutdown improvements.
+   * Fix some memory leaks.
+   * Battery names (where applicable).
+   * Various small tidying.
+
+============
 Evisum 0.2.4
 ============
 

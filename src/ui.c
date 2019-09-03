@@ -663,7 +663,6 @@ _fields_append(Ui *ui, Proc_Stats *proc)
 static void
 _fields_show(Ui *ui)
 {
-
    elm_object_text_set(ui->entry_pid, ui->fields[PROCESS_INFO_FIELD_PID]);
    elm_object_text_set(ui->entry_uid, ui->fields[PROCESS_INFO_FIELD_UID]);
    elm_object_text_set(ui->entry_size, ui->fields[PROCESS_INFO_FIELD_SIZE]);
@@ -1986,8 +1985,6 @@ _ui_memory_view_add(Ui *ui)
    evas_object_show(progress);
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
-
-
 
    elm_box_pack_end(ui->mem_activity, box);
 }
