@@ -109,7 +109,6 @@ file_contents(const char *path)
    char *buf;
    char byte[1];
    size_t count, bytes = 0;
-   struct stat st;
    FILE *f;
 
    f = fopen(path, "r");

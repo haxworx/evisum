@@ -5,8 +5,6 @@
 
 #define VERSION "0.2.6"
 
-#include "process.h"
-#include "system.h"
 #include "ui.h"
 
 static void

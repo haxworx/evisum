@@ -122,7 +122,6 @@ _tab_misc_update(Ui *ui, results_t *results)
 {
    Evas_Object *box, *frame, *progress;
    char *tmp;
-   int i;
 
    if (!ui->misc_visible)
      return;
@@ -310,7 +309,7 @@ _tab_disk_update(Ui *ui)
 static void
 _tab_memory_update(Ui *ui, results_t *results)
 {
-   Evas_Object *box, *frame, *progress;
+   Evas_Object *progress;
    double ratio, value;
 
    if (!ui->mem_visible)
@@ -1003,7 +1002,6 @@ _process_panel_pids_update(Ui *ui)
    Elm_Widget_Item *item;
    Eina_List *list;
    pid_t *pid;
-   char buf[64];
 
    if (!ui->panel_visible)
      return;
@@ -1492,7 +1490,7 @@ _ui_tab_system_add(Ui *ui)
 static void
 _ui_process_panel_add(Ui *ui)
 {
-   Evas_Object *parent, *panel, *box, *hbox, *frame, *scroller, *table;
+   Evas_Object *parent, *panel, *hbox, *frame, *scroller, *table;
    Evas_Object *label, *list, *entry, *button, *border;
 
    parent = ui->content;

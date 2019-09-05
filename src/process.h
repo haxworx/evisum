@@ -24,7 +24,7 @@
 # define PID_MAX     99999
 #endif
 
-#define CMD_NAME_MAX 256
+#define CMD_NAME_MAX 1024
 
 typedef struct _Proc_Stats
 {
