@@ -126,7 +126,7 @@ typedef struct Ui
    Data_Unit     data_unit;
 
 #define TEXT_FIELD_MAX 65535
-   char         *fields[PROCESS_INFO_FIELDS];
+   char         *text_fields[PROCESS_INFO_FIELDS];
 
    Evas_Object  *list_pid;
 

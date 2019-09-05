@@ -73,7 +73,7 @@
 #if defined(__OpenBSD__)
 # define CPU_STATES      6
 #else
-# define CPU_STATES        5
+# define CPU_STATES      5
 #endif
 
 /* Filter requests and results */
@@ -688,7 +688,7 @@ _temperature_cpu_get(int *temperature)
           ("hw.acpi.thermal.tz0.temperature", &value, &len, NULL,
           0)) != -1)
      {
-        *temperature = (value - 2732) / 10;
+        *temperature = (value -  273150000) / 1000000.0;
      }
    else
      *temperature = INVALID_TEMP;
