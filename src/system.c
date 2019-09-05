@@ -687,7 +687,7 @@ _temperature_cpu_get(int *temperature)
           ("hw.acpi.thermal.tz0.temperature", &value, &len, NULL,
           0)) != -1)
      {
-        *temperature = (value -  273150000) / 1000000.0;
+        *temperature = (value -  2732) / 10;
      }
    else
      *temperature = INVALID_TEMP;
