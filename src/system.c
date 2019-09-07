@@ -867,6 +867,7 @@ _battery_state_get(power_t *power)
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    int fd, i;
    union acpi_battery_ioctl_arg battio;
+   char name[256];
 
    if ((fd = open("/dev/acpi", O_RDONLY)) == -1) return;
 
@@ -878,7 +879,8 @@ _battery_state_get(power_t *power)
              power->batteries[i]->charge_full = battio.bif.lfcap;
           }
 
-        power->battery_names[i] = strdup(battio.bif.model);
+        snprintf(name, sizeof(name), "%s (%s)", battio.bif.oeminfo, battio.bif.model);
+        power->battery_names[i] = strdup(name);
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
           {
