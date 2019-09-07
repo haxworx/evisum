@@ -10,6 +10,7 @@ Evisum 0.2.6
    * Fix some memory leaks.
    * Battery names (where applicable).
    * Various small tidying.
+   * Use Eina helpers where applicable.
 
 ============
 Evisum 0.2.4

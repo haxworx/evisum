@@ -1155,7 +1155,8 @@ system_temperature_cpu_get(void)
 void
 system_power_state_get(power_t *power)
 {
-   _power_state_get(power);
+   if (_power_battery_count_get(power))
+     _power_state_get(power);
 }
 
 bool
