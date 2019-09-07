@@ -37,6 +37,7 @@ typedef struct
 
    bat_t  **batteries;
 
+   // Necessary evils.
    char    *battery_names[MAX_BATTERIES];
    int     *bat_mibs[MAX_BATTERIES];
    int      ac_mibs[5];

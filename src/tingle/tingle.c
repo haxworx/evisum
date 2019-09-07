@@ -69,6 +69,7 @@
 # include <net/if_mib.h>
 # include <vm/vm_param.h>
 # include <sys/soundcard.h>
+# include <dev/acpica/acpiio.h>
 #endif
 
 #if defined(__linux__)
@@ -981,12 +982,10 @@ _power_battery_count_get(power_t *power)
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    size_t len;
-   if ((sysctlbyname("hw.acpi.battery.life", NULL, &len, NULL, 0)) != -1)
+
+   if ((sysctlbyname("hw.acpi.battery.units", &power->battery_count, &len, NULL, 0)) < 0)
      {
-        power->bat_mibs[power->battery_count] = malloc(sizeof(int) * 5);
-        sysctlnametomib("hw.acpi.battery.life",
-                        power->bat_mibs[power->battery_count], &len);
-        power->battery_count = 1;
+        power->battery_count = 0;
      }
 
    if ((sysctlbyname("hw.acpi.acline", NULL, &len, NULL, 0)) != -1)
@@ -1075,10 +1074,26 @@ _battery_state_get(power_t *power)
         power->batteries[i]->charge_current = charge_current;
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
-   unsigned int value;
-   size_t len = sizeof(value);
-   if ((sysctl(power->bat_mibs[0], 4, &value, &len, NULL, 0)) != -1)
-     power->batteries[0]->percent = value;
+   int fd, i;
+   union acpi_battery_ioctl_arg battio;
+
+   if ((fd = open("/dev/acpi", O_RDONLY)) == -1) return;
+
+   for (i = 0; i < power->battery_count; i++)
+     {
+        battio.unit = i;
+        if (ioctl(fd, ACPIIO_BATT_GET_BIF, &battio) != -1)
+          {
+             power->batteries[i]->charge_full = battio.bif.lfcap;
+          }
+        battio.unit = i;
+        if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
+          {
+	     power->batteries[i]->charge_current = battio.bst.cap;
+          }
+     }
+   close(fd);
+
 #elif defined(__linux__)
    char path[PATH_MAX];
    struct dirent *dh;
@@ -1145,14 +1160,12 @@ _power_state_get(power_t *power)
    int i;
 #if defined(__OpenBSD__) || defined(__NetBSD__)
    struct sensor snsr;
-   int have_ac = 0;
    size_t slen = sizeof(struct sensor);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int value;
    size_t len;
 #elif defined(__linux__)
    char *buf;
-   int have_ac = 0;
 #endif
 
 #if defined(__OpenBSD__) || defined(__NetBSD__)
@@ -1160,7 +1173,7 @@ _power_state_get(power_t *power)
    power->ac_mibs[4] = 0;
 
    if (sysctl(power->ac_mibs, 5, &snsr, &slen, NULL, 0) != -1)
-     have_ac = (int)snsr.value;
+     power->have_ac = (int)snsr.value;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    len = sizeof(value);
    if ((sysctl(power->ac_mibs, 3, &value, &len, NULL, 0)) == -1)
@@ -1172,34 +1185,20 @@ _power_state_get(power_t *power)
    buf = file_contents("/sys/class/power_supply/AC/online");
    if (buf)
      {
-        have_ac = atoi(buf);
+        power->have_ac = atoi(buf);
         free(buf);
      }
 #endif
 
    _battery_state_get(power);
 
-#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__linux__)
    for (i = 0; i < power->battery_count; i++)
      {
         double percent =
            100 * (power->batteries[i]->charge_current / power->batteries[i]->charge_full);
         power->batteries[i]->percent = percent;
-     }
-   power->have_ac = have_ac;
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-   len = sizeof(value);
-   if ((sysctl(power->bat_mibs[0], 4, &value, &len, NULL, 0)) == -1)
-     {
-        return;
-     }
 
-   power->batteries[0]->percent = value;
-
-#endif
-   for (i = 0; i < power->battery_count; i++)
-     {
-        if (power->bat_mibs[i])
+	if (power->bat_mibs[i])
           free(power->bat_mibs[i]);
         if (power->battery_names[i])
           free(power->battery_names[i]);
