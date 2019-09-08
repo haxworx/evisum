@@ -11,6 +11,7 @@ Evisum 0.2.6
    * Battery names (where applicable).
    * Various small tidying.
    * Use Eina helpers where applicable.
+   * Add battery names and model (Linux and FreeBSD).
 
 ============
 Evisum 0.2.4
