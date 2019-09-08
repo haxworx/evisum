@@ -943,8 +943,43 @@ _battery_state_get(power_t *power)
              free(buf);
           }
 
+        char *model, *vendor;
+
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", power->battery_names[i]);
+        vendor = file_contents(path);
+
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", power->battery_names[i]);
+        model = file_contents(path);
+
+        if (vendor && vendor[0] && model && model[0])
+          {
+             char name[256];
+             int len;
+
+             len = strlen(vendor);
+             if (vendor[len - 1] == '\n' || vendor[len - 1] == '\r')
+               {
+                  vendor[len - 1] = '\0';
+               }
+
+             len = strlen(model);
+             if (model[len - 1] == '\n' || model[len - 1] == '\r')
+               {
+                  model[len - 1] = '\0';
+               }
+
+             free(power->battery_names[i]);
+             snprintf(name, sizeof(name), "%s (%s)", vendor, model);
+             power->battery_names[i] = strdup(name);
+          }
+
         power->batteries[i]->charge_full = charge_full;
         power->batteries[i]->charge_current = charge_current;
+
+        if (model)
+          free(model);
+        if (vendor)
+          free(vendor);
 
         free(naming);
 
