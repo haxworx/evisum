@@ -50,6 +50,9 @@ disk_mount_point_get(const char *path)
    char *start, *end;
    FILE *f = fopen("/proc/mounts", "r");
 
+   if (!f)
+     return NULL;
+
    while ((fgets(buf, sizeof(buf), f)) != NULL)
      {
         start = &buf[0];
