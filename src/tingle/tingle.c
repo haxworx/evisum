@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2017, Alastair Poole <netstar@gmail.com>
+   Copyright (c) 2017, 2019. Alastair Poole <netstar@gmail.com>
    All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
@@ -22,7 +22,7 @@
    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#define VERSION "0.9.0"
+#define VERSION "0.9.2"
 #define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
