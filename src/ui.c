@@ -434,7 +434,7 @@ _system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
         free(results->cores[i]);
      }
 
-   cpu_usage = cpu_usage / results->cpu_count;
+   cpu_usage = cpu_usage / system_cpu_online_count_get();
 
    _progressbar_value_force_set(ui->progress_cpu, (double)cpu_usage / 100);
 

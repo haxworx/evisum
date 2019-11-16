@@ -206,6 +206,26 @@ cpu_count(void)
    return cores;
 }
 
+int
+system_cpu_online_count_get(void)
+{
+#if defined(__linux__)
+   return cpu_count();
+#endif
+   static int cores = 0;
+
+   if (cores != 0) return cores;
+
+   size_t len;
+   int mib[2] = { CTL_HW, HW_NCPUONLINE };
+
+   len = sizeof(cores);
+   if (sysctl(mib, 2, &cores, &len, NULL, 0) < 0)
+     return cpu_count();
+
+   return cores;
+}
+
 static void
 _cpu_state_get(cpu_core_t **cores, int ncpu)
 {

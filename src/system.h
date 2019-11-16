@@ -74,4 +74,7 @@ int
 void
  system_power_state_get(power_t *power);
 
+int
+ system_cpu_online_count_get();
+
 #endif
