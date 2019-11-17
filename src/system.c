@@ -209,9 +209,7 @@ cpu_count(void)
 int
 system_cpu_online_count_get(void)
 {
-#if defined(__linux__)
-   return cpu_count();
-#endif
+#if defined(__OpenBSD__)
    static int cores = 0;
 
    if (cores != 0) return cores;
@@ -224,6 +222,9 @@ system_cpu_online_count_get(void)
      return cpu_count();
 
    return cores;
+#else
+   return cpu_count();
+#endif
 }
 
 static void
