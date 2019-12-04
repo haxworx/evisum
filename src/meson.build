@@ -7,5 +7,3 @@ executable('evisum', [
 	dependencies : deps,
 	gui_app : true,
 	install : true)  
-
-subdir('tingle')
