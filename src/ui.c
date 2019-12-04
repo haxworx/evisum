@@ -1181,7 +1181,7 @@ _entry_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
      return;
 
    text = evas_textblock_cursor_paragraph_text_get(pos);
-   if (!text)
+   if (!text || !text[0])
      return;
 
    pid_text = strdup(text);
