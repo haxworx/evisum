@@ -26,6 +26,3 @@ NOTES
 You can press 'k', 'm', 'g' to display results in KB, MB of GB
 respectively.
 
-The plan is to rewrite the whole program to log system information
-over time to disk so we can do nice things with E and displaying
-system information (not duplicating loads of code).

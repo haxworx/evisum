@@ -386,6 +386,7 @@ _tab_cpu_update(Ui *ui, results_t *results)
         frame = elm_frame_add(box);
         evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
         evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+
         if (i == 0 && results->temperature != INVALID_TEMP)
           elm_object_text_set(frame, eina_slstr_printf("CPU %d (%d °C)", i, results->temperature));
         else
