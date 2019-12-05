@@ -457,7 +457,10 @@ _process_list_freebsd_get(void)
    struct kinfo_proc kp;
    int mib[4];
    size_t len;
-   int pagesize = getpagesize();
+   static int pagesize = 0;
+
+   if (!pagesize)
+     pagesize = getpagesize();
 
    list = NULL;
 
@@ -510,7 +513,9 @@ proc_info_by_pid(int pid)
    struct kinfo_proc kp;
    int mib[4];
    size_t len;
-   int pagesize = getpagesize();
+   static int pagesize = 0;
+
+   if (!pagesize) pagesize = getpagesize();
 
    len = sizeof(int);
    if (sysctlnametomib("kern.proc.pid", mib, &len) == -1)
