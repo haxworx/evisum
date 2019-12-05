@@ -91,13 +91,6 @@ _mem_adjust(Data_Unit unit, unsigned long value)
    return value;
 }
 
-static void
-_progressbar_value_force_set(Evas_Object *progressbar, double val)
-{
-   elm_progressbar_value_set(progressbar, 0.00001);
-   elm_progressbar_value_set(progressbar, val);
-}
-
 static char *
 _network_transfer_format(double rate)
 {
@@ -154,7 +147,7 @@ _tab_misc_update(Ui *ui, results_t *results)
         evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
         elm_progressbar_span_size_set(progress, 1.0);
         elm_progressbar_unit_format_set(progress, "%1.2f%%");
-        _progressbar_value_force_set(progress, (double)results->power.batteries[i]->percent / 100);
+        elm_progressbar_value_set(progress, (double)results->power.batteries[i]->percent / 100);
         evas_object_show(progress);
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);
@@ -182,9 +175,9 @@ _tab_misc_update(Ui *ui, results_t *results)
    free(tmp);
 
    if (results->incoming == 0)
-     _progressbar_value_force_set(progress, 0.0);
+     elm_progressbar_value_set(progress, 0.0);
    else
-     _progressbar_value_force_set(progress, 1.0);
+     elm_progressbar_value_set(progress, 1.0);
 
    evas_object_show(progress);
 
@@ -206,9 +199,9 @@ _tab_misc_update(Ui *ui, results_t *results)
    free(tmp);
 
    if (results->outgoing == 0)
-     _progressbar_value_force_set(progress, 0.0);
+     elm_progressbar_value_set(progress, 0.0);
    else
-     _progressbar_value_force_set(progress, 1.0);
+     elm_progressbar_value_set(progress, 1.0);
 
    evas_object_show(progress);
 
@@ -266,9 +259,9 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, u
    value = used / ratio;
 
    if (used == 0 && total == 0)
-     _progressbar_value_force_set(progress, 1.0);
+     elm_progressbar_value_set(progress, 1.0);
    else
-     _progressbar_value_force_set(progress, value / 100.0);
+     elm_progressbar_value_set(progress, value / 100.0);
 
    evas_object_show(progress);
 
@@ -323,7 +316,7 @@ _tab_memory_update(Ui *ui, results_t *results)
                                    _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit));
    ratio = results->memory.total / 100.0;
    value = results->memory.used / ratio;
-   _progressbar_value_force_set(progress, value / 100);
+   elm_progressbar_value_set(progress, value / 100);
 
    progress = ui->progress_mem_cached;
    elm_progressbar_unit_format_set(progress, eina_slstr_printf(
@@ -332,7 +325,7 @@ _tab_memory_update(Ui *ui, results_t *results)
                                    _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit));
    ratio = results->memory.total / 100.0;
    value = results->memory.cached / ratio;
-   _progressbar_value_force_set(progress, value / 100);
+   elm_progressbar_value_set(progress, value / 100);
 
    progress = ui->progress_mem_buffered;
    elm_progressbar_unit_format_set(progress,
@@ -342,7 +335,7 @@ _tab_memory_update(Ui *ui, results_t *results)
                                    _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit));
    ratio = results->memory.total / 100.0;
    value = results->memory.buffered / ratio;
-   _progressbar_value_force_set(progress, value / 100);
+   elm_progressbar_value_set(progress, value / 100);
 
    progress = ui->progress_mem_shared;
    elm_progressbar_unit_format_set(progress,
@@ -352,7 +345,7 @@ _tab_memory_update(Ui *ui, results_t *results)
                                    _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit));
    ratio = results->memory.total / 100.0;
    value = results->memory.shared / ratio;
-   _progressbar_value_force_set(progress, value / 100);
+   elm_progressbar_value_set(progress, value / 100);
 
    progress = ui->progress_mem_swap;
    elm_progressbar_unit_format_set(progress,
@@ -362,7 +355,7 @@ _tab_memory_update(Ui *ui, results_t *results)
                                    _mem_adjust(ui->data_unit, results->memory.swap_total), ui->data_unit));
    ratio = results->memory.swap_total / 100.0;
    value = results->memory.swap_used / ratio;
-   _progressbar_value_force_set(progress, value / 100);
+   elm_progressbar_value_set(progress, value / 100);
 }
 
 static void
@@ -400,7 +393,7 @@ _tab_cpu_update(Ui *ui, results_t *results)
         elm_progressbar_span_size_set(progress, 1.0);
         elm_progressbar_unit_format_set(progress, "%1.2f%%");
 
-        _progressbar_value_force_set(progress, results->cores[i]->percent / 100);
+        elm_progressbar_value_set(progress, results->cores[i]->percent / 100);
         evas_object_show(progress);
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);
@@ -437,7 +430,7 @@ _system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    cpu_usage = cpu_usage / system_cpu_online_count_get();
 
-   _progressbar_value_force_set(ui->progress_cpu, (double)cpu_usage / 100);
+   elm_progressbar_value_set(ui->progress_cpu, (double)cpu_usage / 100);
 
    progress = ui->progress_mem;
    elm_progressbar_unit_format_set(progress,
@@ -449,7 +442,7 @@ _system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    ratio = results->memory.total / 100.0;
    value = results->memory.used / ratio;
 
-   _progressbar_value_force_set(progress, value / 100);
+   elm_progressbar_value_set(progress, value / 100);
 
 out:
    free(results->cores);
