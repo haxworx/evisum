@@ -4,6 +4,6 @@ executable('evisum', [
 	'system.c', 'system.h',
 	'ui.c', 'ui.h',
 	'main.c'],
-	dependencies : deps,
+	dependencies : [ deps, deps_os ],
 	gui_app : true,
 	install : true)

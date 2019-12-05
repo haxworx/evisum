@@ -4,7 +4,14 @@ project('evisum', 'c',
 
 efl_version = '>= 1.22.0'
 
+host_os = host_machine.system()
+
 deps = dependency('elementary', version: efl_version)
+
+deps_os = declare_dependency(link_args : [] )
+if host_os == 'openbsd'
+deps_os = declare_dependency(link_args : [ '-lkvm' ])
+endif
 
 ##### dir locations
 dir_prefix = get_option('prefix')
