@@ -2,6 +2,8 @@
 Type=Application
 Name=Evisum
 GenericName=System Activity
+GenericName[fr]=Moniteur d'activité système
+GenericName[it]=Attività del sistema
 GenericName[ru]=Системная активность
 Exec=evisum
 Icon=evisum
