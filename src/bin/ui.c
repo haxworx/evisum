@@ -146,7 +146,7 @@ _tab_misc_update(Ui *ui, results_t *results)
         evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
         evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
         elm_progressbar_span_size_set(progress, 1.0);
-        elm_progressbar_unit_format_set(progress, "%1.2f%%");
+        elm_progressbar_unit_format_set(progress, "%1.0f%%");
         elm_progressbar_value_set(progress, (double)results->power.batteries[i]->percent / 100);
         evas_object_show(progress);
         elm_object_content_set(frame, progress);
