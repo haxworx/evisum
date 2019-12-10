@@ -6,8 +6,7 @@
  * See LICENSE file for details.
  */
 
-#define VERSION "0.2.6"
-
+#include "config.h"
 #include "ui.h"
 
 static void
