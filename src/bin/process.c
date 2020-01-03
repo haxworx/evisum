@@ -290,7 +290,7 @@ proc_info_by_pid(int pid)
 {
    struct kinfo_proc *kp;
    kvm_t *kern;
-   char errbuf[4096];
+   char errbuf[_POSIX2_LINE_MAX];
    int count, pagesize, pid_count;
 
    kern = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
