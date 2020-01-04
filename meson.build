@@ -26,6 +26,7 @@ dir_locale = join_paths(dir_prefix, get_option('localedir'))
 ##### config.h
 
 cfg.set_quoted('PACKAGE_VERSION', meson.project_version())
+cfg.set_quoted('PACKAGE_DATA_DIR', join_paths(dir_data, 'evisum'))
 configure_file(output: 'config.h', configuration: cfg)
 
 subdir('src')

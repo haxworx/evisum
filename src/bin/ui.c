@@ -1,3 +1,4 @@
+#include "config.h"
 #include "system.h"
 #include "process.h"
 #include "disks.h"
@@ -11,6 +12,7 @@
 #endif
 
 static Eina_Lock _lock;
+
 
 void
 ui_shutdown(Ui *ui)
@@ -55,7 +57,7 @@ _system_stats(void *data, Ecore_Thread *thread)
         system_stats_all_get(results);
         ecore_thread_feedback(thread, results);
 
-	// Let's wait 3/4 of a second before updating.
+        // Let's wait 3/4 of a second before updating.
         for (int i = 0; i < 3; i++)
           {
              if (ecore_thread_check(thread))
@@ -110,6 +112,42 @@ _network_transfer_format(double rate)
    return strdup(eina_slstr_printf("%.2f %s", rate, unit));
 }
 
+char *
+_path_append(const char *path, const char *file)
+{
+   char *concat;
+   int len;
+   char separator = '/';
+#ifdef WIN32
+   separator = '\\';
+#endif
+
+   len = strlen(path) + strlen(file) + 2;
+   concat = malloc(len * sizeof(char));
+   snprintf(concat, len, "%s%c%s", path, separator, file);
+
+   return concat;
+}
+
+const char *
+_icon_path_get(const char *name)
+{
+   char *path;
+   const char *icon_path, *directory = PACKAGE_DATA_DIR "/images";
+   icon_path = name;
+
+   path = _path_append(directory, eina_slstr_printf("%s.png", name));
+   if (path)
+     {
+        if (ecore_file_exists(path))
+          icon_path = eina_slstr_printf("%s", path);
+
+        free(path);
+     }
+
+   return icon_path;
+}
+
 static void
 _tab_misc_update(Ui *ui, results_t *results)
 {
@@ -132,14 +170,14 @@ _tab_misc_update(Ui *ui, results_t *results)
         evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
         evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
  
-	Eina_Strbuf *buf = eina_strbuf_new();
-	eina_strbuf_append_printf(buf, "Battery %s ", results->power.battery_names[i]);
+        Eina_Strbuf *buf = eina_strbuf_new();
+        eina_strbuf_append_printf(buf, "Battery %s ", results->power.battery_names[i]);
         if (results->power.have_ac && i == 0)
-	  eina_strbuf_append(buf, "(plugged in)");
+          eina_strbuf_append(buf, "(plugged in)");
 
         elm_object_text_set(frame, eina_strbuf_string_get(buf));
 
-	eina_strbuf_free(buf);
+        eina_strbuf_free(buf);
         evas_object_show(frame);
 
         progress = elm_progressbar_add(frame);
@@ -152,8 +190,8 @@ _tab_misc_update(Ui *ui, results_t *results)
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);
 
-	free(results->power.battery_names[i]);
-	free(results->power.batteries[i]);
+        free(results->power.battery_names[i]);
+        free(results->power.batteries[i]);
      }
 
    if (results->power.batteries)
@@ -848,9 +886,9 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
 {
    Evas_Object *icon = elm_icon_add(button);
    if (reverse)
-     elm_icon_standard_set(icon, "go-down");
+     elm_icon_standard_set(icon, _icon_path_get("go-down"));
    else
-     elm_icon_standard_set(icon, "go-up");
+     elm_icon_standard_set(icon, _icon_path_get("go-up"));
 
    elm_object_part_content_set(button, "icon", icon);
    evas_object_show(icon);
