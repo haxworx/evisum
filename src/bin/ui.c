@@ -13,7 +13,6 @@
 
 static Eina_Lock _lock;
 
-
 void
 ui_shutdown(Ui *ui)
 {
@@ -77,11 +76,7 @@ _system_stats(void *data, Ecore_Thread *thread)
 static unsigned long
 _mem_adjust(Data_Unit unit, unsigned long value)
 {
-   if (unit == DATA_UNIT_KB)
-     {
-        //FIXME: KB is memory base default.
-     }
-   else if (unit == DATA_UNIT_MB)
+   if (unit == DATA_UNIT_MB)
      {
         value >>= 10;
      }
@@ -118,9 +113,6 @@ _path_append(const char *path, const char *file)
    char *concat;
    int len;
    char separator = '/';
-#ifdef WIN32
-   separator = '\\';
-#endif
 
    len = strlen(path) + strlen(file) + 2;
    concat = malloc(len * sizeof(char));
@@ -173,7 +165,9 @@ _tab_misc_update(Ui *ui, results_t *results)
         Eina_Strbuf *buf = eina_strbuf_new();
         eina_strbuf_append_printf(buf, "Battery %s ", results->power.battery_names[i]);
         if (results->power.have_ac && i == 0)
-          eina_strbuf_append(buf, "(plugged in)");
+          {
+             eina_strbuf_append(buf, "(plugged in)");
+          }
 
         elm_object_text_set(frame, eina_strbuf_string_get(buf));
 
@@ -2359,7 +2353,7 @@ ui_add(Evas_Object *parent)
    _process_list_update(ui);
    _process_panel_update(ui);
 
-   ui->thread_system = ecore_thread_feedback_run(_system_stats, _system_stats_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+   ui->thread_system  = ecore_thread_feedback_run(_system_stats, _system_stats_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
    ui->thread_process = ecore_thread_feedback_run(_process_list, _process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
 
    evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN, _evisum_key_down_cb, ui);
