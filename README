@@ -7,7 +7,9 @@ FreeBSD, DragonFlyBSD and OpenBSD.
 
 REQUIREMENTS:
 
-An installation of EFL (v1.19.0+). Remember to set your PKG_CONFIG_PATH environment variable accordingly. For example if EFL is installed in /opt:
+An installation of EFL (v1.19.0+). Remember to set your
+PKG_CONFIG_PATH environment variable accordingly. For example
+if EFL is installed in /opt:
 
 export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/opt/libdata/pkgconfig"
 

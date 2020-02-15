@@ -15,7 +15,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_in
    exit(0);
 }
 
-static Eina_Bool
+static Ui *
 _win_add(void)
 {
    Ui *ui;
@@ -33,23 +33,29 @@ _win_add(void)
 
    ui = ui_add(win);
    if (!ui)
-     return EINA_FALSE;
+     return NULL;
 
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evas_object_show(win);
 
-   return EINA_TRUE;
+   return ui;
 }
 
 int
 main(int argc, char **argv)
 {
+   Ui *ui;
+
    eina_init();
    ecore_init();
    elm_init(argc, argv);
 
-   if (_win_add())
-     ecore_main_loop_begin();
+   ui = _win_add();
+   if (ui)
+     {
+        ecore_main_loop_begin();
+        free(ui);
+     }
 
    elm_shutdown();
    ecore_shutdown();

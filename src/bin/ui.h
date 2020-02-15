@@ -51,13 +51,15 @@ typedef enum
    SORT_BY_CPU_USAGE,
 } Sort_Type;
 
+#define TEXT_FIELD_MAX 65535
+#define TAB_BTN_SIZE 75
+
 typedef struct Ui
 {
    Evas_Object  *win;
    Evas_Object  *panel;
    Evas_Object  *scroller;
    Evas_Object  *content;
-#define TAB_BTN_SIZE 75
    Evas_Object  *btn_general;
    Evas_Object  *btn_cpu;
    Evas_Object  *btn_mem;
@@ -103,6 +105,7 @@ typedef struct Ui
    Evas_Object  *btn_cmd;
    Evas_Object  *btn_state;
    Evas_Object  *btn_cpu_usage;
+   Evas_Object  *btn_expand;
 
    Evas_Object  *entry_pid_cmd;
    Evas_Object  *entry_pid_user;
@@ -126,9 +129,8 @@ typedef struct Ui
 
    Data_Unit     data_unit;
 
-#define TEXT_FIELD_MAX 65535
    char         *text_fields[PROCESS_INFO_FIELDS];
-
+   char         *search_text;
    Evas_Object  *list_pid;
 
    Eina_Bool     first_run;

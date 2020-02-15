@@ -825,7 +825,7 @@ _power_battery_count_get(power_t *power)
              free(type);
           }
 
-	free(names[i]);
+        free(names[i]);
      }
 
    free(names);
