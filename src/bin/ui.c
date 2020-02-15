@@ -620,35 +620,6 @@ _sort_by_state(const void *p1, const void *p2)
    return strcmp(inf1->state, inf2->state);
 }
 
-static char *
-_entry_trim_text(Evas_Object *entry, const char *text)
-{
-   char *result;
-   unsigned int max;
-   int w, cw;
-
-   result = strdup(text);
-
-   evas_object_geometry_get(entry, NULL, NULL, &w, NULL);
-
-   Evas_Object *textblock = elm_entry_textblock_get(entry);
-   if (textblock && w > 0)
-     {
-        Evas_Textblock_Cursor *cursor = evas_object_textblock_cursor_get(textblock);
-        if ((evas_textblock_cursor_char_geometry_get(cursor,  NULL, NULL, &cw, NULL)) != -1)
-          {
-             if (cw > 0)
-               {
-                  max = (w / cw) - 3;
-                  if (strlen(result) > max)
-                    result[max] = '\0';
-               }
-          }
-     }
-
-   return result;
-}
-
 static void
 _text_fields_init(Ui *ui)
 {
@@ -657,6 +628,23 @@ _text_fields_init(Ui *ui)
         ui->text_fields[i] = malloc(TEXT_FIELD_MAX * sizeof(char));
         ui->text_fields[i][0] = '\0';
      }
+}
+
+static void
+_entry_cmd_size_set(Ui *ui)
+{
+   static Evas_Coord minw = 0, minh = 0;
+   Evas_Coord w, h;
+
+   evas_object_geometry_get(ui->btn_cmd, NULL, NULL, NULL, &h);
+   evas_object_geometry_get(ui->entry_cmd, NULL, NULL, &w, NULL);
+
+   if ((!minw && !minh) || (w >= minw && h > minh))
+     {
+        minw = w; minh = h;
+     }
+
+   evas_object_size_hint_min_set(ui->btn_cmd, minw, minh);
 }
 
 static void
@@ -690,12 +678,7 @@ _text_fields_append(Ui *ui, Proc_Stats *proc)
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_UID], eina_slstr_printf("%d <br>", proc->uid), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_SIZE], eina_slstr_printf("%lld %c<br>", mem_size, ui->data_unit), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_RSS], eina_slstr_printf("%lld %c<br>", mem_rss, ui->data_unit), TEXT_FIELD_MAX);
-
-   // Make sure we don't wrap text if widget is too small.
-   char *cmd = _entry_trim_text(ui->entry_cmd, proc->command);
-   eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", cmd), TEXT_FIELD_MAX);
-   free(cmd);
-
+   eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", proc->command), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_STATE], eina_slstr_printf("%s <br>", proc->state), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_CPU_USAGE], eina_slstr_printf("%.1f%% <br>", proc->cpu_usage), TEXT_FIELD_MAX);
 }
@@ -823,6 +806,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
 
    if (list)
      eina_list_free(list);
+
+   _entry_cmd_size_set(ui);
 
    _text_fields_show(ui);
    _text_fields_clear(ui);
@@ -1369,10 +1354,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_weight_set(scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(scroller, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_ON);
-   elm_scroller_bounce_set(scroller, EINA_FALSE, EINA_FALSE);
-   elm_scroller_gravity_set(scroller, 0.0, 0.0);
-   elm_scroller_wheel_disabled_set(scroller, 1);
-   elm_scroller_page_relative_set(scroller, 1, 0);
+   elm_scroller_wheel_disabled_set(scroller, EINA_FALSE);
    evas_object_show(scroller);
    elm_object_content_set(scroller, table);
 
@@ -1395,8 +1377,8 @@ _ui_tab_system_add(Ui *ui)
    elm_entry_text_style_user_push(entry, "DEFAULT='align=center'");
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
-   elm_entry_scrollable_set(entry, 0);
-   elm_entry_editable_set(entry, 0);
+   elm_entry_scrollable_set(entry, EINA_FALSE);
+   elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
    elm_table_pack(table, entry, 0, 0, 1, 1);
 
@@ -1459,6 +1441,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, 0);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 0);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_show(entry);
    elm_table_pack(table, entry, 4, 0, 1, 1);
 
