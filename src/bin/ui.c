@@ -644,7 +644,7 @@ _entry_cmd_size_set(Ui *ui)
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, NULL, &h);
    evas_object_geometry_get(ui->entry_cmd, NULL, NULL, &w, &oh);
 
-   if ((!minw && !minh) || (w > minw))
+   if (!minw && !minh)
      {
         minw = w; minh = h;
         evas_object_size_hint_min_set(ui->entry_cmd, minw, oh);
