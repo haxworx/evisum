@@ -644,16 +644,14 @@ _entry_cmd_size_set(Ui *ui)
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, NULL, &h);
    evas_object_geometry_get(ui->entry_cmd, NULL, NULL, &w, &oh);
 
-   if ((!minw && !minh) || (w >= minw && h > minh))
+   if ((!minw && !minh) || (w > minw))
      {
         minw = w; minh = h;
+        evas_object_size_hint_min_set(ui->entry_cmd, minw, oh);
+        evas_object_size_hint_min_set(ui->btn_cmd, minw, minh);
+        evas_object_size_hint_min_set(ui->btn_expand, minw, minh);
      }
-
-   evas_object_size_hint_min_set(ui->entry_cmd, minw, oh);
-   evas_object_size_hint_min_set(ui->btn_cmd, minw, minh);
-   evas_object_size_hint_min_set(ui->btn_expand, minw, h);
 }
-
 static void
 _text_fields_append(Ui *ui, Proc_Stats *proc)
 {
@@ -1146,6 +1144,14 @@ _panel_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EI
 }
 
 static void
+_panel_toggled_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   evas_object_show(ui->panel);
+}
+
+static void
 _btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
@@ -1377,6 +1383,7 @@ _ui_tab_system_add(Ui *ui)
 
    ui->entry_pid = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='align=center'");
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_scrollable_set(entry, EINA_FALSE);
@@ -1393,6 +1400,7 @@ _ui_tab_system_add(Ui *ui)
 
    ui->entry_uid = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='align=center'");
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_editable_set(entry, 0);
@@ -1408,6 +1416,7 @@ _ui_tab_system_add(Ui *ui)
 
    ui->entry_size = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='align=right'");
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_scrollable_set(entry, 0);
@@ -1424,6 +1433,7 @@ _ui_tab_system_add(Ui *ui)
 
    ui->entry_rss = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='align=right'");
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_scrollable_set(entry, 0);
@@ -1439,9 +1449,9 @@ _ui_tab_system_add(Ui *ui)
    elm_table_pack(table, button, 4, 0, 1, 1);
 
    ui->entry_cmd = entry = elm_entry_add(parent);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_entry_scrollable_set(entry, EINA_FALSE);
    elm_entry_editable_set(entry, EINA_FALSE);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(entry);
@@ -1456,6 +1466,7 @@ _ui_tab_system_add(Ui *ui)
 
    ui->entry_state = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='align=center'");
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, 1);
@@ -1474,6 +1485,7 @@ _ui_tab_system_add(Ui *ui)
 
    ui->entry_cpu_usage = entry = elm_entry_add(parent);
    elm_entry_text_style_user_push(entry, "DEFAULT='align=center'");
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, 1);
@@ -1514,8 +1526,9 @@ _ui_process_panel_add(Ui *ui)
    elm_panel_orient_set(panel, ELM_PANEL_ORIENT_BOTTOM);
    elm_panel_toggle(panel);
    elm_object_content_set(ui->win, panel);
-   evas_object_show(panel);
+   evas_object_hide(panel);
    evas_object_smart_callback_add(ui->panel, "scroll", _panel_scrolled_cb, ui);
+   evas_object_smart_callback_add(ui->panel, "toggled", _panel_toggled_cb, ui);
 
    hbox = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -2033,6 +2046,7 @@ _tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
    _tab_state_changed(ui, obj);
 
    evas_object_show(ui->mem_view);
+   evas_object_hide(ui->entry_search);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
    evas_object_hide(ui->disk_view);
@@ -2055,7 +2069,8 @@ _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
    _tab_state_changed(ui, obj);
 
    evas_object_show(ui->system_activity);
-   evas_object_show(ui->panel);
+   evas_object_show(ui->entry_search);
+   evas_object_hide(ui->panel);
    evas_object_hide(ui->disk_view);
    evas_object_hide(ui->misc_view);
    evas_object_hide(ui->cpu_view);
@@ -2077,6 +2092,7 @@ _tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *ev
    _tab_state_changed(ui, obj);
 
    evas_object_show(ui->disk_view);
+   evas_object_hide(ui->entry_search);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
    evas_object_hide(ui->misc_view);
@@ -2099,6 +2115,7 @@ _tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
    _tab_state_changed(ui, obj);
 
    evas_object_show(ui->misc_view);
+   evas_object_hide(ui->entry_search);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
    evas_object_hide(ui->disk_view);
@@ -2121,6 +2138,7 @@ _tab_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
    _tab_state_changed(ui, obj);
 
    evas_object_show(ui->cpu_view);
+   evas_object_hide(ui->entry_search);
    evas_object_hide(ui->misc_view);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->panel);
@@ -2294,7 +2312,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    evas_object_show(pad);
    elm_box_pack_end(box, pad);
 
-   entry = elm_entry_add(parent);
+   ui->entry_search = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, 0);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);

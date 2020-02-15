@@ -119,6 +119,7 @@ typedef struct Ui
    Evas_Object  *entry_pid_pri;
    Evas_Object  *entry_pid_state;
    Evas_Object  *entry_pid_cpu_usage;
+   Evas_Object  *entry_search;
 
    Ecore_Thread *thread_system;
    Ecore_Thread *thread_process;
