@@ -195,6 +195,7 @@ _process_list_linux_get(void)
         fclose(f);
 
         Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
+        if (!p) return NULL;
 
         p->pid = pid;
         p->uid = uid;
@@ -266,6 +267,8 @@ proc_info_by_pid(int pid)
    fclose(f);
 
    Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
+   if (!p) return NULL;
+
    p->pid = pid;
    p->uid = uid;
    p->cpu_id = psr;
@@ -303,6 +306,8 @@ proc_info_by_pid(int pid)
    pagesize = getpagesize();
 
    Proc_Stats *p = malloc(sizeof(Proc_Stats));
+   if (!p) return NULL;
+
    p->pid = kp->p_pid;
    p->uid = kp->p_uid;
    p->cpu_id = kp->p_cpuid;
@@ -349,6 +354,8 @@ _process_list_openbsd_get(void)
    for (int i = 0; i < pid_count; i++)
      {
         p = malloc(sizeof(Proc_Stats));
+        if (!p) return NULL;
+
         p->pid = kp[i].p_pid;
         p->uid = kp[i].p_uid;
         p->cpu_id = kp[i].p_cpuid;
@@ -394,6 +401,8 @@ _process_list_macos_get(void)
         if (size != sizeof(taskinfo)) continue;
 
         Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
+        if (!p) return NULL;
+
         p->pid = i;
         p->uid = taskinfo.pbsd.pbi_uid;
         p->cpu_id = -1;
@@ -430,6 +439,8 @@ proc_info_by_pid(int pid)
      return NULL;
 
    Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
+   if (!p) return NULL;
+
    p->pid = pid;
    p->uid = taskinfo.pbsd.pbi_uid;
    p->cpu_id = workqueue.pwq_nthreads;
@@ -481,6 +492,7 @@ _process_list_freebsd_get(void)
           continue;
 
         Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
+        if (!p) return NULL;
 
         p->pid = kp.ki_pid;
         p->uid = kp.ki_uid;
@@ -528,6 +540,8 @@ proc_info_by_pid(int pid)
      return NULL;
 
    Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
+   if (!p) return NULL;
+
    p->pid = kp.ki_pid;
    p->uid = kp.ki_uid;
    snprintf(p->command, sizeof(p->command), "%s", kp.ki_comm);

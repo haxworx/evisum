@@ -1276,7 +1276,7 @@ _network_transfer_get_thread_cb(void *arg)
 }
 
 void
-system_stats_all_get(results_t *results)
+system_stats_get(results_t *results)
 {
    void *ret;
    pthread_t tid;

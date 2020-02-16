@@ -23,6 +23,7 @@ typedef struct
 } meminfo_t;
 
 #define MAX_BATTERIES 10
+
 typedef struct
 {
    double  charge_full;
@@ -43,6 +44,8 @@ typedef struct
    int      ac_mibs[5];
 } power_t;
 
+#define INVALID_TEMP -999
+
 typedef struct results_t results_t;
 struct results_t
 {
@@ -55,12 +58,11 @@ struct results_t
 
    unsigned long incoming;
    unsigned long outgoing;
-#define INVALID_TEMP -999
    int           temperature;
 };
 
 void
- system_stats_all_get(results_t *results);
+ system_stats_get(results_t *results);
 
 int
  system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used);

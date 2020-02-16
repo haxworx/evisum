@@ -146,6 +146,9 @@ typedef struct Ui
    Eina_Bool     sort_reverse;
    Eina_Bool     panel_visible;
    Eina_Bool     shutting_down;
+
+   uint64_t      incoming_max;
+   uint64_t      outgoing_max;
 } Ui;
 
 Ui *

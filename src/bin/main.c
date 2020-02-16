@@ -22,7 +22,6 @@ _win_add(void)
    Evas_Object *win, *icon;
 
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
-
    win = elm_win_util_standard_add("evisum", "evisum");
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
