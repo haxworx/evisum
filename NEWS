@@ -7,7 +7,10 @@ Evisum 0.3.0
    * General tidying.
    * Fix rare crash.
    * Fix some calculations.
+   * Linux process information improvements.
    * OpenBSD specific fixes.
+   * Various UI improvements.
+   * Various tidying.
    * Move to Meson build system.
    ...
 
