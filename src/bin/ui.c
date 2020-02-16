@@ -2340,15 +2340,14 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    ui->skip_wait = EINA_TRUE;
 
+   if (!control) return;
+
    if (!strcmp(ev->keyname, "Escape"))
      {
         ui_shutdown(ui);
         return;
      }
 
-   if (!control) return;
-
-   /* Set data unit by CTRL + ... */
    if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k') && !ev->keyname[1])
      ui->data_unit = DATA_UNIT_KB;
    else if ((ev->keyname[0] == 'M' || ev->keyname[0] == 'm') && !ev->keyname[1])
