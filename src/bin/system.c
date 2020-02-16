@@ -484,7 +484,6 @@ _memory_usage_get(meminfo_t *memory)
              fields++;
           }
 
-
         if (fields >= 8)
           break;
      }

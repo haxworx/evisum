@@ -234,7 +234,6 @@ disks_get(void)
 #elif defined(__linux__)
    char *name;
    Eina_List *devs, *list;
-   char buf[4096];
    const char *disk_search = "/dev/disk/by-uuid";
 
    devs = ecore_file_ls(disk_search);
@@ -248,8 +247,7 @@ disks_get(void)
 
    EINA_LIST_FREE(devs, name)
      {
-        snprintf(buf, sizeof(buf), "%s/%s", disk_search, name);
-        char *real = realpath(buf, NULL);
+        char *real = realpath(eina_slstr_printf("%s/%s", disk_search, name), NULL);
         if (real)
           {
              list = eina_list_append(list, real);
@@ -263,8 +261,7 @@ disks_get(void)
    devs = ecore_file_ls("/dev/mapper");
    EINA_LIST_FREE(devs, name)
      {
-        snprintf(buf, sizeof(buf), "/dev/mapper/%s", name);
-        list = eina_list_append(list, strdup(name));
+        list = eina_list_append(list, strdup(eina_slstr_printf("/dev/mapper/%s", name)));
         free(name);
      }
 
