@@ -5,7 +5,7 @@
 #include "process.h"
 
 #define EVISUM_SIZE_WIDTH  500
-#define EVISUM_SIZE_HEIGHT 560
+#define EVISUM_SIZE_HEIGHT 600
 
 typedef enum
 {

@@ -158,10 +158,11 @@ _tab_misc_update(Ui *ui, results_t *results)
         Eina_Strbuf *buf = eina_strbuf_new();
         if (buf)
           {
-             eina_strbuf_append_printf(buf, "Battery %s ", results->power.battery_names[i]);
+             eina_strbuf_append_printf(buf, "Battery: %s ", results->power.battery_names[i]);
              if (results->power.have_ac && i == 0)
-               eina_strbuf_append(buf, "(plugged in)");
-
+               {
+                    eina_strbuf_append(buf, "(plugged in)");
+               }
              elm_object_text_set(frame, eina_strbuf_string_get(buf));
              eina_strbuf_free(buf);
           }
@@ -605,9 +606,9 @@ static void
 _entry_cmd_size_set(Ui *ui)
 {
    static Evas_Coord winw = 0, winh = 0;
-   Evas_Coord w, h, ww, wh;
+   Evas_Coord w, h, ww, wh, ow;
 
-   evas_object_geometry_get(ui->btn_cmd, NULL, NULL, NULL, &h);
+   evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &ow, &h);
    evas_object_geometry_get(ui->entry_cmd, NULL, NULL, &w, NULL);
    evas_object_geometry_get(ui->win, NULL, NULL, &ww, &wh);
 
@@ -618,8 +619,11 @@ _entry_cmd_size_set(Ui *ui)
 
    if (winw == ww && winh == wh)
      {
-        evas_object_size_hint_min_set(ui->btn_cmd, w, h);
-        evas_object_size_hint_min_set(ui->btn_expand, w, h);
+        if (ow != w)
+          {
+             evas_object_size_hint_min_set(ui->btn_cmd, w, h);
+             evas_object_size_hint_min_set(ui->btn_expand, w, h);
+          }
      }
 }
 
@@ -658,8 +662,8 @@ _text_fields_append(Ui *ui, Proc_Stats *proc)
 
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_PID], eina_slstr_printf("<link>%d</link> <br>", proc->pid), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_UID], eina_slstr_printf("%d <br>", proc->uid), TEXT_FIELD_MAX);
-   eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_SIZE], eina_slstr_printf("%lld %c<br>", mem_size, ui->data_unit), TEXT_FIELD_MAX);
-   eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_RSS], eina_slstr_printf("%lld %c<br>", mem_rss, ui->data_unit), TEXT_FIELD_MAX);
+   eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_SIZE], eina_slstr_printf("%lld%c<br>", mem_size, ui->data_unit), TEXT_FIELD_MAX);
+   eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_RSS], eina_slstr_printf("%lld%c<br>", mem_rss, ui->data_unit), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_COMMAND], eina_slstr_printf("%s<br>", proc->command), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_STATE], eina_slstr_printf("%s <br>", proc->state), TEXT_FIELD_MAX);
    eina_strlcat(ui->text_fields[PROCESS_INFO_FIELD_CPU_USAGE], eina_slstr_printf("%.1f%% <br>", proc->cpu_usage), TEXT_FIELD_MAX);
@@ -1436,7 +1440,7 @@ _ui_tab_system_add(Ui *ui)
    elm_entry_single_line_set(entry, EINA_TRUE);
    elm_entry_scrollable_set(entry, EINA_FALSE);
    elm_entry_editable_set(entry, EINA_FALSE);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_show(entry);
    elm_table_pack(table, entry, 5, 0, 1, 1);
 
@@ -1456,7 +1460,7 @@ _ui_tab_system_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_FALSE);
    elm_entry_editable_set(entry, EINA_FALSE);
    elm_entry_select_allow_set(entry, EINA_FALSE);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_show(entry);
    elm_table_pack(table, entry, 6, 0, 1, 1);
 
@@ -1550,7 +1554,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 0, 1, 1);
 
    label = elm_label_add(parent);
@@ -1565,7 +1569,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 1, 1, 1);
 
    label = elm_label_add(parent);
@@ -1580,7 +1584,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 2, 1, 1);
 
    label = elm_label_add(parent);
@@ -1595,7 +1599,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 3, 1, 1);
 
    label = elm_label_add(parent);
@@ -1614,7 +1618,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 4, 1, 1);
 
    label = elm_label_add(parent);
@@ -1629,7 +1633,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 5, 1, 1);
 
    label = elm_label_add(parent);
@@ -1644,7 +1648,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 6, 1, 1);
 
    label = elm_label_add(parent);
@@ -1659,7 +1663,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 7, 1, 1);
 
    label = elm_label_add(parent);
@@ -1674,7 +1678,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 8, 1, 1);
 
    label = elm_label_add(parent);
@@ -1689,7 +1693,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 9, 1, 1);
 
    label = elm_label_add(parent);
@@ -1704,7 +1708,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 10, 1, 1);
 
    label = elm_label_add(parent);
@@ -1719,7 +1723,7 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_FALSE);
    evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_WORD);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 11, 1, 1);
 
    hbox = elm_box_add(parent);
@@ -2339,11 +2343,9 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      ui_shutdown(ui);
 }
 
-Ui *
-ui_add(Evas_Object *parent)
+static Ui *
+_ui_init(Evas_Object *parent)
 {
-   eina_lock_new(&_lock);
-
    Ui *ui = calloc(1, sizeof(Ui));
    if (!ui) return NULL;
 
@@ -2360,6 +2362,17 @@ ui_add(Evas_Object *parent)
    _text_fields_init(ui);
 
    memset(ui->cpu_times, 0, PID_MAX * sizeof(int64_t));
+
+   return ui;
+}
+
+Ui *
+ui_add(Evas_Object *parent)
+{
+   eina_lock_new(&_lock);
+
+   Ui *ui = _ui_init(parent);
+   if (!ui) return NULL;
 
    /* Create the tabs, content area and the rest */
    _ui_tabs_add(parent, ui);
