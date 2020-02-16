@@ -637,9 +637,12 @@ _text_fields_append(Ui *ui, Proc_Stats *proc)
 
    if (ui->search_text && ui->search_text[0])
      {
+        ui->searching = EINA_TRUE;
         if (strncasecmp(proc->command, ui->search_text, strlen(ui->search_text)))
           return;
      }
+
+   ui->searching = EINA_FALSE;
 
    mem_size = proc->mem_size;
    mem_rss = proc->mem_rss;
@@ -1324,6 +1327,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_weight_set(scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(scroller, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_ON);
+   elm_scroller_content_min_limit(scroller, EINA_TRUE, EINA_FALSE);
    elm_scroller_wheel_disabled_set(scroller, EINA_FALSE);
    evas_object_show(scroller);
    elm_object_content_set(scroller, table);
@@ -2324,6 +2328,7 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
    Ui *ui;
+   Eina_Bool control;
 
    ev = event_info;
    ui = data;
@@ -2331,16 +2336,25 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (!ev || !ev->keyname)
      return;
 
+   control = evas_key_modifier_is_set(ev->modifiers, "Control");
+
    ui->skip_wait = EINA_TRUE;
 
+   if (!strcmp(ev->keyname, "Escape"))
+     {
+        ui_shutdown(ui);
+        return;
+     }
+
+   if (!control) return;
+
+   /* Set data unit by CTRL + ... */
    if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k') && !ev->keyname[1])
      ui->data_unit = DATA_UNIT_KB;
    else if ((ev->keyname[0] == 'M' || ev->keyname[0] == 'm') && !ev->keyname[1])
      ui->data_unit = DATA_UNIT_MB;
    else if ((ev->keyname[0] == 'G' || ev->keyname[0] == 'g') && !ev->keyname[1])
      ui->data_unit = DATA_UNIT_GB;
-   else if (!strcmp(ev->keyname, "Escape"))
-     ui_shutdown(ui);
 }
 
 static Ui *

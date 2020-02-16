@@ -138,14 +138,14 @@ _parse_line(const char *line)
 static Eina_List *
 _process_list_linux_get(void)
 {
-   char *name;
-   Eina_List *files, *list = NULL;
+   Eina_List *files, *list;
    FILE *f;
-   char path[PATH_MAX], line[4096], program_name[1024], state;
+   char *name, *link, state, line[4096], program_name[1024];
    int pid, res, utime, stime, cutime, cstime, uid, psr, pri, nice, numthreads;
    unsigned int mem_size, mem_rss;
-
    int pagesize = getpagesize();
+
+   list = NULL;
 
    files = ecore_file_ls("/proc");
    EINA_LIST_FREE(files, name)
@@ -155,9 +155,7 @@ _process_list_linux_get(void)
 
         if (!pid) continue;
 
-        snprintf(path, sizeof(path), "/proc/%d/stat", pid);
-
-        f = fopen(path, "r");
+        f = fopen(eina_slstr_printf("/proc/%d/stat", pid), "r");
         if (!f) continue;
 
         if (fgets(line, sizeof(line), f))
@@ -178,9 +176,7 @@ _process_list_linux_get(void)
 
         if (res != 42) continue;
 
-        snprintf(path, sizeof(path), "/proc/%d/status", pid);
-
-        f = fopen(path, "r");
+        f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
         if (!f) continue;
 
         while ((fgets(line, sizeof(line), f)) != NULL)
@@ -193,6 +189,26 @@ _process_list_linux_get(void)
           }
 
         fclose(f);
+
+        link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
+        if (link)
+          {
+             snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(link));
+             free(link);
+          }
+        else
+          {
+             f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
+             if (f)
+               {
+                  if (fgets(line, sizeof(line), f))
+                    {
+                       if (ecore_file_exists(line))
+                         snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(line));
+                    }
+                 fclose(f);
+               }
+          }
 
         Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
         if (!p) return NULL;
@@ -222,17 +238,11 @@ Proc_Stats *
 proc_info_by_pid(int pid)
 {
    FILE *f;
-   char path[PATH_MAX];
-   char line[4096];
-   char state, program_name[1024];
+   char *link, state, line[4096], program_name[1024];
    int res, dummy, utime, stime, cutime, cstime, uid, psr;
    unsigned int mem_size, mem_rss, pri, nice, numthreads;
 
-   snprintf(path, sizeof(path), "/proc/%d/stat", pid);
-   if (!ecore_file_exists(path))
-     return NULL;
-
-   f = fopen(path, "r");
+   f = fopen(eina_slstr_printf("/proc/%d/stat", pid), "r");
    if (!f) return NULL;
 
    if (fgets(line, sizeof(line), f))
@@ -251,9 +261,7 @@ proc_info_by_pid(int pid)
 
    if (res != 42) return NULL;
 
-   snprintf(path, sizeof(path), "/proc/%d/status", pid);
-
-   f = fopen(path, "r");
+   f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
    if (!f) return NULL;
 
    while ((fgets(line, sizeof(line), f)) != NULL)
@@ -265,6 +273,26 @@ proc_info_by_pid(int pid)
           }
      }
    fclose(f);
+
+   link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
+   if (link)
+     {
+        snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(link));
+        free(link);
+     }
+   else
+     {
+        f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
+        if (f)
+          {
+             if (fgets(line, sizeof(line), f))
+               {
+                  if (ecore_file_exists(line))
+                    snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(line));
+               }
+             fclose(f);
+          }
+      }
 
    Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
    if (!p) return NULL;

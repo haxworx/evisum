@@ -25,6 +25,6 @@ $ ninja -C build install
 
 NOTES
 
-You can press 'k', 'm', 'g' to display results in KB, MB of GB
-respectively.
+You can press Ctrl plus 'k', 'm', 'g' to display results in KB, MB
+of GB respectively.
 
