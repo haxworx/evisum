@@ -54,8 +54,7 @@ _system_stats(void *data, Ecore_Thread *thread)
              ecore_thread_feedback(thread, results);
           }
 
-        // Let's wait 3/4 of a second before updating.
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 4; i++)
           {
              if (ecore_thread_check(thread)) return;
 
@@ -64,7 +63,6 @@ _system_stats(void *data, Ecore_Thread *thread)
                   ui->skip_wait = EINA_FALSE;
                   break;
                }
-
              usleep(250000);
           }
      }
@@ -635,14 +633,14 @@ _text_fields_append(Ui *ui, Proc_Stats *proc)
    if (ui->program_pid == proc->pid)
      return;
 
+   ui->searching = EINA_FALSE;
+
    if (ui->search_text && ui->search_text[0])
      {
         ui->searching = EINA_TRUE;
         if (strncasecmp(proc->command, ui->search_text, strlen(ui->search_text)))
           return;
      }
-
-   ui->searching = EINA_FALSE;
 
    mem_size = proc->mem_size;
    mem_rss = proc->mem_rss;
@@ -764,9 +762,9 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
    EINA_LIST_FOREACH(list, l, proc)
      {
         int64_t time_prev = ui->cpu_times[proc->pid];
-        proc->cpu_usage = 0;
-        if (!ui->first_run && proc->cpu_time > time_prev)
+        if (time_prev && proc->cpu_time > time_prev)
           proc->cpu_usage = (double)(proc->cpu_time - time_prev) / ui->poll_delay;
+        ui->cpu_times[proc->pid] = proc->cpu_time;
      }
 
    list = _list_sort(ui, list);
@@ -774,8 +772,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
    EINA_LIST_FREE(list, proc)
      {
         _text_fields_append(ui, proc);
-        ui->first_run = EINA_FALSE;
-        ui->cpu_times[proc->pid] = proc->cpu_time;
         free(proc);
      }
 
@@ -783,6 +779,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
      eina_list_free(list);
 
    _entry_cmd_size_set(ui);
+
    _text_fields_show(ui);
    _text_fields_clear(ui);
 
@@ -812,7 +809,6 @@ _process_list(void *data, Ecore_Thread *thread)
                   ui->skip_wait = EINA_FALSE;
                   break;
                }
-
              usleep(250000);
           }
      }
@@ -2348,11 +2344,11 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
         return;
      }
 
-   if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k') && !ev->keyname[1])
+   if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k'))
      ui->data_unit = DATA_UNIT_KB;
-   else if ((ev->keyname[0] == 'M' || ev->keyname[0] == 'm') && !ev->keyname[1])
+   else if ((ev->keyname[0] == 'M' || ev->keyname[0] == 'm'))
      ui->data_unit = DATA_UNIT_MB;
-   else if ((ev->keyname[0] == 'G' || ev->keyname[0] == 'g') && !ev->keyname[1])
+   else if ((ev->keyname[0] == 'G' || ev->keyname[0] == 'g'))
      ui->data_unit = DATA_UNIT_GB;
 }
 
@@ -2363,7 +2359,6 @@ _ui_init(Evas_Object *parent)
    if (!ui) return NULL;
 
    ui->win = parent;
-   ui->first_run = EINA_TRUE;
    ui->poll_delay = 3;
    ui->sort_reverse = EINA_FALSE;
    ui->sort_type = SORT_BY_PID;
