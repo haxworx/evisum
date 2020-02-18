@@ -516,7 +516,7 @@ _process_list_freebsd_get(void)
              continue;
           }
 
-        if (kp.ki_flag & P_SYSTEM)
+        if (kp.ki_flag & P_KPROC)
           continue;
 
         Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
