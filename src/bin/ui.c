@@ -2292,7 +2292,6 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_entry_single_line_set(entry, EINA_TRUE);
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_TRUE);
-   evas_object_event_callback_add(entry, EVAS_CALLBACK_KEY_DOWN, _evisum_search_keypress_cb, ui);
    evas_object_show(entry);
    elm_object_content_set(border, entry);
    elm_box_pack_end(box, border);
@@ -2352,12 +2351,35 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      ui->data_unit = DATA_UNIT_GB;
 }
 
+static void
+_ui_launch(Ui *ui)
+{
+   _process_list_update(ui);
+   _process_panel_update(ui);
+
+   ui->thread_system  = ecore_thread_feedback_run(_system_stats, _system_stats_feedback_cb,
+                                                  _thread_end_cb, _thread_error_cb, ui,
+                                                  EINA_FALSE);
+
+   ui->thread_process = ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
+                                                  _thread_end_cb, _thread_error_cb, ui,
+                                                  EINA_FALSE);
+
+   evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN, _evisum_key_down_cb, ui);
+   evas_object_event_callback_add(ui->entry_search, EVAS_CALLBACK_KEY_DOWN, _evisum_search_keypress_cb, ui);
+
+   /* Final UI actions post create. */
+
+   elm_object_focus_set(ui->entry_search, EINA_TRUE);
+}
+
 static Ui *
 _ui_init(Evas_Object *parent)
 {
    Ui *ui = calloc(1, sizeof(Ui));
    if (!ui) return NULL;
 
+   /* Settings */
    ui->win = parent;
    ui->poll_delay = 3;
    ui->sort_reverse = EINA_FALSE;
@@ -2371,18 +2393,7 @@ _ui_init(Evas_Object *parent)
 
    memset(ui->cpu_times, 0, PID_MAX * sizeof(int64_t));
 
-   return ui;
-}
-
-Ui *
-ui_add(Evas_Object *parent)
-{
-   eina_lock_new(&_lock);
-
-   Ui *ui = _ui_init(parent);
-   if (!ui) return NULL;
-
-   /* Create the tabs, content area and the rest */
+   /* UI content creation */
    _ui_tabs_add(parent, ui);
    _ui_tab_system_add(ui);
    _ui_process_panel_add(ui);
@@ -2391,19 +2402,20 @@ ui_add(Evas_Object *parent)
    _ui_tab_disk_add(ui);
    _ui_tab_misc_add(ui);
 
-   /* Start polling the data */
-   _process_list_update(ui);
-   _process_panel_update(ui);
+   return ui;
+}
 
-   ui->thread_system  = ecore_thread_feedback_run(_system_stats, _system_stats_feedback_cb,
-                                                  _thread_end_cb, _thread_error_cb, ui,
-                                                  EINA_FALSE);
+Ui *
+ui_add(Evas_Object *parent)
+{
+   eina_lock_new(&_lock);
 
-   ui->thread_process = ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
-                                                  _thread_end_cb, _thread_error_cb, ui,
-                                                  EINA_FALSE);
+   /* Create our user interface. */
+   Ui *ui = _ui_init(parent);
+   if (!ui) return NULL;
 
-   evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN, _evisum_key_down_cb, ui);
+   /* Start polling our data */
+   _ui_launch(ui);
 
    return ui;
 }
