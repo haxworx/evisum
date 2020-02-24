@@ -136,7 +136,7 @@ typedef struct Ui
 
    Eina_Bool     skip_wait;
 
-   int64_t       cpu_times[PID_MAX];
+   Eina_List    *cpu_times;
    int64_t       pid_cpu_time;
 
    int           poll_delay;

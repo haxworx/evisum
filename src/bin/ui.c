@@ -13,33 +13,6 @@
 
 static Eina_Lock _lock;
 
-void
-ui_shutdown(Ui *ui)
-{
-   evas_object_del(ui->win);
-
-   ui->shutting_down = EINA_TRUE;
-
-   if (ui->thread_system)
-     ecore_thread_cancel(ui->thread_system);
-
-   if (ui->thread_process)
-     ecore_thread_cancel(ui->thread_process);
-
-   if (ui->thread_system)
-     ecore_thread_wait(ui->thread_system, 1.0);
-
-   if (ui->thread_process)
-     ecore_thread_wait(ui->thread_process, 1.0);
-
-   for (int i = 0; i < PROCESS_INFO_FIELDS; i++)
-     free(ui->text_fields[i]);
-
-   eina_lock_free(&_lock);
-
-   ecore_main_loop_quit();
-}
-
 static void
 _system_stats(void *data, Ecore_Thread *thread)
 {
@@ -591,16 +564,6 @@ _sort_by_state(const void *p1, const void *p2)
 }
 
 static void
-_text_fields_init(Ui *ui)
-{
-   for (int i = 0; i < PROCESS_INFO_FIELDS; i++)
-     {
-        ui->text_fields[i] = malloc(TEXT_FIELD_MAX * sizeof(char));
-        ui->text_fields[i][0] = '\0';
-     }
-}
-
-static void
 _entry_cmd_size_set(Ui *ui)
 {
    static Evas_Coord winw = 0, winh = 0;
@@ -622,6 +585,16 @@ _entry_cmd_size_set(Ui *ui)
              evas_object_size_hint_min_set(ui->btn_cmd, w, h);
              evas_object_size_hint_min_set(ui->btn_expand, w, h);
           }
+     }
+}
+
+static void
+_text_fields_init(Ui *ui)
+{
+   for (int i = 0; i < PROCESS_INFO_FIELDS; i++)
+     {
+        ui->text_fields[i] = malloc(TEXT_FIELD_MAX * sizeof(char));
+        ui->text_fields[i][0] = '\0';
      }
 }
 
@@ -689,6 +662,13 @@ _text_fields_clear(Ui *ui)
      ui->text_fields[i][0] = '\0';
 }
 
+static void
+_text_fields_free(Ui *ui)
+{
+   for (int i = 0; i < PROCESS_INFO_FIELDS; i++)
+     free(ui->text_fields[i]);
+}
+
 static Eina_List *
 _list_sort(Ui *ui, Eina_List *list)
 {
@@ -746,6 +726,72 @@ _list_sort(Ui *ui, Eina_List *list)
    return list;
 }
 
+typedef struct {
+   pid_t pid;
+   int64_t cpu_time_prev;
+} pid_cpu_time_t;
+
+static void
+_proc_pid_cpu_times_free(Ui *ui)
+{
+   pid_cpu_time_t *tmp;
+
+   EINA_LIST_FREE(ui->cpu_times, tmp)
+     {
+        free(tmp);
+     }
+
+   if (ui->cpu_times)
+     eina_list_free(ui->cpu_times);
+}
+
+static void
+_proc_pid_cpu_time_save(Ui *ui, Proc_Stats *proc)
+{
+   Eina_List *l;
+   pid_cpu_time_t *tmp;
+
+   EINA_LIST_FOREACH(ui->cpu_times, l, tmp)
+     {
+        if (tmp->pid == proc->pid)
+          {
+             tmp->cpu_time_prev = proc->cpu_time;
+             return;
+          }
+     }
+
+   tmp = calloc(1, sizeof(pid_cpu_time_t));
+   if (tmp)
+     {
+        tmp->pid = proc->pid;
+        tmp->cpu_time_prev = proc->cpu_time;
+        ui->cpu_times = eina_list_append(ui->cpu_times, tmp);
+     }
+}
+
+static void
+_proc_pid_cpu_usage_get(Ui *ui, Proc_Stats *proc)
+{
+   Eina_List *l;
+   pid_cpu_time_t *tmp;
+
+   EINA_LIST_FOREACH(ui->cpu_times, l, tmp)
+     {
+        if (tmp->pid == proc->pid)
+          {
+             if (tmp->cpu_time_prev && proc->cpu_time > tmp->cpu_time_prev)
+               {
+                  proc->cpu_usage = (double) (proc->cpu_time - tmp->cpu_time_prev) /
+                     ui->poll_delay;
+               }
+             _proc_pid_cpu_time_save(ui, proc);
+             return;
+          }
+     }
+
+   _proc_pid_cpu_time_save(ui, proc);
+}
+
 static void
 _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msg EINA_UNUSED)
 {
@@ -761,10 +807,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
 
    EINA_LIST_FOREACH(list, l, proc)
      {
-        int64_t time_prev = ui->cpu_times[proc->pid];
-        if (time_prev && proc->cpu_time > time_prev)
-          proc->cpu_usage = (double)(proc->cpu_time - time_prev) / ui->poll_delay;
-        ui->cpu_times[proc->pid] = proc->cpu_time;
+        _proc_pid_cpu_usage_get(ui, proc);
      }
 
    list = _list_sort(ui, list);
@@ -778,10 +821,10 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
    if (list)
      eina_list_free(list);
 
-   _entry_cmd_size_set(ui);
-
    _text_fields_show(ui);
    _text_fields_clear(ui);
+
+   _entry_cmd_size_set(ui);
 
    eina_lock_release(&_lock);
 }
@@ -837,6 +880,7 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
      elm_icon_standard_set(icon, _icon_path_get("go-up"));
 
    elm_object_part_content_set(button, "icon", icon);
+
    evas_object_show(icon);
 }
 
@@ -2351,6 +2395,33 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      ui->data_unit = DATA_UNIT_GB;
 }
 
+void
+ui_shutdown(Ui *ui)
+{
+   evas_object_del(ui->win);
+
+   ui->shutting_down = EINA_TRUE;
+
+   if (ui->thread_system)
+     ecore_thread_cancel(ui->thread_system);
+
+   if (ui->thread_process)
+     ecore_thread_cancel(ui->thread_process);
+
+   if (ui->thread_system)
+     ecore_thread_wait(ui->thread_system, 1.0);
+
+   if (ui->thread_process)
+     ecore_thread_wait(ui->thread_process, 1.0);
+
+   _text_fields_free(ui);
+   _proc_pid_cpu_times_free(ui);
+
+   eina_lock_free(&_lock);
+
+   ecore_main_loop_quit();
+}
+
 static void
 _ui_launch(Ui *ui)
 {
@@ -2391,7 +2462,7 @@ _ui_init(Evas_Object *parent)
 
    _text_fields_init(ui);
 
-   memset(ui->cpu_times, 0, PID_MAX * sizeof(int64_t));
+   ui->cpu_times = NULL;
 
    /* UI content creation */
    _ui_tabs_add(parent, ui);
