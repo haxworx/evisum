@@ -89,11 +89,13 @@
 #define RESULTS_MEM_GB    0x80
 #define RESULTS_CPU_CORES 0x100
 
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 static void
 _memsize_bytes_to_kb(unsigned long *bytes)
 {
    *bytes = (unsigned int)*bytes >> 10;
 }
+#endif
 
 #if defined(__linux__)
 static char *
