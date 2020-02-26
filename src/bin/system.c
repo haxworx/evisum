@@ -95,14 +95,6 @@ _memsize_bytes_to_kb(unsigned long *bytes)
    *bytes = (unsigned int)*bytes >> 10;
 }
 
-#define _memsize_kb_to_mb _memsize_bytes_to_kb
-
-static void
-_memsize_kb_to_gb(unsigned long *bytes)
-{
-   *bytes = (unsigned int)*bytes >> 20;
-}
-
 #if defined(__linux__)
 static char *
 file_contents(const char *path)
