@@ -333,7 +333,7 @@ proc_info_by_pid(int pid)
    if (count == 0) return NULL;
    pagesize = getpagesize();
 
-   Proc_Stats *p = malloc(sizeof(Proc_Stats));
+   Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
    if (!p) return NULL;
 
    p->pid = kp->p_pid;
@@ -381,7 +381,7 @@ _process_list_openbsd_get(void)
 
    for (int i = 0; i < pid_count; i++)
      {
-        p = malloc(sizeof(Proc_Stats));
+        p = calloc(1, sizeof(Proc_Stats));
         if (!p) return NULL;
 
         p->pid = kp[i].p_pid;
