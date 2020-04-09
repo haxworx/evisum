@@ -422,7 +422,7 @@ static void
 _memory_usage_get(meminfo_t *memory)
 {
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-   size_t len = 0;
+   size_t len = 0, miblen;
    int i = 0;
 #endif
    memset(memory, 0, sizeof(meminfo_t));
@@ -538,17 +538,20 @@ _memory_usage_get(meminfo_t *memory)
      return;
    memory->swap_total = (result / 1024);
 
+   miblen = 3;
+   if (sysctlnametomib("vm.swap_info", mib, &miblen) == -1) return;
+
    struct xswdev xsw;
    /* previous mib is important for this one... */
 
-   while (i++)
+   for (i = 0; ; i++)
      {
-        mib[2] = i;
+        mib[miblen] = i;
         len = sizeof(xsw);
-        if (sysctl(mib, 3, &xsw, &len, NULL, 0) == -1)
+        if (sysctl(mib, miblen + 1, &xsw, &len, NULL, 0) == -1)
           break;
 
-        memory->swap_used += xsw.xsw_used * page_size;
+        memory->swap_used += (unsigned long) xsw.xsw_used * page_size;
      }
 
    memory->swap_used >>= 10;
