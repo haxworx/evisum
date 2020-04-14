@@ -38,7 +38,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#include <sys/sysctl.h>
+#if defined(__linux__)
+# define BORING_USER 1
+#else
+# include <sys/sysctl.h>
+#endif
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <net/if.h>
@@ -1271,14 +1275,16 @@ _network_transfer_get_thread_cb(void *arg)
    return (void *)0;
 }
 
-void
-system_stats_get(results_t *results)
+results_t *
+system_stats_get(void)
 {
+   results_t *results;
    void *ret;
    pthread_t tid;
    int error;
 
-   memset(results, 0, sizeof(results_t));
+   results = calloc(1, sizeof(results_t));
+   if (!results) return NULL;
 
    results->cores = _cpu_cores_state_get(&results->cpu_count);
 
@@ -1298,5 +1304,7 @@ system_stats_get(results_t *results)
         ret = NULL;
         pthread_join(tid, ret);
      }
+
+   return results;
 }
 

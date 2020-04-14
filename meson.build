@@ -12,7 +12,7 @@ host_os = host_machine.system()
 deps = dependency('elementary', version: efl_version)
 
 deps_os = declare_dependency(link_args : [] )
-if host_os == 'openbsd'
+if host_os == 'openbsd' or host_os == 'freebsd' or host_os == 'dragonfly'
   deps_os = declare_dependency(link_args : [ '-lkvm' ])
 endif
 

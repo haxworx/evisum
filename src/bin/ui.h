@@ -1,11 +1,12 @@
- #ifndef __UI_H__
+#ifndef __UI_H__
 #define __UI_H__
 
 #include <Elementary.h>
 #include "process.h"
+#include "configuration.h"
 
-#define EVISUM_SIZE_WIDTH  500
-#define EVISUM_SIZE_HEIGHT 600
+#define EVISUM_SIZE_WIDTH  600
+#define EVISUM_SIZE_HEIGHT 520
 
 typedef enum
 {
@@ -90,14 +91,6 @@ typedef struct Ui
    Evas_Object  *progress_mem_shared;
    Evas_Object  *progress_mem_swap;
 
-   Evas_Object  *entry_pid;
-   Evas_Object  *entry_uid;
-   Evas_Object  *entry_size;
-   Evas_Object  *entry_rss;
-   Evas_Object  *entry_cmd;
-   Evas_Object  *entry_state;
-   Evas_Object  *entry_cpu_usage;
-
    Evas_Object  *btn_pid;
    Evas_Object  *btn_uid;
    Evas_Object  *btn_size;
@@ -105,7 +98,16 @@ typedef struct Ui
    Evas_Object  *btn_cmd;
    Evas_Object  *btn_state;
    Evas_Object  *btn_cpu_usage;
-   Evas_Object  *btn_expand;
+
+   char         *long_pid;
+   char         *long_uid;
+   char         *long_size;
+   char         *long_rss;
+   char         *long_cmd;
+   char         *long_state;
+   char         *long_cpu;
+
+   Evas_Object  *genlist_procs;
 
    Evas_Object  *entry_pid_cmd;
    Evas_Object  *entry_pid_user;
@@ -135,6 +137,7 @@ typedef struct Ui
    Evas_Object  *list_pid;
 
    Eina_Bool     skip_wait;
+   Eina_Bool     ready;
 
    Eina_List    *cpu_times;
    int64_t       pid_cpu_time;
@@ -146,6 +149,7 @@ typedef struct Ui
    Eina_Bool     panel_visible;
    Eina_Bool     shutting_down;
    Eina_Bool     searching;
+   Eina_Bool     show_self;
 
    uint64_t      incoming_max;
    uint64_t      outgoing_max;

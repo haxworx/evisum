@@ -1,4 +1,17 @@
 ============
+Evisum 0.3.4
+============
+
+   * Offer kvm_openfiles means of obtaining PID list on
+   FreeBSD-based platforms. This requires specific
+   permissions (s+g kmem). We fallback if that fails.
+   * Get rid of the horrible entry-based process list and
+   use a genlist (meh).
+   * Save settings upon exit (kb/mb/gb) and sorting.
+   * UI Changes (Too many labels and progress bars).
+   * Other stuff.
+
+============
 Evisum 0.3.2
 ============
 

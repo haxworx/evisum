@@ -1,6 +1,8 @@
 inc = include_directories('.', '../..')
 
 executable('evisum', [
+     'configuration.c',
+     'configuration.h',
      'disks.c',
      'disks.h',
      'process.c',

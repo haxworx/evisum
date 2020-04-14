@@ -9,7 +9,9 @@
 # include <sys/proc.h>
 #endif
 
-#if defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+# include <unistd.h>
+# include <fcntl.h>
 # include <kvm.h>
 # include <limits.h>
 # include <sys/proc.h>
@@ -33,6 +35,10 @@
 #include <Eina.h>
 #include <Ecore.h>
 #include <Ecore_File.h>
+
+#if defined(__linux__) && !defined(PF_KTHREAD)
+# define PF_KTHREAD 0x00200000
+#endif
 
 static const char *
 _process_state_name(char state)
@@ -142,7 +148,7 @@ _process_list_linux_get(void)
    FILE *f;
    char *name, *link, state, line[4096], program_name[1024];
    int pid, res, utime, stime, cutime, cstime, uid, psr, pri, nice, numthreads;
-   unsigned int mem_size, mem_rss;
+   unsigned int mem_size, mem_rss, flags;
    int pagesize = getpagesize();
 
    list = NULL;
@@ -165,9 +171,8 @@ _process_list_linux_get(void)
              end = strchr(line, ')');
              strncpy(program_name, start, end - start);
              program_name[end - start] = '\0';
-
              res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
-                          &state, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
+                          &state, &dummy, &dummy, &dummy, &dummy, &dummy, &flags, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
                           &pri, &nice, &numthreads, &dummy, &dummy, &mem_size, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                           &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
           }
@@ -175,6 +180,8 @@ _process_list_linux_get(void)
         fclose(f);
 
         if (res != 42) continue;
+
+        if (flags & PF_KTHREAD) continue;
 
         f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
         if (!f) continue;
@@ -210,6 +217,9 @@ _process_list_linux_get(void)
                }
           }
 
+
+        char *end = strchr(program_name, ' ');
+        if (end) *end = '\0';
         Proc_Stats *p = calloc(1, sizeof(Proc_Stats));
         if (!p) return NULL;
 
@@ -489,7 +499,7 @@ proc_info_by_pid(int pid)
 
 #if defined(__FreeBSD__) || defined(__DragonFly__)
 static Eina_List *
-_process_list_freebsd_get(void)
+_process_list_freebsd_fallback_get(void)
 {
    Eina_List *list;
    struct rusage *usage;
@@ -539,6 +549,36 @@ _process_list_freebsd_get(void)
         p->nice = kp.ki_nice - NZERO;
         p->priority = kp.ki_pri.pri_level - PZERO;
         p->numthreads = kp.ki_numthreads;
+
+        list = eina_list_append(list, p);
+     }
+
+   return list;
+}
+
+static Eina_List *
+_process_list_freebsd_get(void)
+{
+   kvm_t *kern;
+   Eina_List *list = NULL;
+   struct kinfo_proc *kp;
+   char errbuf[_POSIX2_LINE_MAX];
+   int pid_count;
+
+   kern = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
+   if (!kern)
+     return _process_list_freebsd_fallback_get();
+
+   kp = kvm_getprocs(kern, KERN_PROC_PROC, 0, &pid_count);
+   if (!kp) return _process_list_freebsd_fallback_get();
+
+   for (int i = 0; i < pid_count; i++)
+     {
+        if (kp[i].ki_flag & P_KPROC)
+          continue;
+
+        Proc_Stats *p = proc_info_by_pid(kp[i].ki_pid);
+        if (!p) continue;
 
         list = eina_list_append(list, p);
      }

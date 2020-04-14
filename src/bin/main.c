@@ -7,6 +7,7 @@
  */
 
 #include "config.h"
+#include "configuration.h"
 #include "ui.h"
 
 static void
@@ -47,6 +48,7 @@ main(int argc, char **argv)
 
    eina_init();
    ecore_init();
+   config_init();
    elm_init(argc, argv);
 
    ui = _win_add();
@@ -57,6 +59,7 @@ main(int argc, char **argv)
      }
 
    elm_shutdown();
+   config_shutdown();
    ecore_shutdown();
    eina_shutdown();
 

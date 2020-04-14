@@ -61,8 +61,8 @@ struct results_t
    int           temperature;
 };
 
-void
- system_stats_get(results_t *results);
+results_t *
+ system_stats_get(void);
 
 int
  system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used);
