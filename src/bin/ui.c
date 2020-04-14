@@ -833,7 +833,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    label = elm_label_add(obj);
    if (ui->sort_type == SORT_BY_PID)
-     elm_object_text_set(label, eina_slstr_printf("<hilight>%d</hilight>", proc->pid));
+     elm_object_text_set(label, eina_slstr_printf("<info>%d</info>", proc->pid));
    else
      elm_object_text_set(label, eina_slstr_printf("%d", proc->pid));
    evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -848,7 +848,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    label = elm_label_add(table);
    if (ui->sort_type == SORT_BY_UID)
-     elm_object_text_set(label, eina_slstr_printf("<hilight>%d</hilight>", proc->uid));
+     elm_object_text_set(label, eina_slstr_printf("<info>%d</info>", proc->uid));
    else
      elm_object_text_set(label, eina_slstr_printf("%d", proc->uid));
    evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -863,7 +863,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    label = elm_label_add(table);
    if (ui->sort_type == SORT_BY_SIZE)
-     elm_object_text_set(label, eina_slstr_printf("<hilight>%lu %c</hilight>", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));
+     elm_object_text_set(label, eina_slstr_printf("<info>%lu %c</info>", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));
    else
      elm_object_text_set(label, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));
    evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -879,7 +879,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    label = elm_label_add(table);
    if (ui->sort_type == SORT_BY_RSS)
-     elm_object_text_set(label, eina_slstr_printf("<hilight>%lu %c</hilight>", _mem_adjust(ui->data_unit, proc->mem_rss >> 10), ui->data_unit));
+     elm_object_text_set(label, eina_slstr_printf("<info>%lu %c</info>", _mem_adjust(ui->data_unit, proc->mem_rss >> 10), ui->data_unit));
    else
      elm_object_text_set(label, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_rss >> 10), ui->data_unit));
 
@@ -895,7 +895,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    label = elm_label_add(table);
    if (ui->sort_type == SORT_BY_CMD)
-     elm_object_text_set(label, eina_slstr_printf("<hilight>%s</hilight>", proc->command));
+     elm_object_text_set(label, eina_slstr_printf("<info>%s</info>", proc->command));
    else
      elm_object_text_set(label, eina_slstr_printf("%s", proc->command));
    evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -910,7 +910,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    label = elm_label_add(table);
    if (ui->sort_type == SORT_BY_STATE)
-     elm_object_text_set(label, eina_slstr_printf("<hilight>%s</hilight>", proc->state));
+     elm_object_text_set(label, eina_slstr_printf("<info>%s</info>", proc->state));
    else
      elm_object_text_set(label, eina_slstr_printf("%s", proc->state));
    evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
@@ -925,7 +925,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    label = elm_label_add(table);
    if (ui->sort_type == SORT_BY_CPU_USAGE)
-     elm_object_text_set(label, eina_slstr_printf("<hilight>%.1f%%</hilight>", proc->cpu_usage));
+     elm_object_text_set(label, eina_slstr_printf("<info>%.1f%%</info>", proc->cpu_usage));
    else
      elm_object_text_set(label, eina_slstr_printf("%.1f%%", proc->cpu_usage));
    evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
