@@ -30,6 +30,15 @@ _config_save(Ui *ui)
 }
 
 static void
+_config_load(Ui *ui)
+{
+   _configuration = config_load();
+   ui->sort_type = _configuration->sort_type;
+   ui->sort_reverse = _configuration->sort_reverse;
+   ui->data_unit = _configuration->data_unit == 0 ? DATA_UNIT_MB : _configuration->data_unit;
+}
+
+static void
 _system_stats(void *data, Ecore_Thread *thread)
 {
    Ui *ui = data;
@@ -999,6 +1008,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
      }
 
    elm_genlist_realized_items_update(ui->genlist_procs);
+
    if (list)
      eina_list_free(list);
 
@@ -2592,10 +2602,7 @@ _ui_init(Evas_Object *parent)
 
    ui->cpu_times = NULL;
 
-   _configuration = config_load();
-   ui->sort_type = _configuration->sort_type;
-   ui->sort_reverse = _configuration->sort_reverse;
-   ui->data_unit = _configuration->data_unit == 0 ? DATA_UNIT_MB : _configuration->data_unit;
+   _config_load(ui);
 
    /* UI content creation */
    _ui_tabs_add(parent, ui);
