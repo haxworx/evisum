@@ -134,7 +134,8 @@ _icon_path_get(const char *name)
 static void
 _tab_misc_update(Ui *ui, results_t *results)
 {
-   Evas_Object *box, *frame, *progress;
+   Evas_Object *box, *hbox, *vbox, *frame, *ic, *progress;
+   Evas_Object *label;
 
    if (!ui->misc_visible)
      return;
@@ -146,24 +147,58 @@ _tab_misc_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(box);
 
+   frame = elm_frame_add(box);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+
+   elm_box_pack_end(box, frame);
+
    for (int i = 0; i < results->power.battery_count; i++)
      {
         frame = elm_frame_add(box);
-        evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
+        evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
         evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        elm_object_style_set(frame, "pad_small");
         evas_object_show(frame);
+
+        vbox = elm_box_add(box);
+        evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+        evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_show(vbox);
+
+        label = elm_label_add(box);
+        evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
+        evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_show(label);
+        elm_box_pack_end(vbox, label);
 
         Eina_Strbuf *buf = eina_strbuf_new();
         if (buf)
           {
-             eina_strbuf_append_printf(buf, "Battery: %s ", results->power.battery_names[i]);
+             eina_strbuf_append_printf(buf, "<bigger>%s ", results->power.battery_names[i]);
              if (results->power.have_ac && i == 0)
                {
                     eina_strbuf_append(buf, "(plugged in)");
                }
-             elm_object_text_set(frame, eina_strbuf_string_get(buf));
+             eina_strbuf_append(buf, "</bigger>");
+             elm_object_text_set(label, eina_strbuf_string_get(buf));
              eina_strbuf_free(buf);
           }
+
+        hbox = elm_box_add(box);
+        evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+        evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        elm_box_horizontal_set(hbox, EINA_TRUE);
+        evas_object_show(hbox);
+
+        ic = elm_image_add(box);
+        elm_image_file_set(ic, _icon_path_get("battery"), NULL);
+        evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
+        evas_object_show(ic);
+
+        elm_box_pack_end(hbox, ic);
 
         progress = elm_progressbar_add(frame);
         evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -172,7 +207,10 @@ _tab_misc_update(Ui *ui, results_t *results)
         elm_progressbar_unit_format_set(progress, "%1.0f%%");
         elm_progressbar_value_set(progress, (double) results->power.batteries[i]->percent / 100);
         evas_object_show(progress);
-        elm_object_content_set(frame, progress);
+
+        elm_box_pack_end(hbox, progress);
+        elm_box_pack_end(vbox, hbox);
+        elm_object_content_set(frame, vbox);
         elm_box_pack_end(box, frame);
 
         free(results->power.battery_names[i]);
@@ -185,14 +223,41 @@ _tab_misc_update(Ui *ui, results_t *results)
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_text_set(frame, "Network Incoming");
+   elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+
+   vbox = elm_box_add(box);
+   evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(vbox);
+
+   label = elm_label_add(box);
+   elm_object_text_set(label, "<bigger>Network Incoming</bigger>");
+   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(label);
+   elm_box_pack_end(vbox, label);
+
+   hbox = elm_box_add(box);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   ic = elm_image_add(box);
+   elm_image_file_set(ic, _icon_path_get("network"), NULL);
+   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
+   evas_object_show(ic);
+
+   elm_box_pack_end(hbox, ic);
 
    progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    evas_object_show(progress);
+   elm_box_pack_end(hbox, progress);
+   elm_box_pack_end(vbox, hbox);
 
    char *tmp = _network_transfer_format(results->incoming);
    if (tmp)
@@ -208,14 +273,39 @@ _tab_misc_update(Ui *ui, results_t *results)
         elm_progressbar_value_set(progress, (double) results->incoming / ui->incoming_max);
      }
 
-   elm_object_content_set(frame, progress);
+   elm_object_content_set(frame, vbox);
    elm_box_pack_end(box, frame);
 
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_text_set(frame, "Network Outgoing");
+   elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+
+   vbox = elm_box_add(box);
+   evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(vbox);
+
+   label = elm_label_add(box);
+   elm_object_text_set(label, "<bigger>Network Outgoing</bigger>");
+   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(label);
+   elm_box_pack_end(vbox, label);
+
+   hbox = elm_box_add(box);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   ic = elm_image_add(box);
+   elm_image_file_set(ic, _icon_path_get("network"), NULL);
+   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
+   evas_object_show(ic);
+
+   elm_box_pack_end(hbox, ic);
 
    progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -237,7 +327,9 @@ _tab_misc_update(Ui *ui, results_t *results)
         elm_progressbar_value_set(progress, (double) results->outgoing / ui->outgoing_max);
      }
 
-   elm_object_content_set(frame, progress);
+   elm_box_pack_end(hbox, progress);
+   elm_box_pack_end(vbox, hbox);
+   elm_object_content_set(frame, vbox);
    elm_box_pack_end(box, frame);
    elm_box_pack_end(ui->misc_activity, box);
 }
@@ -397,7 +489,7 @@ _tab_memory_update(Ui *ui, results_t *results)
 static void
 _tab_cpu_update(Ui *ui, results_t *results)
 {
-   Evas_Object *box, *frame, *label, *progress;
+   Evas_Object *box, *hbox, *frame, *label, *progress, *ic;
 
    if (!ui->cpu_visible)
      return;
@@ -446,7 +538,6 @@ _tab_cpu_update(Ui *ui, results_t *results)
         evas_object_show(progress);
 
         elm_progressbar_value_set(progress, results->cores[i]->percent / 100);
-
         elm_object_content_set(frame, progress);
         elm_box_pack_end(box, frame);
      }
@@ -2032,7 +2123,7 @@ _label(Evas_Object *parent, const char *text)
 {
    Evas_Object *label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_FILL);
    elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",text));
    evas_object_show(label);
 
