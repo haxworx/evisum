@@ -273,13 +273,6 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, u
    elm_object_style_set(frame, "pad_medium");
    elm_box_pack_end(box, frame);
 
-   label = elm_label_add(box);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(label, eina_slstr_printf("<subtitle>%s</subtitle>", path));
-   evas_object_show(label);
-   elm_box_pack_end(box, label);
-
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, 0);
@@ -289,7 +282,7 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, u
    label = elm_label_add(box);
    evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_text_set(label, eina_slstr_printf("<bigger>mounted at %s</bigger><br>%lu%c of %lu%c", mount,
+   elm_object_text_set(label, eina_slstr_printf("<subtitle>%s</subtitle><br><bigger>mounted at %s</bigger><br>%lu%c of %lu%c", path, mount,
                        _disk_adjust(ui->data_unit, used), ui->data_unit, _disk_adjust(ui->data_unit, total), ui->data_unit));
    evas_object_show(label);
 
