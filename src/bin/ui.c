@@ -258,13 +258,48 @@ _disk_adjust(Data_Unit unit, unsigned long value)
 static void
 _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, unsigned long used)
 {
-   Evas_Object *frame, *progress;
+   Evas_Object *box, *frame, *progress, *label;
    double ratio, value;
 
-   frame = elm_frame_add(ui->disk_activity);
+   box = elm_box_add(ui->disk_activity);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(box);
+
+   frame = elm_frame_add(box);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(frame);
+   elm_object_style_set(frame, "pad_medium");
+   elm_box_pack_end(box, frame);
+
+   label = elm_label_add(box);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(label, eina_slstr_printf("<subtitle>%s</subtitle>", path));
+   evas_object_show(label);
+   elm_box_pack_end(box, label);
+
+   frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, 0);
-   elm_object_text_set(frame, eina_slstr_printf("%s on %s", path, mount));
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+
+   label = elm_label_add(box);
+   evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_object_text_set(label, eina_slstr_printf("<bigger>mounted at %s</bigger><br>%lu%c of %lu%c", mount,
+                       _disk_adjust(ui->data_unit, used), ui->data_unit, _disk_adjust(ui->data_unit, total), ui->data_unit));
+   evas_object_show(label);
+
+   elm_object_content_set(frame, label);
+   elm_box_pack_end(box, frame);
+
+   frame = elm_frame_add(box);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, 0);
+   elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
 
    progress = elm_progressbar_add(frame);
@@ -276,17 +311,14 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, u
    ratio = total / 100.0;
    value = used / ratio;
 
-   elm_progressbar_unit_format_set(progress, eina_slstr_printf("%lu%c of %lu%c (%1.0f &#37;)",
-                                   _disk_adjust(ui->data_unit, used), ui->data_unit,
-                                   _disk_adjust(ui->data_unit, total), ui->data_unit, value));
-
    if (used == 0 && total == 0)
      elm_progressbar_value_set(progress, 1.0);
    else
      elm_progressbar_value_set(progress, value / 100.0);
 
    elm_object_content_set(frame, progress);
-   elm_box_pack_end(ui->disk_activity, frame);
+   elm_box_pack_end(box, frame);
+   elm_box_pack_end(ui->disk_activity, box);
 }
 
 static void
@@ -1988,7 +2020,7 @@ _ui_tab_cpu_add(Ui *ui)
    frame = elm_frame_add(box);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_style_set(frame, "outdent_bottom");
+   elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
 
    scroller = elm_scroller_add(parent);
