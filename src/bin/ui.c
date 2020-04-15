@@ -197,7 +197,6 @@ _tab_misc_update(Ui *ui, results_t *results)
         elm_image_file_set(ic, _icon_path_get("battery"), NULL);
         evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
         evas_object_show(ic);
-
         elm_box_pack_end(hbox, ic);
 
         progress = elm_progressbar_add(frame);
@@ -248,7 +247,6 @@ _tab_misc_update(Ui *ui, results_t *results)
    elm_image_file_set(ic, _icon_path_get("network"), NULL);
    evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
    evas_object_show(ic);
-
    elm_box_pack_end(hbox, ic);
 
    progress = elm_progressbar_add(frame);
@@ -304,7 +302,6 @@ _tab_misc_update(Ui *ui, results_t *results)
    elm_image_file_set(ic, _icon_path_get("network"), NULL);
    evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
    evas_object_show(ic);
-
    elm_box_pack_end(hbox, ic);
 
    progress = elm_progressbar_add(frame);
@@ -2119,7 +2116,7 @@ _ui_tab_cpu_add(Ui *ui)
 }
 
 static Evas_Object *
-_label(Evas_Object *parent, const char *text)
+_label_mem(Evas_Object *parent, const char *text)
 {
    Evas_Object *label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -2197,7 +2194,7 @@ _ui_tab_memory_add(Ui *ui)
    evas_object_show(frame);
    elm_box_pack_end(box, frame);
 
-   label = _label(box, "Used");
+   label = _label_mem(box, "Used");
    elm_box_pack_end(box, label);
 
    frame = elm_frame_add(box);
@@ -2214,7 +2211,7 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label(box, "Cached");
+   label = _label_mem(box, "Cached");
    elm_box_pack_end(box, label);
 
    frame = elm_frame_add(box);
@@ -2231,7 +2228,7 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label(box, "Buffered");
+   label = _label_mem(box, "Buffered");
    elm_box_pack_end(box, label);
 
    frame = elm_frame_add(box);
@@ -2248,7 +2245,7 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label(box, "Shared");
+   label = _label_mem(box, "Shared");
    elm_box_pack_end(box, label);
 
    frame = elm_frame_add(box);
@@ -2264,7 +2261,7 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label(box, "Swapped");
+   label = _label_mem(box, "Swapped");
    elm_box_pack_end(box, label);
 
    frame = elm_frame_add(box);
