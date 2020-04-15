@@ -489,7 +489,7 @@ _tab_memory_update(Ui *ui, results_t *results)
 static void
 _tab_cpu_update(Ui *ui, results_t *results)
 {
-   Evas_Object *box, *hbox, *frame, *label, *progress, *ic;
+   Evas_Object *box, *frame, *label, *progress;
 
    if (!ui->cpu_visible)
      return;
