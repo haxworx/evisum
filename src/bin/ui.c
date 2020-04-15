@@ -15,27 +15,27 @@
 static Ui *_ui = NULL;
 static Eina_Lock _lock;
 static Eina_List *_list = NULL;
-static Evisum_Config *_configuration = NULL;
+static Evisum_Config *_evisum_config = NULL;
 
 static void
 _config_save(Ui *ui)
 {
-   if (!_configuration) return;
+   if (!_evisum_config) return;
 
-   _configuration->sort_type = ui->sort_type;
-   _configuration->sort_reverse = ui->sort_reverse;
-   _configuration->data_unit = ui->data_unit;
+   _evisum_config->sort_type    = ui->sort_type;
+   _evisum_config->sort_reverse = ui->sort_reverse;
+   _evisum_config->data_unit    = ui->data_unit;
 
-   config_save(_configuration);
+   config_save(_evisum_config);
 }
 
 static void
 _config_load(Ui *ui)
 {
-   _configuration = config_load();
-   ui->sort_type = _configuration->sort_type;
-   ui->sort_reverse = _configuration->sort_reverse;
-   ui->data_unit = _configuration->data_unit == 0 ? DATA_UNIT_MB : _configuration->data_unit;
+   _evisum_config   = config_load();
+   ui->sort_type    = _evisum_config->sort_type;
+   ui->sort_reverse = _evisum_config->sort_reverse;
+   ui->data_unit    = _evisum_config->data_unit == 0 ? DATA_UNIT_MB : _evisum_config->data_unit;
 }
 
 static void
@@ -934,16 +934,16 @@ static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Ui *ui;
+   Proc_Stats *proc;
    Evas_Object *box, *label;
    Evas_Object *table, *rect;
    Evas_Coord w, h;
-   Proc_Stats *proc = (void *) data;
+
+   proc = (void *) data;
+   ui = _ui;
 
    if (strcmp(source, "elm.swallow.content")) return NULL;
    if (!proc) return NULL;
-
-   ui = _ui;
-
    if (!ui->ready) return NULL;
 
    box = elm_box_add(obj);
@@ -2710,7 +2710,7 @@ _ui_init(Evas_Object *parent)
    ui->sort_type = SORT_BY_PID;
    ui->selected_pid = -1;
    ui->program_pid = getpid();
-   ui->panel_visible = ui->disk_visible = ui->cpu_visible = ui->mem_visible = ui->misc_visible = EINA_TRUE;
+   ui->panel_visible = ui->disk_visible = ui->cpu_visible = ui->mem_visible =ui->misc_visible = EINA_TRUE;
    ui->data_unit = DATA_UNIT_MB;
 
    ui->cpu_times = NULL;
