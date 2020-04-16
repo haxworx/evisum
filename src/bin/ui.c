@@ -306,7 +306,15 @@ _tab_misc_update(Ui *ui, results_t *results)
    elm_box_pack_end(hbox, progress);
    elm_box_pack_end(vbox, hbox);
    elm_box_pack_end(box, vbox);
-   elm_box_pack_end(ui->misc_activity, box);
+
+   frame = elm_frame_add(ui->misc_activity);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_object_style_set(frame, "pad_medium");
+   evas_object_show(frame);
+   elm_object_content_set(frame, box);
+
+   elm_box_pack_end(ui->misc_activity, frame);
 }
 
 static unsigned long
@@ -2204,8 +2212,15 @@ _ui_tab_memory_add(Ui *ui)
    elm_table_pack(table, label, 0, 4, 1, 1);
    elm_table_pack(table, progress, 1, 4, 1, 1);
 
+   frame = elm_frame_add(ui->mem_activity);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_style_set(frame, "pad_medium");
+   evas_object_show(frame);
+
    elm_box_pack_end(box, table);
-   elm_box_pack_end(ui->mem_activity, box);
+   elm_object_content_set(frame, box);
+   elm_box_pack_end(ui->mem_activity, frame);
 }
 
 static void
