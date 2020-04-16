@@ -2077,8 +2077,8 @@ static Evas_Object *
 _label_mem(Evas_Object *parent, const char *text)
 {
    Evas_Object *label = elm_label_add(parent);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(label, 0.01, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(label, 0.1, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",text));
    evas_object_show(label);
 
@@ -2089,7 +2089,7 @@ static void
 _ui_tab_memory_add(Ui *ui)
 {
    Evas_Object *parent, *box, *hbox, *frame, *progress, *scroller;
-   Evas_Object *label;
+   Evas_Object *label, *table;
 
    parent = ui->content;
 
@@ -2141,100 +2141,70 @@ _ui_tab_memory_add(Ui *ui)
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+   elm_object_style_set(frame, "pad_large");
    elm_box_pack_end(box, frame);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-   elm_box_pack_end(box, frame);
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
+   table = elm_table_add(parent);
+   evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_padding_set(table, 0, 20 * elm_config_scale_get());
+   evas_object_show(table);
 
    label = _label_mem(box, "Used");
-   elm_box_pack_end(box, label);
 
-   ui->progress_mem_used = progress = elm_progressbar_add(frame);
+   ui->progress_mem_used = progress = elm_progressbar_add(table);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    evas_object_show(progress);
-   elm_object_content_set(frame, progress);
-   elm_box_pack_end(box, frame);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
+   elm_table_pack(table, label, 0, 0, 1, 1);
+   elm_table_pack(table, progress, 1, 0, 1, 1);
 
    label = _label_mem(box, "Cached");
-   elm_box_pack_end(box, label);
 
    ui->progress_mem_cached = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    evas_object_show(progress);
-   elm_object_content_set(frame, progress);
-   elm_box_pack_end(box, frame);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
+   elm_table_pack(table, label, 0, 1, 1, 1);
+   elm_table_pack(table, progress, 1, 1, 1, 1);
 
    label = _label_mem(box, "Buffered");
-   elm_box_pack_end(box, label);
 
    ui->progress_mem_buffered = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    evas_object_show(progress);
-   elm_object_content_set(frame, progress);
-   elm_box_pack_end(box, frame);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
+   elm_table_pack(table, label, 0, 2, 1, 1);
+   elm_table_pack(table, progress, 1, 2, 1, 1);
 
    label = _label_mem(box, "Shared");
-   elm_box_pack_end(box, label);
 
    ui->progress_mem_shared = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(progress);
-   elm_object_content_set(frame, progress);
-   elm_box_pack_end(box, frame);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
+   elm_table_pack(table, label, 0, 3, 1, 1);
+   elm_table_pack(table, progress, 1, 3, 1, 1);
 
    label = _label_mem(box, "Swapped");
-   elm_box_pack_end(box, label);
 
    ui->progress_mem_swap = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(progress);
-   elm_object_content_set(frame, progress);
-   elm_box_pack_end(box, frame);
 
+   elm_table_pack(table, label, 0, 4, 1, 1);
+   elm_table_pack(table, progress, 1, 4, 1, 1);
+
+   elm_box_pack_end(box, table);
    elm_box_pack_end(ui->mem_activity, box);
 }
 
