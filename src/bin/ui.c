@@ -542,7 +542,7 @@ out:
 static int
 _sort_by_pid(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -552,7 +552,7 @@ _sort_by_pid(const void *p1, const void *p2)
 static int
 _sort_by_uid(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -562,7 +562,7 @@ _sort_by_uid(const void *p1, const void *p2)
 static int
 _sort_by_nice(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -572,7 +572,7 @@ _sort_by_nice(const void *p1, const void *p2)
 static int
 _sort_by_pri(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -582,7 +582,7 @@ _sort_by_pri(const void *p1, const void *p2)
 static int
 _sort_by_cpu(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -592,7 +592,7 @@ _sort_by_cpu(const void *p1, const void *p2)
 static int
 _sort_by_threads(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -602,7 +602,7 @@ _sort_by_threads(const void *p1, const void *p2)
 static int
 _sort_by_size(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
    int64_t size1, size2;
 
    inf1 = p1; inf2 = p2;
@@ -621,7 +621,7 @@ _sort_by_size(const void *p1, const void *p2)
 static int
 _sort_by_rss(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
    int64_t size1, size2;
 
    inf1 = p1; inf2 = p2;
@@ -640,7 +640,7 @@ _sort_by_rss(const void *p1, const void *p2)
 static int
 _sort_by_cpu_usage(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
    double one, two;
 
    inf1 = p1; inf2 = p2;
@@ -659,7 +659,7 @@ _sort_by_cpu_usage(const void *p1, const void *p2)
 static int
 _sort_by_cmd(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -669,7 +669,7 @@ _sort_by_cmd(const void *p1, const void *p2)
 static int
 _sort_by_state(const void *p1, const void *p2)
 {
-   const Proc_Stats *inf1, *inf2;
+   const Proc_Info *inf1, *inf2;
 
    inf1 = p1; inf2 = p2;
 
@@ -753,7 +753,7 @@ _proc_pid_cpu_times_free(Ui *ui)
 }
 
 static void
-_proc_pid_cpu_time_save(Ui *ui, Proc_Stats *proc)
+_proc_pid_cpu_time_save(Ui *ui, Proc_Info *proc)
 {
    Eina_List *l;
    pid_cpu_time_t *tmp;
@@ -777,7 +777,7 @@ _proc_pid_cpu_time_save(Ui *ui, Proc_Stats *proc)
 }
 
 static void
-_proc_pid_cpu_usage_get(Ui *ui, Proc_Stats *proc)
+_proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
 {
    Eina_List *l;
    pid_cpu_time_t *tmp;
@@ -812,7 +812,7 @@ _column_expand_init(Ui *ui)
 }
 
 static void
-_column_expand_calculate(Ui *ui, Proc_Stats *proc)
+_column_expand_calculate(Ui *ui, Proc_Info *proc)
 {
    const char *text;
 
@@ -882,7 +882,7 @@ _column_expand(Evas_Object *parent, const char *text)
 static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
-   Proc_Stats *proc = data;
+   Proc_Info *proc = data;
    free(proc);
 }
 
@@ -890,7 +890,7 @@ static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Ui *ui;
-   Proc_Stats *proc;
+   Proc_Info *proc;
    Evas_Object *box, *label;
    Evas_Object *table, *rect;
    Evas_Coord w, h;
@@ -1040,7 +1040,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
 {
    Ui *ui;
    Eina_List *list, *l, *l_next;
-   Proc_Stats *proc;
+   Proc_Info *proc;
    Elm_Object_Item *it;
 
    ui = data;
@@ -1080,7 +1080,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
    list = _list = _list_sort(ui, list);
    EINA_LIST_FREE(list, proc)
      {
-        Proc_Stats *prev = elm_object_item_data_get(it);
+        Proc_Info *prev = elm_object_item_data_get(it);
         if (prev) { free(prev); }
         elm_object_item_data_set(it, proc);
         elm_genlist_item_update(it);
@@ -1292,7 +1292,7 @@ _list_item_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EIN
 static void
 _process_panel_pids_update(Ui *ui)
 {
-   Proc_Stats *proc;
+   Proc_Info *proc;
    Elm_Widget_Item *item;
    Eina_List *list;
    pid_t *pid;
@@ -1328,7 +1328,7 @@ _process_panel_update(void *data)
    const Eina_List *l, *list;
    Elm_Widget_Item *it;
    struct passwd *pwd_entry;
-   Proc_Stats *proc;
+   Proc_Info *proc;
    double cpu_usage = 0.0;
 
    ui = data;
@@ -1465,7 +1465,7 @@ _item_pid_clicked_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUS
    Ui *ui;
    Evas_Event_Mouse_Up *ev;
    Elm_Object_Item *it;
-   Proc_Stats *proc;
+   Proc_Info *proc;
 
    ui = data;
 

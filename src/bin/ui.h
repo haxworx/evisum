@@ -25,7 +25,7 @@ typedef enum
    PROCESS_INFO_FIELD_THREADS,
    // Not used yet in UI.
    PROCESS_INFO_FIELD_CPU_TIME,
-} Proc_Stats_Field;
+} Proc_Info_Field;
 
 #define PROCESS_INFO_FIELDS 7
 

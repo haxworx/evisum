@@ -26,7 +26,7 @@
 
 #define CMD_NAME_MAX 1024
 
-typedef struct _Proc_Stats
+typedef struct _Proc_Info
 {
    pid_t       pid;
    uid_t       uid;
@@ -42,7 +42,7 @@ typedef struct _Proc_Stats
 
    // Not used yet in UI.
    long        cpu_time;
-} Proc_Stats;
+} Proc_Info;
 
 /**
  * Query a full list of running processes and return a list.
@@ -59,7 +59,7 @@ Eina_List *
  *
  * @return A proc_t pointer containing the process information.
  */
-Proc_Stats *
+Proc_Info *
  proc_info_by_pid(int pid);
 
 /**
