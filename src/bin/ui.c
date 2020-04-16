@@ -1119,10 +1119,9 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
         Proc_Stats *prev = elm_object_item_data_get(it);
         if (prev) { free(prev); }
         elm_object_item_data_set(it, proc);
+        elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
-
-   elm_genlist_realized_items_update(ui->genlist_procs);
 
    if (list)
      eina_list_free(list);
@@ -1200,6 +1199,7 @@ _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 
    _config_save(ui);
    _process_list_update(ui);
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
 static void
@@ -1216,6 +1216,8 @@ _btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 
    _config_save(ui);
    _process_list_update(ui);
+
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
 static void
@@ -1232,6 +1234,8 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_
 
    _config_save(ui);
    _process_list_update(ui);
+
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
 static void
@@ -1248,6 +1252,8 @@ _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 
    _config_save(ui);
    _process_list_update(ui);
+
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
 static void
@@ -1264,6 +1270,8 @@ _btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 
    _config_save(ui);
    _process_list_update(ui);
+
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
 static void
@@ -1280,6 +1288,8 @@ _btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 
    _config_save(ui);
    _process_list_update(ui);
+
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
 static void
@@ -1296,6 +1306,8 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
 
    _config_save(ui);
    _process_list_update(ui);
+
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
 static void
@@ -1516,8 +1528,7 @@ static void
 _ui_tab_system_add(Ui *ui)
 {
    Evas_Object *parent, *box, *hbox, *frame, *table;
-   Evas_Object *progress, *button;
-   Evas_Object *scroller, *plist;
+   Evas_Object *progress, *button, *plist;
 
    parent = ui->content;
 
@@ -1567,7 +1578,6 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, 0);
    evas_object_size_hint_align_set(table, EVAS_HINT_FILL, 0);
    evas_object_show(table);
-   elm_box_pack_end(box, table);
 
    ui->btn_pid = button = elm_button_add(parent);
    if (ui->sort_type == SORT_BY_PID)
@@ -1674,21 +1684,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_show(button);
    elm_table_pack(table, button, 6, 0, 1, 1);
 
-   table = elm_table_add(parent);
-   evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, 0);
-   evas_object_size_hint_align_set(table, EVAS_HINT_FILL, EVAS_HINT_EXPAND);
-   evas_object_show(table);
-
-   ui->scroller = scroller = elm_scroller_add(parent);
-   evas_object_size_hint_weight_set(scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(scroller, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
-   elm_scroller_content_min_limit(scroller, EINA_TRUE, EINA_FALSE);
-   elm_scroller_wheel_disabled_set(scroller, EINA_FALSE);
-   evas_object_show(scroller);
-   elm_object_content_set(scroller, table);
-
-   ui->genlist_procs = plist = elm_genlist_add(parent);
+   ui->scroller = ui->genlist_procs = plist = elm_genlist_add(parent);
    elm_object_focus_allow_set(plist, EINA_FALSE);
    elm_genlist_homogeneous_set(plist, EINA_TRUE);
    elm_genlist_select_mode_set(plist, ELM_OBJECT_SELECT_MODE_NONE);
@@ -1696,13 +1692,8 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(plist, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(plist);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_style_set(frame, "pad_small");
-   elm_box_pack_end(box, frame);
-   evas_object_show(frame);
-   elm_object_content_set(frame, plist);
+   elm_box_pack_end(box, table);
+   elm_box_pack_end(box, plist);
 
    evas_object_smart_callback_add(ui->btn_pid, "clicked", _btn_pid_clicked_cb, ui);
    evas_object_smart_callback_add(ui->btn_uid, "clicked", _btn_uid_clicked_cb, ui);
