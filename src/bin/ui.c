@@ -347,7 +347,7 @@ _disk_adjust(Data_Unit unit, unsigned long value)
 static void
 _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, unsigned long used)
 {
-   Evas_Object *box, *frame, *progress, *label;
+   Evas_Object *box, *progress, *label;
    double ratio, value;
 
    box = elm_box_add(ui->disk_activity);
@@ -355,36 +355,15 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, u
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(box);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(frame);
-   elm_object_style_set(frame, "pad_medium");
-   elm_box_pack_end(box, frame);
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, 0);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-
    label = elm_label_add(box);
    evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_object_text_set(label, eina_slstr_printf("<subtitle>%s</subtitle><br><bigger>mounted at %s</bigger><br>%lu%c of %lu%c", path, mount,
                        _disk_adjust(ui->data_unit, used), ui->data_unit, _disk_adjust(ui->data_unit, total), ui->data_unit));
    evas_object_show(label);
+   elm_box_pack_end(box, label);
 
-   elm_object_content_set(frame, label);
-   elm_box_pack_end(box, frame);
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, 0);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-
-   progress = elm_progressbar_add(frame);
+   progress = elm_progressbar_add(box);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
@@ -398,8 +377,7 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total, u
    else
      elm_progressbar_value_set(progress, value / 100.0);
 
-   elm_object_content_set(frame, progress);
-   elm_box_pack_end(box, frame);
+   elm_box_pack_end(box, progress);
    elm_box_pack_end(ui->disk_activity, box);
 }
 
@@ -2017,8 +1995,8 @@ _ui_tab_disk_add(Ui *ui)
    evas_object_hide(box);
 
    ui->disk_activity = hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0.5);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, 0.5);
    evas_object_show(hbox);
 
    frame = elm_frame_add(box);
@@ -2113,7 +2091,7 @@ _label_mem(Evas_Object *parent, const char *text)
 {
    Evas_Object *label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(label, 0.01, EVAS_HINT_FILL);
    elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",text));
    evas_object_show(label);
 
