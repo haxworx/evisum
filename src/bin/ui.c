@@ -147,14 +147,6 @@ _tab_misc_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(box);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-
-   elm_box_pack_end(box, frame);
-
    for (int i = 0; i < results->power.battery_count; i++)
      {
         frame = elm_frame_add(box);
@@ -219,12 +211,6 @@ _tab_misc_update(Ui *ui, results_t *results)
    if (results->power.batteries)
      free(results->power.batteries);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-
    vbox = elm_box_add(box);
    evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -249,7 +235,7 @@ _tab_misc_update(Ui *ui, results_t *results)
    evas_object_show(ic);
    elm_box_pack_end(hbox, ic);
 
-   progress = elm_progressbar_add(frame);
+   progress = elm_progressbar_add(box);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
@@ -271,14 +257,7 @@ _tab_misc_update(Ui *ui, results_t *results)
         elm_progressbar_value_set(progress, (double) results->incoming / ui->incoming_max);
      }
 
-   elm_object_content_set(frame, vbox);
-   elm_box_pack_end(box, frame);
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
+   elm_box_pack_end(box, vbox);
 
    vbox = elm_box_add(box);
    evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -304,7 +283,7 @@ _tab_misc_update(Ui *ui, results_t *results)
    evas_object_show(ic);
    elm_box_pack_end(hbox, ic);
 
-   progress = elm_progressbar_add(frame);
+   progress = elm_progressbar_add(box);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
@@ -326,8 +305,7 @@ _tab_misc_update(Ui *ui, results_t *results)
 
    elm_box_pack_end(hbox, progress);
    elm_box_pack_end(vbox, hbox);
-   elm_object_content_set(frame, vbox);
-   elm_box_pack_end(box, frame);
+   elm_box_pack_end(box, vbox);
    elm_box_pack_end(ui->misc_activity, box);
 }
 
@@ -484,7 +462,7 @@ _tab_cpu_update(Ui *ui, results_t *results)
              evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
              evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
              evas_object_show(frame);
-             elm_object_style_set(frame, "pad_small");
+             elm_object_style_set(frame, "pad_large");
 
              label = elm_label_add(box);
              evas_object_size_hint_align_set(label, EVAS_HINT_FILL, 0);
@@ -1067,6 +1045,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
 
    ui = data;
 
+   if (ui->shutting_down) return;
+
    eina_lock_take(&_lock);
 
    list = proc_info_all_get();
@@ -1085,6 +1065,12 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
             _proc_pid_cpu_usage_get(ui, proc);
             _column_expand_calculate(ui, proc);
          }
+     }
+
+   if (ui->shutting_down)
+     {
+        eina_lock_release(&_lock);
+        return;
      }
 
    _genlist_ensure_n_items(ui->genlist_procs, eina_list_count(list));
@@ -1177,6 +1163,7 @@ _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 
    _config_save(ui);
    _process_list_update(ui);
+
    elm_scroller_page_bring_in(ui->scroller, 0, 0);
 }
 
@@ -2141,7 +2128,7 @@ _ui_tab_memory_add(Ui *ui)
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(frame);
-   elm_object_style_set(frame, "pad_small");
+   elm_object_style_set(frame, "pad_large");
    elm_box_pack_end(box, frame);
 
    label = elm_label_add(parent);
@@ -2165,14 +2152,14 @@ _ui_tab_memory_add(Ui *ui)
    evas_object_show(frame);
    elm_box_pack_end(box, frame);
 
-   label = _label_mem(box, "Used");
-   elm_box_pack_end(box, label);
-
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+
+   label = _label_mem(box, "Used");
+   elm_box_pack_end(box, label);
 
    ui->progress_mem_used = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -2182,14 +2169,14 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label_mem(box, "Cached");
-   elm_box_pack_end(box, label);
-
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+
+   label = _label_mem(box, "Cached");
+   elm_box_pack_end(box, label);
 
    ui->progress_mem_cached = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -2199,14 +2186,14 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label_mem(box, "Buffered");
-   elm_box_pack_end(box, label);
-
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+
+   label = _label_mem(box, "Buffered");
+   elm_box_pack_end(box, label);
 
    ui->progress_mem_buffered = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -2216,14 +2203,14 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label_mem(box, "Shared");
-   elm_box_pack_end(box, label);
-
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+
+   label = _label_mem(box, "Shared");
+   elm_box_pack_end(box, label);
 
    ui->progress_mem_shared = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -2232,14 +2219,14 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_content_set(frame, progress);
    elm_box_pack_end(box, frame);
 
-   label = _label_mem(box, "Swapped");
-   elm_box_pack_end(box, label);
-
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
+
+   label = _label_mem(box, "Swapped");
+   elm_box_pack_end(box, label);
 
    ui->progress_mem_swap = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
