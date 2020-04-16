@@ -844,13 +844,6 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Stats *proc)
 }
 
 static void
-_item_del(void *data, Evas_Object *obj EINA_UNUSED)
-{
-   Proc_Stats *proc = data;
-   free(proc);
-}
-
-static void
 _column_expand_init(Ui *ui)
 {
    ui->long_pid   = strdup("");
@@ -928,6 +921,13 @@ _column_expand(Evas_Object *parent, const char *text)
    evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
    return label;
+}
+
+static void
+_item_del(void *data, Evas_Object *obj EINA_UNUSED)
+{
+   Proc_Stats *proc = data;
+   free(proc);
 }
 
 static Evas_Object *
