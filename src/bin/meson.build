@@ -17,3 +17,7 @@ executable('evisum', [
    dependencies        : [ deps, deps_os ],
    gui_app             : true,
    install             : true)
+
+if host_os == 'freebsd' or host_os == 'dragonfly'
+   meson.add_install_script('perms.sh')
+endif
