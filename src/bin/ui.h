@@ -90,6 +90,7 @@ typedef struct Ui
    Evas_Object  *progress_mem_buffered;
    Evas_Object  *progress_mem_shared;
    Evas_Object  *progress_mem_swap;
+   Evas_Object  *label_mem;
 
    Evas_Object  *btn_pid;
    Evas_Object  *btn_uid;

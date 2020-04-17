@@ -406,6 +406,12 @@ _tab_memory_update(Ui *ui, results_t *results)
    if (!ui->mem_visible)
      return;
 
+   elm_object_text_set(ui->label_mem, eina_slstr_printf("<subtitle>Memory</subtitle><br>" \
+                       "<bigger>Physical %lu %c</bigger><br>" \
+                       "Swap %lu %c",
+                       _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit,
+                       _mem_adjust(ui->data_unit, results->memory.swap_total), ui->data_unit));
+
    progress = ui->progress_mem_used;
    ratio = results->memory.total / 100.0;
    value = results->memory.used / ratio;
@@ -2136,10 +2142,10 @@ _ui_tab_memory_add(Ui *ui)
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
    evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(frame);
-   elm_object_style_set(frame, "pad_large");
+   elm_object_style_set(frame, "pad_medium");
    elm_box_pack_end(box, frame);
 
-   label = elm_label_add(parent);
+   ui->label_mem = label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(label, "<subtitle>Memory</subtitle>");
