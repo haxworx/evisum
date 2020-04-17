@@ -1474,20 +1474,18 @@ _btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static void
-_item_pid_clicked_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Ui *ui;
-   Evas_Event_Mouse_Up *ev;
    Elm_Object_Item *it;
    Proc_Info *proc;
 
    ui = data;
-
-   ev = event_info;
-   it = elm_genlist_at_xy_item_get(obj, ev->output.x, ev->output.y, NULL);
+   it = event_info;
    proc = elm_object_item_data_get(it);
    if (!proc) return;
 
+   elm_genlist_item_selected_set(it, EINA_FALSE);
    ui->selected_pid = proc->pid;
    _process_panel_update(ui);
 
@@ -1666,7 +1664,7 @@ _ui_tab_system_add(Ui *ui)
    ui->scroller = ui->genlist_procs = plist = elm_genlist_add(parent);
    elm_object_focus_allow_set(plist, EINA_FALSE);
    elm_genlist_homogeneous_set(plist, EINA_TRUE);
-   elm_genlist_select_mode_set(plist, ELM_OBJECT_SELECT_MODE_NONE);
+   //elm_genlist_select_mode_set(plist, ELM_OBJECT_SELECT_MODE_NONE);
    evas_object_size_hint_weight_set(plist, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(plist, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(plist);
@@ -1681,7 +1679,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_smart_callback_add(ui->btn_cmd, "clicked", _btn_cmd_clicked_cb, ui);
    evas_object_smart_callback_add(ui->btn_state, "clicked", _btn_state_clicked_cb, ui);
    evas_object_smart_callback_add(ui->btn_cpu_usage, "clicked", _btn_cpu_usage_clicked_cb, ui);
-   evas_object_event_callback_add(ui->genlist_procs, EVAS_CALLBACK_MOUSE_UP, _item_pid_clicked_cb, ui);
+   evas_object_smart_callback_add(ui->genlist_procs, "selected", _item_pid_clicked_cb, ui);
 }
 
 static void
