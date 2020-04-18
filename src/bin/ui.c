@@ -415,7 +415,7 @@ _tab_memory_update(Ui *ui, results_t *results)
    if (!ui->mem_visible)
      return;
 
-   elm_object_text_set(ui->label_mem, eina_slstr_printf("<subtitle>Memory</subtitle><br>" \
+   elm_object_text_set(ui->title_mem, eina_slstr_printf("<subtitle>Memory</subtitle><br>" \
                        "<bigger>Physical %lu %c</bigger><br>" \
                        "Swap %lu %c",
                        _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit,
@@ -823,86 +823,6 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
 }
 
 static void
-_column_expand_init(Ui *ui)
-{
-   ui->long_pid   = strdup("");
-   ui->long_uid   = strdup("");
-   ui->long_size  = strdup("");
-   ui->long_rss   = strdup("");
-   ui->long_cmd   = strdup("");
-   ui->long_state = strdup("");
-   ui->long_cpu_usage = strdup("");
-}
-
-static void
-_column_expand_calculate(Ui *ui, Proc_Info *proc)
-{
-   const char *text;
-
-   text = eina_slstr_printf("%d", proc->pid);
-   if (strlen(text) > strlen(ui->long_pid))
-     {
-        if (ui->long_pid) free(ui->long_pid);
-        ui->long_pid = strdup(text);
-     }
-
-   text = eina_slstr_printf("%d", proc->uid);
-   if (strlen(text) > strlen(ui->long_uid))
-     {
-       if (ui->long_uid) free(ui->long_uid);
-       ui->long_uid = strdup(text);
-     }
-
-   text = eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit);
-   if (strlen(text) > strlen(ui->long_size))
-     {
-        if (ui->long_size) free(ui->long_size);
-        ui->long_size = strdup(text);
-     }
-
-   text = eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_rss >> 10), ui->data_unit);
-   if (strlen(text) > strlen(ui->long_rss))
-     {
-        if (ui->long_rss) free(ui->long_rss);
-        ui->long_rss = strdup(text);
-     }
-
-   text = eina_slstr_printf("%sXXX", proc->command);
-   if (strlen(text) > strlen(ui->long_cmd))
-     {
-        if (ui->long_cmd) free(ui->long_cmd);
-        ui->long_cmd = strdup(text);
-     }
-
-   text = eina_slstr_printf("%s", proc->state);
-   if (strlen(text) > strlen(ui->long_state))
-     {
-        if (ui->long_state) free(ui->long_state);
-        ui->long_state = strdup(text);
-     }
-
-   text = eina_slstr_printf("%.1f%%", proc->cpu_usage);
-   if (strlen(text) > strlen(ui->long_cpu_usage))
-     {
-        if (ui->long_cpu_usage) free(ui->long_cpu_usage);
-        ui->long_cpu_usage = strdup(text);
-     }
-}
-
-static Evas_Object *
-_label_expand(Evas_Object *parent, const char *text)
-{
-   Evas_Object *label;
-
-   label = elm_label_add(parent);
-   evas_object_data_set(label, text, label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-
-   return label;
-}
-
-static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Item_Cache *it;
@@ -955,7 +875,6 @@ _item_create(Evas_Object *parent)
    evas_object_data_set(label, "rect", rect);
    elm_table_pack(table, rect, 0, 0, 1, 1);
    elm_table_pack(table, label, 0, 0, 1, 1);
-   elm_table_pack(table, _label_expand(table, "long_pid"), 0, 0, 1, 1);
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_uid", label);
@@ -966,7 +885,6 @@ _item_create(Evas_Object *parent)
    evas_object_data_set(label, "rect", rect);
    elm_table_pack(table, rect, 1, 0, 1, 1);
    elm_table_pack(table, label, 1, 0, 1, 1);
-   elm_table_pack(table, _label_expand(table, "long_uid"), 1, 0, 1, 1);
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_size", label);
@@ -977,7 +895,6 @@ _item_create(Evas_Object *parent)
    evas_object_data_set(label, "rect", rect);
    elm_table_pack(table, rect, 2, 0, 1, 1);
    elm_table_pack(table, label, 2, 0, 1, 1);
-   elm_table_pack(table, _label_expand(table, "long_size"), 2, 0, 1, 1);
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_rss", label);
@@ -988,7 +905,6 @@ _item_create(Evas_Object *parent)
    evas_object_data_set(label, "rect", rect);
    elm_table_pack(table, rect, 3, 0, 1, 1);
    elm_table_pack(table, label, 3, 0, 1, 1);
-   elm_table_pack(table, _label_expand(table, "long_rss"), 3, 0, 1, 1);
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_cmd", label);
@@ -999,7 +915,6 @@ _item_create(Evas_Object *parent)
    evas_object_data_set(label, "rect", rect);
    elm_table_pack(table, rect, 4, 0, 1, 1);
    elm_table_pack(table, label, 4, 0, 1, 1);
-   elm_table_pack(table, _label_expand(table, "long_cmd"), 4, 0, 1, 1);
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_state", label);
@@ -1010,7 +925,6 @@ _item_create(Evas_Object *parent)
    evas_object_data_set(label, "rect", rect);
    elm_table_pack(table, label, 5, 0, 1, 1);
    elm_table_pack(table, rect, 5, 0, 1, 1);
-   elm_table_pack(table, _label_expand(table, "long_state"), 5, 0, 1, 1);
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_cpu_usage", label);
@@ -1021,7 +935,6 @@ _item_create(Evas_Object *parent)
    evas_object_data_set(label, "rect", rect);
    elm_table_pack(table, label, 6, 0, 1, 1);
    elm_table_pack(table, rect, 6, 0, 1, 1);
-   elm_table_pack(table, _label_expand(table, "long_cpu_usage"), 6, 0, 1, 1);
 
    return table;
 }
@@ -1084,74 +997,45 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(ui->btn_pid, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_pid");
-   if (l)
-     elm_object_text_set(l, eina_slstr_printf("%d", proc->pid));
+   elm_object_text_set(l, eina_slstr_printf("%d", proc->pid));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
    evas_object_geometry_get(ui->btn_uid, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_uid");
-   if (l)
-     elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
+   elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
    evas_object_geometry_get(ui->btn_size, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_size");
-   if (l)
-     elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));
+   elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
    evas_object_geometry_get(ui->btn_rss, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_rss");
-   if (l)
-     elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_rss >> 10), ui->data_unit));
+   elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_rss >> 10), ui->data_unit));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_cmd");
-   if (l)
-     elm_object_text_set(l, eina_slstr_printf("%s", proc->command));
+   elm_object_text_set(l, eina_slstr_printf("%s", proc->command));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
    evas_object_geometry_get(ui->btn_state, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_state");
-   if (l)
-     elm_object_text_set(l, eina_slstr_printf("%s", proc->state));
+   elm_object_text_set(l, eina_slstr_printf("%s", proc->state));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
    evas_object_geometry_get(ui->btn_cpu_usage, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_cpu_usage");
-   if (l)
-     elm_object_text_set(l, eina_slstr_printf("%.1f%%", proc->cpu_usage));
+   elm_object_text_set(l, eina_slstr_printf("%.1f%%", proc->cpu_usage));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-
-   l = evas_object_data_get(it->obj, "long_pid");
-   if (l)
-     elm_object_text_set(l,  ui->long_pid);
-   l = evas_object_data_get(it->obj, "long_uid");
-   if (l)
-     elm_object_text_set(l,  ui->long_uid);
-   l = evas_object_data_get(it->obj, "long_size");
-   if (l)
-     elm_object_text_set(l, ui->long_size);
-   l = evas_object_data_get(it->obj, "long_rss");
-   if (l)
-     elm_object_text_set(l, ui->long_rss);
-   l = evas_object_data_get(it->obj, "long_cmd");
-   if (l)
-     elm_object_text_set(l, ui->long_cmd);
-   l = evas_object_data_get(it->obj, "long_state");
-   if (l)
-     elm_object_text_set(l, ui->long_state);
-   l = evas_object_data_get(it->obj, "long_cpu_usage");
-   if (l)
-     elm_object_text_set(l, ui->long_cpu_usage);
 
    return it->obj;
 }
@@ -1218,7 +1102,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
         else
          {
             _proc_pid_cpu_usage_get(ui, proc);
-            _column_expand_calculate(ui, proc);
          }
      }
 
@@ -2814,7 +2697,6 @@ _ui_init(Evas_Object *parent)
    _ui_tab_misc_add(ui);
 
    _item_cache_init(ui);
-   _column_expand_init(ui);
 
    return ui;
 }

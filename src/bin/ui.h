@@ -85,12 +85,12 @@ typedef struct Ui
    Evas_Object  *progress_cpu;
    Evas_Object  *progress_mem;
 
+   Evas_Object  *title_mem;
    Evas_Object  *progress_mem_used;
    Evas_Object  *progress_mem_cached;
    Evas_Object  *progress_mem_buffered;
    Evas_Object  *progress_mem_shared;
    Evas_Object  *progress_mem_swap;
-   Evas_Object  *label_mem;
 
    Evas_Object  *btn_pid;
    Evas_Object  *btn_uid;
@@ -99,14 +99,6 @@ typedef struct Ui
    Evas_Object  *btn_cmd;
    Evas_Object  *btn_state;
    Evas_Object  *btn_cpu_usage;
-
-   char         *long_pid;
-   char         *long_uid;
-   char         *long_size;
-   char         *long_rss;
-   char         *long_cmd;
-   char         *long_state;
-   char         *long_cpu_usage;
 
    Evas_Object  *genlist_procs;
 
