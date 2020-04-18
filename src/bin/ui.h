@@ -106,7 +106,7 @@ typedef struct Ui
    char         *long_rss;
    char         *long_cmd;
    char         *long_state;
-   char         *long_cpu;
+   char         *long_cpu_usage;
 
    Evas_Object  *genlist_procs;
 
