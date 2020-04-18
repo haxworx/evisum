@@ -906,10 +906,10 @@ static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Item_Cache *it;
+   Evas_Object *o;
    Eina_List *l, *contents = NULL;
 
    elm_genlist_item_all_contents_unset(event_info, &contents);
-   Evas_Object *o;
    EINA_LIST_FREE(contents, o)
     {
        EINA_LIST_FOREACH(_item_cache, l, it)
