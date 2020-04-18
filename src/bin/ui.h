@@ -100,6 +100,7 @@ typedef struct Ui
    Evas_Object  *btn_state;
    Evas_Object  *btn_cpu_usage;
 
+   Eina_List    *item_cache;
    Evas_Object  *genlist_procs;
 
    Evas_Object  *entry_pid_cmd;
@@ -125,7 +126,6 @@ typedef struct Ui
 
    Data_Unit     data_unit;
 
-   char         *text_fields[PROCESS_INFO_FIELDS];
    char         *search_text;
    Evas_Object  *list_pid;
 
