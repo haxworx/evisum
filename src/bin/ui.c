@@ -1143,12 +1143,15 @@ _process_list_update(Ui *ui)
 static void
 _process_list(void *data, Ecore_Thread *thread)
 {
-   Ui *ui = data;
+   Ui *ui;
+   int poll_delay = 1;
+
+   ui = data;
 
    while (1)
      {
         ecore_thread_feedback(thread, ui);
-        for (int i = 0; i < ui->poll_delay * 4; i++)
+        for (int i = 0; i < poll_delay * 4; i++)
           {
              if (ecore_thread_check(thread)) return;
 
@@ -1160,6 +1163,7 @@ _process_list(void *data, Ecore_Thread *thread)
              usleep(250000);
           }
         ui->ready = EINA_TRUE;
+        if (ui->ready) poll_delay = ui->poll_delay;
      }
 }
 
