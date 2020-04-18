@@ -30,7 +30,6 @@ _config_save(Ui *ui)
    Evas_Coord w, h;
 
    if (!_evisum_config) return;
-   if (!ui->ready) return;
 
    evas_object_geometry_get(ui->win, NULL, NULL, &w, &h);
 
