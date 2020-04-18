@@ -848,6 +848,7 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
    Proc_Info *proc = data;
    free(proc);
+   proc = NULL;
 }
 
 static Evas_Object *
@@ -875,7 +876,7 @@ _item_create(Evas_Object *parent)
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_uid", label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_EXPAND);
    evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(label);
    rect = evas_object_rectangle_add(table);
@@ -980,6 +981,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Ui *ui;
    Proc_Info *proc;
+   struct passwd *pwd_entry;
    Evas_Object *l, *r;
    Evas_Coord w, h;
 
@@ -1005,7 +1007,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(ui->btn_uid, NULL, NULL, &w, &h);
    l = evas_object_data_get(it->obj, "proc_uid");
-   elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
+   pwd_entry = getpwuid(proc->uid);
+   if (pwd_entry)
+     elm_object_text_set(l, pwd_entry->pw_name);
+   else
+     elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
@@ -1516,6 +1522,98 @@ _btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static void
+_item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *ev EINA_UNUSED)
+{
+   evas_object_del(obj);
+}
+
+static void
+_item_menu_start_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Proc_Info *proc;
+
+   proc = data;
+   if (!proc) return;
+
+   kill(proc->pid, SIGCONT);
+}
+
+static void
+_item_menu_stop_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Proc_Info *proc;
+
+   proc = data;
+   if (!proc) return;
+
+   kill(proc->pid, SIGSTOP);
+}
+
+static void
+_item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Proc_Info *proc;
+
+   proc = data;
+   if (!proc) return;
+
+   kill(proc->pid, SIGKILL);
+}
+
+static
+Evas_Object *
+_item_menu_create(Ui *ui, Proc_Info *proc)
+{
+   Elm_Object_Item *menu_main, *menu_it, *menu_it2;
+   Evas_Object *menu;
+   Eina_Bool stopped;
+   if (!proc) return NULL;
+
+   menu = elm_menu_add(ui->win);
+   if (!menu) return NULL;
+
+   evas_object_smart_callback_add(menu, "dismissed", _item_menu_dismissed_cb, NULL);
+
+   stopped = !!strcmp(proc->state, "stop");
+
+   menu_main = menu_it = elm_menu_item_add(menu, NULL, _icon_path_get("window"), proc->command, NULL, NULL);
+   menu_it2 = elm_menu_item_add(menu, menu_it, _icon_path_get("start"), "Start", _item_menu_start_cb, proc);
+   if (stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
+   menu_it2 = elm_menu_item_add(menu, menu_it, _icon_path_get("stop"), "Stop", _item_menu_stop_cb, proc);
+   if (!stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
+   elm_menu_item_add(menu, menu_it, _icon_path_get("kill"), "Kill", _item_menu_kill_cb, proc);
+   elm_menu_item_separator_add(menu, menu_it);
+   elm_menu_item_add(menu, menu_it, _icon_path_get("cancel"), "Cancel", _item_menu_dismissed_cb, NULL);
+
+   return menu;
+}
+
+static void
+_item_pid_secondary_clicked_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *menu;
+   Evas_Event_Mouse_Up *ev;
+   Ui *ui;
+   Elm_Object_Item *it;
+   Proc_Info *proc;
+
+   ev = event_info;
+   if (ev->button != 3) return;
+
+   it = elm_genlist_at_xy_item_get(obj, ev->output.x, ev->output.y, NULL);
+   proc = elm_object_item_data_get(it);
+   if (!proc) return;
+
+   ui = data;
+
+   menu = _item_menu_create(ui, proc);
+   if (!menu) return;
+
+   elm_menu_move(menu, ev->canvas.x, ev->canvas.y);
+   evas_object_show(menu);
+}
+
+static void
 _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Ui *ui;
@@ -1721,6 +1819,8 @@ _ui_tab_system_add(Ui *ui)
    evas_object_smart_callback_add(ui->btn_state, "clicked", _btn_state_clicked_cb, ui);
    evas_object_smart_callback_add(ui->btn_cpu_usage, "clicked", _btn_cpu_usage_clicked_cb, ui);
    evas_object_smart_callback_add(ui->genlist_procs, "selected", _item_pid_clicked_cb, ui);
+   evas_object_event_callback_add(ui->genlist_procs, EVAS_CALLBACK_MOUSE_UP,
+                                  _item_pid_secondary_clicked_cb, ui);
    evas_object_smart_callback_add(ui->genlist_procs, "unrealized", _item_unrealized_cb, ui);
 }
 
