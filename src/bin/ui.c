@@ -2166,7 +2166,7 @@ _ui_tab_memory_add(Ui *ui)
    elm_object_style_set(frame, "pad_medium");
    elm_box_pack_end(box, frame);
 
-   ui->label_mem = label = elm_label_add(parent);
+   ui->title_mem = label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(label, "<subtitle>Memory</subtitle>");
