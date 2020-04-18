@@ -17,6 +17,8 @@ static Eina_Lock _lock;
 static Eina_List *_list = NULL;
 static Evisum_Config *_evisum_config = NULL;
 
+#define ITEM_CACHE_INIT_SIZE 50
+
 typedef struct _Item_Cache {
    Evas_Object *obj;
    Eina_Bool   used;
@@ -1027,7 +1029,7 @@ _item_create(Evas_Object *parent)
 static void
 _item_cache_init(Ui *ui)
 {
-   for (int i = 0; i < 100; i++)
+   for (int i = 0; i < ITEM_CACHE_INIT_SIZE; i++)
      {
         Item_Cache *it = calloc(1, sizeof(Item_Cache));
         it->obj = _item_create(ui->genlist_procs);
