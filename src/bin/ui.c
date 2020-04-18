@@ -837,11 +837,9 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
             if (it->obj == o)
               {
                  it->used = EINA_FALSE;
-                 puts("REUSE");
                  break;
               }
           }
-       puts("STOLEN");
     }
 }
 
@@ -849,7 +847,6 @@ static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
    Proc_Info *proc = data;
-   puts("DELE");
    free(proc);
 }
 
@@ -1140,18 +1137,23 @@ _process_list_update(Ui *ui)
    _process_list_feedback_cb(ui, NULL, NULL);
 }
 
+#define POLL_ONE_SEC 4
+
 static void
 _process_list(void *data, Ecore_Thread *thread)
 {
    Ui *ui;
-   int poll_delay = 1;
+   int duration, delay;
+
+   delay = 1;
+   duration = POLL_ONE_SEC / 2;
 
    ui = data;
 
    while (1)
      {
         ecore_thread_feedback(thread, ui);
-        for (int i = 0; i < poll_delay * 4; i++)
+        for (int i = 0; i < delay * duration; i++)
           {
              if (ecore_thread_check(thread)) return;
 
@@ -1163,7 +1165,11 @@ _process_list(void *data, Ecore_Thread *thread)
              usleep(250000);
           }
         ui->ready = EINA_TRUE;
-        if (ui->ready) poll_delay = ui->poll_delay;
+        if (ui->ready)
+          {
+             delay = ui->poll_delay;
+             duration = POLL_ONE_SEC;
+          }
      }
 }
 
