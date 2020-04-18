@@ -1,14 +1,17 @@
 ============
-Evisum 0.3.4
+Evisum 0.4.0
 ============
 
+   * Use a generic list for process listing (pretty).
+   * Add process menu.
+   * Set application priority (nice).
+   * UI improvements.
    * Offer kvm_openfiles means of obtaining PID list on
    FreeBSD-based platforms. This requires specific
    permissions (s+g kmem). We fallback if that fails.
-   * Get rid of the horrible entry-based process list and
    use a genlist (meh).
    * Save settings upon exit (kb/mb/gb) and sorting.
-   * UI Changes (Too many labels and progress bars).
+   * Remove redundant code.
    * Other stuff.
 
 ============
