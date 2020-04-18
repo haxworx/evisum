@@ -1001,7 +1001,7 @@ _item_create(Evas_Object *parent)
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_state", label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
    evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(label);
    rect = evas_object_rectangle_add(table);
@@ -1012,7 +1012,7 @@ _item_create(Evas_Object *parent)
 
    label = elm_label_add(table);
    evas_object_data_set(table, "proc_cpu_usage", label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
    evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(label);
    rect = evas_object_rectangle_add(table);
@@ -1241,7 +1241,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
    if (list)
      eina_list_free(list);
 
-   evas_object_smart_calculate(ui->genlist_procs);
 
    eina_lock_release(&_lock);
 }
