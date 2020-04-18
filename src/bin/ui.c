@@ -1525,7 +1525,11 @@ _btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 static void
 _item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *ev EINA_UNUSED)
 {
+   Ui *ui = data;
+
    evas_object_del(obj);
+
+   ui->menu = NULL;
 }
 
 static void
@@ -1564,9 +1568,10 @@ _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EI
 static void
 _item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Evas_Object *menu = data;
+   Ui *ui = data;
 
-   elm_menu_close(menu);
+   elm_menu_close(ui->menu);
+   ui->menu = NULL;
 }
 
 static void
@@ -1608,10 +1613,10 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    Eina_Bool stopped;
    if (!proc) return NULL;
 
-   menu = elm_menu_add(ui->win);
+   ui->menu = menu = elm_menu_add(ui->win);
    if (!menu) return NULL;
 
-   evas_object_smart_callback_add(menu, "dismissed", _item_menu_dismissed_cb, NULL);
+   evas_object_smart_callback_add(menu, "dismissed", _item_menu_dismissed_cb, ui);
 
    stopped = !!strcmp(proc->state, "stop");
 
@@ -1627,7 +1632,7 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    if (!stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
    elm_menu_item_add(menu, menu_it, _icon_path_get("kill"), "Kill", _item_menu_kill_cb, proc);
    elm_menu_item_separator_add(menu, menu_it);
-   elm_menu_item_add(menu, menu_it, _icon_path_get("cancel"), "Cancel", _item_menu_cancel_cb, menu);
+   elm_menu_item_add(menu, menu_it, _icon_path_get("cancel"), "Cancel", _item_menu_cancel_cb, ui);
 
    return menu;
 }
@@ -1666,10 +1671,13 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 
    ui = data;
    it = event_info;
+
+   elm_genlist_item_selected_set(it, EINA_FALSE);
+   if (ui->menu) return;
+
    proc = elm_object_item_data_get(it);
    if (!proc) return;
 
-   elm_genlist_item_selected_set(it, EINA_FALSE);
    ui->selected_pid = proc->pid;
    _process_panel_update(ui);
 
