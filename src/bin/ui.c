@@ -1170,6 +1170,11 @@ _process_list(void *data, Ecore_Thread *thread)
              delay = ui->poll_delay;
              duration = POLL_ONE_SEC;
           }
+        else
+          {
+             delay = 1;
+             duration = POLL_ONE_SEC / 2;
+          }
      }
 }
 
@@ -2631,6 +2636,8 @@ static void
 _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
+
+   ui->ready = EINA_FALSE;
 
    elm_genlist_clear(ui->genlist_procs);
    _process_panel_update(ui);
