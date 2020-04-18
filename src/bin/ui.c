@@ -27,11 +27,18 @@ typedef struct _Item_Cache {
 static void
 _config_save(Ui *ui)
 {
+   Evas_Coord w, h;
+
    if (!_evisum_config) return;
+   if (!ui->ready) return;
+
+   evas_object_geometry_get(ui->win, NULL, NULL, &w, &h);
 
    _evisum_config->sort_type    = ui->sort_type;
    _evisum_config->sort_reverse = ui->sort_reverse;
    _evisum_config->data_unit    = ui->data_unit;
+   _evisum_config->width = w;
+   _evisum_config->height = h;
 
    config_save(_evisum_config);
 }
@@ -43,6 +50,11 @@ _config_load(Ui *ui)
    ui->sort_type    = _evisum_config->sort_type;
    ui->sort_reverse = _evisum_config->sort_reverse;
    ui->data_unit    = _evisum_config->data_unit == 0 ? DATA_UNIT_MB : _evisum_config->data_unit;
+
+   if (_evisum_config->width > 0 && _evisum_config->height > 0)
+     {
+        evas_object_resize(ui->win, _evisum_config->width, _evisum_config->height);
+     }
 }
 
 static void
@@ -2808,6 +2820,7 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    elm_genlist_clear(ui->genlist_procs);
    _process_panel_update(ui);
+   _config_save(ui);
 }
 
 void

@@ -5,8 +5,8 @@
 #include "process.h"
 #include "configuration.h"
 
-#define EVISUM_SIZE_WIDTH  600
-#define EVISUM_SIZE_HEIGHT 520
+#define EVISUM_SIZE_WIDTH  640
+#define EVISUM_SIZE_HEIGHT 480
 
 typedef enum
 {
@@ -52,7 +52,6 @@ typedef enum
    SORT_BY_CPU_USAGE,
 } Sort_Type;
 
-#define TEXT_FIELD_MAX 65535
 #define TAB_BTN_SIZE 75
 
 typedef struct Ui
