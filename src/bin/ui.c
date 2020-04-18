@@ -984,7 +984,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    Proc_Info *proc;
    struct passwd *pwd_entry;
    Evas_Object *l, *r;
-   Evas_Coord w, h;
+   Evas_Coord w, ow;
 
    proc = (void *) data;
    ui = _ui;
@@ -1000,49 +1000,64 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         exit(1);
      }
 
-   evas_object_geometry_get(ui->btn_pid, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ui->btn_pid, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_pid");
    elm_object_text_set(l, eina_slstr_printf("%d", proc->pid));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(ui->btn_pid, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
-   evas_object_geometry_get(ui->btn_uid, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ui->btn_uid, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_uid");
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
      elm_object_text_set(l, pwd_entry->pw_name);
    else
      elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(ui->btn_uid, w, 1);
+
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
-   evas_object_geometry_get(ui->btn_size, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ui->btn_size, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_size");
    elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(ui->btn_size, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
-   evas_object_geometry_get(ui->btn_rss, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ui->btn_rss, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_rss");
    elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_rss >> 10), ui->data_unit));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(ui->btn_rss, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
-   evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cmd");
    elm_object_text_set(l, eina_slstr_printf("%s", proc->command));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(ui->btn_cmd, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
-   evas_object_geometry_get(ui->btn_state, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ui->btn_state, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_state");
    elm_object_text_set(l, eina_slstr_printf("%s", proc->state));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(ui->btn_state, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
-   evas_object_geometry_get(ui->btn_cpu_usage, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ui->btn_cpu_usage, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cpu_usage");
    elm_object_text_set(l, eina_slstr_printf("%.1f%%", proc->cpu_usage));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(ui->btn_cpu_usage, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
