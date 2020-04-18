@@ -624,7 +624,7 @@ proc_info_by_pid(int pid)
    p->state = _process_state_name(kp.ki_stat);
    p->mem_size = kp.ki_size;
    p->mem_rss = kp.ki_rssize * pagesize;
-   p->nice = kp.ki_nice = NZERO;
+   p->nice = kp.ki_nice - NZERO;
    p->priority = kp.ki_pri.pri_level - PZERO;
    p->numthreads = kp.ki_numthreads;
 

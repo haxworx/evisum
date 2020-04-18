@@ -6,6 +6,7 @@
 #include "disks.h"
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/resource.h>
 #include <pwd.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -1560,6 +1561,44 @@ _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EI
    kill(proc->pid, SIGKILL);
 }
 
+static void
+_item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Evas_Object *menu = data;
+
+   elm_menu_close(menu);
+}
+
+static void
+_item_menu_priority_increase_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Proc_Info *proc = data;
+   if (!proc) return;
+
+   setpriority(PRIO_PROCESS, proc->pid, proc->nice - 1);
+}
+
+static void
+_item_menu_priority_decrease_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Proc_Info *proc = data;
+   if (!proc) return;
+
+   setpriority(PRIO_PROCESS, proc->pid, proc->nice + 1);
+}
+
+static void
+_item_menu_priority_add(Evas_Object *menu, Elm_Object_Item *menu_it, Proc_Info *proc)
+{
+   Elm_Object_Item *it;
+
+   it = elm_menu_item_add(menu, menu_it, _icon_path_get("window"), eina_slstr_printf("%d", proc->nice), NULL, NULL);
+   elm_menu_item_separator_add(menu, menu_it);
+   elm_menu_item_add(menu, menu_it, _icon_path_get("increase"), "Increase", _item_menu_priority_increase_cb, proc);
+   elm_menu_item_add(menu, menu_it, _icon_path_get("decrease"), "Decrease", _item_menu_priority_decrease_cb, proc);
+   elm_object_item_disabled_set(it, EINA_TRUE);
+}
+
 static
 Evas_Object *
 _item_menu_create(Ui *ui, Proc_Info *proc)
@@ -1577,13 +1616,18 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    stopped = !!strcmp(proc->state, "stop");
 
    menu_it = elm_menu_item_add(menu, NULL, _icon_path_get("window"), proc->command, NULL, NULL);
+
+   menu_it2 = elm_menu_item_add(menu, menu_it, _icon_path_get("window"), "Priority", NULL, NULL);
+   _item_menu_priority_add(menu, menu_it2, proc);
+
+   elm_menu_item_separator_add(menu, menu_it);
    menu_it2 = elm_menu_item_add(menu, menu_it, _icon_path_get("start"), "Start", _item_menu_start_cb, proc);
    if (stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
    menu_it2 = elm_menu_item_add(menu, menu_it, _icon_path_get("stop"), "Stop", _item_menu_stop_cb, proc);
    if (!stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
    elm_menu_item_add(menu, menu_it, _icon_path_get("kill"), "Kill", _item_menu_kill_cb, proc);
    elm_menu_item_separator_add(menu, menu_it);
-   elm_menu_item_add(menu, menu_it, _icon_path_get("cancel"), "Cancel", _item_menu_dismissed_cb, NULL);
+   elm_menu_item_add(menu, menu_it, _icon_path_get("cancel"), "Cancel", _item_menu_cancel_cb, menu);
 
    return menu;
 }
