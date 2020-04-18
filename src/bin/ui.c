@@ -1564,7 +1564,7 @@ static
 Evas_Object *
 _item_menu_create(Ui *ui, Proc_Info *proc)
 {
-   Elm_Object_Item *menu_main, *menu_it, *menu_it2;
+   Elm_Object_Item *menu_it, *menu_it2;
    Evas_Object *menu;
    Eina_Bool stopped;
    if (!proc) return NULL;
