@@ -1576,7 +1576,7 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
 
    stopped = !!strcmp(proc->state, "stop");
 
-   menu_main = menu_it = elm_menu_item_add(menu, NULL, _icon_path_get("window"), proc->command, NULL, NULL);
+   menu_it = elm_menu_item_add(menu, NULL, _icon_path_get("window"), proc->command, NULL, NULL);
    menu_it2 = elm_menu_item_add(menu, menu_it, _icon_path_get("start"), "Start", _item_menu_start_cb, proc);
    if (stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
    menu_it2 = elm_menu_item_add(menu, menu_it, _icon_path_get("stop"), "Stop", _item_menu_stop_cb, proc);
