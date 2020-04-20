@@ -17,13 +17,6 @@ static Ui *_ui = NULL;
 static Eina_Lock _lock;
 static Evisum_Config *_evisum_config = NULL;
 
-#define ITEM_CACHE_INIT_SIZE 50
-
-typedef struct _Item_Cache {
-   Evas_Object *obj;
-   Eina_Bool   used;
-} Item_Cache;
-
 static void
 _config_save(Ui *ui)
 {
@@ -831,6 +824,13 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
    _proc_pid_cpu_time_save(ui, proc);
 }
 
+#define ITEM_CACHE_INIT_SIZE 50
+
+typedef struct _Item_Cache {
+   Evas_Object *obj;
+   Eina_Bool   used;
+} Item_Cache;
+
 static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
@@ -1007,8 +1007,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    Item_Cache *it = _item_cache_get(ui);
    if (!it)
      {
-        puts("BOOM");
-        exit(1);
+        fprintf(stderr, "Error: Object cache creation failed.\n");
+        exit(-1);
      }
 
    evas_object_geometry_get(ui->btn_pid, NULL, NULL, &w, NULL);
@@ -1028,7 +1028,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(ui->btn_uid, w, 1);
-
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
