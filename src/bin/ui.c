@@ -13,9 +13,10 @@
 # define __MacOS__
 #endif
 
-static Ui *_ui = NULL;
+Ui *_ui;
+Evisum_Config *_evisum_config;
+
 static Eina_Lock _lock;
-static Evisum_Config *_evisum_config = NULL;
 
 static void
 _config_save(Ui *ui)
@@ -2713,7 +2714,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    evas_object_size_hint_weight_set(button, EVAS_HINT_FILL, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_min_set(button, TAB_BTN_SIZE * elm_config_scale_get(), 0);
-   elm_object_text_set(button, "Other");
+   elm_object_text_set(button, "Misc");
    evas_object_show(button);
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
@@ -2900,6 +2901,8 @@ _ui_init(Evas_Object *parent)
    ui->data_unit = DATA_UNIT_MB;
    ui->cpu_times = NULL;
    ui->item_cache = NULL;
+
+   _ui = _evisum_config = NULL;
 
    _config_load(ui);
 
