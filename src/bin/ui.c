@@ -2902,7 +2902,8 @@ _ui_init(Evas_Object *parent)
    ui->cpu_times = NULL;
    ui->item_cache = NULL;
 
-   _ui = _evisum_config = NULL;
+   _ui = NULL;
+   _evisum_config = NULL;
 
    _config_load(ui);
 
