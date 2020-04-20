@@ -143,22 +143,10 @@ _icon_path_get(const char *name)
 }
 
 static void
-_tab_misc_update(Ui *ui, results_t *results)
+_battery_list_add(Evas_Object *box, power_t *power)
 {
-   Evas_Object *box, *hbox, *vbox, *frame, *ic, *progress;
-   Evas_Object *label;
-
-   if (!ui->misc_visible)
-     return;
-
-   elm_box_clear(ui->misc_activity);
-
-   box = elm_box_add(ui->content);
-   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(box);
-
-   for (int i = 0; i < results->power.battery_count; i++)
+   Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
+   for (int i = 0; i < power->battery_count; i++)
      {
         frame = elm_frame_add(box);
         evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -180,8 +168,8 @@ _tab_misc_update(Ui *ui, results_t *results)
         Eina_Strbuf *buf = eina_strbuf_new();
         if (buf)
           {
-             eina_strbuf_append_printf(buf, "<bigger>%s ", results->power.battery_names[i]);
-             if (results->power.have_ac && i == 0)
+             eina_strbuf_append_printf(buf, "<bigger>%s ", power->battery_names[i]);
+             if (power->have_ac && i == 0)
                {
                     eina_strbuf_append(buf, "(plugged in)");
                }
@@ -207,7 +195,7 @@ _tab_misc_update(Ui *ui, results_t *results)
         evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
         elm_progressbar_span_size_set(progress, 1.0);
         elm_progressbar_unit_format_set(progress, "%1.0f%%");
-        elm_progressbar_value_set(progress, (double) results->power.batteries[i]->percent / 100);
+        elm_progressbar_value_set(progress, (double) power->batteries[i]->percent / 100);
         evas_object_show(progress);
 
         elm_box_pack_end(hbox, progress);
@@ -215,12 +203,31 @@ _tab_misc_update(Ui *ui, results_t *results)
         elm_object_content_set(frame, vbox);
         elm_box_pack_end(box, frame);
 
-        free(results->power.battery_names[i]);
-        free(results->power.batteries[i]);
+        free(power->battery_names[i]);
+        free(power->batteries[i]);
      }
 
-   if (results->power.batteries)
-     free(results->power.batteries);
+   if (power->batteries)
+     free(power->batteries);
+}
+
+static void
+_tab_misc_update(Ui *ui, results_t *results)
+{
+   Evas_Object *box, *hbox, *vbox, *frame, *ic, *progress;
+   Evas_Object *label;
+
+   if (!ui->misc_visible)
+     return;
+
+   elm_box_clear(ui->misc_activity);
+
+   box = elm_box_add(ui->content);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(box);
+
+   _battery_list_add(box, &results->power);
 
    vbox = elm_box_add(box);
    evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -2674,7 +2681,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    evas_object_size_hint_weight_set(button, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(button, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_size_hint_min_set(button, TAB_BTN_SIZE * elm_config_scale_get(), 0);
-   elm_object_text_set(button, "RAM");
+   elm_object_text_set(button, "Memory");
    evas_object_show(button);
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
