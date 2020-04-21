@@ -448,60 +448,21 @@ _tab_memory_update(Ui *ui, results_t *results)
 static void
 _tab_cpu_update(Ui *ui, results_t *results)
 {
-   Evas_Object *box, *frame, *label, *progress;
+   Eina_List *l;
+   Evas_Object *pb;
+   int i = 0;
 
    if (!ui->cpu_visible)
      return;
 
-   elm_box_clear(ui->cpu_activity);
+   if (results->temperature != INVALID_TEMP)
+     elm_object_text_set(ui->temp_label, eina_slstr_printf("<header>Core at (%d °C)</header>", results->temperature));
 
-   box = elm_box_add(ui->content);
-   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(box);
-
-   for (int i = 0; i < results->cpu_count; i++)
+   EINA_LIST_FOREACH(ui->cpu_list, l, pb)
      {
-        if (i == 0)
-          {
-             frame = elm_frame_add(box);
-             evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-             evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-             evas_object_show(frame);
-             elm_object_style_set(frame, "pad_large");
-
-             label = elm_label_add(box);
-             evas_object_size_hint_align_set(label, EVAS_HINT_FILL, 0);
-             evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-             evas_object_show(label);
-
-             if (results->temperature != INVALID_TEMP)
-               elm_object_text_set(label, eina_slstr_printf("<subtitle>CPUs</subtitle><br><bigger>Total of %d CPUs</bigger><br><header>Core at (%d °C)</header>", results->cpu_count, results->temperature));
-             else
-               elm_object_text_set(label, eina_slstr_printf("<subtitle>CPUs</subtitle><br><bigger>Total of %d CPUs</bigger>", results->cpu_count));
-             elm_box_pack_end(box, frame);
-             elm_box_pack_end(box, label);
-          }
-
-        frame = elm_frame_add(box);
-        evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
-        evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-        evas_object_show(frame);
-        elm_object_style_set(frame, "pad_large");
-
-        progress = elm_progressbar_add(frame);
-        evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
-        evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-        elm_progressbar_span_size_set(progress, 1.0);
-        elm_progressbar_unit_format_set(progress, "%1.2f%%");
-        evas_object_show(progress);
-
-        elm_progressbar_value_set(progress, results->cores[i]->percent / 100);
-        elm_object_content_set(frame, progress);
-        elm_box_pack_end(box, frame);
+        elm_progressbar_value_set(pb, results->cores[i]->percent / 100);
+        ++i;
      }
-
-   elm_box_pack_end(ui->cpu_activity, box);
 }
 
 static void
@@ -2253,7 +2214,9 @@ _ui_tab_misc_add(Ui *ui)
 static void
 _ui_tab_cpu_add(Ui *ui)
 {
-   Evas_Object *parent, *box, *hbox, *frame, *scroller;
+   Evas_Object *parent, *box, *hbox, *frame, *label, *scroller;
+   Evas_Object *progress;
+   unsigned int cpu_count;
 
    parent = ui->content;
 
@@ -2283,6 +2246,60 @@ _ui_tab_cpu_add(Ui *ui)
 
    elm_object_content_set(frame, scroller);
    elm_box_pack_end(box, frame);
+
+   box = elm_box_add(ui->content);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(box);
+
+   cpu_count = system_cpu_online_count_get();
+
+   for (int i = 0; i < cpu_count; i++)
+     {
+        if (i == 0)
+          {
+             frame = elm_frame_add(box);
+             evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
+             evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+             evas_object_show(frame);
+             elm_object_style_set(frame, "pad_large");
+             elm_box_pack_end(box, frame);
+
+             label = elm_label_add(box);
+             evas_object_size_hint_align_set(label, EVAS_HINT_FILL, 0);
+             evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+             elm_object_text_set(label, eina_slstr_printf("<subtitle>CPUs</subtitle><br><bigger>Total of %d CPUs</bigger>", cpu_count));
+             evas_object_show(label);
+             elm_box_pack_end(box, label);
+
+             ui->temp_label = label = elm_label_add(box);
+             evas_object_size_hint_align_set(label, EVAS_HINT_FILL, 0);
+             evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+             evas_object_show(label);
+             elm_box_pack_end(box, label);
+          }
+
+        frame = elm_frame_add(box);
+        evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, 0);
+        evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_show(frame);
+        elm_object_style_set(frame, "pad_large");
+
+        progress = elm_progressbar_add(frame);
+        evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
+        evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        elm_progressbar_span_size_set(progress, 1.0);
+        elm_progressbar_unit_format_set(progress, "%1.2f%%");
+        evas_object_show(progress);
+        elm_progressbar_value_set(progress, 0.0);
+
+        elm_object_content_set(frame, progress);
+        elm_box_pack_end(box, frame);
+
+        ui->cpu_list = eina_list_append(ui->cpu_list, progress);
+     }
+
+   elm_box_pack_end(ui->cpu_activity, box);
 }
 
 static Evas_Object *
@@ -2830,6 +2847,9 @@ ui_shutdown(Ui *ui)
         free(it);
      }
 
+   if (ui->cpu_list)
+     eina_list_free(ui->cpu_list);
+
    if (ui->item_cache)
      eina_list_free(ui->item_cache);
 
@@ -2873,6 +2893,7 @@ _ui_init(Evas_Object *parent)
    ui->panel_visible = ui->disk_visible = ui->cpu_visible = ui->mem_visible =ui->misc_visible = EINA_TRUE;
    ui->data_unit = DATA_UNIT_MB;
    ui->cpu_times = NULL;
+   ui->cpu_list = NULL;
    ui->item_cache = NULL;
 
    _ui = NULL;

@@ -135,6 +135,9 @@ typedef struct Ui
    Eina_List    *cpu_times;
    int64_t       pid_cpu_time;
 
+   Eina_List    *cpu_list;
+   Evas_Object  *temp_label;
+
    int           poll_delay;
 
    Sort_Type     sort_type;
