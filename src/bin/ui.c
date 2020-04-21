@@ -213,10 +213,77 @@ _battery_list_add(Evas_Object *box, power_t *power)
 }
 
 static void
+_network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
+{
+   Evas_Object *vbox, *hbox, *label, *progress, *ic;
+   char *tmp;
+
+   vbox = elm_box_add(box);
+   evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(vbox);
+
+   label = elm_label_add(box);
+   if (incoming)
+     elm_object_text_set(label, "<bigger>Network Incoming</bigger>");
+   else
+     elm_object_text_set(label, "<bigger>Network Outgoing</bigger>");
+
+   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_show(label);
+   elm_box_pack_end(vbox, label);
+
+   hbox = elm_box_add(box);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   ic = elm_image_add(box);
+   elm_image_file_set(ic, _icon_path_get("network"), NULL);
+   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
+   evas_object_show(ic);
+   elm_box_pack_end(hbox, ic);
+
+   progress = elm_progressbar_add(box);
+   evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   elm_progressbar_span_size_set(progress, 1.0);
+   evas_object_show(progress);
+   elm_box_pack_end(hbox, progress);
+   elm_box_pack_end(vbox, hbox);
+
+   tmp = _network_transfer_format(bytes);
+   if (tmp)
+     {
+        elm_progressbar_unit_format_set(progress, tmp);
+        free(tmp);
+     }
+
+   if (bytes)
+     {
+	if (incoming)
+          {
+             if (ui->incoming_max < bytes)
+               ui->incoming_max = bytes;
+             elm_progressbar_value_set(progress, (double) bytes / ui->incoming_max);
+	  }
+	else
+          {
+             if (ui->outgoing_max < bytes)
+               ui->outgoing_max = bytes;
+             elm_progressbar_value_set(progress, (double) bytes / ui->outgoing_max);
+          }
+     }
+
+   elm_box_pack_end(box, vbox);
+}
+
+static void
 _tab_misc_update(Ui *ui, results_t *results)
 {
-   Evas_Object *box, *hbox, *vbox, *frame, *ic, *progress;
-   Evas_Object *label;
+   Evas_Object *box, *frame;
 
    if (!ui->misc_visible)
      return;
@@ -229,102 +296,8 @@ _tab_misc_update(Ui *ui, results_t *results)
    evas_object_show(box);
 
    _battery_list_add(box, &results->power);
-
-   vbox = elm_box_add(box);
-   evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(vbox);
-
-   label = elm_label_add(box);
-   elm_object_text_set(label, "<bigger>Network Incoming</bigger>");
-   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(label);
-   elm_box_pack_end(vbox, label);
-
-   hbox = elm_box_add(box);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
-
-   ic = elm_image_add(box);
-   elm_image_file_set(ic, _icon_path_get("network"), NULL);
-   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
-   evas_object_show(ic);
-   elm_box_pack_end(hbox, ic);
-
-   progress = elm_progressbar_add(box);
-   evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
-   elm_box_pack_end(hbox, progress);
-   elm_box_pack_end(vbox, hbox);
-
-   char *tmp = _network_transfer_format(results->incoming);
-   if (tmp)
-     {
-        elm_progressbar_unit_format_set(progress, tmp);
-        free(tmp);
-     }
-
-   if (results->incoming)
-     {
-        if (ui->incoming_max < results->incoming)
-          ui->incoming_max = results->incoming;
-        elm_progressbar_value_set(progress, (double) results->incoming / ui->incoming_max);
-     }
-
-   elm_box_pack_end(box, vbox);
-
-   vbox = elm_box_add(box);
-   evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(vbox);
-
-   label = elm_label_add(box);
-   elm_object_text_set(label, "<bigger>Network Outgoing</bigger>");
-   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_show(label);
-   elm_box_pack_end(vbox, label);
-
-   hbox = elm_box_add(box);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
-
-   ic = elm_image_add(box);
-   elm_image_file_set(ic, _icon_path_get("network"), NULL);
-   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
-   evas_object_show(ic);
-   elm_box_pack_end(hbox, ic);
-
-   progress = elm_progressbar_add(box);
-   evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
-
-   tmp = _network_transfer_format(results->outgoing);
-   if (tmp)
-     {
-        elm_progressbar_unit_format_set(progress, tmp);
-        free(tmp);
-     }
-
-   if (results->outgoing)
-     {
-        if (ui->outgoing_max < results->outgoing)
-          ui->outgoing_max = results->outgoing;
-        elm_progressbar_value_set(progress, (double) results->outgoing / ui->outgoing_max);
-     }
-
-   elm_box_pack_end(hbox, progress);
-   elm_box_pack_end(vbox, hbox);
-   elm_box_pack_end(box, vbox);
+   _network_usage_add(ui, box, results->incoming, EINA_TRUE);
+   _network_usage_add(ui, box, results->outgoing, EINA_FALSE);
 
    frame = elm_frame_add(ui->misc_activity);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
