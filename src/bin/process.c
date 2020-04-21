@@ -332,8 +332,10 @@ proc_info_by_pid(int pid)
 {
    struct kinfo_proc *kp;
    kvm_t *kern;
+   char **args;
    char errbuf[_POSIX2_LINE_MAX];
    int count, pagesize, pid_count;
+   Eina_Bool have_command = EINA_FALSE;
 
    kern = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
    if (!kern) return NULL;
@@ -350,7 +352,6 @@ proc_info_by_pid(int pid)
    p->pid = kp->p_pid;
    p->uid = kp->p_uid;
    p->cpu_id = kp->p_cpuid;
-   snprintf(p->command, sizeof(p->command), "%s", kp->p_comm);
    p->state = _process_state_name(kp->p_stat);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
    p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
@@ -358,6 +359,17 @@ proc_info_by_pid(int pid)
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
    p->numthreads = -1;
+
+   if ((args = kvm_getargv(kern, kp, sizeof(p->command)-1)))
+     {
+        if (args[0])
+          {
+             snprintf(p->command, sizeof(p->command), "%s", args[0]);
+             have_command = EINA_TRUE;
+          }
+     }
+   if (!have_command)
+     snprintf(p->command, sizeof(p->command), "%s", kp->p_comm);
 
    kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
 
@@ -375,18 +387,18 @@ proc_info_by_pid(int pid)
 static Eina_List *
 _process_list_openbsd_get(void)
 {
-   struct kinfo_proc *kp;
+   struct kinfo_proc *kps, *kp;
    Proc_Info *p;
    char errbuf[4096];
    kvm_t *kern;
    int pid_count, pagesize;
-   Eina_List *l, *list = NULL;
+   Eina_List *list = NULL;
 
    kern = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
    if (!kern) return NULL;
 
-   kp = kvm_getprocs(kern, KERN_PROC_ALL, 0, sizeof(*kp), &pid_count);
-   if (!kp) return NULL;
+   kps = kvm_getprocs(kern, KERN_PROC_ALL, 0, sizeof(*kps), &pid_count);
+   if (!kps) return NULL;
 
    pagesize = getpagesize();
 
@@ -395,19 +407,27 @@ _process_list_openbsd_get(void)
         p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
 
-        p->pid = kp[i].p_pid;
-        p->uid = kp[i].p_uid;
-        p->cpu_id = kp[i].p_cpuid;
-        snprintf(p->command, sizeof(p->command), "%s", kp[i].p_comm);
-        p->state = _process_state_name(kp[i].p_stat);
-        p->cpu_time = kp[i].p_uticks + kp[i].p_sticks + kp[i].p_iticks;
-        p->mem_size = (kp[i].p_vm_tsize * pagesize) + (kp[i].p_vm_dsize * pagesize) + (kp[i].p_vm_ssize * pagesize);
-        p->mem_rss = kp[i].p_vm_rssize * pagesize;
-        p->priority = kp[i].p_priority - PZERO;
-        p->nice = kp[i].p_nice - NZERO;
+        kp = &kps[i];
+        p->pid = kp->p_pid;
+        p->uid = kp->p_uid;
+        p->cpu_id = kp->p_cpuid;
+        p->state = _process_state_name(kp->p_stat);
+        p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
+        p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
+        p->mem_rss = kp->p_vm_rssize * pagesize;
+        p->priority = kp->p_priority - PZERO;
+        p->nice = kp->p_nice - NZERO;
         p->numthreads = -1;
+
+        snprintf(p->command, sizeof(p->command), "%s", kp->p_comm);
+
         list = eina_list_append(list, p);
      }
+
+   /* We don't need to count the threads for our usage in Evisum.
+
+     If necessary this can be re-enabled. Our single process query is
+     sufficient.
 
    kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
 
@@ -419,6 +439,7 @@ _process_list_openbsd_get(void)
                p->numthreads++;
           }
      }
+   */
 
    kvm_close(kern);
 

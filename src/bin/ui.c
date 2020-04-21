@@ -1912,7 +1912,7 @@ _ui_process_panel_add(Ui *ui)
    elm_box_pack_end(hbox, frame);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "Name:");
+   elm_object_text_set(label, "Command:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 0, 1, 1);
 

@@ -568,6 +568,7 @@ _memory_usage_get(meminfo_t *memory)
    struct uvmexp uvmexp;
    int nswap, rnswap;
    struct swapent *swdev = NULL;
+   (void) miblen;
 
    len = sizeof(memory->total);
    if (sysctl(mib, 2, &memory->total, &len, NULL, 0) == -1)
