@@ -11,7 +11,10 @@ Evisum 0.4.0
    permissions (s+g kmem). We fallback if that fails.
    use a genlist (meh).
    * Save settings upon exit (kb/mb/gb) and sorting.
+   * Reduce object creation and deletion.
+   * Use object caching where applicable.
    * Remove redundant code.
+   * FreeBSD et al. Get process arguments akin to Linux.
    * Other stuff.
 
 ============

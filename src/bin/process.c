@@ -10,6 +10,7 @@
 #endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+# include <libgen.h>
 # include <unistd.h>
 # include <fcntl.h>
 # include <kvm.h>
@@ -561,29 +562,108 @@ _process_list_freebsd_get(void)
 {
    kvm_t *kern;
    Eina_List *list = NULL;
-   struct kinfo_proc *kp;
+   struct kinfo_proc *kps, *kp;
+   struct rusage *usage;
+   char **args;
    char errbuf[_POSIX2_LINE_MAX];
    int pid_count;
+   static int pagesize = 0;
+
+   if (!pagesize) pagesize = getpagesize();
 
    kern = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
    if (!kern)
      return _process_list_freebsd_fallback_get();
 
-   kp = kvm_getprocs(kern, KERN_PROC_PROC, 0, &pid_count);
-   if (!kp) return _process_list_freebsd_fallback_get();
+   kps = kvm_getprocs(kern, KERN_PROC_PROC, 0, &pid_count);
+   if (!kps)
+     {
+        kvm_close(kern);
+        return _process_list_freebsd_fallback_get();
+     }
 
    for (int i = 0; i < pid_count; i++)
      {
-        if (kp[i].ki_flag & P_KPROC)
+        Eina_Bool have_command = EINA_FALSE;
+
+        if (kps[i].ki_flag & P_KPROC)
           continue;
 
-        Proc_Info *p = proc_info_by_pid(kp[i].ki_pid);
+        kp = &kps[i];
+        Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) continue;
+        p->pid = kp->ki_pid;
+        p->uid = kp->ki_uid;
+
+        p->cpu_id = kp->ki_oncpu;
+        if (p->cpu_id == -1)
+          p->cpu_id = kp->ki_lastcpu;
+
+        if ((args = kvm_getargv(kern, kp, sizeof(p->command)-1)))
+          {
+             if (args[0])
+               {
+                  char *base = basename(args[0]);
+                  if (base && base != args[0])
+                    {
+                       snprintf(p->command, sizeof(p->command), "%s", base);
+                       char *spc = strchr(p->command, ' ');
+                       if (!spc)
+                         have_command = EINA_TRUE;
+                    }
+               }
+          }
+
+        if (!have_command)
+          snprintf(p->command, sizeof(p->command), "%s", kp->ki_comm);
+
+        usage = &kp->ki_rusage;
+        p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
+        p->cpu_time /= 10000;
+        p->state = _process_state_name(kp->ki_stat);
+        p->mem_size = kp->ki_size;
+        p->mem_rss = kp->ki_rssize * pagesize;
+        p->nice = kp->ki_nice - NZERO;
+        p->priority = kp->ki_pri.pri_level - PZERO;
+        p->numthreads = kp->ki_numthreads;
 
         list = eina_list_append(list, p);
      }
 
+   kvm_close(kern);
+
    return list;
+}
+
+static void
+_cmd_get(Proc_Info *p, struct kinfo_proc *kp)
+{
+   kvm_t * kern;
+   char **args;
+   Eina_Bool have_command = EINA_FALSE;
+
+   kern = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
+   if (kern != NULL)
+     {
+        if ((args = kvm_getargv(kern, kp, sizeof(p->command)-1)))
+          {
+             if (args[0])
+               {
+                  char *base = basename(args[0]);
+                  if (base && base != args[0])
+                    {
+                       snprintf(p->command, sizeof(p->command), "%s", base);
+                       char *spc = strchr(p->command, ' ');
+                       if (!spc)
+                         have_command = EINA_TRUE;
+                    }
+               }
+          }
+        kvm_close(kern);
+     }
+
+   if (!have_command)
+     snprintf(p->command, sizeof(p->command), "%s", kp->ki_comm);
 }
 
 Proc_Info *
@@ -612,7 +692,7 @@ proc_info_by_pid(int pid)
 
    p->pid = kp.ki_pid;
    p->uid = kp.ki_uid;
-   snprintf(p->command, sizeof(p->command), "%s", kp.ki_comm);
+   _cmd_get(p, &kp);
    p->cpu_id = kp.ki_oncpu;
    if (p->cpu_id == -1)
      p->cpu_id = kp.ki_lastcpu;
