@@ -55,6 +55,7 @@ main(int argc, char **argv)
    if (ui)
      {
         ecore_main_loop_begin();
+        ui_shutdown(ui);
         free(ui);
      }
 
