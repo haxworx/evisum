@@ -34,9 +34,9 @@ typedef struct _Proc_Info
    int8_t      priority;
    int         cpu_id;
    int32_t     numthreads;
-   int64_t     mem_size;
+   int64_t     mem_virt;
    int64_t     mem_rss;
-   int64_t     mem_cached;
+   int64_t     mem_shared;
    double      cpu_usage;
    char       *command;
    char       *arguments;

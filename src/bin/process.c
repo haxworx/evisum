@@ -142,23 +142,45 @@ _parse_line(const char *line)
    return atol(tok);
 }
 
+static void
+_mem_shared(Proc_Info *proc, int pid)
+{
+   FILE *f;
+   char buf[1024];
+   unsigned int dummy, shared, resident, data;
+
+   f = fopen(eina_slstr_printf("/proc/%d/statm", pid), "r");
+   if (!f) return;
+
+   if (fgets(buf, sizeof(buf), f))
+     {
+        if (sscanf(buf, "%u %u %u %u %u %u %u", &dummy, &resident, &shared, &dummy,
+                   &dummy, &data, &dummy) == 7)
+          {
+             proc->mem_shared = (resident + shared + data) * getpagesize();
+          }
+     }
+
+   fclose(f);
+}
+
 static Eina_List *
 _process_list_linux_get(void)
 {
    Eina_List *files, *list;
    FILE *f;
-   char *name, *link, state, line[4096], name[1024];
+   char *n, *link, state, line[4096], name[1024];
    int pid, res, utime, stime, cutime, cstime, uid, psr, pri, nice, numthreads;
-   unsigned int mem_size, mem_rss, flags;
+   unsigned int mem_virt, mem_rss, flags;
    int pagesize = getpagesize();
 
    list = NULL;
 
    files = ecore_file_ls("/proc");
-   EINA_LIST_FREE(files, name)
+   EINA_LIST_FREE(files, n)
      {
-        pid = atoi(name);
-        free(name);
+        pid = atoi(n);
+        free(n);
 
         if (!pid) continue;
 
@@ -174,7 +196,7 @@ _process_list_linux_get(void)
              name[end - start] = '\0';
              res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
                           &state, &dummy, &dummy, &dummy, &dummy, &dummy, &flags, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
-                          &pri, &nice, &numthreads, &dummy, &dummy, &mem_size, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
+                          &pri, &nice, &numthreads, &dummy, &dummy, &mem_virt, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                           &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
           }
 
@@ -200,6 +222,8 @@ _process_list_linux_get(void)
 
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
+
+        _mem_shared(p, pid);
 
         link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
         if (link)
@@ -231,7 +255,7 @@ _process_list_linux_get(void)
         p->command = strdup(name);
         p->state = _process_state_name(state);
         p->cpu_time = utime + stime;
-        p->mem_size = mem_size;
+        p->mem_virt = mem_virt;
         p->mem_rss = mem_rss * pagesize;
         p->nice = nice;
         p->priority = pri;
@@ -252,7 +276,7 @@ proc_info_by_pid(int pid)
    FILE *f;
    char *link, state, line[4096], name[1024];
    int res, dummy, utime, stime, cutime, cstime, uid, psr;
-   unsigned int mem_size, mem_rss, pri, nice, numthreads;
+   unsigned int mem_virt, mem_rss, pri, nice, numthreads;
 
    f = fopen(eina_slstr_printf("/proc/%d/stat", pid), "r");
    if (!f) return NULL;
@@ -266,7 +290,7 @@ proc_info_by_pid(int pid)
 
         res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
                      &state, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
-                     &pri, &nice, &numthreads, &dummy, &dummy, &mem_size, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
+                     &pri, &nice, &numthreads, &dummy, &dummy, &mem_virt, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                      &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
      }
    fclose(f);
@@ -288,6 +312,8 @@ proc_info_by_pid(int pid)
 
    Proc_Info *p = calloc(1, sizeof(Proc_Info));
    if (!p) return NULL;
+
+   _mem_shared(p, pid);
 
    link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
    if (link)
@@ -316,7 +342,7 @@ proc_info_by_pid(int pid)
    p->command = strdup(name);
    p->state = _process_state_name(state);
    p->cpu_time = utime + stime;
-   p->mem_size = mem_size;
+   p->mem_virt = mem_virt;
    p->mem_rss = mem_rss * getpagesize();
    p->priority = pri;
    p->nice = nice;
@@ -356,7 +382,7 @@ proc_info_by_pid(int pid)
    p->cpu_id = kp->p_cpuid;
    p->state = _process_state_name(kp->p_stat);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-   p->mem_size = p->mem_cached = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
+   p->mem_virt = p->mem_cached = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
    p->mem_rss = kp->p_vm_rssize * pagesize;
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
@@ -419,7 +445,7 @@ _process_list_openbsd_get(void)
         p->cpu_id = kp->p_cpuid;
         p->state = _process_state_name(kp->p_stat);
         p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-        p->mem_cached = p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
+        p->mem_cached = p->mem_virt = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
         p->mem_rss = kp->p_vm_rssize * pagesize;
         p->priority = kp->p_priority - PZERO;
         p->nice = kp->p_nice - NZERO;
@@ -485,7 +511,7 @@ _process_list_macos_get(void)
         p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
         p->cpu_time /= 10000000;
         p->state = _process_state_name(taskinfo.pbsd.pbi_status);
-        p->mem_size = taskinfo.ptinfo.pti_virtual_size;
+        p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
         p->mem_rss = taskinfo.ptinfo.pti_resident_size;
         p->priority = taskinfo.ptinfo.pti_priority;
         p->nice = taskinfo.pbsd.pbi_nice;
@@ -523,7 +549,7 @@ proc_info_by_pid(int pid)
    p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
-   p->mem_size = taskinfo.ptinfo.pti_virtual_size;
+   p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
    p->priority = taskinfo.ptinfo.pti_priority;
    p->nice = taskinfo.pbsd.pbi_nice;
@@ -581,7 +607,7 @@ _process_list_freebsd_fallback_get(void)
         p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
         p->cpu_time /= 10000;
         p->state = _process_state_name(kp.ki_stat);
-        p->mem_size = kp.ki_size;
+        p->mem_virt = kp.ki_size;
         p->mem_rss = kp.ki_rssize * pagesize;
         p->mem_cached = (kp.ki_tsize + kp.ki_dsize + kp.ki_ssize) * pagesize;
         p->nice = kp.ki_nice - NZERO;
@@ -670,7 +696,7 @@ _process_list_freebsd_get(void)
         p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
         p->cpu_time /= 10000;
         p->state = _process_state_name(kp->ki_stat);
-        p->mem_size = kp->ki_size;
+        p->mem_virt = kp->ki_size;
         p->mem_rss = kp->ki_rssize * pagesize;
         p->mem_cached = (kp->ki_tsize + kp->ki_dsize + kp->ki_ssize) * pagesize;
         p->nice = kp->ki_nice - NZERO;
@@ -763,7 +789,7 @@ proc_info_by_pid(int pid)
    p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
    p->cpu_time /= 10000;
    p->state = _process_state_name(kp.ki_stat);
-   p->mem_size = kp.ki_size;
+   p->mem_virt = kp.ki_size;
    p->mem_rss = kp.ki_rssize * pagesize;
    p->mem_cached = (kp.ki_tsize + kp.ki_dsize + kp.ki_ssize) * pagesize;
    p->nice = kp.ki_nice - NZERO;
