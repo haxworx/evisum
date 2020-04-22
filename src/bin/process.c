@@ -222,7 +222,6 @@ _process_list_linux_get(void)
                }
           }
 
-
         char *end = strchr(name, ' ');
         if (end) *end = '\0';
 
@@ -482,7 +481,7 @@ _process_list_macos_get(void)
         p->pid = i;
         p->uid = taskinfo.pbsd.pbi_uid;
         p->cpu_id = -1;
-        snprintf(p->command, sizeof(p->command), "%s", taskinfo.pbsd.pbi_comm);
+        p->command = strdup(taskinfo.pbsd.pbi_comm);
         p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
         p->cpu_time /= 10000000;
         p->state = _process_state_name(taskinfo.pbsd.pbi_status);
@@ -520,7 +519,7 @@ proc_info_by_pid(int pid)
    p->pid = pid;
    p->uid = taskinfo.pbsd.pbi_uid;
    p->cpu_id = workqueue.pwq_nthreads;
-   snprintf(p->command, sizeof(p->command), "%s", taskinfo.pbsd.pbi_comm);
+   p->command = strdup(taskinfo.pbsd.pbi_comm);
    p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
@@ -602,7 +601,6 @@ _process_list_freebsd_get(void)
    struct kinfo_proc *kps, *kp;
    struct rusage *usage;
    char **args;
-   Eina_Strbuf *buf;
    char errbuf[_POSIX2_LINE_MAX];
    char name[1024];
    int pid_count;
@@ -629,6 +627,7 @@ _process_list_freebsd_get(void)
           continue;
 
         kp = &kps[i];
+
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) continue;
         p->pid = kp->ki_pid;
@@ -651,7 +650,7 @@ _process_list_freebsd_get(void)
                          have_command = EINA_TRUE;
                     }
                }
-             buf = eina_strbuf_new();
+             Eina_Strbuf *buf = eina_strbuf_new();
              for (int i = 0; args[i] != NULL; i++)
                {
                   eina_strbuf_append(buf, args[i]);
@@ -662,7 +661,7 @@ _process_list_freebsd_get(void)
           }
 
         if (!have_command)
-          snprintf(name, sizeof(name), "%s", kp->ki_comm);
+         snprintf(name, sizeof(name), "%s", kp->ki_comm);
 
         p->command = strdup(name);
 
