@@ -198,6 +198,9 @@ _process_list_linux_get(void)
 
         fclose(f);
 
+        Proc_Info *p = calloc(1, sizeof(Proc_Info));
+        if (!p) return NULL;
+
         link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
         if (link)
           {
@@ -213,6 +216,7 @@ _process_list_linux_get(void)
                     {
                        if (ecore_file_exists(line))
                          snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(line));
+                       p->arguments = strdup(line);
                     }
                  fclose(f);
                }
@@ -221,13 +225,11 @@ _process_list_linux_get(void)
 
         char *end = strchr(program_name, ' ');
         if (end) *end = '\0';
-        Proc_Info *p = calloc(1, sizeof(Proc_Info));
-        if (!p) return NULL;
 
         p->pid = pid;
         p->uid = uid;
         p->cpu_id = psr;
-        snprintf(p->command, sizeof(p->command), "%s", program_name);
+        p->command = strdup(program_name);
         p->state = _process_state_name(state);
         p->cpu_time = utime + stime;
         p->mem_size = mem_size;
@@ -285,6 +287,9 @@ proc_info_by_pid(int pid)
      }
    fclose(f);
 
+   Proc_Info *p = calloc(1, sizeof(Proc_Info));
+   if (!p) return NULL;
+
    link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
    if (link)
      {
@@ -300,18 +305,16 @@ proc_info_by_pid(int pid)
                {
                   if (ecore_file_exists(line))
                     snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(line));
+                  p->arguments = strdup(line);
                }
              fclose(f);
           }
       }
 
-   Proc_Info *p = calloc(1, sizeof(Proc_Info));
-   if (!p) return NULL;
-
    p->pid = pid;
    p->uid = uid;
    p->cpu_id = psr;
-   snprintf(p->command, sizeof(p->command), "%s", program_name);
+   p->command = strdup(program_name);
    p->state = _process_state_name(state);
    p->cpu_time = utime + stime;
    p->mem_size = mem_size;
@@ -733,6 +736,18 @@ proc_info_by_pid(int pid)
 }
 
 #endif
+
+void
+proc_info_free(Proc_Info *proc)
+{
+   if (!proc) return;
+
+   if (proc->command)
+     free(proc->command);
+   if (proc->arguments)
+     free(proc->arguments);
+   free(proc);
+}
 
 Eina_List *
 proc_info_all_get(void)

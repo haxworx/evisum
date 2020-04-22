@@ -144,7 +144,7 @@ _icon_path_get(const char *name)
 }
 
 static void
-_battery_list_add(Evas_Object *box, power_t *power)
+_battery_usage_add(Evas_Object *box, power_t *power)
 {
    Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
    for (int i = 0; i < power->battery_count; i++)
@@ -295,7 +295,7 @@ _tab_misc_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(box);
 
-   _battery_list_add(box, &results->power);
+   _battery_usage_add(box, &results->power);
    _network_usage_add(ui, box, results->incoming, EINA_TRUE);
    _network_usage_add(ui, box, results->outgoing, EINA_FALSE);
 
@@ -808,7 +808,7 @@ static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
    Proc_Info *proc = data;
-   free(proc);
+   proc_info_free(proc);
    proc = NULL;
 }
 
@@ -1079,7 +1079,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
            strncasecmp(proc->command, ui->search_text, strlen(ui->search_text))) ||
            (!ui->show_self && proc->pid == ui->program_pid))
          {
-            free(proc);
+            proc_info_free(proc);
             list = eina_list_remove_list(list, l);
          }
         else
@@ -1349,7 +1349,7 @@ _process_panel_pids_update(Ui *ui)
 
         item = elm_list_item_append(ui->list_pid, eina_slstr_printf("%d", proc->pid), NULL, NULL, NULL, pid);
         elm_object_item_del_cb_set(item, _list_item_del_cb);
-        free(proc);
+        proc_info_free(proc);
      }
 
    elm_list_go(ui->list_pid);
@@ -1397,6 +1397,9 @@ _process_panel_update(void *data)
    if (pwd_entry)
      elm_object_text_set(ui->entry_pid_user, pwd_entry->pw_name);
 
+   if (proc->arguments)
+     elm_object_text_set(ui->entry_pid_cmd_args, proc->arguments);
+
    elm_object_text_set(ui->entry_pid_pid, eina_slstr_printf("%d", proc->pid));
    elm_object_text_set(ui->entry_pid_uid, eina_slstr_printf("%d", proc->uid));
    elm_object_text_set(ui->entry_pid_cpu, eina_slstr_printf("%d", proc->cpu_id));
@@ -1414,7 +1417,7 @@ _process_panel_update(void *data)
 
    ui->pid_cpu_time = proc->cpu_time;
 
-   free(proc);
+   proc_info_free(proc);
 
    return ECORE_CALLBACK_RENEW;
 }
@@ -1926,12 +1929,13 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 0, 1, 1);
 
+
    label = elm_label_add(parent);
-   elm_object_text_set(label, "PID:");
+   elm_object_text_set(label, "Command line:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 1, 1, 1);
 
-   ui->entry_pid_pid = entry = elm_entry_add(parent);
+   ui->entry_pid_cmd_args = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -1941,12 +1945,13 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 1, 1, 1);
 
+
    label = elm_label_add(parent);
-   elm_object_text_set(label, "Username:");
+   elm_object_text_set(label, "PID:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 2, 1, 1);
 
-   ui->entry_pid_user = entry = elm_entry_add(parent);
+   ui->entry_pid_pid = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -1957,11 +1962,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 2, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "UID:");
+   elm_object_text_set(label, "Username:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 3, 1, 1);
 
-   ui->entry_pid_uid = entry = elm_entry_add(parent);
+   ui->entry_pid_user = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -1972,15 +1977,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 3, 1, 1);
 
    label = elm_label_add(parent);
-#if defined(__MacOS__)
-   elm_object_text_set(label, "WQ #:");
-#else
-   elm_object_text_set(label, "CPU #:");
-#endif
+   elm_object_text_set(label, "UID:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 4, 1, 1);
 
-   ui->entry_pid_cpu = entry = elm_entry_add(parent);
+   ui->entry_pid_uid = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -1991,11 +1992,15 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 4, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "Threads:");
+#if defined(__MacOS__)
+   elm_object_text_set(label, "WQ #:");
+#else
+   elm_object_text_set(label, "CPU #:");
+#endif
    evas_object_show(label);
    elm_table_pack(table, label, 0, 5, 1, 1);
 
-   ui->entry_pid_threads = entry = elm_entry_add(parent);
+   ui->entry_pid_cpu = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -2006,11 +2011,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 5, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "Total memory:");
+   elm_object_text_set(label, "Threads:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 6, 1, 1);
 
-   ui->entry_pid_size = entry = elm_entry_add(parent);
+   ui->entry_pid_threads = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -2021,11 +2026,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 6, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, " Reserved memory:");
+   elm_object_text_set(label, "Total memory:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 7, 1, 1);
 
-   ui->entry_pid_rss = entry = elm_entry_add(parent);
+   ui->entry_pid_size = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -2036,11 +2041,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 7, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "Nice:");
+   elm_object_text_set(label, " Reserved memory:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 8, 1, 1);
 
-   ui->entry_pid_nice = entry = elm_entry_add(parent);
+   ui->entry_pid_rss = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -2051,11 +2056,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 8, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "Priority:");
+   elm_object_text_set(label, "Nice:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 9, 1, 1);
 
-   ui->entry_pid_pri = entry = elm_entry_add(parent);
+   ui->entry_pid_nice = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -2066,11 +2071,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 9, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "State:");
+   elm_object_text_set(label, "Priority:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 10, 1, 1);
 
-   ui->entry_pid_state = entry = elm_entry_add(parent);
+   ui->entry_pid_pri = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -2081,11 +2086,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, 10, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "CPU %:");
+   elm_object_text_set(label, "State:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, 11, 1, 1);
 
-   ui->entry_pid_cpu_usage = entry = elm_entry_add(parent);
+   ui->entry_pid_state = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
@@ -2095,12 +2100,27 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, 11, 1, 1);
 
+   label = elm_label_add(parent);
+   elm_object_text_set(label, "CPU %:");
+   evas_object_show(label);
+   elm_table_pack(table, label, 0, 12, 1, 1);
+
+   ui->entry_pid_cpu_usage = entry = elm_entry_add(parent);
+   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_entry_single_line_set(entry, EINA_TRUE);
+   elm_entry_scrollable_set(entry, EINA_TRUE);
+   elm_entry_editable_set(entry, EINA_FALSE);
+   evas_object_show(entry);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   elm_table_pack(table, entry, 1, 12, 1, 1);
+
    hbox = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_box_horizontal_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
-   elm_table_pack(table, hbox, 1, 12, 1, 1);
+   elm_table_pack(table, hbox, 1, 13, 1, 1);
 
    border = elm_frame_add(parent);
    evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, 0);

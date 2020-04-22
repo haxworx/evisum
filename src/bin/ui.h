@@ -104,6 +104,7 @@ typedef struct Ui
    Evas_Object  *genlist_procs;
 
    Evas_Object  *entry_pid_cmd;
+   Evas_Object  *entry_pid_cmd_args;
    Evas_Object  *entry_pid_user;
    Evas_Object  *entry_pid_pid;
    Evas_Object  *entry_pid_uid;

@@ -37,7 +37,8 @@ typedef struct _Proc_Info
    int64_t     mem_size;
    int64_t     mem_rss;
    double      cpu_usage;
-   char        command[CMD_NAME_MAX];
+   char       *command;
+   char       *arguments;
    const char *state;
 
    // Not used yet in UI.
@@ -61,6 +62,14 @@ Eina_List *
  */
 Proc_Info *
  proc_info_by_pid(int pid);
+
+/**
+ * Free a Proc_Info * pointer;
+ *
+ * @param proc The object to free.
+ */
+void
+  proc_info_free(Proc_Info *proc);
 
 /**
  * @}
