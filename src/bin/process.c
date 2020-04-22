@@ -164,16 +164,74 @@ _mem_size(Proc_Info *proc, int pid)
    fclose(f);
 }
 
+static void
+_cmd_args(Proc_Info *p, int pid, char *name, size_t len)
+{
+   char line[4096];
+
+   char *link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
+   if (link)
+     {
+        snprintf(name, len, "%s", ecore_file_file_get(link));
+        free(link);
+     }
+   else
+     {
+        FILE *f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
+        if (f)
+          {
+             if (fgets(line, sizeof(line), f))
+               {
+                  if (ecore_file_exists(line))
+                    snprintf(name, len, "%s", ecore_file_file_get(line));
+                  p->arguments = strdup(line);
+               }
+            fclose(f);
+          }
+     }
+
+   char *end = strchr(name, ' ');
+   if (end) *end = '\0';
+
+   p->command = strdup(name);
+}
+
+static int
+_uid(int pid)
+{
+   FILE *f;
+   int uid;
+   char line[1024];
+
+   f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
+   if (!f) return -1;
+
+   while ((fgets(line, sizeof(line), f)) != NULL)
+     {
+        if (!strncmp(line, "Uid:", 4))
+          {
+             uid = _parse_line(line);
+             break;
+          }
+     }
+
+   fclose(f);
+
+   return uid;
+}
+
 static Eina_List *
 _process_list_linux_get(void)
 {
    Eina_List *files, *list;
    FILE *f;
-   char *n, *link, state, line[4096], name[1024];
-   int pid, res, utime, stime, cutime, cstime, uid, psr, pri, nice, numthreads;
+   char *n;
+   char state, line[4096], name[1024];
+   int pid, res, utime, stime, cutime, cstime, psr, pri, nice, numthreads, dummy;
    unsigned int mem_virt, mem_rss, flags;
    int pagesize = getpagesize();
 
+   res = 0;
    list = NULL;
 
    files = ecore_file_ls("/proc");
@@ -189,77 +247,40 @@ _process_list_linux_get(void)
 
         if (fgets(line, sizeof(line), f))
           {
-             int dummy;
              char *end, *start = strchr(line, '(') + 1;
              end = strchr(line, ')');
+
              strncpy(name, start, end - start);
              name[end - start] = '\0';
+
              res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
                           &state, &dummy, &dummy, &dummy, &dummy, &dummy, &flags, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
                           &pri, &nice, &numthreads, &dummy, &dummy, &mem_virt, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                           &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
           }
-
         fclose(f);
 
         if (res != 42) continue;
-
         if (flags & PF_KTHREAD) continue;
-
-        f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
-        if (!f) continue;
-
-        while ((fgets(line, sizeof(line), f)) != NULL)
-          {
-             if (!strncmp(line, "Uid:", 4))
-               {
-                  uid = _parse_line(line);
-                  break;
-               }
-          }
-
-        fclose(f);
 
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
 
-        _mem_size(p, pid);
-
-        link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
-        if (link)
-          {
-             snprintf(name, sizeof(name), "%s", ecore_file_file_get(link));
-             free(link);
-          }
-        else
-          {
-             f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
-             if (f)
-               {
-                  if (fgets(line, sizeof(line), f))
-                    {
-                       if (ecore_file_exists(line))
-                         snprintf(name, sizeof(name), "%s", ecore_file_file_get(line));
-                       p->arguments = strdup(line);
-                    }
-                 fclose(f);
-               }
-          }
-
-        char *end = strchr(name, ' ');
-        if (end) *end = '\0';
-
         p->pid = pid;
-        p->uid = uid;
+        p->uid = _uid(pid);
         p->cpu_id = psr;
-        p->command = strdup(name);
         p->state = _process_state_name(state);
         p->cpu_time = utime + stime;
-        p->mem_virt = mem_virt;
-        p->mem_rss = mem_rss * pagesize;
         p->nice = nice;
         p->priority = pri;
         p->numthreads = numthreads;
+
+        p->mem_virt = mem_virt;
+        p->mem_rss = mem_rss * pagesize;
+        _mem_size(p, pid);
+        p->mem_size -= p->mem_rss;
+
+        _cmd_args(p, pid, name, sizeof(name));
 
         list = eina_list_append(list, p);
      }
@@ -274,8 +295,8 @@ Proc_Info *
 proc_info_by_pid(int pid)
 {
    FILE *f;
-   char *link, state, line[4096], name[1024];
-   int res, dummy, utime, stime, cutime, cstime, uid, psr;
+   char line[4096], name[1024], state;
+   int res, dummy, utime, stime, cutime, cstime, psr;
    unsigned int mem_virt, mem_rss, pri, nice, numthreads;
 
    f = fopen(eina_slstr_printf("/proc/%d/stat", pid), "r");
@@ -297,56 +318,25 @@ proc_info_by_pid(int pid)
 
    if (res != 42) return NULL;
 
-   f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
-   if (!f) return NULL;
-
-   while ((fgets(line, sizeof(line), f)) != NULL)
-     {
-        if (!strncmp(line, "Uid:", 4))
-          {
-             uid = _parse_line(line);
-             break;
-          }
-     }
-   fclose(f);
-
    Proc_Info *p = calloc(1, sizeof(Proc_Info));
    if (!p) return NULL;
 
-   _mem_size(p, pid);
-
-   link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
-   if (link)
-     {
-        snprintf(name, sizeof(name), "%s", ecore_file_file_get(link));
-        free(link);
-     }
-   else
-     {
-        f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
-        if (f)
-          {
-             if (fgets(line, sizeof(line), f))
-               {
-                  if (ecore_file_exists(line))
-                    snprintf(name, sizeof(name), "%s", ecore_file_file_get(line));
-                  p->arguments = strdup(line);
-               }
-             fclose(f);
-          }
-      }
-
    p->pid = pid;
-   p->uid = uid;
+   p->uid = _uid(pid);
    p->cpu_id = psr;
-   p->command = strdup(name);
    p->state = _process_state_name(state);
    p->cpu_time = utime + stime;
+
    p->mem_virt = mem_virt;
    p->mem_rss = mem_rss * getpagesize();
+   _mem_size(p, pid);
+   p->mem_size -= p->mem_rss;
+
    p->priority = pri;
    p->nice = nice;
    p->numthreads = numthreads;
+
+   _cmd_args(p, pid, name, sizeof(name));
 
    return p;
 }

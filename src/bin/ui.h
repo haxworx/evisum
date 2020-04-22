@@ -145,7 +145,6 @@ typedef struct Ui
    Sort_Type     sort_type;
    Eina_Bool     sort_reverse;
    Eina_Bool     panel_visible;
-   Eina_Bool     shutting_down;
    Eina_Bool     searching;
    Eina_Bool     show_self;
 

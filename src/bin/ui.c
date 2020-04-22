@@ -60,7 +60,7 @@ _system_stats(void *data, Ecore_Thread *thread)
         results_t *results = system_stats_get();
         if (!results)
           {
-             ui_shutdown(ui);
+             ecore_main_loop_quit();
              return;
           }
 
@@ -1067,8 +1067,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
 
    ui = data;
 
-   if (ui->shutting_down) return;
-
    eina_lock_take(&_lock);
 
    list = proc_info_all_get();
@@ -1086,12 +1084,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
          {
             _proc_pid_cpu_usage_get(ui, proc);
          }
-     }
-
-   if (ui->shutting_down)
-     {
-        eina_lock_release(&_lock);
-        return;
      }
 
    _genlist_ensure_n_items(ui->genlist_procs, eina_list_count(list));
@@ -1369,9 +1361,6 @@ _process_panel_update(void *data)
    double cpu_usage = 0.0;
 
    ui = data;
-
-   if (ui->shutting_down)
-     return ECORE_CALLBACK_CANCEL;
 
    proc = proc_info_by_pid(ui->selected_pid);
    if (!proc)
@@ -2836,7 +2825,7 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    if (!strcmp(ev->keyname, "Escape"))
      {
-        ui_shutdown(ui);
+        ecore_main_loop_quit();
         return;
      }
 
@@ -2872,7 +2861,8 @@ ui_shutdown(Ui *ui)
 
    evas_object_del(ui->win);
 
-   ui->shutting_down = EINA_TRUE;
+   if (ui->timer_pid)
+     ecore_timer_del(ui->timer_pid);
 
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
@@ -2900,8 +2890,6 @@ ui_shutdown(Ui *ui)
      eina_list_free(ui->item_cache);
 
    eina_lock_free(&_lock);
-
-   ecore_main_loop_quit();
 }
 
 static void
