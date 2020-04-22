@@ -594,8 +594,8 @@ _sort_by_size(const void *p1, const void *p2)
 
    inf1 = p1; inf2 = p2;
 
-   size1 = inf1->mem_virt;
-   size2 = inf2->mem_virt;
+   size1 = inf1->mem_size;
+   size2 = inf2->mem_size;
 
    if (size1 < size2)
      return -1;
