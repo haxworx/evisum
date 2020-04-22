@@ -337,8 +337,8 @@ proc_info_by_pid(int pid)
    kvm_t *kern;
    char **args;
    char errbuf[_POSIX2_LINE_MAX];
+   char name[1024];
    int count, pagesize, pid_count;
-   Eina_Bool have_command = EINA_FALSE;
 
    kern = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
    if (!kern) return NULL;
@@ -362,17 +362,19 @@ proc_info_by_pid(int pid)
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
    p->numthreads = -1;
+   p->command = strdup(kp->p_comm);
 
-   if ((args = kvm_getargv(kern, kp, sizeof(p->command)-1)))
+   if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
      {
-        if (args[0])
+        Eina_Strbuf *buf = eina_strbuf_new();
+        for (int i = 0; args[i]; i++)
           {
-             snprintf(p->command, sizeof(p->command), "%s", args[0]);
-             have_command = EINA_TRUE;
+             eina_strbuf_append(buf, args[i]);
+             eina_strbuf_append(buf, " ");
           }
+        p->arguments = eina_strbuf_string_steal(buf);
+        eina_strbuf_free(buf);
      }
-   if (!have_command)
-     snprintf(p->command, sizeof(p->command), "%s", kp->p_comm);
 
    kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
 
@@ -392,7 +394,9 @@ _process_list_openbsd_get(void)
 {
    struct kinfo_proc *kps, *kp;
    Proc_Info *p;
+   char **args;
    char errbuf[4096];
+   char name[1024];
    kvm_t *kern;
    int pid_count, pagesize;
    Eina_List *list = NULL;
@@ -421,9 +425,18 @@ _process_list_openbsd_get(void)
         p->priority = kp->p_priority - PZERO;
         p->nice = kp->p_nice - NZERO;
         p->numthreads = -1;
-
-        snprintf(p->command, sizeof(p->command), "%s", kp->p_comm);
-
+        p->command = strdup(kp->p_comm);
+        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
+          {
+             Eina_Strbuf *buf = eina_strbuf_new();
+             for (int i = 0; args[i]; i++)
+               {
+                  eina_strbuf_append(buf, args[i]);
+                  eina_strbuf_append(buf, " ");
+               }
+             p->arguments = eina_strbuf_string_steal(buf);
+             eina_strbuf_free(buf);
+          }
         list = eina_list_append(list, p);
      }
 
