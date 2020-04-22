@@ -583,6 +583,7 @@ _process_list_freebsd_fallback_get(void)
         p->state = _process_state_name(kp.ki_stat);
         p->mem_size = kp.ki_size;
         p->mem_rss = kp.ki_rssize * pagesize;
+        p->mem_cached = (kp.ki_tsize + kp.ki_dsize + kp.ki_ssize) * pagesize;
         p->nice = kp.ki_nice - NZERO;
         p->priority = kp.ki_pri.pri_level - PZERO;
         p->numthreads = kp.ki_numthreads;
@@ -671,6 +672,7 @@ _process_list_freebsd_get(void)
         p->state = _process_state_name(kp->ki_stat);
         p->mem_size = kp->ki_size;
         p->mem_rss = kp->ki_rssize * pagesize;
+        p->mem_cached = (kp->ki_tsize + kp->ki_dsize + kp->ki_ssize) * pagesize;
         p->nice = kp->ki_nice - NZERO;
         p->priority = kp->ki_pri.pri_level - PZERO;
         p->numthreads = kp->ki_numthreads;
@@ -763,6 +765,7 @@ proc_info_by_pid(int pid)
    p->state = _process_state_name(kp.ki_stat);
    p->mem_size = kp.ki_size;
    p->mem_rss = kp.ki_rssize * pagesize;
+   p->mem_cached = (kp.ki_tsize + kp.ki_dsize + kp.ki_ssize) * pagesize;
    p->nice = kp.ki_nice - NZERO;
    p->priority = kp.ki_pri.pri_level - PZERO;
    p->numthreads = kp.ki_numthreads;

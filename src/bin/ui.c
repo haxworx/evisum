@@ -263,13 +263,13 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
 
    if (bytes)
      {
-	if (incoming)
+        if (incoming)
           {
              if (ui->incoming_max < bytes)
                ui->incoming_max = bytes;
              elm_progressbar_value_set(progress, (double) bytes / ui->incoming_max);
-	  }
-	else
+          }
+        else
           {
              if (ui->outgoing_max < bytes)
                ui->outgoing_max = bytes;
@@ -980,6 +980,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
+//   printf("size %lu and %lu \n", _mem_adjust(ui->data_unit, proc->mem_size >> 10), _mem_adjust(ui->data_unit, proc->mem_cached >> 10));
    evas_object_geometry_get(ui->btn_size, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_size");
    elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));

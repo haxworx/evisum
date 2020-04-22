@@ -36,6 +36,7 @@ typedef struct _Proc_Info
    int32_t     numthreads;
    int64_t     mem_size;
    int64_t     mem_rss;
+   int64_t     mem_cached;
    double      cpu_usage;
    char       *command;
    char       *arguments;
