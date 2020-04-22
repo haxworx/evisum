@@ -384,6 +384,7 @@ proc_info_by_pid(int pid)
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
    p->mem_virt = p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
    p->mem_rss = kp->p_vm_rssize * pagesize;
+   p->mem_shared = kp->p_uru_ixrss;
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
    p->numthreads = -1;
@@ -447,6 +448,7 @@ _process_list_openbsd_get(void)
         p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
         p->mem_size = p->mem_virt = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
         p->mem_rss = kp->p_vm_rssize * pagesize;
+        p->mem_shared = kp->p_uru_ixrss;
         p->priority = kp->p_priority - PZERO;
         p->nice = kp->p_nice - NZERO;
         p->numthreads = -1;
