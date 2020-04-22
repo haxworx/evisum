@@ -356,7 +356,7 @@ proc_info_by_pid(int pid)
    p->cpu_id = kp->p_cpuid;
    p->state = _process_state_name(kp->p_stat);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-   p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
+   p->mem_size = p->mem_cached = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
    p->mem_rss = kp->p_vm_rssize * pagesize;
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
@@ -419,7 +419,7 @@ _process_list_openbsd_get(void)
         p->cpu_id = kp->p_cpuid;
         p->state = _process_state_name(kp->p_stat);
         p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-        p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
+        p->mem_cached = p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
         p->mem_rss = kp->p_vm_rssize * pagesize;
         p->priority = kp->p_priority - PZERO;
         p->nice = kp->p_nice - NZERO;
