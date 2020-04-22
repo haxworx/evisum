@@ -15,6 +15,7 @@ Evisum 0.4.0
    * Use object caching where applicable.
    * Remove redundant code.
    * FreeBSD et al. Get process arguments akin to Linux.
+   * Process command-line (new field).
    * Other stuff.
 
 ============
