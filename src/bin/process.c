@@ -147,7 +147,7 @@ _process_list_linux_get(void)
 {
    Eina_List *files, *list;
    FILE *f;
-   char *name, *link, state, line[4096], program_name[1024];
+   char *name, *link, state, line[4096], name[1024];
    int pid, res, utime, stime, cutime, cstime, uid, psr, pri, nice, numthreads;
    unsigned int mem_size, mem_rss, flags;
    int pagesize = getpagesize();
@@ -170,8 +170,8 @@ _process_list_linux_get(void)
              int dummy;
              char *end, *start = strchr(line, '(') + 1;
              end = strchr(line, ')');
-             strncpy(program_name, start, end - start);
-             program_name[end - start] = '\0';
+             strncpy(name, start, end - start);
+             name[end - start] = '\0';
              res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
                           &state, &dummy, &dummy, &dummy, &dummy, &dummy, &flags, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
                           &pri, &nice, &numthreads, &dummy, &dummy, &mem_size, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
@@ -204,7 +204,7 @@ _process_list_linux_get(void)
         link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
         if (link)
           {
-             snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(link));
+             snprintf(name, sizeof(name), "%s", ecore_file_file_get(link));
              free(link);
           }
         else
@@ -215,7 +215,7 @@ _process_list_linux_get(void)
                   if (fgets(line, sizeof(line), f))
                     {
                        if (ecore_file_exists(line))
-                         snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(line));
+                         snprintf(name, sizeof(name), "%s", ecore_file_file_get(line));
                        p->arguments = strdup(line);
                     }
                  fclose(f);
@@ -223,13 +223,13 @@ _process_list_linux_get(void)
           }
 
 
-        char *end = strchr(program_name, ' ');
+        char *end = strchr(name, ' ');
         if (end) *end = '\0';
 
         p->pid = pid;
         p->uid = uid;
         p->cpu_id = psr;
-        p->command = strdup(program_name);
+        p->command = strdup(name);
         p->state = _process_state_name(state);
         p->cpu_time = utime + stime;
         p->mem_size = mem_size;
@@ -251,7 +251,7 @@ Proc_Info *
 proc_info_by_pid(int pid)
 {
    FILE *f;
-   char *link, state, line[4096], program_name[1024];
+   char *link, state, line[4096], name[1024];
    int res, dummy, utime, stime, cutime, cstime, uid, psr;
    unsigned int mem_size, mem_rss, pri, nice, numthreads;
 
@@ -262,8 +262,8 @@ proc_info_by_pid(int pid)
      {
         char *end, *start = strchr(line, '(') + 1;
         end = strchr(line, ')');
-        strncpy(program_name, start, end - start);
-        program_name[end - start] = '\0';
+        strncpy(name, start, end - start);
+        name[end - start] = '\0';
 
         res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
                      &state, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
@@ -293,7 +293,7 @@ proc_info_by_pid(int pid)
    link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
    if (link)
      {
-        snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(link));
+        snprintf(name, sizeof(name), "%s", ecore_file_file_get(link));
         free(link);
      }
    else
@@ -304,7 +304,7 @@ proc_info_by_pid(int pid)
              if (fgets(line, sizeof(line), f))
                {
                   if (ecore_file_exists(line))
-                    snprintf(program_name, sizeof(program_name), "%s", ecore_file_file_get(line));
+                    snprintf(name, sizeof(name), "%s", ecore_file_file_get(line));
                   p->arguments = strdup(line);
                }
              fclose(f);
@@ -314,7 +314,7 @@ proc_info_by_pid(int pid)
    p->pid = pid;
    p->uid = uid;
    p->cpu_id = psr;
-   p->command = strdup(program_name);
+   p->command = strdup(name);
    p->state = _process_state_name(state);
    p->cpu_time = utime + stime;
    p->mem_size = mem_size;
@@ -559,7 +559,7 @@ _process_list_freebsd_fallback_get(void)
 
         p->pid = kp.ki_pid;
         p->uid = kp.ki_uid;
-        snprintf(p->command, sizeof(p->command), "%s", kp.ki_comm);
+        p->command = strdup(kp.ki_comm);
         p->cpu_id = kp.ki_oncpu;
         if (p->cpu_id == -1)
           p->cpu_id = kp.ki_lastcpu;
@@ -589,7 +589,9 @@ _process_list_freebsd_get(void)
    struct kinfo_proc *kps, *kp;
    struct rusage *usage;
    char **args;
+   Eina_Strbuf *buf;
    char errbuf[_POSIX2_LINE_MAX];
+   char name[1024];
    int pid_count;
    static int pagesize = 0;
 
@@ -623,23 +625,33 @@ _process_list_freebsd_get(void)
         if (p->cpu_id == -1)
           p->cpu_id = kp->ki_lastcpu;
 
-        if ((args = kvm_getargv(kern, kp, sizeof(p->command)-1)))
+        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
           {
              if (args[0])
                {
                   char *base = basename(args[0]);
                   if (base && base != args[0])
                     {
-                       snprintf(p->command, sizeof(p->command), "%s", base);
-                       char *spc = strchr(p->command, ' ');
+                       snprintf(name, sizeof(name), "%s", base);
+                       char *spc = strchr(name, ' ');
                        if (!spc)
                          have_command = EINA_TRUE;
                     }
                }
+             buf = eina_strbuf_new();
+             for (int i = 0; args[i] != NULL; i++)
+               {
+                  eina_strbuf_append(buf, args[i]);
+                  eina_strbuf_append(buf, " ");
+               }
+             p->arguments = eina_strbuf_string_steal(buf);
+             eina_strbuf_free(buf);
           }
 
         if (!have_command)
-          snprintf(p->command, sizeof(p->command), "%s", kp->ki_comm);
+          snprintf(name, sizeof(name), "%s", kp->ki_comm);
+
+        p->command = strdup(name);
 
         usage = &kp->ki_rusage;
         p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
@@ -664,30 +676,41 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
 {
    kvm_t * kern;
    char **args;
+   char name[1024];
    Eina_Bool have_command = EINA_FALSE;
 
    kern = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
    if (kern != NULL)
      {
-        if ((args = kvm_getargv(kern, kp, sizeof(p->command)-1)))
+        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
           {
              if (args[0])
                {
                   char *base = basename(args[0]);
                   if (base && base != args[0])
                     {
-                       snprintf(p->command, sizeof(p->command), "%s", base);
-                       char *spc = strchr(p->command, ' ');
+                       snprintf(name, sizeof(name), "%s", base);
+                       char *spc = strchr(name, ' ');
                        if (!spc)
                          have_command = EINA_TRUE;
                     }
                }
+             Eina_Strbuf *buf = eina_strbuf_new();
+             for (int i = 0; args[i] != NULL; i++)
+               {
+                  eina_strbuf_append(buf, args[i]);
+                  eina_strbuf_append(buf, " ");
+               }
+             p->arguments = eina_strbuf_string_steal(buf);
+             eina_strbuf_free(buf);
           }
         kvm_close(kern);
      }
 
    if (!have_command)
-     snprintf(p->command, sizeof(p->command), "%s", kp->ki_comm);
+     snprintf(name, sizeof(name), "%s", kp->ki_comm);
+
+   p->command = strdup(name);
 }
 
 Proc_Info *
@@ -740,8 +763,6 @@ proc_info_by_pid(int pid)
 void
 proc_info_free(Proc_Info *proc)
 {
-   if (!proc) return;
-
    if (proc->command)
      free(proc->command);
    if (proc->arguments)
