@@ -146,6 +146,7 @@ static void
 _battery_usage_add(Evas_Object *box, power_t *power)
 {
    Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
+
    for (int i = 0; i < power->battery_count; i++)
      {
         frame = elm_frame_add(box);
@@ -2503,6 +2504,23 @@ _ui_tab_memory_add(Ui *ui)
 }
 
 static void
+_tabs_hide(Ui *ui)
+{
+   ui->mem_visible = EINA_FALSE;
+   ui->misc_visible = EINA_FALSE;
+   ui->disk_visible = EINA_FALSE;
+   ui->cpu_visible = EINA_FALSE;
+
+   evas_object_hide(ui->entry_search);
+   evas_object_hide(ui->system_activity);
+   evas_object_hide(ui->panel);
+   evas_object_hide(ui->cpu_view);
+   evas_object_hide(ui->mem_view);
+   evas_object_hide(ui->disk_view);
+   evas_object_hide(ui->misc_view);
+}
+
+static void
 _tab_state_changed(Ui *ui, Evas_Object *btn_active)
 {
    elm_object_disabled_set(ui->btn_general, EINA_FALSE);
@@ -2512,6 +2530,7 @@ _tab_state_changed(Ui *ui, Evas_Object *btn_active)
    elm_object_disabled_set(ui->btn_misc, EINA_FALSE);
 
    elm_object_disabled_set(btn_active, EINA_TRUE);
+   _tabs_hide(ui);
 }
 
 static void
@@ -2521,20 +2540,11 @@ _tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 
    ui = data;
 
-   ui->mem_visible = EINA_TRUE;
-   ui->misc_visible = EINA_FALSE;
-   ui->disk_visible = EINA_FALSE;
-   ui->cpu_visible = EINA_FALSE;
-
    _tab_state_changed(ui, obj);
 
+   ui->mem_visible = EINA_TRUE;
+
    evas_object_show(ui->mem_view);
-   evas_object_hide(ui->entry_search);
-   evas_object_hide(ui->system_activity);
-   evas_object_hide(ui->panel);
-   evas_object_hide(ui->disk_view);
-   evas_object_hide(ui->misc_view);
-   evas_object_hide(ui->cpu_view);
 }
 
 static void
@@ -2544,20 +2554,10 @@ _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 
    ui = data;
 
-   ui->misc_visible = EINA_FALSE;
-   ui->disk_visible = EINA_FALSE;
-   ui->cpu_visible = EINA_FALSE;
-   ui->mem_visible = EINA_FALSE;
-
    _tab_state_changed(ui, obj);
 
    evas_object_show(ui->system_activity);
    evas_object_show(ui->entry_search);
-   evas_object_hide(ui->panel);
-   evas_object_hide(ui->disk_view);
-   evas_object_hide(ui->misc_view);
-   evas_object_hide(ui->cpu_view);
-   evas_object_hide(ui->mem_view);
 }
 
 static void
@@ -2567,20 +2567,11 @@ _tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *ev
 
    ui = data;
 
-   ui->misc_visible = EINA_FALSE;
-   ui->disk_visible = EINA_TRUE;
-   ui->cpu_visible = EINA_FALSE;
-   ui->mem_visible = EINA_FALSE;
-
    _tab_state_changed(ui, obj);
 
+   ui->disk_visible = EINA_TRUE;
+
    evas_object_show(ui->disk_view);
-   evas_object_hide(ui->entry_search);
-   evas_object_hide(ui->system_activity);
-   evas_object_hide(ui->panel);
-   evas_object_hide(ui->misc_view);
-   evas_object_hide(ui->cpu_view);
-   evas_object_hide(ui->mem_view);
 }
 
 static void
@@ -2590,20 +2581,11 @@ _tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 
    ui = data;
 
-   ui->misc_visible = EINA_TRUE;
-   ui->disk_visible = EINA_FALSE;
-   ui->cpu_visible = EINA_FALSE;
-   ui->mem_visible = EINA_FALSE;
-
    _tab_state_changed(ui, obj);
 
+   ui->misc_visible = EINA_TRUE;
+
    evas_object_show(ui->misc_view);
-   evas_object_hide(ui->entry_search);
-   evas_object_hide(ui->system_activity);
-   evas_object_hide(ui->panel);
-   evas_object_hide(ui->disk_view);
-   evas_object_hide(ui->cpu_view);
-   evas_object_hide(ui->mem_view);
 }
 
 static void
@@ -2613,20 +2595,11 @@ _tab_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
 
    ui = data;
 
-   ui->mem_visible = EINA_FALSE;
-   ui->misc_visible = EINA_FALSE;
-   ui->disk_visible = EINA_FALSE;
-   ui->cpu_visible = EINA_TRUE;
-
    _tab_state_changed(ui, obj);
 
+   ui->cpu_visible = EINA_TRUE;
+
    evas_object_show(ui->cpu_view);
-   evas_object_hide(ui->entry_search);
-   evas_object_hide(ui->misc_view);
-   evas_object_hide(ui->system_activity);
-   evas_object_hide(ui->panel);
-   evas_object_hide(ui->disk_view);
-   evas_object_hide(ui->mem_view);
 }
 
 static void
