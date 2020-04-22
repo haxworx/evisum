@@ -471,6 +471,32 @@ _tab_cpu_update(Ui *ui, results_t *results)
      }
 }
 
+static const char *
+_mem_total(Ui *ui, unsigned long total)
+{
+   const char *res;
+
+   if (total > 1048576)
+     res = eina_slstr_printf("%1.2f G",(double) total / (1048576));
+   else
+     res = eina_slstr_printf("%lu %c", _mem_adjust(ui->data_unit, total), ui->data_unit);
+
+   return res;
+}
+
+static const char *
+_mem_used(Ui *ui, unsigned long total)
+{
+   const char *res;
+
+   if (total < 1048576 && ui->data_unit == DATA_UNIT_GB)
+     res = eina_slstr_printf("%1.2f %c",(double) total / (1048576), DATA_UNIT_GB);
+   else
+     res = eina_slstr_printf("%lu %c", _mem_adjust(ui->data_unit, total), ui->data_unit);
+
+   return res;
+}
+
 static void
 _system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
@@ -504,9 +530,9 @@ _system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    ratio = results->memory.total / 100.0;
    value = results->memory.used / ratio;
    elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress, eina_slstr_printf("%lu %c / %lu %c",
-                                   _mem_adjust(ui->data_unit, results->memory.used), ui->data_unit,
-                                   _mem_adjust(ui->data_unit, results->memory.total), ui->data_unit));
+   elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s",
+                                   _mem_used(ui, results->memory.used),
+                                   _mem_total(ui, results->memory.total)));
 out:
    free(results->cores);
    free(results);
