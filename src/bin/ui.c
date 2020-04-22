@@ -414,7 +414,7 @@ _tab_memory_update(Ui *ui, results_t *results)
 
    elm_object_text_set(ui->title_mem, eina_slstr_printf(
                         "<subtitle>Memory</subtitle><br>" \
-                       "<bigger>Physical %s</bigger><br>" \
+                       "<bigger>Physical %s</bigger><br><br>" \
                        "Swap %s",
                        _mem_format(ui->data_unit, results->memory.total),
                        _mem_format(ui->data_unit, results->memory.swap_total)));
@@ -1586,8 +1586,7 @@ _item_menu_priority_add(Evas_Object *menu, Elm_Object_Item *menu_it, Proc_Info *
    elm_object_item_disabled_set(it, EINA_TRUE);
 }
 
-static
-Evas_Object *
+static Evas_Object *
 _item_menu_create(Ui *ui, Proc_Info *proc)
 {
    Elm_Object_Item *menu_it, *menu_it2;
@@ -2459,7 +2458,7 @@ _ui_tab_memory_add(Ui *ui)
    elm_table_pack(table, label, 0, 2, 1, 1);
    elm_table_pack(table, progress, 1, 2, 1, 1);
 
-   label = _label_mem(box, "Res");
+   label = _label_mem(box, "Shared");
 
    ui->progress_mem_shared = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -2800,17 +2799,17 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (!ev || !ev->keyname)
      return;
 
-   control = evas_key_modifier_is_set(ev->modifiers, "Control");
-
-   ui->skip_wait = EINA_TRUE;
-
-   if (!control) return;
-
    if (!strcmp(ev->keyname, "Escape"))
      {
         ecore_main_loop_quit();
         return;
      }
+
+   control = evas_key_modifier_is_set(ev->modifiers, "Control");
+
+   ui->skip_wait = EINA_TRUE;
+
+   if (!control) return;
 
    if ((ev->keyname[0] == 'K' || ev->keyname[0] == 'k'))
      ui->data_unit = DATA_UNIT_KB;
