@@ -40,14 +40,13 @@ static void
 _config_load(Ui *ui)
 {
    _evisum_config   = config_load();
+
    ui->sort_type    = _evisum_config->sort_type;
    ui->sort_reverse = _evisum_config->sort_reverse;
    ui->data_unit    = _evisum_config->data_unit == 0 ? DATA_UNIT_MB : _evisum_config->data_unit;
 
-   if (_evisum_config->width > 0 && _evisum_config->height > 0)
-     {
-        evas_object_resize(ui->win, _evisum_config->width, _evisum_config->height);
-     }
+   if ((_evisum_config->width > 0) && (_evisum_config->height > 0))
+     evas_object_resize(ui->win, _evisum_config->width, _evisum_config->height);
 }
 
 static void
@@ -1922,7 +1921,6 @@ _ui_process_panel_add(Ui *ui)
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-
    label = elm_label_add(parent);
    elm_object_text_set(label, "Command line:");
    evas_object_show(label);
@@ -1937,7 +1935,6 @@ _ui_process_panel_add(Ui *ui)
    evas_object_show(entry);
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, i++, 1, 1);
-
 
    label = elm_label_add(parent);
    elm_object_text_set(label, "PID:");
@@ -2019,7 +2016,7 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, " Total memory:");
+   elm_object_text_set(label, " Total memory :");
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
@@ -2034,7 +2031,7 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, " Reserved memory:");
+   elm_object_text_set(label, " Shared memory:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
@@ -2049,7 +2046,7 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, "Virtual memory:");
+   elm_object_text_set(label, " Virtual memory:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
@@ -2448,7 +2445,7 @@ _ui_tab_memory_add(Ui *ui)
    elm_table_pack(table, label, 0, 2, 1, 1);
    elm_table_pack(table, progress, 1, 2, 1, 1);
 
-   label = _label_mem(box, "Shared");
+   label = _label_mem(box, "Res");
 
    ui->progress_mem_shared = progress = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);

@@ -147,17 +147,18 @@ _mem_size(Proc_Info *proc, int pid)
 {
    FILE *f;
    char buf[1024];
-   unsigned int dummy, shared, resident, data;
+   unsigned int dummy, size, shared, resident, data, text;
 
    f = fopen(eina_slstr_printf("/proc/%d/statm", pid), "r");
    if (!f) return;
 
    if (fgets(buf, sizeof(buf), f))
      {
-        if (sscanf(buf, "%u %u %u %u %u %u %u", &dummy, &resident, &shared, &dummy,
+        if (sscanf(buf, "%u %u %u %u %u %u %u", &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_size = (resident + shared + data) * getpagesize();
+             proc->mem_size = (size * getpagesize()) - proc->mem_rss;
+             proc->mem_shared = shared * getpagesize();
           }
      }
 
@@ -278,7 +279,6 @@ _process_list_linux_get(void)
         p->mem_virt = mem_virt;
         p->mem_rss = mem_rss * pagesize;
         _mem_size(p, pid);
-        p->mem_size -= p->mem_rss;
 
         _cmd_args(p, pid, name, sizeof(name));
 
@@ -330,7 +330,6 @@ proc_info_by_pid(int pid)
    p->mem_virt = mem_virt;
    p->mem_rss = mem_rss * getpagesize();
    _mem_size(p, pid);
-   p->mem_size -= p->mem_rss;
 
    p->priority = pri;
    p->nice = nice;
