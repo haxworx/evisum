@@ -982,7 +982,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(ui->btn_size, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_size");
-   elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_shared >> 10), ui->data_unit));
+   elm_object_text_set(l, eina_slstr_printf("%lu %c ", _mem_adjust(ui->data_unit, proc->mem_size >> 10), ui->data_unit));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(ui->btn_size, w, 1);
    r = evas_object_data_get(l, "rect");
@@ -1408,7 +1408,7 @@ _process_panel_update(void *data)
    elm_object_text_set(ui->entry_pid_threads, eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(ui->entry_pid_virt, eina_slstr_printf("%lld bytes", proc->mem_virt));
    elm_object_text_set(ui->entry_pid_rss, eina_slstr_printf("%lld bytes", proc->mem_rss));
-   elm_object_text_set(ui->entry_pid_shared, eina_slstr_printf("%lld bytes", proc->mem_shared));
+   elm_object_text_set(ui->entry_pid_size, eina_slstr_printf("%lld bytes", proc->mem_size));
    elm_object_text_set(ui->entry_pid_nice, eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(ui->entry_pid_pri, eina_slstr_printf("%d", proc->priority));
    elm_object_text_set(ui->entry_pid_state, proc->state);
@@ -2030,11 +2030,11 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, " Shared memory:");
+   elm_object_text_set(label, " Total memory:");
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_shared = entry = elm_entry_add(parent);
+   ui->entry_pid_size = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);

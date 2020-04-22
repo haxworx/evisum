@@ -143,7 +143,7 @@ _parse_line(const char *line)
 }
 
 static void
-_mem_shared(Proc_Info *proc, int pid)
+_mem_size(Proc_Info *proc, int pid)
 {
    FILE *f;
    char buf[1024];
@@ -157,7 +157,7 @@ _mem_shared(Proc_Info *proc, int pid)
         if (sscanf(buf, "%u %u %u %u %u %u %u", &dummy, &resident, &shared, &dummy,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_shared = (resident + shared + data) * getpagesize();
+             proc->mem_size = (resident + shared + data) * getpagesize();
           }
      }
 
@@ -223,7 +223,7 @@ _process_list_linux_get(void)
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
 
-        _mem_shared(p, pid);
+        _mem_size(p, pid);
 
         link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
         if (link)
@@ -313,7 +313,7 @@ proc_info_by_pid(int pid)
    Proc_Info *p = calloc(1, sizeof(Proc_Info));
    if (!p) return NULL;
 
-   _mem_shared(p, pid);
+   _mem_size(p, pid);
 
    link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
    if (link)
@@ -382,7 +382,7 @@ proc_info_by_pid(int pid)
    p->cpu_id = kp->p_cpuid;
    p->state = _process_state_name(kp->p_stat);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-   p->mem_virt = p->mem_cached = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
+   p->mem_virt = p->mem_size = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
    p->mem_rss = kp->p_vm_rssize * pagesize;
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
@@ -445,7 +445,7 @@ _process_list_openbsd_get(void)
         p->cpu_id = kp->p_cpuid;
         p->state = _process_state_name(kp->p_stat);
         p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-        p->mem_cached = p->mem_virt = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
+        p->mem_size = p->mem_virt = (kp->p_vm_tsize * pagesize) + (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
         p->mem_rss = kp->p_vm_rssize * pagesize;
         p->priority = kp->p_priority - PZERO;
         p->nice = kp->p_nice - NZERO;
@@ -607,9 +607,8 @@ _process_list_freebsd_fallback_get(void)
         p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
         p->cpu_time /= 10000;
         p->state = _process_state_name(kp.ki_stat);
-        p->mem_virt = kp.ki_size;
+        p->mem_virt = p->mem_size = kp.ki_size;
         p->mem_rss = kp.ki_rssize * pagesize;
-        p->mem_cached = (kp.ki_tsize + kp.ki_dsize + kp.ki_ssize) * pagesize;
         p->nice = kp.ki_nice - NZERO;
         p->priority = kp.ki_pri.pri_level - PZERO;
         p->numthreads = kp.ki_numthreads;
@@ -696,9 +695,8 @@ _process_list_freebsd_get(void)
         p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
         p->cpu_time /= 10000;
         p->state = _process_state_name(kp->ki_stat);
-        p->mem_virt = kp->ki_size;
+        p->mem_size = p->mem_virt = kp->ki_size;
         p->mem_rss = kp->ki_rssize * pagesize;
-        p->mem_cached = (kp->ki_tsize + kp->ki_dsize + kp->ki_ssize) * pagesize;
         p->nice = kp->ki_nice - NZERO;
         p->priority = kp->ki_pri.pri_level - PZERO;
         p->numthreads = kp->ki_numthreads;
@@ -789,9 +787,8 @@ proc_info_by_pid(int pid)
    p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
    p->cpu_time /= 10000;
    p->state = _process_state_name(kp.ki_stat);
-   p->mem_virt = kp.ki_size;
+   p->mem_size = p->mem_virt = kp.ki_size;
    p->mem_rss = kp.ki_rssize * pagesize;
-   p->mem_cached = (kp.ki_tsize + kp.ki_dsize + kp.ki_ssize) * pagesize;
    p->nice = kp.ki_nice - NZERO;
    p->priority = kp.ki_pri.pri_level - PZERO;
    p->numthreads = kp.ki_numthreads;

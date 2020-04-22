@@ -112,7 +112,7 @@ typedef struct Ui
    Evas_Object  *entry_pid_threads;
    Evas_Object  *entry_pid_virt;
    Evas_Object  *entry_pid_rss;
-   Evas_Object  *entry_pid_shared;
+   Evas_Object  *entry_pid_size;
    Evas_Object  *entry_pid_nice;
    Evas_Object  *entry_pid_pri;
    Evas_Object  *entry_pid_state;
