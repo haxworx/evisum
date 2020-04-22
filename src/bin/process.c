@@ -513,8 +513,9 @@ _process_list_macos_get(void)
         p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
         p->cpu_time /= 10000000;
         p->state = _process_state_name(taskinfo.pbsd.pbi_status);
-        p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
+        p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
         p->mem_rss = taskinfo.ptinfo.pti_resident_size;
+        p->mem_shared = 0;
         p->priority = taskinfo.ptinfo.pti_priority;
         p->nice = taskinfo.pbsd.pbi_nice;
         p->numthreads = taskinfo.ptinfo.pti_threadnum;
@@ -551,8 +552,9 @@ proc_info_by_pid(int pid)
    p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
-   p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
+   p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
+   p->mem_shared = 0;
    p->priority = taskinfo.ptinfo.pti_priority;
    p->nice = taskinfo.pbsd.pbi_nice;
    p->numthreads = taskinfo.ptinfo.pti_threadnum;
@@ -609,8 +611,9 @@ _process_list_freebsd_fallback_get(void)
         p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
         p->cpu_time /= 10000;
         p->state = _process_state_name(kp.ki_stat);
-        p->mem_virt = p->mem_size = kp.ki_size;
+        p->mem_size = p->mem_virt = kp.ki_size;
         p->mem_rss = kp.ki_rssize * pagesize;
+        p->mem_shared = kp.ki_rusage.ru_ixrss;
         p->nice = kp.ki_nice - NZERO;
         p->priority = kp.ki_pri.pri_level - PZERO;
         p->numthreads = kp.ki_numthreads;
@@ -699,6 +702,7 @@ _process_list_freebsd_get(void)
         p->state = _process_state_name(kp->ki_stat);
         p->mem_size = p->mem_virt = kp->ki_size;
         p->mem_rss = kp->ki_rssize * pagesize;
+        p->mem_shared = kp->ki_rusage.ru_ixrss;
         p->nice = kp->ki_nice - NZERO;
         p->priority = kp->ki_pri.pri_level - PZERO;
         p->numthreads = kp->ki_numthreads;
@@ -791,6 +795,7 @@ proc_info_by_pid(int pid)
    p->state = _process_state_name(kp.ki_stat);
    p->mem_size = p->mem_virt = kp.ki_size;
    p->mem_rss = kp.ki_rssize * pagesize;
+   p->mem_shared = kp.ki_rusage.ru_ixrss;
    p->nice = kp.ki_nice - NZERO;
    p->priority = kp.ki_pri.pri_level - PZERO;
    p->numthreads = kp.ki_numthreads;
