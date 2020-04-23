@@ -1464,14 +1464,6 @@ _panel_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EI
 }
 
 static void
-_panel_toggled_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   evas_object_show(ui->panel);
-}
-
-static void
 _btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
@@ -1671,6 +1663,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    ui->timer_pid = ecore_timer_add(ui->poll_delay, _process_panel_update, ui);
 
    elm_panel_toggle(ui->panel);
+   evas_object_show(ui->panel);
    ui->panel_visible = EINA_TRUE;
 }
 
@@ -1874,7 +1867,6 @@ _ui_process_panel_add(Ui *ui)
    elm_object_content_set(ui->win, panel);
    evas_object_hide(panel);
    evas_object_smart_callback_add(ui->panel, "scroll", _panel_scrolled_cb, ui);
-   evas_object_smart_callback_add(ui->panel, "toggled", _panel_toggled_cb, ui);
 
    hbox = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
