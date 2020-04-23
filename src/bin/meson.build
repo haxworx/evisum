@@ -1,6 +1,7 @@
 inc = include_directories('.', '../..')
 
 executable('evisum', [
+     'main.c',
      'configuration.c',
      'configuration.h',
      'disks.c',
@@ -11,10 +12,10 @@ executable('evisum', [
      'system.h',
      'ui.c',
      'ui.h',
-     'main.c'
+     'gettext.h',
    ],
    include_directories : inc,
-   dependencies        : [ deps, deps_os ],
+   dependencies        : [ deps, deps_os, deps_nls ],
    gui_app             : true,
    install             : true)
 

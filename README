@@ -28,3 +28,5 @@ NOTES
 You can press Ctrl plus 'k', 'm', 'g' to display results in KB, MB
 of GB respectively.
 
+# Note to self
+xgettext --keyword=_ --language=C --add-comments --sort-output --from-code=UTF-8 -o po/evisum.pot src/bin/ui.c src/bin/main.c

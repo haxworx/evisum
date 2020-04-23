@@ -2,8 +2,11 @@
 #define __UI_H__
 
 #include <Elementary.h>
+#include "gettext.h"
 #include "process.h"
 #include "configuration.h"
+
+#define _(STR) gettext(STR)
 
 #define EVISUM_SIZE_WIDTH  640
 #define EVISUM_SIZE_HEIGHT 480

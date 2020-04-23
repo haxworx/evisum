@@ -9,6 +9,8 @@ cfg = configuration_data()
 
 host_os = host_machine.system()
 
+cc = meson.get_compiler('c')
+
 deps = dependency('elementary', version: efl_version)
 
 deps_os = declare_dependency(link_args : [] )
@@ -23,11 +25,27 @@ dir_lib    = join_paths(dir_prefix, get_option('libdir'))
 dir_data   = join_paths(dir_prefix, get_option('datadir'))
 dir_locale = join_paths(dir_prefix, get_option('localedir'))
 
+##### translation
+
+deps_nls = []
+translate_enabled = false
+intl_lib = cc.find_library('intl', required: false)
+if intl_lib.found()
+  translate_enabled = true
+  deps_nls = [intl_lib]
+endif
+
 ##### config.h
 
+cfg.set_quoted('PACKAGE', meson.project_name())
 cfg.set_quoted('PACKAGE_VERSION', meson.project_version())
 cfg.set_quoted('PACKAGE_DATA_DIR', join_paths(dir_data, 'evisum'))
-configure_file(output: 'config.h', configuration: cfg)
+
+if translate_enabled
+  subdir('po')
+endif
 
 subdir('src')
 subdir('data')
+
+configure_file(output: 'config.h', configuration: cfg)

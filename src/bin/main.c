@@ -7,6 +7,7 @@
  */
 
 #include "config.h"
+#include "gettext.h"
 #include "configuration.h"
 #include "ui.h"
 
@@ -28,7 +29,7 @@ _win_add(void)
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
    evas_object_resize(win, EVISUM_SIZE_WIDTH * elm_config_scale_get(), EVISUM_SIZE_HEIGHT * elm_config_scale_get());
-   elm_win_title_set(win, "Evisum: System Monitor");
+   elm_win_title_set(win, _("Evisum: System Monitor"));
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
 
    ui = ui_add(win);
@@ -50,6 +51,13 @@ main(int argc, char **argv)
    ecore_init();
    config_init();
    elm_init(argc, argv);
+
+#if ENABLE_NLS
+   setlocale(LC_ALL, "");
+   bindtextdomain(PACKAGE, LOCALEDIR);
+   bind_textdomain_codeset(PACKAGE, "UTF-8");
+   textdomain(PACKAGE);
+#endif
 
    ui = _win_add();
    if (ui)
