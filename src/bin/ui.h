@@ -34,6 +34,7 @@ typedef enum
 
 typedef enum
 {
+   DATA_UNIT_B  = 'B',
    DATA_UNIT_KB = 'K',
    DATA_UNIT_MB = 'M',
    DATA_UNIT_GB = 'G',
@@ -128,8 +129,6 @@ typedef struct Ui
    Ecore_Timer  *timer_pid;
    pid_t         selected_pid;
    pid_t         program_pid;
-
-   Data_Unit     data_unit;
 
    char         *search_text;
    Evas_Object  *list_pid;

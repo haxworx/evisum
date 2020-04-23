@@ -10,7 +10,6 @@ typedef struct _Evisum_Config
    int       version;
    int       sort_type;
    Eina_Bool sort_reverse;
-   int       data_unit;
    int       width;
    int       height;
 } Evisum_Config;
