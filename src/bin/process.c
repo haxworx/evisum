@@ -157,7 +157,6 @@ _mem_size(Proc_Info *proc, int pid)
         if (sscanf(buf, "%u %u %u %u %u %u %u", &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_size = (size * getpagesize()) - proc->mem_rss;
              proc->mem_shared = shared * getpagesize();
           }
      }
@@ -190,6 +189,7 @@ _cmd_args(Proc_Info *p, int pid, char *name, size_t len)
             fclose(f);
           }
      }
+
 
    char *end = strchr(name, ' ');
    if (end) *end = '\0';
@@ -229,7 +229,8 @@ _process_list_linux_get(void)
    char *n;
    char state, line[4096], name[1024];
    int pid, res, utime, stime, cutime, cstime, psr, pri, nice, numthreads, dummy;
-   unsigned int mem_virt, mem_rss, flags;
+   unsigned int mem_rss, flags;
+   unsigned long mem_virt;
    int pagesize = getpagesize();
 
    res = 0;
@@ -254,7 +255,7 @@ _process_list_linux_get(void)
              strncpy(name, start, end - start);
              name[end - start] = '\0';
 
-             res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
+             res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
                           &state, &dummy, &dummy, &dummy, &dummy, &dummy, &flags, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
                           &pri, &nice, &numthreads, &dummy, &dummy, &mem_virt, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                           &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
@@ -276,7 +277,7 @@ _process_list_linux_get(void)
         p->priority = pri;
         p->numthreads = numthreads;
 
-        p->mem_virt = mem_virt;
+        p->mem_virt = p->mem_size = mem_virt;
         p->mem_rss = mem_rss * pagesize;
         _mem_size(p, pid);
 
@@ -297,7 +298,8 @@ proc_info_by_pid(int pid)
    FILE *f;
    char line[4096], name[1024], state;
    int res, dummy, utime, stime, cutime, cstime, psr;
-   unsigned int mem_virt, mem_rss, pri, nice, numthreads;
+   unsigned int mem_rss, pri, nice, numthreads;
+   unsigned long int mem_virt;
 
    f = fopen(eina_slstr_printf("/proc/%d/stat", pid), "r");
    if (!f) return NULL;
@@ -309,7 +311,7 @@ proc_info_by_pid(int pid)
         strncpy(name, start, end - start);
         name[end - start] = '\0';
 
-        res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %u %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
+        res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u %d %d %d %d %d %d %d %d %d",
                      &state, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime, &cstime,
                      &pri, &nice, &numthreads, &dummy, &dummy, &mem_virt, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                      &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
@@ -327,7 +329,7 @@ proc_info_by_pid(int pid)
    p->state = _process_state_name(state);
    p->cpu_time = utime + stime;
 
-   p->mem_virt = mem_virt;
+   p->mem_size = p->mem_virt = mem_virt;
    p->mem_rss = mem_rss * getpagesize();
    _mem_size(p, pid);
 
