@@ -2786,10 +2786,9 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      }
 
    control = evas_key_modifier_is_set(ev->modifiers, "Control");
+   if (!control) return;
 
    ui->skip_wait = EINA_TRUE;
-
-   if (!control) return;
 
    if (ev->keyname[0] == 'e' || ev->keyname[0] == 'E')
      ui->show_self = !ui->show_self;
