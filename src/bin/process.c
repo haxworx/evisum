@@ -157,6 +157,7 @@ _mem_size(Proc_Info *proc, int pid)
         if (sscanf(buf, "%u %u %u %u %u %u %u", &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
+             proc->mem_size = data * getpagesize();
              proc->mem_shared = shared * getpagesize();
           }
      }
@@ -277,7 +278,7 @@ _process_list_linux_get(void)
         p->priority = pri;
         p->numthreads = numthreads;
 
-        p->mem_virt = p->mem_size = mem_virt;
+        p->mem_virt = mem_virt;
         p->mem_rss = mem_rss * pagesize;
         _mem_size(p, pid);
 
@@ -329,7 +330,7 @@ proc_info_by_pid(int pid)
    p->state = _process_state_name(state);
    p->cpu_time = utime + stime;
 
-   p->mem_size = p->mem_virt = mem_virt;
+   p->mem_virt = mem_virt;
    p->mem_rss = mem_rss * getpagesize();
    _mem_size(p, pid);
 
