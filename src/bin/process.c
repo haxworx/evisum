@@ -521,7 +521,6 @@ _process_list_macos_get(void)
 Proc_Info *
 proc_info_by_pid(int pid)
 {
-   struct kinfo_proc kp;
    struct proc_taskallinfo taskinfo;
    struct proc_workqueueinfo workqueue;
    size_t size;
