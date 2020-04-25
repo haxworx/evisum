@@ -157,7 +157,7 @@ _mem_size(Proc_Info *proc, int pid)
         if (sscanf(buf, "%u %u %u %u %u %u %u", &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_size = data * getpagesize();
+             proc->mem_size = (text + shared + data) * getpagesize();
              proc->mem_shared = shared * getpagesize();
           }
      }
