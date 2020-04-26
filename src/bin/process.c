@@ -187,10 +187,9 @@ _cmd_args(Proc_Info *p, int pid, char *name, size_t len)
                     snprintf(name, len, "%s", ecore_file_file_get(line));
                   p->arguments = strdup(line);
                }
-            fclose(f);
+             fclose(f);
           }
      }
-
 
    char *end = strchr(name, ' ');
    if (end) *end = '\0';
