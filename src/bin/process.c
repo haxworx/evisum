@@ -500,7 +500,11 @@ _process_list_macos_get(void)
         p->pid = i;
         p->uid = taskinfo.pbsd.pbi_uid;
         p->cpu_id = -1;
-        p->command = strdup(taskinfo.pbsd.pbi_comm);
+        if (taskinfo.pbsd.pbi_name[0])
+          p->command = strdup(taskinfo.pbsd.pbi_name);
+        else
+          p->command = strdup(taskinfo.pbsd.pbi_comm);
+
         p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
         p->cpu_time /= 10000000;
         p->state = _process_state_name(taskinfo.pbsd.pbi_status);
@@ -538,7 +542,11 @@ proc_info_by_pid(int pid)
    p->pid = pid;
    p->uid = taskinfo.pbsd.pbi_uid;
    p->cpu_id = workqueue.pwq_nthreads;
-   p->command = strdup(taskinfo.pbsd.pbi_comm);
+   if (taskinfo.pbsd.pbi_name[0])
+     p->command = strdup(taskinfo.pbsd.pbi_name);
+   else
+     p->command = strdup(taskinfo.pbsd.pbi_comm);
+
    p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
