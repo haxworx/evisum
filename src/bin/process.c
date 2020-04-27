@@ -561,7 +561,7 @@ _cmd_get(Proc_Info *p, int pid)
 
    if (cp == &args[size]) return;
 
-   /* Skip any padded NULLs.
+   /* Skip any padded NULLs. */
    for (;cp < &args[size]; cp++)
      {
         if (*cp == '\0') break;
