@@ -498,7 +498,6 @@ _cmd_get(Proc_Info *p, int pid)
 
    if (sysctl(mib, 2, &argmax, &size, NULL, 0) == -1) return;
 
-   /* Make a sysctl() call to get the raw argument space of the process. */
    mib[0] = CTL_KERN;
    mib[1] = KERN_PROCARGS2;
    mib[2] = pid;
