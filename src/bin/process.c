@@ -7,6 +7,7 @@
 # include <sys/sysctl.h>
 # include <sys/user.h>
 # include <sys/proc.h>
+# include <libgen.h>
 #endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
@@ -483,6 +484,127 @@ _process_list_openbsd_get(void)
 #endif
 
 #if defined(__MacOS__)
+static void
+_cmd_get(Proc_Info *p, int pid)
+{
+   char *cp, *args, **argv;
+   int mib[3], argmax, argc;
+   size_t size;
+
+   mib[0] = CTL_KERN;
+   mib[1] = KERN_ARGMAX;
+
+   size = sizeof(argmax);
+
+   if (sysctl(mib, 2, &argmax, &size, NULL, 0) == -1) return;
+
+   /* Make a sysctl() call to get the raw argument space of the process. */
+   mib[0] = CTL_KERN;
+   mib[1] = KERN_PROCARGS2;
+   mib[2] = pid;
+
+   size = (size_t) argmax;
+   args = malloc(argmax);
+   if (!args) return;
+
+   /*
+    * Make a sysctl() call to get the raw argument space of the process.
+    * The layout is documented in start.s, which is part of the Csu
+    * project.  In summary, it looks like:
+    *
+    * /---------------\ 0x00000000
+    * :               :
+    * :               :
+    * |---------------|
+    * | argc          |
+    * |---------------|
+    * | arg[0]        |
+    * |---------------|
+    * :               :
+    * :               :
+    * |---------------|
+    * | arg[argc - 1] |
+    * |---------------|
+    * | 0             |
+    * |---------------|
+    * | env[0]        |
+    * |---------------|
+    * :               :
+    * :               :
+    * |---------------|
+    * | env[n]        |
+    * |---------------|
+    * | 0             |
+    * |---------------| <-- Beginning of data returned by sysctl() is here.
+    * | argc          |
+    * |---------------|
+    * | exec_path     |
+    * |:::::::::::::::|
+    * |               |
+    * | String area.  |
+    * |               |
+    * |---------------| <-- Top of stack.
+    * :               :
+    * :               :
+    * \---------------/ 0xffffffff
+    */
+
+   if (sysctl(mib, 3, args, &size, NULL, 0) == -1) return;
+
+   memcpy(&argc, args, sizeof(argc));
+   cp = args + sizeof(argc);
+
+   /* Skip exec path */
+   for (;cp < &args[size]; cp++)
+     {
+        if (*cp == '\0') break;
+     }
+
+   if (cp == &args[size]) return;
+
+   /* Skip any padded NULLs.
+   for (;cp < &args[size]; cp++)
+     {
+        if (*cp == '\0') break;
+     }
+
+   if (cp == &args[size]) return;
+
+   argv = malloc(1 + argc * sizeof(char *));
+   if (!argv) return;
+
+   int i = 0;
+   argv[i] = cp;
+
+   for (cp = args + sizeof(int); cp < &args[size] && i < argc; cp++)
+     {
+        if (*cp == '\0')
+          {
+             while (*cp == '\0') cp++;
+             argv[i++] = cp;
+          }
+     }
+
+   if (i == 0) i++;
+
+   argv[i] = NULL;
+
+   p->command = strdup(basename(argv[0]));
+
+   Eina_Strbuf *buf = eina_strbuf_new();
+
+   for (i = 0; i < argc; i++)
+     eina_strbuf_append_printf(buf, "%s ", argv[i]);
+
+   if (argc > 0)
+     p->arguments = eina_strbuf_release(buf);
+   else
+     eina_strbuf_free(buf);
+
+   free(args);
+   free(argv);
+}
+
 static Eina_List *
 _process_list_macos_get(void)
 {
@@ -500,11 +622,6 @@ _process_list_macos_get(void)
         p->pid = i;
         p->uid = taskinfo.pbsd.pbi_uid;
         p->cpu_id = -1;
-        if (taskinfo.pbsd.pbi_name[0])
-          p->command = strdup(taskinfo.pbsd.pbi_name);
-        else
-          p->command = strdup(taskinfo.pbsd.pbi_comm);
-
         p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
         p->cpu_time /= 10000000;
         p->state = _process_state_name(taskinfo.pbsd.pbi_status);
@@ -514,6 +631,7 @@ _process_list_macos_get(void)
         p->priority = taskinfo.ptinfo.pti_priority;
         p->nice = taskinfo.pbsd.pbi_nice;
         p->numthreads = taskinfo.ptinfo.pti_threadnum;
+        _cmd_get(p, i);
 
         list = eina_list_append(list, p);
      }
@@ -542,11 +660,6 @@ proc_info_by_pid(int pid)
    p->pid = pid;
    p->uid = taskinfo.pbsd.pbi_uid;
    p->cpu_id = workqueue.pwq_nthreads;
-   if (taskinfo.pbsd.pbi_name[0])
-     p->command = strdup(taskinfo.pbsd.pbi_name);
-   else
-     p->command = strdup(taskinfo.pbsd.pbi_comm);
-
    p->cpu_time = taskinfo.ptinfo.pti_total_user + taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
@@ -556,6 +669,7 @@ proc_info_by_pid(int pid)
    p->priority = taskinfo.ptinfo.pti_priority;
    p->nice = taskinfo.pbsd.pbi_nice;
    p->numthreads = taskinfo.ptinfo.pti_threadnum;
+   _cmd_get(p, pid);
 
    return p;
 }

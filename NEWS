@@ -7,14 +7,16 @@ Evisum 0.4.0
    * Set application priority (nice).
    * UI improvements.
    * Offer kvm_openfiles means of obtaining PID list on
-   FreeBSD-based platforms. This requires specific
-   permissions (s+g kmem). We fallback if that fails.
-   use a genlist (meh).
-   * Save settings upon exit (kb/mb/gb) and sorting.
+     FreeBSD-based platforms. This requires specific
+     permissions (s+g kmem). We fallback if that fails.
+     use a genlist (meh).
+   * Save settings upon exit. Sorting and window size.
    * Reduce object creation and deletion.
+   * Improve display of memory and storage sizes.
    * Use object caching where applicable.
    * Remove redundant code.
    * FreeBSD et al. Get process arguments akin to Linux.
+   * macOS improvements for process information.
    * Process command-line (new field).
    * Other stuff.
 
