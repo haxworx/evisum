@@ -18,6 +18,7 @@ Evisum 0.4.0
    * FreeBSD et al. Get process arguments akin to Linux.
    * macOS improvements for process information.
    * Process command-line (new field).
+   * Added translation support (with French and Italian).
    * Other stuff.
 
 ============
