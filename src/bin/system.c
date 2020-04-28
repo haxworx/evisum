@@ -836,6 +836,7 @@ _power_battery_count_get(power_t *power)
    for (int i = 0; i < power->battery_count; i++)
      {
         power->batteries[i] = calloc(1, sizeof(bat_t));
+        power->batteries[i]->present = true;
      }
 
    return power->battery_count;
@@ -898,15 +899,18 @@ _battery_state_get(power_t *power)
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BIF, &battio) != -1)
           {
-             power->batteries[i]->charge_full = battio.bif.lfcap;
+             power->batteries[i]->charge_full = battio.bif.dcap;
           }
-
         snprintf(name, sizeof(name), "%s %s", battio.bif.oeminfo, battio.bif.model);
         power->battery_names[i] = strdup(name);
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
           {
              power->batteries[i]->charge_current = battio.bst.cap;
+          }
+        if (battio.bst.state == ACPI_BATT_STAT_NOT_PRESENT)
+          {
+             power->batteries[i]->present = false;
           }
      }
    close(fd);

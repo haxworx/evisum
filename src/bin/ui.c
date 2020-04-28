@@ -164,6 +164,9 @@ _battery_usage_add(Evas_Object *box, power_t *power)
 
    for (int i = 0; i < power->battery_count; i++)
      {
+        if (!power->batteries[i]->present)
+          continue;
+
         frame = elm_frame_add(box);
         evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
         evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);

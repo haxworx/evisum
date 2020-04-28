@@ -29,6 +29,7 @@ typedef struct
    double  charge_full;
    double  charge_current;
    uint8_t percent;
+   bool    present;
 } bat_t;
 
 typedef struct
