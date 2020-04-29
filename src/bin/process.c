@@ -676,6 +676,30 @@ proc_info_by_pid(int pid)
 #endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__)
+
+static int
+_pid_max(void)
+{
+   size_t len;
+   static int pid_max = 0;
+
+   if (pid_max != 0) return pid_max;
+
+   len = sizeof(pid_max);
+   if (sysctlbyname("kern.pid_max", &pid_max, &len, NULL, 0) == -1)
+     {
+#if defined(__FreeBSD__)
+        pid_max = 99999;
+#elif defined(__DragonFly__)
+        pid_max = 999999;
+#else
+        pid_max = PID_MAX;
+#endif
+     }
+
+   return pid_max;
+}
+
 static Eina_List *
 _process_list_freebsd_fallback_get(void)
 {
@@ -684,10 +708,12 @@ _process_list_freebsd_fallback_get(void)
    struct kinfo_proc kp;
    int mib[4];
    size_t len;
-   static int pagesize = 0;
+   static int pid_max, pagesize = 0;
 
    if (!pagesize)
      pagesize = getpagesize();
+
+   pid_max = _pid_max();
 
    list = NULL;
 
@@ -695,7 +721,7 @@ _process_list_freebsd_fallback_get(void)
    if (sysctlnametomib("kern.proc.pid", mib, &len) == -1)
      return NULL;
 
-   for (int i = 1; i <= PID_MAX; i++)
+   for (int i = 1; i <= pid_max; i++)
      {
         mib[3] = i;
         len = sizeof(kp);
