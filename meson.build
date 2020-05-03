@@ -33,6 +33,18 @@ intl_lib = cc.find_library('intl', required: false)
 if intl_lib.found()
   translate_enabled = true
   deps_nls = [intl_lib]
+else
+  gettext_code = '''
+  #include <libintl.h>
+  int main(int argc, char *argv[]) {
+      (void)ngettext("", "", 0);
+      return 0;
+  }
+  '''
+  if cc.links(gettext_code)
+    translate_enabled = true
+    message('Intl Support Enabled')
+  endif
 endif
 
 ##### config.h
