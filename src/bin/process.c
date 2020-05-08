@@ -184,9 +184,19 @@ _cmd_args(Proc_Info *p, int pid, char *name, size_t len)
           {
              if (fgets(line, sizeof(line), f))
                {
+                  Eina_Strbuf *buf = eina_strbuf_new();
+                  const char *n;
+
                   if (ecore_file_exists(line))
                     snprintf(name, len, "%s", ecore_file_file_get(line));
-                  p->arguments = strdup(line);
+
+                  n = line;
+                  while (*n && (*n + 1))
+                    {
+                       eina_strbuf_append_printf(buf, "%s ", n);
+                       n = strchr(n, '\0') + 1;
+                    }
+                  p->arguments = eina_strbuf_release(buf);
                }
              fclose(f);
           }
