@@ -2804,10 +2804,8 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
 
-   ui->ready = EINA_FALSE;
+   elm_genlist_realized_items_update(ui->genlist_procs);
 
-   elm_genlist_clear(ui->genlist_procs);
-   _process_panel_update(ui);
    _config_save(ui);
 }
 
