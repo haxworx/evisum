@@ -2595,6 +2595,8 @@ _evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, vo
 
    if (!event) return;
 
+   ui->skip_wait = EINA_TRUE;
+
    markup = elm_object_part_text_get(entry, NULL);
    text = elm_entry_markup_to_utf8(markup);
    if (text)
@@ -2782,6 +2784,8 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (!ev || !ev->keyname)
      return;
 
+   ui->skip_wait = EINA_TRUE;
+
    if (!strcmp(ev->keyname, "Escape"))
      {
         ecore_main_loop_quit();
@@ -2790,8 +2794,6 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    control = evas_key_modifier_is_set(ev->modifiers, "Control");
    if (!control) return;
-
-   ui->skip_wait = EINA_TRUE;
 
    if (ev->keyname[0] == 'e' || ev->keyname[0] == 'E')
      ui->show_self = !ui->show_self;
