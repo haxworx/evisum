@@ -1062,6 +1062,20 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
 }
 
 static void
+_bring_in(Ui *ui)
+{
+   int h_page, v_page;
+   static Eina_Bool init_done = EINA_FALSE;
+
+   if (init_done || !ui->ready) return;
+
+   elm_scroller_gravity_set(ui->scroller, 0.0, 0.0);
+   elm_scroller_last_page_get(ui->scroller, &h_page, &v_page);
+   elm_scroller_page_bring_in(ui->scroller, h_page, v_page);
+   init_done = EINA_TRUE;
+}
+
+static void
 _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msg EINA_UNUSED)
 {
    Ui *ui;
@@ -1106,6 +1120,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
      eina_list_free(list);
 
    eina_lock_release(&_lock);
+
+   _bring_in(ui);
 }
 
 static void
@@ -1819,6 +1835,7 @@ _ui_tab_system_add(Ui *ui)
    elm_table_pack(table, button, 6, 0, 1, 1);
 
    ui->scroller = ui->genlist_procs = plist = elm_genlist_add(parent);
+   elm_scroller_gravity_set(ui->scroller, 0.0, 1.0);
    elm_object_focus_allow_set(plist, EINA_FALSE);
    elm_genlist_homogeneous_set(plist, EINA_TRUE);
    evas_object_size_hint_weight_set(plist, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
