@@ -809,13 +809,18 @@ _process_list_freebsd_get(void)
           {
              if (args[0])
                {
-                  char *base = basename(args[0]);
-                  if (base && base != args[0])
+                  char *base = strdup(args[0]);
+                  if (base)
                     {
-                       snprintf(name, sizeof(name), "%s", base);
-                       char *spc = strchr(name, ' ');
-                       if (!spc)
-                         have_command = EINA_TRUE;
+                       char *spc = strchr(base, ' ');
+                       if (spc) *spc = '\0';
+
+                       if (ecore_file_exists(base))
+                         {
+                            snprintf(name, sizeof(name), "%s", basename(base));
+                            have_command = EINA_TRUE;
+                         }
+                       free(base);
                     }
                }
              Eina_Strbuf *buf = eina_strbuf_new();
@@ -867,13 +872,18 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
           {
              if (args[0])
                {
-                  char *base = basename(args[0]);
-                  if (base && base != args[0])
+                  char *base = strdup(args[0]);
+                  if (base)
                     {
-                       snprintf(name, sizeof(name), "%s", base);
-                       char *spc = strchr(name, ' ');
-                       if (!spc)
-                         have_command = EINA_TRUE;
+                       char *spc = strchr(base, ' ');
+                       if (spc) *spc = '\0';
+
+                       if (ecore_file_exists(base))
+                         {
+                            snprintf(name, sizeof(name), "%s", basename(base));
+                            have_command = EINA_TRUE;
+                         }
+                       free(base);
                     }
                }
              Eina_Strbuf *buf = eina_strbuf_new();
