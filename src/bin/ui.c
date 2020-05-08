@@ -1136,17 +1136,16 @@ static void
 _process_list(void *data, Ecore_Thread *thread)
 {
    Ui *ui;
-   int duration, delay;
+   int delay;
 
    delay = 1;
-   duration = POLL_ONE_SEC / 2;
 
    ui = data;
 
    while (1)
      {
         ecore_thread_feedback(thread, ui);
-        for (int i = 0; i < delay * duration; i++)
+        for (int i = 0; i < delay * POLL_ONE_SEC; i++)
           {
              if (ecore_thread_check(thread)) return;
 
@@ -1161,12 +1160,6 @@ _process_list(void *data, Ecore_Thread *thread)
         if (ui->ready)
           {
              delay = ui->poll_delay;
-             duration = POLL_ONE_SEC;
-          }
-        else
-          {
-             delay = 1;
-             duration = POLL_ONE_SEC / 2;
           }
      }
 }
