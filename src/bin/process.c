@@ -177,29 +177,27 @@ _cmd_args(Proc_Info *p, int pid, char *name, size_t len)
         snprintf(name, len, "%s", ecore_file_file_get(link));
         free(link);
      }
-   else
+
+   FILE *f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
+   if (f)
      {
-        FILE *f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
-        if (f)
+        if (fgets(line, sizeof(line), f))
           {
-             if (fgets(line, sizeof(line), f))
+             Eina_Strbuf *buf = eina_strbuf_new();
+             const char *n;
+
+             if (ecore_file_exists(line))
+               snprintf(name, len, "%s", ecore_file_file_get(line));
+
+             n = line;
+             while (*n && (*n + 1))
                {
-                  Eina_Strbuf *buf = eina_strbuf_new();
-                  const char *n;
-
-                  if (ecore_file_exists(line))
-                    snprintf(name, len, "%s", ecore_file_file_get(line));
-
-                  n = line;
-                  while (*n && (*n + 1))
-                    {
-                       eina_strbuf_append_printf(buf, "%s ", n);
-                       n = strchr(n, '\0') + 1;
-                    }
-                  p->arguments = eina_strbuf_release(buf);
+                 eina_strbuf_append_printf(buf, "%s ", n);
+                 n = strchr(n, '\0') + 1;
                }
-             fclose(f);
+             p->arguments = eina_strbuf_release(buf);
           }
+        fclose(f);
      }
 
    char *end = strchr(name, ' ');
