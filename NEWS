@@ -1,4 +1,16 @@
 ============
+Evisum 0.4.1
+============
+
+  * Fix intl support for some Linux distributions.
+  * Improve the search responsiveness.
+  * Improve window resize behaviour.
+  * Fix process arguments on FreeBSD/DragonFlyBSD.
+  * Fix command-line parsing of Linux processes.
+  * Introduce some transition animations.
+  * Small refactor.
+
+============
 Evisum 0.4.0
 ============
 
