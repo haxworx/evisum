@@ -2500,9 +2500,20 @@ _tabs_hide(Ui *ui)
 }
 
 static void
+_transit_del_cb(void *data, Elm_Transit *transit)
+{
+   Ui *ui = data;
+
+   ui->transit = transit = NULL;
+}
+
+static void
 _tab_state_changed(Ui *ui, Evas_Object *btn_active, Evas_Object *view)
 {
    Elm_Transit *transit;
+
+   if (ui->transit) return;
+
    elm_object_disabled_set(ui->btn_general, EINA_FALSE);
    elm_object_disabled_set(ui->btn_cpu, EINA_FALSE);
    elm_object_disabled_set(ui->btn_mem, EINA_FALSE);
@@ -2514,11 +2525,12 @@ _tab_state_changed(Ui *ui, Evas_Object *btn_active, Evas_Object *view)
    _tabs_hide(ui);
    evas_object_show(view);
 
-   transit = elm_transit_add();
+   ui->transit = transit = elm_transit_add();
    elm_transit_object_add(transit, ui->current_view);
    elm_transit_object_add(transit, view);
    elm_transit_duration_set(transit, 0.5);
    elm_transit_effect_blend_add(transit);
+   elm_transit_del_cb_set(transit, _transit_del_cb, ui);
    elm_transit_go(transit);
 }
 
