@@ -81,6 +81,8 @@ typedef struct Ui
    Evas_Object  *misc_activity;
    Evas_Object  *system_activity;
 
+   Evas_Object  *current_view;
+
    Eina_Bool     cpu_visible;
    Eina_Bool     misc_visible;
    Eina_Bool     disk_visible;

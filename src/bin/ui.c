@@ -1675,7 +1675,7 @@ _ui_tab_system_add(Ui *ui)
 
    parent = ui->content;
 
-   ui->system_activity = box = elm_box_add(parent);
+   ui->system_activity = ui->current_view = box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(box);
@@ -2500,8 +2500,9 @@ _tabs_hide(Ui *ui)
 }
 
 static void
-_tab_state_changed(Ui *ui, Evas_Object *btn_active)
+_tab_state_changed(Ui *ui, Evas_Object *btn_active, Evas_Object *view)
 {
+   Elm_Transit *transit;
    elm_object_disabled_set(ui->btn_general, EINA_FALSE);
    elm_object_disabled_set(ui->btn_cpu, EINA_FALSE);
    elm_object_disabled_set(ui->btn_mem, EINA_FALSE);
@@ -2509,7 +2510,16 @@ _tab_state_changed(Ui *ui, Evas_Object *btn_active)
    elm_object_disabled_set(ui->btn_misc, EINA_FALSE);
 
    elm_object_disabled_set(btn_active, EINA_TRUE);
+
    _tabs_hide(ui);
+   evas_object_show(view);
+
+   transit = elm_transit_add();
+   elm_transit_object_add(transit, ui->current_view);
+   elm_transit_object_add(transit, view);
+   elm_transit_duration_set(transit, 0.5);
+   elm_transit_effect_blend_add(transit);
+   elm_transit_go(transit);
 }
 
 static void
@@ -2519,11 +2529,10 @@ _tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 
    ui = data;
 
-   _tab_state_changed(ui, obj);
+   _tab_state_changed(ui, obj, ui->mem_view);
 
    ui->mem_visible = EINA_TRUE;
-
-   evas_object_show(ui->mem_view);
+   ui->current_view = ui->mem_view;
 }
 
 static void
@@ -2533,9 +2542,9 @@ _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 
    ui = data;
 
-   _tab_state_changed(ui, obj);
+   _tab_state_changed(ui, obj, ui->system_activity);
 
-   evas_object_show(ui->system_activity);
+   ui->current_view = ui->system_activity;
    evas_object_show(ui->entry_search);
 }
 
@@ -2546,11 +2555,10 @@ _tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *ev
 
    ui = data;
 
-   _tab_state_changed(ui, obj);
+   _tab_state_changed(ui, obj, ui->disk_view);
 
+   ui->current_view = ui->disk_view;
    ui->disk_visible = EINA_TRUE;
-
-   evas_object_show(ui->disk_view);
 }
 
 static void
@@ -2560,11 +2568,10 @@ _tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 
    ui = data;
 
-   _tab_state_changed(ui, obj);
+   _tab_state_changed(ui, obj, ui->misc_view);
 
+   ui->current_view = ui->misc_view;
    ui->misc_visible = EINA_TRUE;
-
-   evas_object_show(ui->misc_view);
 }
 
 static void
@@ -2574,11 +2581,10 @@ _tab_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
 
    ui = data;
 
-   _tab_state_changed(ui, obj);
+   _tab_state_changed(ui, obj, ui->cpu_view);
 
+   ui->current_view = ui->cpu_view;
    ui->cpu_visible = EINA_TRUE;
-
-   evas_object_show(ui->cpu_view);
 }
 
 static void
