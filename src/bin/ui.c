@@ -447,8 +447,12 @@ _tab_memory_update(Ui *ui, results_t *results)
                                    value));
 
    progress = ui->progress_mem_swap;
-   ratio = results->memory.swap_total / 100.0;
-   value = results->memory.swap_used / ratio;
+   if (results->memory.swap_total)
+     {
+        ratio = results->memory.swap_total / 100.0;
+        value = results->memory.swap_used / ratio;
+     }
+   else value = 0.0;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s (%1.0f &#37;)",
                                    _size_format(results->memory.swap_used << 10),
@@ -1410,7 +1414,7 @@ _process_panel_update(void *data)
    elm_object_text_set(ui->entry_pid_threads, eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(ui->entry_pid_virt, _size_format(proc->mem_virt));
    elm_object_text_set(ui->entry_pid_rss, _size_format(proc->mem_rss));
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__MacOS__)
    elm_object_text_set(ui->entry_pid_shared, "N/A");
 #else
    elm_object_text_set(ui->entry_pid_shared, _size_format(proc->mem_shared));
