@@ -2543,10 +2543,10 @@ _tab_state_changed(Ui *ui, Evas_Object *btn_active, Evas_Object *view)
    elm_object_disabled_set(ui->btn_mem, EINA_FALSE);
    elm_object_disabled_set(ui->btn_storage, EINA_FALSE);
    elm_object_disabled_set(ui->btn_misc, EINA_FALSE);
-
    elm_object_disabled_set(btn_active, EINA_TRUE);
 
    _tabs_hide(ui);
+
    evas_object_show(view);
 
    ui->transit = transit = elm_transit_add();
@@ -2556,70 +2556,57 @@ _tab_state_changed(Ui *ui, Evas_Object *btn_active, Evas_Object *view)
    elm_transit_effect_blend_add(transit);
    elm_transit_del_cb_set(transit, _transit_del_cb, ui);
    elm_transit_go(transit);
+
+   ui->current_view = view;
 }
 
 static void
 _tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-
-   ui = data;
+   Ui *ui = data;
 
    _tab_state_changed(ui, obj, ui->mem_view);
 
    ui->mem_visible = EINA_TRUE;
-   ui->current_view = ui->mem_view;
 }
 
 static void
 _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-
-   ui = data;
+   Ui *ui = data;
 
    _tab_state_changed(ui, obj, ui->system_activity);
 
-   ui->current_view = ui->system_activity;
    evas_object_show(ui->entry_search);
 }
 
 static void
 _tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-
-   ui = data;
+   Ui *ui = data;
 
    _tab_state_changed(ui, obj, ui->disk_view);
 
-   ui->current_view = ui->disk_view;
    ui->disk_visible = EINA_TRUE;
 }
 
 static void
 _tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-
-   ui = data;
+   Ui *ui = data;
 
    _tab_state_changed(ui, obj, ui->misc_view);
 
-   ui->current_view = ui->misc_view;
    ui->misc_visible = EINA_TRUE;
 }
 
 static void
 _tab_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-
-   ui = data;
+   Ui *ui = data;
 
    _tab_state_changed(ui, obj, ui->cpu_view);
 
-   ui->current_view = ui->cpu_view;
    ui->cpu_visible = EINA_TRUE;
 }
 
