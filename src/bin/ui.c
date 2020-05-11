@@ -1140,9 +1140,7 @@ static void
 _process_list(void *data, Ecore_Thread *thread)
 {
    Ui *ui;
-   int delay;
-
-   delay = 1;
+   int delay = 1;
 
    ui = data;
 
@@ -1161,10 +1159,7 @@ _process_list(void *data, Ecore_Thread *thread)
              usleep(250000);
           }
         ui->ready = EINA_TRUE;
-        if (ui->ready)
-          {
-             delay = ui->poll_delay;
-          }
+        delay = ui->poll_delay;
      }
 }
 
