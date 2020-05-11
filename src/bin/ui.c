@@ -1410,7 +1410,11 @@ _process_panel_update(void *data)
    elm_object_text_set(ui->entry_pid_threads, eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(ui->entry_pid_virt, _size_format(proc->mem_virt));
    elm_object_text_set(ui->entry_pid_rss, _size_format(proc->mem_rss));
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+   elm_object_text_set(ui->entry_pid_shared, "N/A");
+#else
    elm_object_text_set(ui->entry_pid_shared, _size_format(proc->mem_shared));
+#endif
    elm_object_text_set(ui->entry_pid_size, _size_format(proc->mem_size));
    elm_object_text_set(ui->entry_pid_nice, eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(ui->entry_pid_pri, eina_slstr_printf("%d", proc->priority));

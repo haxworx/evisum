@@ -771,9 +771,9 @@ _process_list_freebsd_fallback_get(void)
            usage->ru_stime.tv_usec;
         p->cpu_time /= 10000;
         p->state = _process_state_name(kp.ki_stat);
-        p->mem_size = p->mem_virt = kp.ki_size;
+        p->mem_virt = kp.ki_size;
         p->mem_rss = kp.ki_rssize * pagesize;
-        p->mem_shared = kp.ki_rusage.ru_ixrss;
+        p->mem_size = p->mem_virt;
         p->nice = kp.ki_nice - NZERO;
         p->priority = kp.ki_pri.pri_level - PZERO;
         p->numthreads = kp.ki_numthreads;
@@ -867,9 +867,9 @@ _process_list_freebsd_get(void)
            usage->ru_stime.tv_usec;
         p->cpu_time /= 10000;
         p->state = _process_state_name(kp->ki_stat);
-        p->mem_size = p->mem_virt = kp->ki_size;
+        p->mem_virt = kp->ki_size;
         p->mem_rss = kp->ki_rssize * pagesize;
-        p->mem_shared = kp->ki_rusage.ru_ixrss;
+        p->mem_size = p->mem_virt;
         p->nice = kp->ki_nice - NZERO;
         p->priority = kp->ki_pri.pri_level - PZERO;
         p->numthreads = kp->ki_numthreads;
@@ -966,9 +966,9 @@ proc_info_by_pid(int pid)
       (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
    p->cpu_time /= 10000;
    p->state = _process_state_name(kp.ki_stat);
-   p->mem_size = p->mem_virt = kp.ki_size;
+   p->mem_virt = kp.ki_size;
    p->mem_rss = kp.ki_rssize * pagesize;
-   p->mem_shared = kp.ki_rusage.ru_ixrss;
+   p->mem_size = p->mem_virt;
    p->nice = kp.ki_nice - NZERO;
    p->priority = kp.ki_pri.pri_level - PZERO;
    p->numthreads = kp.ki_numthreads;
