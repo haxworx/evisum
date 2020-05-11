@@ -398,7 +398,6 @@ proc_info_by_pid(int pid)
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
    p->numthreads = -1;
-   p->command = strdup(kp->p_comm);
 
    if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
      {
@@ -410,7 +409,13 @@ proc_info_by_pid(int pid)
           }
         p->arguments = eina_strbuf_string_steal(buf);
         eina_strbuf_free(buf);
+
+        if (args[0] && ecore_file_exists(args[0]))
+          p->command = strdup(ecore_file_file_get(args[0]));
      }
+
+   if (!p->command)
+     p->command = strdup(kp->p_comm);
 
    kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
 
@@ -463,7 +468,6 @@ _process_list_openbsd_get(void)
         p->priority = kp->p_priority - PZERO;
         p->nice = kp->p_nice - NZERO;
         p->numthreads = -1;
-        p->command = strdup(kp->p_comm);
         if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
           {
              Eina_Strbuf *buf = eina_strbuf_new();
@@ -474,7 +478,13 @@ _process_list_openbsd_get(void)
                }
              p->arguments = eina_strbuf_string_steal(buf);
              eina_strbuf_free(buf);
+
+             if (args[0] && ecore_file_exists(args[0]))
+                p->command = strdup(ecore_file_file_get(args[0]));
           }
+        if (!p->command)
+          p->command = strdup(kp->p_comm);
+
         list = eina_list_append(list, p);
      }
 
