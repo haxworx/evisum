@@ -1410,6 +1410,7 @@ _process_panel_update(void *data)
    elm_object_text_set(ui->entry_pid_threads, eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(ui->entry_pid_virt, _size_format(proc->mem_virt));
    elm_object_text_set(ui->entry_pid_rss, _size_format(proc->mem_rss));
+   elm_object_text_set(ui->entry_pid_shared, _size_format(proc->mem_shared));
    elm_object_text_set(ui->entry_pid_size, _size_format(proc->mem_size));
    elm_object_text_set(ui->entry_pid_nice, eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(ui->entry_pid_pri, eina_slstr_printf("%d", proc->priority));
@@ -2022,7 +2023,7 @@ _ui_process_panel_add(Ui *ui)
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
-   elm_object_text_set(label, _(" Total memory :"));
+   elm_object_text_set(label, _(" Memory :"));
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
@@ -2038,6 +2039,21 @@ _ui_process_panel_add(Ui *ui)
 
    label = elm_label_add(parent);
    elm_object_text_set(label, _(" Shared memory:"));
+   evas_object_show(label);
+   elm_table_pack(table, label, 0, i, 1, 1);
+
+   ui->entry_pid_shared = entry = elm_entry_add(parent);
+   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_entry_single_line_set(entry, EINA_TRUE);
+   elm_entry_scrollable_set(entry, EINA_TRUE);
+   elm_entry_editable_set(entry, EINA_FALSE);
+   evas_object_show(entry);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   elm_table_pack(table, entry, 1, i++, 1, 1);
+
+   label = elm_label_add(parent);
+   elm_object_text_set(label, _(" Resident memory:"));
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 

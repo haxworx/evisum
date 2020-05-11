@@ -159,8 +159,9 @@ _mem_size(Proc_Info *proc, int pid)
                    &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_size = (text + shared + data) * getpagesize();
+             proc->mem_rss = resident * getpagesize();
              proc->mem_shared = shared * getpagesize();
+             proc->mem_size = proc->mem_rss - proc->mem_shared;
           }
      }
 
@@ -242,7 +243,6 @@ _process_list_linux_get(void)
    int dummy;
    unsigned int mem_rss, flags;
    unsigned long mem_virt;
-   int pagesize = getpagesize();
 
    res = 0;
    list = NULL;
@@ -293,7 +293,6 @@ _process_list_linux_get(void)
         p->numthreads = numthreads;
 
         p->mem_virt = mem_virt;
-        p->mem_rss = mem_rss * pagesize;
         _mem_size(p, pid);
 
         _cmd_args(p, pid, name, sizeof(name));
