@@ -671,7 +671,7 @@ proc_info_by_pid(int pid)
 
    size = proc_pidinfo(pid, PROC_PIDWORKQUEUEINFO, 0, &workqueue, sizeof(workqueue));
    if (size != sizeof(workqueue))
-     return NULL;
+     memset(&workqueue, 0, sizeof(struct proc_workqueueinfo));
 
    Proc_Info *p = calloc(1, sizeof(Proc_Info));
    if (!p) return NULL;
