@@ -194,9 +194,9 @@ _cmd_args(Proc_Info *p, int pid, char *name, size_t len)
              n = line;
              while (*n && (*n + 1))
                {
-                 eina_strbuf_append(buf, n);
-                 n = strchr(n, '\0') + 1;
-		 if (*n && (*n + 1)) eina_strbuf_append(buf, " ");
+                  eina_strbuf_append(buf, n);
+                  n = strchr(n, '\0') + 1;
+                  if (*n && (*n + 1)) eina_strbuf_append(buf, " ");
                }
              p->arguments = eina_strbuf_release(buf);
           }
@@ -233,70 +233,88 @@ _uid(int pid)
    return uid;
 }
 
+typedef struct {
+   int pid, utime, stime, cutime, cstime;
+   int psr, pri, nice, numthreads;
+   char state;
+   unsigned int mem_rss, flags;
+   unsigned long mem_virt;
+   char name[1024];
+} Stat;
+
+static Eina_Bool
+_stat(const char *path, Stat *st)
+{
+   FILE *f;
+   char line[4096];
+   int dummy, res = 0;
+
+   memset(st, 0, sizeof(Stat));
+
+   f = fopen(path, "r");
+   if (!f) return EINA_FALSE;
+
+   if (fgets(line, sizeof(line), f))
+     {
+        char *end, *start = strchr(line, '(') + 1;
+        end = strchr(line, ')');
+
+        strncpy(st->name, start, end - start);
+        st->name[end - start] = '\0';
+        res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
+              " %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u"
+              " %d %d %d %d %d %d %d %d %d",
+              &st->state, &dummy, &dummy, &dummy, &dummy, &dummy, &st->flags,
+              &dummy, &dummy, &dummy, &dummy, &st->utime, &st->stime, &st->cutime,
+              &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &dummy,
+              &st->mem_virt, &st->mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy,
+              &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
+              &dummy, &dummy, &st->psr, &dummy, &dummy, &dummy, &dummy, &dummy);
+     }
+   fclose(f);
+
+   if (res != 42) return EINA_FALSE;
+
+   return EINA_TRUE;
+}
+
 static Eina_List *
 _process_list_linux_get(void)
 {
    Eina_List *files, *list;
-   FILE *f;
    char *n;
-   char state, line[4096], name[1024];
-   int pid, res, utime, stime, cutime, cstime, psr, pri, nice, numthreads;
-   int dummy;
-   unsigned int mem_rss, flags;
-   unsigned long mem_virt;
+   Stat st;
 
-   res = 0;
    list = NULL;
 
    files = ecore_file_ls("/proc");
    EINA_LIST_FREE(files, n)
      {
-        pid = atoi(n);
+        int pid = atoi(n);
         free(n);
 
         if (!pid) continue;
 
-        f = fopen(eina_slstr_printf("/proc/%d/stat", pid), "r");
-        if (!f) continue;
+        if (!_stat(eina_slstr_printf("/proc/%d/stat", pid), &st))
+          continue;
 
-        if (fgets(line, sizeof(line), f))
-          {
-             char *end, *start = strchr(line, '(') + 1;
-             end = strchr(line, ')');
-
-             strncpy(name, start, end - start);
-             name[end - start] = '\0';
-             res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
-                   " %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u"
-                   " %d %d %d %d %d %d %d %d %d",
-                   &state, &dummy, &dummy, &dummy, &dummy, &dummy, &flags,
-                   &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime,
-                   &cstime, &pri, &nice, &numthreads, &dummy, &dummy,
-                   &mem_virt, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy,
-                   &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
-                   &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
-          }
-        fclose(f);
-
-        if (res != 42) continue;
-        if (flags & PF_KTHREAD) continue;
+        if (st.flags & PF_KTHREAD) continue;
 
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
 
         p->pid = pid;
         p->uid = _uid(pid);
-        p->cpu_id = psr;
-        p->state = _process_state_name(state);
-        p->cpu_time = utime + stime;
-        p->nice = nice;
-        p->priority = pri;
-        p->numthreads = numthreads;
-
-        p->mem_virt = mem_virt;
+        p->cpu_id = st.psr;
+        p->state = _process_state_name(st.state);
+        p->cpu_time = st.utime + st.stime;
+        p->nice = st.nice;
+        p->priority = st.pri;
+        p->numthreads = st.numthreads;
+        p->mem_virt = st.mem_virt;
         _mem_size(p, pid);
 
-        _cmd_args(p, pid, name, sizeof(name));
+        _cmd_args(p, pid, st.name, sizeof(st.name));
 
         list = eina_list_append(list, p);
      }
@@ -310,53 +328,26 @@ _process_list_linux_get(void)
 Proc_Info *
 proc_info_by_pid(int pid)
 {
-   FILE *f;
-   char line[4096], name[1024], state;
-   int res, dummy, utime, stime, cutime, cstime, psr;
-   unsigned int mem_rss, pri, nice, numthreads, flags;
-   unsigned long int mem_virt;
+   Stat st;
 
-   f = fopen(eina_slstr_printf("/proc/%d/stat", pid), "r");
-   if (!f) return NULL;
-
-   if (fgets(line, sizeof(line), f))
-     {
-        char *end, *start = strchr(line, '(') + 1;
-        end = strchr(line, ')');
-        strncpy(name, start, end - start);
-        name[end - start] = '\0';
-        res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
-              " %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u"
-              " %d %d %d %d %d %d %d %d %d",
-              &state, &dummy, &dummy, &dummy, &dummy, &dummy, &flags,
-              &dummy, &dummy, &dummy, &dummy, &utime, &stime, &cutime,
-              &cstime, &pri, &nice, &numthreads, &dummy, &dummy,
-              &mem_virt, &mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy,
-              &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
-              &dummy, &dummy, &psr, &dummy, &dummy, &dummy, &dummy, &dummy);
-     }
-   fclose(f);
-
-   if (res != 42) return NULL;
+   if (!_stat(eina_slstr_printf("/proc/%d/stat", pid), &st))
+     return NULL;
 
    Proc_Info *p = calloc(1, sizeof(Proc_Info));
    if (!p) return NULL;
 
    p->pid = pid;
    p->uid = _uid(pid);
-   p->cpu_id = psr;
-   p->state = _process_state_name(state);
-   p->cpu_time = utime + stime;
-
-   p->mem_virt = mem_virt;
-   p->mem_rss = mem_rss * getpagesize();
+   p->cpu_id = st.psr;
+   p->state = _process_state_name(st.state);
+   p->cpu_time = st.utime + st.stime;
+   p->priority = st.pri;
+   p->nice = st.nice;
+   p->numthreads = st.numthreads;
+   p->mem_virt = st.mem_virt;
    _mem_size(p, pid);
 
-   p->priority = pri;
-   p->nice = nice;
-   p->numthreads = numthreads;
-
-   _cmd_args(p, pid, name, sizeof(name));
+   _cmd_args(p, pid, st.name, sizeof(st.name));
 
    return p;
 }
