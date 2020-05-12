@@ -7,9 +7,8 @@
  */
 
 #include "config.h"
-#include "gettext.h"
-#include "configuration.h"
-#include "ui.h"
+#include "evisum_config.h"
+#include "ui/ui.h"
 
 static void
 _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)

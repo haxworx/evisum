@@ -1,0 +1,15 @@
+src += files([
+   'gettext.h',
+   'ui.h',
+   'ui.c',
+   'ui_misc.c',
+   'ui_misc.h',
+   'ui_disk.c',
+   'ui_disk.h',
+   'ui_memory.h',
+   'ui_memory.c',
+   'ui_cpu.c',
+   'ui_cpu.h',
+   'ui_process.c',
+   'ui_process.h',
+])

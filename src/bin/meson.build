@@ -1,19 +1,17 @@
 inc = include_directories('.', '../..')
 
-executable('evisum', [
-     'main.c',
-     'configuration.c',
-     'configuration.h',
-     'disks.c',
-     'disks.h',
-     'process.c',
-     'process.h',
-     'system.c',
-     'system.h',
-     'ui.c',
-     'ui.h',
-     'gettext.h',
-   ],
+src = []
+
+subdir('system')
+subdir('ui')
+
+src += files([
+   'main.c',
+   'evisum_config.c',
+   'evisum_config.h',
+])
+
+executable('evisum', src,
    include_directories : inc,
    dependencies        : [ deps, deps_os, deps_nls ],
    gui_app             : true,

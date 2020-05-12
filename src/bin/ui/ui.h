@@ -3,8 +3,8 @@
 
 #include <Elementary.h>
 #include "gettext.h"
-#include "process.h"
-#include "configuration.h"
+#include "system/process.h"
+#include "../evisum_config.h"
 
 #define _(STR) gettext(STR)
 
@@ -163,5 +163,11 @@ Ui *
 
 void
  ui_shutdown(Ui *ui);
+
+const char *
+evisum_icon_path_get(const char *name);
+
+const char *
+evisum_size_format(unsigned long value);
 
 #endif

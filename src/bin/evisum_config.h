@@ -1,7 +1,7 @@
 #ifndef __CONFIGURATION_H__
 #define __CONFIGURATION_H__
 
-#include "ui.h"
+#include "ui/ui.h"
 
 #define CONFIG_VERSION 0x0002
 

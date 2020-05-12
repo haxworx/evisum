@@ -1,5 +1,5 @@
 #include "config.h"
-#include "configuration.h"
+#include "evisum_config.h"
 #include <Eina.h>
 #include <Ecore_File.h>
 #include <Efreet.h>
