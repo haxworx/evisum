@@ -861,7 +861,8 @@ _process_list_freebsd_get(void)
              for (int i = 0; args[i] != NULL; i++)
                {
                   eina_strbuf_append(buf, args[i]);
-                  eina_strbuf_append(buf, " ");
+                  if (args[i + 1])
+                    eina_strbuf_append(buf, " ");
                }
              p->arguments = eina_strbuf_string_steal(buf);
              eina_strbuf_free(buf);
@@ -926,7 +927,8 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
              for (int i = 0; args[i] != NULL; i++)
                {
                   eina_strbuf_append(buf, args[i]);
-                  eina_strbuf_append(buf, " ");
+                  if (args[i + 1])
+                    eina_strbuf_append(buf, " ");
                }
              p->arguments = eina_strbuf_string_steal(buf);
              eina_strbuf_free(buf);
