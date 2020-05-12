@@ -194,8 +194,9 @@ _cmd_args(Proc_Info *p, int pid, char *name, size_t len)
              n = line;
              while (*n && (*n + 1))
                {
-                 eina_strbuf_append_printf(buf, "%s ", n);
+                 eina_strbuf_append(buf, n);
                  n = strchr(n, '\0') + 1;
+		 if (*n && (*n + 1)) eina_strbuf_append(buf, " ");
                }
              p->arguments = eina_strbuf_release(buf);
           }
