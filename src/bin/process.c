@@ -313,7 +313,6 @@ _process_list_linux_get(void)
         p->numthreads = st.numthreads;
         p->mem_virt = st.mem_virt;
         _mem_size(p, pid);
-
         _cmd_args(p, pid, st.name, sizeof(st.name));
 
         list = eina_list_append(list, p);
@@ -323,6 +322,39 @@ _process_list_linux_get(void)
      eina_list_free(files);
 
    return list;
+}
+
+static void
+_proc_thread_info(Proc_Info *p)
+{
+   Eina_List *files;
+   char *n;
+   Stat st;
+
+   files = ecore_file_ls(eina_slstr_printf("/proc/%d/task", p->pid));
+   EINA_LIST_FREE(files, n)
+     {
+        int tid = atoi(n);
+        free(n);
+        if (!_stat(eina_slstr_printf("/proc/%d/task/%d/stat", p->pid, tid), &st))
+          continue;
+
+        Proc_Info *t = calloc(1, sizeof(Proc_Info));
+        if (!t) continue;
+        t->cpu_id = st.psr;
+        t->state = _process_state_name(st.state);
+        t->cpu_time = st.utime + st.stime;
+        t->nice = st.nice;
+        t->priority = st.pri;
+        t->numthreads = st.numthreads;
+        t->mem_virt = st.mem_virt;
+        t->mem_rss = st.mem_rss;
+        t->command = strdup(st.name);
+        p->threads = eina_list_append(p->threads, t);
+     }
+
+   if (files)
+     eina_list_free(files);
 }
 
 Proc_Info *
@@ -346,8 +378,9 @@ proc_info_by_pid(int pid)
    p->numthreads = st.numthreads;
    p->mem_virt = st.mem_virt;
    _mem_size(p, pid);
-
    _cmd_args(p, pid, st.name, sizeof(st.name));
+
+   _proc_thread_info(p);
 
    return p;
 }
@@ -985,6 +1018,16 @@ proc_info_by_pid(int pid)
 void
 proc_info_free(Proc_Info *proc)
 {
+   Proc_Info *t;
+
+   EINA_LIST_FREE(proc->threads, t)
+     {
+        proc_info_free(t);
+     }
+
+   if (proc->threads)
+     eina_list_free(proc->threads);
+
    if (proc->command)
      free(proc->command);
    if (proc->arguments)
