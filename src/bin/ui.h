@@ -56,7 +56,7 @@ typedef enum
    SORT_BY_CPU_USAGE,
 } Sort_Type;
 
-#define TAB_BTN_SIZE 75
+#define TAB_BTN_SIZE 96
 
 typedef struct Ui
 {
