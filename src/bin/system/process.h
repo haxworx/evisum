@@ -55,7 +55,7 @@ typedef struct _Proc_Info
  * @return A list of proc_t members for all processes.
  */
 Eina_List *
- proc_info_all_get(void);
+proc_info_all_get(void);
 
 /**
  * Query a process for its current state.
@@ -65,7 +65,7 @@ Eina_List *
  * @return A proc_t pointer containing the process information.
  */
 Proc_Info *
- proc_info_by_pid(int pid);
+proc_info_by_pid(int pid);
 
 /**
  * Free a Proc_Info * pointer;
@@ -73,7 +73,7 @@ Proc_Info *
  * @param proc The object to free.
  */
 void
-  proc_info_free(Proc_Info *proc);
+proc_info_free(Proc_Info *proc);
 
 /**
  * @}

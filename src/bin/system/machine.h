@@ -63,21 +63,21 @@ struct results_t
 };
 
 results_t *
- system_stats_get(void);
+system_stats_get(void);
 
 int
- system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used);
+system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used);
 
 bool
- system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing);
+system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing);
 
 int
- system_temperature_cpu_get(void);
+system_temperature_cpu_get(void);
 
 void
- system_power_state_get(power_t *power);
+system_power_state_get(power_t *power);
 
 int
- system_cpu_online_count_get();
+system_cpu_online_count_get();
 
 #endif
