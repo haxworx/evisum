@@ -107,7 +107,7 @@ evisum_size_format(unsigned long value)
    return s;
 }
 
-char *
+static char *
 _path_append(const char *path, const char *file)
 {
    char *concat;
