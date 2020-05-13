@@ -755,7 +755,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-       if ((ui->search_text && ui->search_text[0] &&
+        if ((ui->search_text && ui->search_text[0] &&
            strncasecmp(proc->command, ui->search_text, strlen(ui->search_text))) ||
            (!ui->show_self && proc->pid == ui->program_pid))
          {
