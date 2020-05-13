@@ -11,13 +11,8 @@
 #include <sys/resource.h>
 #include <pwd.h>
 
-#if defined(__APPLE__) && defined(__MACH__)
-# define __MacOS__
-#endif
-
 Ui *_ui;
 Evisum_Config *_evisum_config;
-
 static Eina_Lock _lock;
 
 static void
@@ -598,7 +593,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
      }
 
    _genlist_ensure_n_items(ui->genlist_procs, eina_list_count(list));
-
    it = elm_genlist_first_item_get(ui->genlist_procs);
 
    list = _list_sort(ui, list);
