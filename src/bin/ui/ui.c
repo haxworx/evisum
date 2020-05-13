@@ -1696,7 +1696,7 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_shutdown(Ui *ui)
+evisum_ui_shutdown(Ui *ui)
 {
    Item_Cache *it;
 
@@ -1792,7 +1792,7 @@ _ui_init(Evas_Object *parent)
 }
 
 Ui *
-ui_add(Evas_Object *parent)
+evisum_ui_add(Evas_Object *parent)
 {
    eina_lock_new(&_lock);
 

@@ -159,10 +159,10 @@ typedef struct Ui
 } Ui;
 
 Ui *
- ui_add(Evas_Object *win);
+evisum_ui_add(Evas_Object *win);
 
 void
- ui_shutdown(Ui *ui);
+evisum_ui_shutdown(Ui *ui);
 
 const char *
 evisum_icon_path_get(const char *name);

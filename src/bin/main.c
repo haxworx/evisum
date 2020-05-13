@@ -31,7 +31,7 @@ _win_add(void)
    elm_win_title_set(win, _("Evisum: System Monitor"));
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
 
-   ui = ui_add(win);
+   ui = evisum_ui_add(win);
    if (!ui)
      return NULL;
 
@@ -62,7 +62,7 @@ main(int argc, char **argv)
    if (ui)
      {
         ecore_main_loop_begin();
-        ui_shutdown(ui);
+        evisum_ui_shutdown(ui);
         free(ui);
      }
 
