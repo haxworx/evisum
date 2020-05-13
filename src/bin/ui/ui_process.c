@@ -310,7 +310,7 @@ ui_process_panel_add(Ui *ui)
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-      label = elm_label_add(parent);
+   label = elm_label_add(parent);
    elm_object_text_set(label, _("UID:"));
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);

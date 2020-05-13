@@ -73,7 +73,7 @@
 # include <dev/acpica/acpiio.h>
 #endif
 
-#include "system.h"
+#include "machine.h"
 
 #if defined(__OpenBSD__)
 # define CPU_STATES      6

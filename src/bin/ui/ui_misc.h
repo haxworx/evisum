@@ -2,7 +2,7 @@
 #define __UI_MISC_H__
 
 #include "ui.h"
-#include "../system/system.h"
+#include "../system/machine.h"
 
 void
 ui_tab_misc_add(Ui *ui);

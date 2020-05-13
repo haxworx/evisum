@@ -3,6 +3,6 @@ src += files([
    'disks.h',
    'process.c',
    'process.h',
-   'system.c',
-   'system.h',
+   'machine.c',
+   'machine.h',
 ])
