@@ -1765,7 +1765,8 @@ _ui_init(Evas_Object *parent)
    ui->sort_type = SORT_BY_PID;
    ui->selected_pid = -1;
    ui->program_pid = getpid();
-   ui->panel_visible = ui->disk_visible = ui->cpu_visible = ui->mem_visible =ui->misc_visible = EINA_TRUE;
+   ui->panel_visible = ui->disk_visible =
+      ui->cpu_visible = ui->mem_visible = ui->misc_visible = EINA_TRUE;
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
    ui->item_cache = NULL;

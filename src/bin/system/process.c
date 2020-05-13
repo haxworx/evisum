@@ -144,13 +144,13 @@ _parse_line(const char *line)
 }
 
 static void
-_mem_size(Proc_Info *proc, int pid)
+_mem_size(Proc_Info *proc)
 {
    FILE *f;
    char buf[1024];
    unsigned int dummy, size, shared, resident, data, text;
 
-   f = fopen(eina_slstr_printf("/proc/%d/statm", pid), "r");
+   f = fopen(eina_slstr_printf("/proc/%d/statm", proc->pid), "r");
    if (!f) return;
 
    if (fgets(buf, sizeof(buf), f))
@@ -169,9 +169,10 @@ _mem_size(Proc_Info *proc, int pid)
 }
 
 static void
-_cmd_args(Proc_Info *p, int pid, char *name, size_t len)
+_cmd_args(Proc_Info *p, char *name, size_t len)
 {
    char line[4096];
+   int pid = p->pid;
 
    char *link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
    if (link)
@@ -312,8 +313,8 @@ _process_list_linux_get(void)
         p->priority = st.pri;
         p->numthreads = st.numthreads;
         p->mem_virt = st.mem_virt;
-        _mem_size(p, pid);
-        _cmd_args(p, pid, st.name, sizeof(st.name));
+        _mem_size(p);
+        _cmd_args(p, st.name, sizeof(st.name));
 
         list = eina_list_append(list, p);
      }
@@ -377,8 +378,8 @@ proc_info_by_pid(int pid)
    p->nice = st.nice;
    p->numthreads = st.numthreads;
    p->mem_virt = st.mem_virt;
-   _mem_size(p, pid);
-   _cmd_args(p, pid, st.name, sizeof(st.name));
+   _mem_size(p);
+   _cmd_args(p, st.name, sizeof(st.name));
 
    _proc_thread_info(p);
 
