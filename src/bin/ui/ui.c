@@ -49,138 +49,6 @@ _config_load(Ui *ui)
      evas_object_resize(ui->win, _evisum_config->width, _evisum_config->height);
 }
 
-static void
-_system_stats(void *data, Ecore_Thread *thread)
-{
-   Ui *ui = data;
-
-   while (1)
-     {
-        results_t *results = system_stats_get();
-        if (!results)
-          {
-             ecore_main_loop_quit();
-             return;
-          }
-
-        ecore_thread_feedback(thread, results);
-
-        for (int i = 0; i < 4; i++)
-          {
-             if (ecore_thread_check(thread)) return;
-
-             if (ui->skip_wait)
-               {
-                  ui->skip_wait = EINA_FALSE;
-                  break;
-               }
-             usleep(250000);
-          }
-     }
-}
-
-const char *
-evisum_size_format(unsigned long value)
-{
-   const char *s;
-   double res = value;
-
-   if (value > (1024 * 1024 * 1024))
-     {
-        res /= (1024 * 1024 * 1024);
-        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_GB);
-     }
-   else if (value > (1024 * 1024))
-     {
-        res /= (1024 * 1024);
-        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_MB);
-     }
-   else if (value > (1024))
-     {
-        res /= (1024);
-        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_KB);
-     }
-   else
-     {
-        s = eina_slstr_printf("%1.0f %c", res, DATA_UNIT_B);
-     }
-   return s;
-}
-
-static char *
-_path_append(const char *path, const char *file)
-{
-   char *concat;
-   int len;
-   char separator = '/';
-
-   len = strlen(path) + strlen(file) + 2;
-   concat = malloc(len * sizeof(char));
-   snprintf(concat, len, "%s%c%s", path, separator, file);
-
-   return concat;
-}
-
-const char *
-evisum_icon_path_get(const char *name)
-{
-   char *path;
-   const char *icon_path, *directory = PACKAGE_DATA_DIR "/images";
-   icon_path = name;
-
-   path = _path_append(directory, eina_slstr_printf("%s.png", name));
-   if (path)
-     {
-        if (ecore_file_exists(path))
-          icon_path = eina_slstr_printf("%s", path);
-
-        free(path);
-     }
-
-   return icon_path;
-}
-
-static void
-_system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
-{
-   Ui *ui;
-   Evas_Object *progress;
-   results_t *results;
-   double ratio, value, cpu_usage = 0.0;
-
-   ui = data;
-   results = msg;
-
-   if (ecore_thread_check(thread))
-     goto out;
-
-   ui_tab_cpu_update(ui, results);
-   ui_tab_memory_update(ui, results);
-   ui_tab_disk_update(ui);
-   ui_tab_misc_update(ui, results);
-
-   for (int i = 0; i < results->cpu_count; i++)
-     {
-        cpu_usage += results->cores[i]->percent;
-        free(results->cores[i]);
-     }
-
-   cpu_usage = cpu_usage / system_cpu_online_count_get();
-
-   elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
-
-   progress = ui->progress_mem;
-   ratio = results->memory.total / 100.0;
-   value = results->memory.used / ratio;
-   elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s",
-                                   evisum_size_format(results->memory.used << 10),
-                                   evisum_size_format(results->memory.total << 10)));
-out:
-   free(results->cores);
-   free(results);
-}
-
 static int
 _sort_by_pid(const void *p1, const void *p2)
 {
@@ -1695,6 +1563,67 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    _config_save(ui);
 }
 
+const char *
+evisum_size_format(unsigned long value)
+{
+   const char *s;
+   double res = value;
+
+   if (value > (1024 * 1024 * 1024))
+     {
+        res /= (1024 * 1024 * 1024);
+        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_GB);
+     }
+   else if (value > (1024 * 1024))
+     {
+        res /= (1024 * 1024);
+        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_MB);
+     }
+   else if (value > (1024))
+     {
+        res /= (1024);
+        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_KB);
+     }
+   else
+     {
+        s = eina_slstr_printf("%1.0f %c", res, DATA_UNIT_B);
+     }
+   return s;
+}
+
+static char *
+_path_append(const char *path, const char *file)
+{
+   char *concat;
+   int len;
+   char separator = '/';
+
+   len = strlen(path) + strlen(file) + 2;
+   concat = malloc(len * sizeof(char));
+   snprintf(concat, len, "%s%c%s", path, separator, file);
+
+   return concat;
+}
+
+const char *
+evisum_icon_path_get(const char *name)
+{
+   char *path;
+   const char *icon_path, *directory = PACKAGE_DATA_DIR "/images";
+   icon_path = name;
+
+   path = _path_append(directory, eina_slstr_printf("%s.png", name));
+   if (path)
+     {
+        if (ecore_file_exists(path))
+          icon_path = eina_slstr_printf("%s", path);
+
+        free(path);
+     }
+
+   return icon_path;
+}
+
 void
 evisum_ui_shutdown(Ui *ui)
 {
@@ -1731,6 +1660,77 @@ evisum_ui_shutdown(Ui *ui)
      eina_list_free(ui->item_cache);
 
    eina_lock_free(&_lock);
+}
+
+static void
+_system_stats(void *data, Ecore_Thread *thread)
+{
+   Ui *ui = data;
+
+   while (1)
+     {
+        results_t *results = system_stats_get();
+        if (!results)
+          {
+             ecore_main_loop_quit();
+             return;
+          }
+
+        ecore_thread_feedback(thread, results);
+
+        for (int i = 0; i < 4; i++)
+          {
+             if (ecore_thread_check(thread)) return;
+
+             if (ui->skip_wait)
+               {
+                  ui->skip_wait = EINA_FALSE;
+                  break;
+               }
+             usleep(250000);
+          }
+     }
+}
+
+static void
+_system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
+{
+   Ui *ui;
+   Evas_Object *progress;
+   results_t *results;
+   double ratio, value, cpu_usage = 0.0;
+
+   ui = data;
+   results = msg;
+
+   if (ecore_thread_check(thread))
+     goto out;
+
+   ui_tab_cpu_update(ui, results);
+   ui_tab_memory_update(ui, results);
+   ui_tab_disk_update(ui);
+   ui_tab_misc_update(ui, results);
+
+   for (int i = 0; i < results->cpu_count; i++)
+     {
+        cpu_usage += results->cores[i]->percent;
+        free(results->cores[i]);
+     }
+
+   cpu_usage = cpu_usage / system_cpu_online_count_get();
+
+   elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
+
+   progress = ui->progress_mem;
+   ratio = results->memory.total / 100.0;
+   value = results->memory.used / ratio;
+   elm_progressbar_value_set(progress, value / 100);
+   elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s",
+                                   evisum_size_format(results->memory.used << 10),
+                                   evisum_size_format(results->memory.total << 10)));
+out:
+   free(results->cores);
+   free(results);
 }
 
 static void
