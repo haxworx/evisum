@@ -349,10 +349,29 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 }
 
 static Evas_Object *
+_item_column_add(Evas_Object *table, const char *text, int col)
+{
+   Evas_Object *rect, *label;
+
+   label = elm_label_add(table);
+   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_data_set(table, text, label);
+   evas_object_show(label);
+
+   rect = evas_object_rectangle_add(table);
+   evas_object_data_set(label, "rect", rect);
+
+   elm_table_pack(table, rect, col, 0, 1, 1);
+   elm_table_pack(table, label, col, 0, 1, 1);
+
+   return label;
+}
+
+static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *obj, *label;
-   Evas_Object *table, *rect;
+   Evas_Object *obj, *table, *label;
 
    obj = parent;
 
@@ -361,75 +380,17 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_weight_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(table);
 
-   label = elm_label_add(obj);
-   evas_object_data_set(table, "proc_pid", label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(label);
-   rect = evas_object_rectangle_add(table);
-   evas_object_data_set(label, "rect", rect);
-   elm_table_pack(table, rect, 0, 0, 1, 1);
-   elm_table_pack(table, label, 0, 0, 1, 1);
+   _item_column_add(table, "proc_pid", 0);
+   _item_column_add(table, "proc_uid", 1);
+   _item_column_add(table, "proc_size", 2);
+   _item_column_add(table, "proc_rss", 3);
+   _item_column_add(table, "proc_cmd", 4);
 
-   label = elm_label_add(table);
-   evas_object_data_set(table, "proc_uid", label);
-   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(label);
-   rect = evas_object_rectangle_add(table);
-   evas_object_data_set(label, "rect", rect);
-   elm_table_pack(table, rect, 1, 0, 1, 1);
-   elm_table_pack(table, label, 1, 0, 1, 1);
-
-   label = elm_label_add(table);
-   evas_object_data_set(table, "proc_size", label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(label);
-   rect = evas_object_rectangle_add(table);
-   evas_object_data_set(label, "rect", rect);
-   elm_table_pack(table, rect, 2, 0, 1, 1);
-   elm_table_pack(table, label, 2, 0, 1, 1);
-
-   label = elm_label_add(table);
-   evas_object_data_set(table, "proc_rss", label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(label);
-   rect = evas_object_rectangle_add(table);
-   evas_object_data_set(label, "rect", rect);
-   elm_table_pack(table, rect, 3, 0, 1, 1);
-   elm_table_pack(table, label, 3, 0, 1, 1);
-
-   label = elm_label_add(table);
-   evas_object_data_set(table, "proc_cmd", label);
-   evas_object_size_hint_align_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(label);
-   rect = evas_object_rectangle_add(table);
-   evas_object_data_set(label, "rect", rect);
-   elm_table_pack(table, rect, 4, 0, 1, 1);
-   elm_table_pack(table, label, 4, 0, 1, 1);
-
-   label = elm_label_add(table);
-   evas_object_data_set(table, "proc_state", label);
+   label = _item_column_add(table, "proc_state", 5);
    evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(label);
-   rect = evas_object_rectangle_add(table);
-   evas_object_data_set(label, "rect", rect);
-   elm_table_pack(table, label, 5, 0, 1, 1);
-   elm_table_pack(table, rect, 5, 0, 1, 1);
 
-   label = elm_label_add(table);
-   evas_object_data_set(table, "proc_cpu_usage", label);
+   label = _item_column_add(table, "proc_cpu_usage", 6);
    evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(label);
-   rect = evas_object_rectangle_add(table);
-   evas_object_data_set(label, "rect", rect);
-   elm_table_pack(table, label, 6, 0, 1, 1);
-   elm_table_pack(table, rect, 6, 0, 1, 1);
 
    return table;
 }
