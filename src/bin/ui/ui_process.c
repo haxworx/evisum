@@ -14,9 +14,12 @@ _exe_response(const char *command)
 
    lines = NULL;
 
+   int n = 1;
    while ((fgets(buf, sizeof(buf), p)) != NULL)
      {
-        lines = eina_list_append(lines, elm_entry_markup_to_utf8(buf));
+	if (n > 1)
+          lines = eina_list_append(lines, elm_entry_markup_to_utf8(buf));
+        n++;
      }
 
    pclose(p);
@@ -460,7 +463,7 @@ _threads_tab_add(Evas_Object *parent)
 
 
 static Evas_Object *
-_info_tab_add(Evas_Object *parent, const char *cmd)
+_info_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *box, *entry;
 
@@ -468,7 +471,7 @@ _info_tab_add(Evas_Object *parent, const char *cmd)
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
-   entry = elm_entry_add(box);
+   ui->entry_info = entry = elm_entry_add(box);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_FALSE);
@@ -476,25 +479,6 @@ _info_tab_add(Evas_Object *parent, const char *cmd)
    elm_entry_editable_set(entry, EINA_FALSE);
    elm_entry_scrollable_set(entry, EINA_TRUE);
    evas_object_show(entry);
-
-   Eina_List *lines = _exe_response(eina_slstr_printf("man %s | col -b", cmd));
-   if (lines)
-     {
-        Eina_Strbuf *buf = eina_strbuf_new();
-        eina_strbuf_append(buf, "<code>");
-        char *line;
-        EINA_LIST_FREE(lines, line)
-          {
-             eina_strbuf_append_printf(buf, "%s<br>", line);
-             free(line);
-          }
-
-        eina_list_free(lines);
-        eina_strbuf_append(buf, "</code>");
-        elm_object_text_set(entry, eina_strbuf_string_get(buf));
-        eina_strbuf_free(buf);
-     }
-
    elm_box_pack_end(box, entry);
 
    return box;
@@ -543,6 +527,28 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 
    _hide_all(ui, obj);
    evas_object_show(ui->info_view);
+
+   if (ui->info_init) return;
+
+   Eina_List *lines = _exe_response(eina_slstr_printf("man %s | col -b", ui->selected_cmd));
+   if (lines)
+     {
+        Eina_Strbuf *buf = eina_strbuf_new();
+        eina_strbuf_append(buf, "<code>");
+
+        char *line;
+        EINA_LIST_FREE(lines, line)
+          {
+             eina_strbuf_append_printf(buf, "%s<br>", line);
+             free(line);
+          }
+
+        eina_list_free(lines);
+        eina_strbuf_append(buf, "</code>");
+        elm_object_text_set(ui->entry_info, eina_strbuf_string_get(buf));
+        eina_strbuf_free(buf);
+     }
+   ui->info_init = EINA_TRUE;
 }
 
 static Evas_Object *
@@ -634,7 +640,7 @@ ui_process_win_add(int pid, const char *cmd)
 
    ui->main_view = _process_tab_add(win, ui);
    ui->thread_view = _threads_tab_add(win);
-   ui->info_view = _info_tab_add(win, cmd);
+   ui->info_view = _info_tab_add(win, ui);
 
    elm_table_pack(ui->content, ui->info_view, 0, 0, 1, 1);
    elm_table_pack(ui->content, ui->main_view, 0, 0, 1, 1);

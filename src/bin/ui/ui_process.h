@@ -15,6 +15,8 @@ typedef struct _Ui_Process {
    Evas_Object  *btn_info;
    Evas_Object  *btn_thread;
 
+   Evas_Object  *entry_info;
+
    Evas_Object  *entry_pid_cmd;
    Evas_Object  *entry_pid_cmd_args;
    Evas_Object  *entry_pid_user;
@@ -35,6 +37,7 @@ typedef struct _Ui_Process {
    char        *selected_cmd;
    int          selected_pid;
    int64_t      pid_cpu_time;
+   Eina_Bool    info_init;
 
    Ecore_Timer *timer_pid;
 } Ui_Process;
