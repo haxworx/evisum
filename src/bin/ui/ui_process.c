@@ -458,7 +458,7 @@ _info_tab_add(Evas_Object *parent, const char *cmd)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    evas_object_show(entry);
 
-   Eina_List *lines = _exe_response(eina_slstr_printf("man %s", cmd));
+   Eina_List *lines = _exe_response(eina_slstr_printf("man %s | col -b", cmd));
    if (lines)
      {
         Eina_Strbuf *buf = eina_strbuf_new();
@@ -471,7 +471,7 @@ _info_tab_add(Evas_Object *parent, const char *cmd)
           }
 
         eina_list_free(lines);
-        eina_strbuf_append(buf, "<code>");
+        eina_strbuf_append(buf, "</code>");
         elm_object_text_set(entry, eina_strbuf_string_get(buf));
         eina_strbuf_free(buf);
      }
