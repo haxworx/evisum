@@ -647,18 +647,6 @@ _process_list(void *data, Ecore_Thread *thread)
 }
 
 static void
-_thread_end_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
-{
-   thread = NULL;
-}
-
-static void
-_thread_error_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
-{
-   thread = NULL;
-}
-
-static void
 _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
 {
    Evas_Object *icon = elm_icon_add(button);
@@ -1602,6 +1590,18 @@ evisum_ui_shutdown(Ui *ui)
      eina_list_free(ui->item_cache);
 
    eina_lock_free(&_lock);
+}
+
+static void
+_thread_end_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
+{
+   thread = NULL;
+}
+
+static void
+_thread_error_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
+{
+   thread = NULL;
 }
 
 static void
