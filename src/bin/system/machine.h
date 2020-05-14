@@ -47,8 +47,8 @@ typedef struct
 
 #define INVALID_TEMP -999
 
-typedef struct results_t results_t;
-struct results_t
+typedef struct Sys_Info Sys_Info;
+struct Sys_Info
 {
    int           cpu_count;
    cpu_core_t  **cores;
@@ -62,20 +62,8 @@ struct results_t
    int           temperature;
 };
 
-results_t *
-system_stats_get(void);
-
-int
-system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used);
-
-bool
-system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing);
-
-int
-system_temperature_cpu_get(void);
-
-void
-system_power_state_get(power_t *power);
+Sys_Info *
+sys_info_all_get(void);
 
 int
 system_cpu_online_count_get();

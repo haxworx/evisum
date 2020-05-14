@@ -1172,7 +1172,7 @@ _linux_generic_network_status(unsigned long int *in,
 #endif
 
 static void
-_network_transfer_get(results_t *results)
+_network_transfer_get(Sys_Info *results)
 {
    unsigned long first_in = 0, first_out = 0;
    unsigned long last_in = 0, last_out = 0;
@@ -1251,7 +1251,7 @@ system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing)
 int
 system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used)
 {
-   results_t results;
+   Sys_Info results;
 
    memset(&results, 0, sizeof(results));
 
@@ -1276,22 +1276,22 @@ system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used
 static void *
 _network_transfer_get_thread_cb(void *arg)
 {
-   results_t *results = arg;
+   Sys_Info *results = arg;
 
    _network_transfer_get(results);
 
    return (void *)0;
 }
 
-results_t *
-system_stats_get(void)
+Sys_Info *
+sys_info_all_get(void)
 {
-   results_t *results;
+   Sys_Info *results;
    void *ret;
    pthread_t tid;
    int error;
 
-   results = calloc(1, sizeof(results_t));
+   results = calloc(1, sizeof(Sys_Info));
    if (!results) return NULL;
 
    results->cores = _cpu_cores_state_get(&results->cpu_count);

@@ -1,85 +1,46 @@
 #include "ui_process.h"
 #include "../system/process.h"
 
-static void
-_list_item_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+Eina_List *
+_exe_response(const char *command)
 {
-   pid_t *pid = data;
+   FILE *p;
+   Eina_List *lines;
+   char buf[8192];
 
-   free(pid);
-}
+   p = popen(command, "r");
+   if (!p)
+     return NULL;
 
-static int
-_sort_by_pid(const void *p1, const void *p2)
-{
-   const Proc_Info *inf1, *inf2;
+   lines = NULL;
 
-   inf1 = p1; inf2 = p2;
-
-   return inf1->pid - inf2->pid;
-}
-
-static void
-_process_panel_pids_update(Ui *ui)
-{
-   Proc_Info *proc;
-   Elm_Widget_Item *item;
-   Eina_List *list;
-   pid_t *pid;
-
-   if (!ui->panel_visible)
-     return;
-
-   elm_list_clear(ui->list_pid);
-
-   list = proc_info_all_get();
-   list = eina_list_sort(list, eina_list_count(list), _sort_by_pid);
-
-   EINA_LIST_FREE(list, proc)
+   while ((fgets(buf, sizeof(buf), p)) != NULL)
      {
-        pid = malloc(sizeof(pid_t));
-        *pid = proc->pid;
-
-        item = elm_list_item_append(ui->list_pid, eina_slstr_printf("%d", proc->pid), NULL, NULL, NULL, pid);
-        elm_object_item_del_cb_set(item, _list_item_del_cb);
-        proc_info_free(proc);
+        lines = eina_list_append(lines, elm_entry_markup_to_utf8(buf));
      }
 
-   elm_list_go(ui->list_pid);
+   pclose(p);
 
-   if (list)
-     eina_list_free(list);
+   return lines;
 }
 
-Eina_Bool
-ui_process_panel_update(void *data)
+static Eina_Bool
+_proc_info_update(void *data)
 {
-   Ui *ui;
-   const Eina_List *l, *list;
-   Elm_Widget_Item *it;
+   Ui_Process *ui;
    struct passwd *pwd_entry;
    Proc_Info *proc;
    double cpu_usage = 0.0;
 
    ui = data;
 
+   if (!ui->timer_pid)
+     ui->timer_pid = ecore_timer_add(ui->poll_delay, _proc_info_update, ui);
+
    proc = proc_info_by_pid(ui->selected_pid);
    if (!proc)
      {
-        _process_panel_pids_update(ui);
         return ECORE_CALLBACK_CANCEL;
-     }
-
-   list = elm_list_items_get(ui->list_pid);
-   EINA_LIST_FOREACH(list, l, it)
-     {
-        pid_t *pid = elm_object_item_data_get(it);
-        if (pid && *pid == ui->selected_pid)
-          {
-             elm_list_item_selected_set(it, EINA_TRUE);
-             elm_list_item_bring_in(it);
-             break;
-          }
      }
 
    elm_object_text_set(ui->entry_pid_cmd, proc->command);
@@ -121,42 +82,6 @@ ui_process_panel_update(void *data)
 }
 
 static void
-_process_panel_list_selected_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
-{
-   Elm_Object_Item *it;
-   Ui *ui;
-   const char *text;
-
-   ui = data;
-
-   it = elm_list_selected_item_get(obj);
-   text = elm_object_item_text_get(it);
-
-   if (ui->timer_pid)
-     {
-        ecore_timer_del(ui->timer_pid);
-        ui->timer_pid = NULL;
-     }
-
-   ui->selected_pid = atoi(text);
-   ui->pid_cpu_time = 0;
-
-   ui_process_panel_update(ui);
-
-   ui->timer_pid = ecore_timer_add(ui->poll_delay, ui_process_panel_update, ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
-}
-
-static void
-_panel_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   ui->panel_visible = !ui->panel_visible;
-}
-
-static void
 _btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
@@ -189,57 +114,17 @@ _btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
    kill(ui->selected_pid, SIGKILL);
 }
 
-void
-ui_process_panel_add(Ui *ui)
+static Evas_Object *
+_process_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
-   Evas_Object *parent, *panel, *hbox, *frame, *scroller, *table;
-   Evas_Object *label, *list, *entry, *button, *border;
+   Evas_Object *hbox, *scroller, *table;
+   Evas_Object *label, *entry, *button, *border;
    int i = 0;
-
-   parent = ui->content;
-
-   ui->panel = panel = elm_panel_add(parent);
-   evas_object_size_hint_weight_set(panel, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(panel, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_panel_orient_set(panel, ELM_PANEL_ORIENT_BOTTOM);
-   elm_panel_toggle(panel);
-   elm_object_content_set(ui->win, panel);
-   evas_object_hide(panel);
-   evas_object_smart_callback_add(ui->panel, "scroll", _panel_scrolled_cb, ui);
-
-   hbox = elm_box_add(parent);
-   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   elm_object_content_set(panel, hbox);
-   evas_object_show(hbox);
-
-   frame = elm_frame_add(hbox);
-   evas_object_size_hint_weight_set(frame, 0.2, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(frame, "PID");
-   elm_box_pack_end(hbox, frame);
-   evas_object_show(frame);
-
-   ui->list_pid = list = elm_list_add(frame);
-   evas_object_size_hint_weight_set(list, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_align_set(list, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_scroller_gravity_set(list, 0.5, 0.0);
-   evas_object_show(list);
-   evas_object_smart_callback_add(ui->list_pid, "selected", _process_panel_list_selected_cb, ui);
-   elm_object_content_set(frame, list);
-
-   frame = elm_frame_add(hbox);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_text_set(frame, _("Process Statistics"));
-   elm_box_pack_end(hbox, frame);
-   evas_object_show(frame);
-
-   table = elm_table_add(frame);
-   evas_object_size_hint_weight_set(table, 0.5, EVAS_HINT_EXPAND);
+ 
+   table = elm_table_add(parent);
+   evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(table);
+   evas_object_show(ui->content);
 
    scroller = elm_scroller_add(parent);
    evas_object_size_hint_weight_set(scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -247,8 +132,6 @@ ui_process_panel_add(Ui *ui)
    elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_ON);
    evas_object_show(scroller);
    elm_object_content_set(scroller, table);
-   elm_object_content_set(frame, scroller);
-   elm_box_pack_end(hbox, frame);
 
    label = elm_label_add(parent);
    elm_object_text_set(label, _("Command:"));
@@ -529,5 +412,210 @@ ui_process_panel_add(Ui *ui)
    evas_object_show(button);
    elm_object_content_set(border, button);
    evas_object_smart_callback_add(button, "clicked", _btn_kill_clicked_cb, ui);
+
+   return scroller;
+}
+
+static Evas_Object *
+_threads_tab_add(Evas_Object *parent)
+{
+   Evas_Object *box, *entry;
+
+   box = elm_box_add(parent);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   entry = elm_entry_add(box);
+   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_entry_single_line_set(entry, EINA_FALSE);
+   elm_entry_editable_set(entry, EINA_FALSE);
+   elm_entry_scrollable_set(entry, EINA_TRUE);
+   elm_object_text_set(entry, "threashdjh");
+   evas_object_show(entry);
+
+   elm_box_pack_end(box, entry);
+
+   return box;
+}
+
+
+static Evas_Object *
+_info_tab_add(Evas_Object *parent, const char *cmd)
+{
+   Evas_Object *box, *entry;
+
+   box = elm_box_add(parent);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   entry = elm_entry_add(box);
+   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_entry_single_line_set(entry, EINA_FALSE);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   elm_entry_editable_set(entry, EINA_FALSE);
+   elm_entry_scrollable_set(entry, EINA_TRUE);
+   evas_object_show(entry);
+
+   Eina_List *lines = _exe_response(eina_slstr_printf("man %s", cmd));
+   if (lines)
+     {
+        Eina_Strbuf *buf = eina_strbuf_new();
+        eina_strbuf_append(buf, "<code>");
+        char *line;
+        EINA_LIST_FREE(lines, line)
+          {
+             eina_strbuf_append_printf(buf, "%s<br>", line);
+             free(line);
+          }
+
+        eina_list_free(lines);
+        eina_strbuf_append(buf, "<code>");
+        elm_object_text_set(entry, eina_strbuf_string_get(buf));
+        eina_strbuf_free(buf);
+     }
+
+   elm_box_pack_end(box, entry);
+
+   return box;
+}
+
+static void
+_hide_all(Ui_Process *ui)
+{
+   evas_object_hide(ui->main_view);
+   evas_object_hide(ui->info_view);
+   evas_object_hide(ui->thread_view);
+}
+
+static void
+_btn_process_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui;
+
+   ui = data;
+
+   _hide_all(ui);
+   evas_object_show(ui->main_view);
+}
+
+static void
+_btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui;
+
+   ui = data;
+
+   _hide_all(ui);
+   evas_object_show(ui->thread_view);
+}
+
+static void
+_btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui;
+
+   ui = data;
+
+   _hide_all(ui);
+   evas_object_show(ui->info_view);
+}
+
+static Evas_Object *
+_tabs_add(Evas_Object *parent, Ui_Process *ui)
+{
+   Evas_Object *hbox, *btn;
+
+   hbox = elm_box_add(parent);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   btn = elm_button_add(parent);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("Process"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_process_clicked_cb, ui);
+
+   btn = elm_button_add(parent);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("Threads"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_threads_clicked_cb, ui);
+
+   btn = elm_button_add(parent);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("Information"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_info_clicked_cb, ui);
+
+   return hbox;
+}
+
+static void
+_win_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Evas_Object *win;
+   Ui_Process *ui;
+
+   ui  = data;
+   win = obj;
+
+   if (ui->timer_pid)
+     ecore_timer_del(ui->timer_pid);
+
+   evas_object_del(win);
+}
+
+void
+ui_process_win_add(int pid, const char *cmd)
+{
+   Evas_Object *win, *ic, *box, *tabs;
+
+   win = elm_win_util_standard_add("evisum", eina_slstr_printf("Evisum: %s", cmd));
+   ic = elm_icon_add(win);
+   elm_icon_standard_set(ic, "evisum");
+   elm_win_icon_object_set(win, ic);
+   Ui_Process *ui = calloc(1, sizeof(Ui_Process));
+   ui->selected_pid = pid;
+   ui->poll_delay = 3.0;
+
+   tabs = _tabs_add(win, ui);
+
+   box = elm_box_add(win);
+   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(box);
+   elm_box_pack_end(box, tabs);
+
+   ui->content = elm_table_add(box);
+   evas_object_size_hint_weight_set(ui->content, 0.5, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(ui->content, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(ui->content);
+
+   ui->main_view = _process_tab_add(win, ui);
+   ui->thread_view = _threads_tab_add(win);
+   ui->info_view = _info_tab_add(win, cmd);
+
+   elm_table_pack(ui->content, ui->info_view, 0, 0, 1, 1);
+   elm_table_pack(ui->content, ui->main_view, 0, 0, 1, 1);
+   elm_table_pack(ui->content, ui->thread_view, 0, 0, 1, 1);
+
+   elm_box_pack_end(box, ui->content);
+   elm_object_content_set(win, box);
+   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   elm_win_center(win, EINA_TRUE, EINA_TRUE);
+   evas_object_resize(win, 640, 480);
+   evas_object_show(win);
+
+   _proc_info_update(ui);
 }
 

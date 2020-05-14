@@ -143,7 +143,7 @@ ui_tab_memory_add(Ui *ui)
 }
 
 void
-ui_tab_memory_update(Ui *ui, results_t *results)
+ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
 {
    Evas_Object *progress;
    double ratio, value;
@@ -152,52 +152,52 @@ ui_tab_memory_update(Ui *ui, results_t *results)
      return;
 
    progress = ui->progress_mem_used;
-   ratio = results->memory.total / 100.0;
-   value = results->memory.used / ratio;
+   ratio = sysinfo->memory.total / 100.0;
+   value = sysinfo->memory.used / ratio;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                                   evisum_size_format(results->memory.used << 10),
-                                   evisum_size_format(results->memory.total << 10),
+                                   evisum_size_format(sysinfo->memory.used << 10),
+                                   evisum_size_format(sysinfo->memory.total << 10),
                                    value));
 
    progress = ui->progress_mem_cached;
-   ratio = results->memory.total / 100.0;
-   value = results->memory.cached / ratio;
+   ratio = sysinfo->memory.total / 100.0;
+   value = sysinfo->memory.cached / ratio;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                                   evisum_size_format(results->memory.cached << 10),
-                                   evisum_size_format(results->memory.total << 10),
+                                   evisum_size_format(sysinfo->memory.cached << 10),
+                                   evisum_size_format(sysinfo->memory.total << 10),
                                    value));
 
    progress = ui->progress_mem_buffered;
-   ratio = results->memory.total / 100.0;
-   value = results->memory.buffered / ratio;
+   ratio = sysinfo->memory.total / 100.0;
+   value = sysinfo->memory.buffered / ratio;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                                   evisum_size_format(results->memory.buffered << 10),
-                                   evisum_size_format(results->memory.total << 10),
+                                   evisum_size_format(sysinfo->memory.buffered << 10),
+                                   evisum_size_format(sysinfo->memory.total << 10),
                                    value));
 
    progress = ui->progress_mem_shared;
-   ratio = results->memory.total / 100.0;
-   value = results->memory.shared / ratio;
+   ratio = sysinfo->memory.total / 100.0;
+   value = sysinfo->memory.shared / ratio;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                                   evisum_size_format(results->memory.shared << 10),
-                                   evisum_size_format(results->memory.total << 10),
+                                   evisum_size_format(sysinfo->memory.shared << 10),
+                                   evisum_size_format(sysinfo->memory.total << 10),
                                    value));
 
    progress = ui->progress_mem_swap;
-   if (results->memory.swap_total)
+   if (sysinfo->memory.swap_total)
      {
-        ratio = results->memory.swap_total / 100.0;
-        value = results->memory.swap_used / ratio;
+        ratio = sysinfo->memory.swap_total / 100.0;
+        value = sysinfo->memory.swap_used / ratio;
      }
    else value = 0.0;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                                   evisum_size_format(results->memory.swap_used << 10),
-                                   evisum_size_format(results->memory.swap_total << 10),
+                                   evisum_size_format(sysinfo->memory.swap_used << 10),
+                                   evisum_size_format(sysinfo->memory.swap_total << 10),
                                    value));
 }
 

@@ -92,7 +92,7 @@ ui_tab_cpu_add(Ui *ui)
 }
 
 void
-ui_tab_cpu_update(Ui *ui, results_t *results)
+ui_tab_cpu_update(Ui *ui, Sys_Info *sysinfo)
 {
    Eina_List *l;
    Evas_Object *pb;
@@ -101,12 +101,12 @@ ui_tab_cpu_update(Ui *ui, results_t *results)
    if (!ui->cpu_visible)
      return;
 
-   if (results->temperature != INVALID_TEMP)
-     elm_object_text_set(ui->temp_label, eina_slstr_printf(_("Core at (%d °C)"), results->temperature));
+   if (sysinfo->temperature != INVALID_TEMP)
+     elm_object_text_set(ui->temp_label, eina_slstr_printf(_("Core at (%d °C)"), sysinfo->temperature));
 
    EINA_LIST_FOREACH(ui->cpu_list, l, pb)
      {
-        elm_progressbar_value_set(pb, results->cores[i]->percent / 100);
+        elm_progressbar_value_set(pb, sysinfo->cores[i]->percent / 100);
         ++i;
      }
 }

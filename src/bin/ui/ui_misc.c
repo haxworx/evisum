@@ -196,7 +196,7 @@ ui_tab_misc_add(Ui *ui)
 }
 
 void
-ui_tab_misc_update(Ui *ui, results_t *results)
+ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
 {
    Evas_Object *box, *frame;
 
@@ -210,9 +210,9 @@ ui_tab_misc_update(Ui *ui, results_t *results)
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_show(box);
 
-   _battery_usage_add(box, &results->power);
-   _network_usage_add(ui, box, results->incoming, EINA_TRUE);
-   _network_usage_add(ui, box, results->outgoing, EINA_FALSE);
+   _battery_usage_add(box, &sysinfo->power);
+   _network_usage_add(ui, box, sysinfo->incoming, EINA_TRUE);
+   _network_usage_add(ui, box, sysinfo->outgoing, EINA_FALSE);
 
    frame = elm_frame_add(ui->misc_activity);
    evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);

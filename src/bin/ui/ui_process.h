@@ -3,10 +3,37 @@
 
 #include "ui.h"
 
-void
-ui_process_panel_add(Ui *ui);
+typedef struct _Ui_Process {
+   Evas_Object  *content;
 
-Eina_Bool
-ui_process_panel_update(void *data);
+   Evas_Object  *main_view;
+   Evas_Object  *info_view;
+   Evas_Object  *thread_view;
+
+   Evas_Object  *entry_pid_cmd;
+   Evas_Object  *entry_pid_cmd_args;
+   Evas_Object  *entry_pid_user;
+   Evas_Object  *entry_pid_pid;
+   Evas_Object  *entry_pid_uid;
+   Evas_Object  *entry_pid_cpu;
+   Evas_Object  *entry_pid_threads;
+   Evas_Object  *entry_pid_virt;
+   Evas_Object  *entry_pid_rss;
+   Evas_Object  *entry_pid_shared;
+   Evas_Object  *entry_pid_size;
+   Evas_Object  *entry_pid_nice;
+   Evas_Object  *entry_pid_pri;
+   Evas_Object  *entry_pid_state;
+   Evas_Object  *entry_pid_cpu_usage;
+
+   int          poll_delay;
+   int          selected_pid;
+   int64_t      pid_cpu_time;
+
+   Ecore_Timer *timer_pid;
+} Ui_Process;
+
+void
+ui_process_win_add(int pid, const char *cmd);
 
 #endif

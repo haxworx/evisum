@@ -62,7 +62,6 @@ typedef struct Ui
 {
    Evas_Object  *win;
    Evas_Object  *menu;
-   Evas_Object  *panel;
    Evas_Object  *scroller;
    Evas_Object  *content;
    Evas_Object  *btn_general;
@@ -109,22 +108,6 @@ typedef struct Ui
 
    Eina_List    *item_cache;
    Evas_Object  *genlist_procs;
-
-   Evas_Object  *entry_pid_cmd;
-   Evas_Object  *entry_pid_cmd_args;
-   Evas_Object  *entry_pid_user;
-   Evas_Object  *entry_pid_pid;
-   Evas_Object  *entry_pid_uid;
-   Evas_Object  *entry_pid_cpu;
-   Evas_Object  *entry_pid_threads;
-   Evas_Object  *entry_pid_virt;
-   Evas_Object  *entry_pid_rss;
-   Evas_Object  *entry_pid_shared;
-   Evas_Object  *entry_pid_size;
-   Evas_Object  *entry_pid_nice;
-   Evas_Object  *entry_pid_pri;
-   Evas_Object  *entry_pid_state;
-   Evas_Object  *entry_pid_cpu_usage;
    Evas_Object  *entry_search;
 
    Ecore_Thread *thread_system;
@@ -141,7 +124,6 @@ typedef struct Ui
    Eina_Bool     ready;
 
    Eina_List    *cpu_times;
-   int64_t       pid_cpu_time;
 
    Eina_List    *cpu_list;
    Evas_Object  *temp_label;
@@ -150,7 +132,6 @@ typedef struct Ui
 
    Sort_Type     sort_type;
    Eina_Bool     sort_reverse;
-   Eina_Bool     panel_visible;
    Eina_Bool     searching;
    Eina_Bool     show_self;
 

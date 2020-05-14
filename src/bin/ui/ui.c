@@ -961,19 +961,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    ui->selected_pid = proc->pid;
-   ui_process_panel_update(ui);
-
-   if (ui->timer_pid)
-     {
-        ecore_timer_del(ui->timer_pid);
-        ui->timer_pid = NULL;
-     }
-
-   ui->timer_pid = ecore_timer_add(ui->poll_delay, ui_process_panel_update, ui);
-
-   elm_panel_toggle(ui->panel);
-   evas_object_show(ui->panel);
-   ui->panel_visible = EINA_TRUE;
+   ui_process_win_add(proc->pid, proc->command);
 }
 
 static void
@@ -1170,7 +1158,6 @@ _tabs_hide(Ui *ui)
 
    evas_object_hide(ui->entry_search);
    evas_object_hide(ui->system_activity);
-   evas_object_hide(ui->panel);
    evas_object_hide(ui->cpu_view);
    evas_object_hide(ui->mem_view);
    evas_object_hide(ui->disk_view);
@@ -1618,20 +1605,20 @@ evisum_ui_shutdown(Ui *ui)
 }
 
 static void
-_system_stats(void *data, Ecore_Thread *thread)
+_sys_info_all_poll(void *data, Ecore_Thread *thread)
 {
    Ui *ui = data;
 
    while (1)
      {
-        results_t *results = system_stats_get();
-        if (!results)
+        Sys_Info *sysinfo = sys_info_all_get();
+        if (!sysinfo)
           {
              ecore_main_loop_quit();
              return;
           }
 
-        ecore_thread_feedback(thread, results);
+        ecore_thread_feedback(thread, sysinfo);
 
         for (int i = 0; i < 4; i++)
           {
@@ -1648,28 +1635,28 @@ _system_stats(void *data, Ecore_Thread *thread)
 }
 
 static void
-_system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
+_sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
    Ui *ui;
    Evas_Object *progress;
-   results_t *results;
+   Sys_Info *sysinfo;
    double ratio, value, cpu_usage = 0.0;
 
    ui = data;
-   results = msg;
+   sysinfo = msg;
 
    if (ecore_thread_check(thread))
      goto out;
 
-   ui_tab_cpu_update(ui, results);
-   ui_tab_memory_update(ui, results);
+   ui_tab_cpu_update(ui, sysinfo);
+   ui_tab_memory_update(ui, sysinfo);
    ui_tab_disk_update(ui);
-   ui_tab_misc_update(ui, results);
+   ui_tab_misc_update(ui, sysinfo);
 
-   for (int i = 0; i < results->cpu_count; i++)
+   for (int i = 0; i < sysinfo->cpu_count; i++)
      {
-        cpu_usage += results->cores[i]->percent;
-        free(results->cores[i]);
+        cpu_usage += sysinfo->cores[i]->percent;
+        free(sysinfo->cores[i]);
      }
 
    cpu_usage = cpu_usage / system_cpu_online_count_get();
@@ -1677,30 +1664,29 @@ _system_stats_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
 
    progress = ui->progress_mem;
-   ratio = results->memory.total / 100.0;
-   value = results->memory.used / ratio;
+   ratio = sysinfo->memory.total / 100.0;
+   value = sysinfo->memory.used / ratio;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s",
-                                   evisum_size_format(results->memory.used << 10),
-                                   evisum_size_format(results->memory.total << 10)));
+                                   evisum_size_format(sysinfo->memory.used << 10),
+                                   evisum_size_format(sysinfo->memory.total << 10)));
 out:
-   free(results->cores);
-   free(results);
+   free(sysinfo->cores);
+   free(sysinfo);
 }
 
 static void
 _ui_launch(Ui *ui)
 {
-   ui_process_panel_update(ui);
    _process_list_update(ui);
 
-   ui->thread_system  = ecore_thread_feedback_run(_system_stats, _system_stats_feedback_cb,
-                                                  _thread_end_cb, _thread_error_cb, ui,
-                                                  EINA_FALSE);
+   ui->thread_system =
+      ecore_thread_feedback_run(_sys_info_all_poll, _sys_info_all_poll_feedback_cb,
+                                _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
 
-   ui->thread_process = ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
-                                                  _thread_end_cb, _thread_error_cb, ui,
-                                                  EINA_FALSE);
+   ui->thread_process =
+      ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
+                                _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE, _evisum_resize_cb, ui);
    evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN, _evisum_key_down_cb, ui);
@@ -1720,8 +1706,8 @@ _ui_init(Evas_Object *parent)
    ui->sort_type = SORT_BY_PID;
    ui->selected_pid = -1;
    ui->program_pid = getpid();
-   ui->panel_visible = ui->disk_visible =
-      ui->cpu_visible = ui->mem_visible = ui->misc_visible = EINA_TRUE;
+   ui->disk_visible = ui->cpu_visible = EINA_TRUE;
+   ui->mem_visible = ui->misc_visible = EINA_TRUE;
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
    ui->item_cache = NULL;
@@ -1735,7 +1721,6 @@ _ui_init(Evas_Object *parent)
    _ui_tabs_add(parent, ui);
    _ui_tab_system_add(ui);
 
-   ui_process_panel_add(ui);
    ui_tab_cpu_add(ui);
    ui_tab_memory_add(ui);
    ui_tab_disk_add(ui);
