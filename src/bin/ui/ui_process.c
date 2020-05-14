@@ -96,7 +96,7 @@ _proc_info_update(void *data)
 static void
 _btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Ui_Process *ui = data;
 
    if (ui->selected_pid == -1)
      return;
@@ -107,7 +107,7 @@ _btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
 static void
 _btn_stop_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Ui_Process *ui = data;
 
    if (ui->selected_pid == -1)
      return;
@@ -118,7 +118,7 @@ _btn_stop_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 static void
 _btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Ui_Process *ui = data;
 
    if (ui->selected_pid == -1)
      return;
