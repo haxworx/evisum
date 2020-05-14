@@ -14,12 +14,9 @@ _exe_response(const char *command)
 
    lines = NULL;
 
-   int n = 1;
    while ((fgets(buf, sizeof(buf), p)) != NULL)
      {
-	if (n > 1)
-          lines = eina_list_append(lines, elm_entry_markup_to_utf8(buf));
-        n++;
+        lines = eina_list_append(lines, elm_entry_markup_to_utf8(buf));
      }
 
    pclose(p);
@@ -145,12 +142,22 @@ _entry_add(Evas_Object *parent)
 }
 
 static Evas_Object *
+_label_add(Evas_Object *parent, const char *text)
+{
+   Evas_Object *label = elm_label_add(parent);
+   elm_object_text_set(label, text);
+   evas_object_show(label);
+
+   return label;
+}
+
+static Evas_Object *
 _process_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *hbox, *scroller, *table;
    Evas_Object *label, *entry, *button, *border;
    int i = 0;
- 
+
    table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
@@ -163,127 +170,82 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(scroller);
    elm_object_content_set(scroller, table);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("Command:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("Command:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_cmd = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("Command line:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("Command line:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_cmd_args = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("PID:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("PID:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_pid = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("Username:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("Username:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_user = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("UID:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("UID:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_uid = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
 #if defined(__MacOS__)
-   elm_object_text_set(label, _("WQ #:"));
+   label = _label_add(parent, _("WQ #:"));
 #else
-   elm_object_text_set(label, _("CPU #:"));
+   label = _label_add(parent, _("CPU #:"));
 #endif
-   evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_cpu = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("Threads:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("Threads:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_threads = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _(" Memory :"));
-   evas_object_show(label);
+   label = _label_add(parent, _(" Memory :"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_size = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _(" Shared memory:"));
-   evas_object_show(label);
+   label = _label_add(parent, _(" Shared memory:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_shared = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _(" Resident memory:"));
-   evas_object_show(label);
+   label = _label_add(parent,  _(" Resident memory:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_rss = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _(" Virtual memory:"));
-   evas_object_show(label);
+   label = _label_add(parent, _(" Virtual memory:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_virt = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("Nice:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("Nice:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_nice = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("Priority:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("Priority:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_pri = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("State:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("State:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_state = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
-   label = elm_label_add(parent);
-   elm_object_text_set(label, _("CPU %:"));
-   evas_object_show(label);
+   label = _label_add(parent, _("CPU %:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-
    ui->entry_pid_cpu_usage = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
@@ -372,7 +334,6 @@ _threads_tab_add(Evas_Object *parent)
    return box;
 }
 
-
 static Evas_Object *
 _info_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
@@ -433,6 +394,9 @@ static void
 _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
+   char *line;
+   Eina_Strbuf *buf;
+   int n;
 
    ui = data;
 
@@ -444,20 +408,22 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
    Eina_List *lines = _exe_response(eina_slstr_printf("man %s | col -b", ui->selected_cmd));
    if (lines)
      {
-        Eina_Strbuf *buf = eina_strbuf_new();
+        buf = eina_strbuf_new();
         eina_strbuf_append(buf, "<code>");
 
-        char *line;
+        n = 1;
         EINA_LIST_FREE(lines, line)
           {
-             eina_strbuf_append_printf(buf, "%s<br>", line);
+             if (n++ > 1)
+               eina_strbuf_append_printf(buf, "%s<br>", line);
              free(line);
           }
 
-        eina_list_free(lines);
         eina_strbuf_append(buf, "</code>");
         elm_object_text_set(ui->entry_info, eina_strbuf_string_get(buf));
         eina_strbuf_free(buf);
+
+        eina_list_free(lines);
      }
    ui->info_init = EINA_TRUE;
 }
