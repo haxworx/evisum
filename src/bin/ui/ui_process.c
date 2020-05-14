@@ -24,6 +24,12 @@ _exe_response(const char *command)
    return lines;
 }
 
+static void
+_win_title_set(Evas_Object *win, const char *fmt, const char *cmd, int pid)
+{
+    elm_win_title_set(win, eina_slstr_printf(fmt, cmd, pid));
+}
+
 static Eina_Bool
 _proc_info_update(void *data)
 {
@@ -40,6 +46,12 @@ _proc_info_update(void *data)
    proc = proc_info_by_pid(ui->selected_pid);
    if (!proc)
      {
+         if (ui->timer_pid)
+           ecore_timer_del(ui->timer_pid);
+         ui->timer_pid = NULL;
+
+        _win_title_set(ui->win, _("%s (%d) - Not running"), ui->selected_cmd, ui->selected_pid);
+
         return ECORE_CALLBACK_CANCEL;
      }
 
@@ -571,8 +583,11 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUS
 
    if (ui->timer_pid)
      ecore_timer_del(ui->timer_pid);
+   if (ui->selected_cmd)
+     free(ui->selected_cmd);
 
    evas_object_del(win);
+   free(ui);
 }
 
 void
@@ -580,14 +595,16 @@ ui_process_win_add(int pid, const char *cmd)
 {
    Evas_Object *win, *ic, *box, *tabs;
 
-   win = elm_win_util_standard_add("evisum", eina_slstr_printf("Evisum: %s", cmd));
+   Ui_Process *ui = calloc(1, sizeof(Ui_Process));
+   ui->selected_pid = pid;
+   ui->selected_cmd = strdup(cmd);
+   ui->poll_delay = 3.0;
+
+   ui->win = win = elm_win_util_standard_add("evisum", "evisum");
+   _win_title_set(win, "%s (%d)", cmd, pid);
    ic = elm_icon_add(win);
    elm_icon_standard_set(ic, "evisum");
    elm_win_icon_object_set(win, ic);
-   Ui_Process *ui = calloc(1, sizeof(Ui_Process));
-   ui->selected_pid = pid;
-   ui->poll_delay = 3.0;
-
    tabs = _tabs_add(win, ui);
 
    box = elm_box_add(win);

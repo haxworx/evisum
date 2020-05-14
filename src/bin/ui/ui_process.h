@@ -4,6 +4,7 @@
 #include "ui.h"
 
 typedef struct _Ui_Process {
+   Evas_Object  *win;
    Evas_Object  *content;
 
    Evas_Object  *main_view;
@@ -27,6 +28,7 @@ typedef struct _Ui_Process {
    Evas_Object  *entry_pid_cpu_usage;
 
    int          poll_delay;
+   char        *selected_cmd;
    int          selected_pid;
    int64_t      pid_cpu_time;
 
