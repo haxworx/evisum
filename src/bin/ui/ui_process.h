@@ -11,6 +11,10 @@ typedef struct _Ui_Process {
    Evas_Object  *info_view;
    Evas_Object  *thread_view;
 
+   Evas_Object  *btn_main;
+   Evas_Object  *btn_info;
+   Evas_Object  *btn_thread;
+
    Evas_Object  *entry_pid_cmd;
    Evas_Object  *entry_pid_cmd_args;
    Evas_Object  *entry_pid_user;
