@@ -130,6 +130,21 @@ _btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static Evas_Object *
+_entry_add(Evas_Object *parent)
+{
+   Evas_Object *entry = elm_entry_add(parent);
+   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_entry_single_line_set(entry, EINA_TRUE);
+   elm_entry_scrollable_set(entry, EINA_TRUE);
+   elm_entry_editable_set(entry, EINA_FALSE);
+   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   evas_object_show(entry);
+
+   return entry;
+}
+
+static Evas_Object *
 _process_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *hbox, *scroller, *table;
@@ -153,14 +168,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_cmd = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_cmd = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -168,14 +176,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_cmd_args = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_cmd_args = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -183,14 +184,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_pid = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_pid = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -198,14 +192,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_user = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_user = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -213,14 +200,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_uid = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_uid = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -232,14 +212,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_cpu = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_cpu = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -247,14 +220,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_threads = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_threads = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -262,14 +228,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_size = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_size = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -277,14 +236,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_shared = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_shared = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -292,28 +244,15 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_rss = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_rss = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
    elm_object_text_set(label, _(" Virtual memory:"));
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
-   ui->entry_pid_virt = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+
+   ui->entry_pid_virt = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -321,14 +260,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_nice = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_nice = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -336,14 +268,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_pri = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_pri = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -351,14 +276,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_state = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_state = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = elm_label_add(parent);
@@ -366,14 +284,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(label);
    elm_table_pack(table, label, 0, i, 1, 1);
 
-   ui->entry_pid_cpu_usage = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   evas_object_show(entry);
-   elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
+   ui->entry_pid_cpu_usage = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    hbox = elm_box_add(parent);

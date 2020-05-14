@@ -27,7 +27,8 @@ _win_add(void)
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
-   evas_object_resize(win, EVISUM_SIZE_WIDTH * elm_config_scale_get(), EVISUM_SIZE_HEIGHT * elm_config_scale_get());
+   evas_object_resize(win, EVISUM_SIZE_WIDTH * elm_config_scale_get(),
+                           EVISUM_SIZE_HEIGHT * elm_config_scale_get());
    elm_win_title_set(win, _("Evisum: System Monitor"));
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
 
