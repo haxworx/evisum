@@ -48,7 +48,7 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
      {
         long *cpu_time, *cpu_time_prev;
         double cpu_usage = 0.0;
-        const char *key = t->command;
+        const char *key = eina_slstr_printf("%s:%d", t->thread_name, t->tid);
 
         if ((cpu_time_prev = eina_hash_find(ui->hash_cpu_times, key)) == NULL)
           {
@@ -62,7 +62,7 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
              *cpu_time_prev = t->cpu_time;
           }
 
-        eina_strbuf_append_printf(buf, "Name %s<br>", t->command);
+        eina_strbuf_append_printf(buf, "Name %s<br>", t->thread_name);
         eina_strbuf_append_printf(buf, "State %s<br>", t->state);
         eina_strbuf_append_printf(buf, "CPU %d<br>", t->cpu_id);
         eina_strbuf_append_printf(buf, "CPU %1.1f%%", cpu_usage);

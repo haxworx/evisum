@@ -46,6 +46,9 @@ typedef struct _Proc_Info
    // Not used yet in UI.
    long        cpu_time;
 
+   int         tid;
+   char       *thread_name;
+
    Eina_List  *threads;
 } Proc_Info;
 

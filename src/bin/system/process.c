@@ -350,7 +350,10 @@ _proc_thread_info(Proc_Info *p)
         t->numthreads = st.numthreads;
         t->mem_virt = st.mem_virt;
         t->mem_rss = st.mem_rss;
-        t->command = strdup(st.name);
+
+        t->tid = tid;
+        t->thread_name = strdup(st.name);
+
         p->threads = eina_list_append(p->threads, t);
      }
 
@@ -1085,6 +1088,9 @@ proc_info_free(Proc_Info *proc)
      free(proc->command);
    if (proc->arguments)
      free(proc->arguments);
+   if (proc->thread_name)
+     free(proc->thread_name);
+
    free(proc);
 }
 
