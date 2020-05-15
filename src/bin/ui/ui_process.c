@@ -25,6 +25,55 @@ _exe_response(const char *command)
 }
 
 static void
+_hash_free_cb(void *data)
+{
+   long *cpu_time = data;
+   if (cpu_time)
+     free(cpu_time);
+}
+
+static void
+_thread_info_set(Ui_Process *ui, Proc_Info *proc)
+{
+   Eina_List *l;
+   Proc_Info *t;
+   Eina_Strbuf *buf = eina_strbuf_new();
+
+   if (!ui->hash_cpu_times)
+     {
+        ui->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
+     }
+
+   EINA_LIST_FOREACH(proc->threads, l, t)
+     {
+        long *cpu_time, *cpu_time_prev;
+        double cpu_usage = 0.0;
+        const char *key = t->command;
+
+        if ((cpu_time_prev = eina_hash_find(ui->hash_cpu_times, key)) == NULL)
+          {
+             cpu_time = malloc(sizeof(long));
+             *cpu_time = t->cpu_time;
+             eina_hash_add(ui->hash_cpu_times, key, cpu_time);
+          }
+        else
+          {
+             cpu_usage = (double) (t->cpu_time - *cpu_time_prev) / ui->poll_delay;
+             *cpu_time_prev = t->cpu_time;
+          }
+
+        eina_strbuf_append_printf(buf, "Name %s<br>", t->command);
+        eina_strbuf_append_printf(buf, "State %s<br>", t->state);
+        eina_strbuf_append_printf(buf, "CPU %d<br>", t->cpu_id);
+        eina_strbuf_append_printf(buf, "CPU %1.1f%%", cpu_usage);
+        eina_strbuf_append(buf, "<br><br>");
+     }
+
+   elm_object_text_set(ui->entry_thread, eina_strbuf_string_get(buf));
+   eina_strbuf_free(buf);
+}
+
+static void
 _win_title_set(Evas_Object *win, const char *fmt, const char *cmd, int pid)
 {
     elm_win_title_set(win, eina_slstr_printf(fmt, cmd, pid));
@@ -87,6 +136,8 @@ _proc_info_update(void *data)
    elm_object_text_set(ui->entry_pid_cpu_usage, eina_slstr_printf("%.1f%%", cpu_usage));
 
    ui->pid_cpu_time = proc->cpu_time;
+
+   _thread_info_set(ui, proc);
 
    proc_info_free(proc);
 
@@ -312,7 +363,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
 }
 
 static Evas_Object *
-_threads_tab_add(Evas_Object *parent)
+_threads_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *box, *entry;
 
@@ -320,13 +371,12 @@ _threads_tab_add(Evas_Object *parent)
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
 
-   entry = elm_entry_add(box);
+   ui->entry_thread = entry = elm_entry_add(box);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(entry, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_entry_single_line_set(entry, EINA_FALSE);
    elm_entry_editable_set(entry, EINA_FALSE);
    elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_object_text_set(entry, "threashdjh");
    evas_object_show(entry);
 
    elm_box_pack_end(box, entry);
@@ -478,6 +528,9 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUS
    ui  = data;
    win = obj;
 
+   if (ui->hash_cpu_times)
+     eina_hash_free(ui->hash_cpu_times);
+
    if (ui->timer_pid)
      ecore_timer_del(ui->timer_pid);
    if (ui->selected_cmd)
@@ -516,7 +569,7 @@ ui_process_win_add(int pid, const char *cmd)
    evas_object_show(ui->content);
 
    ui->main_view = _process_tab_add(win, ui);
-   ui->thread_view = _threads_tab_add(win);
+   ui->thread_view = _threads_tab_add(win, ui);
    ui->info_view = _info_tab_add(win, ui);
 
    elm_table_pack(ui->content, ui->info_view, 0, 0, 1, 1);
