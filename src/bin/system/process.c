@@ -392,27 +392,12 @@ proc_info_by_pid(int pid)
 
 #if defined(__OpenBSD__)
 
-Proc_Info *
-proc_info_by_pid(int pid)
+static void
+_proc_get(Proc_Info *p, struct kinfo_proc *kp)
 {
-   struct kinfo_proc *kp, *kpt;
-   kvm_t *kern;
-   char **args;
-   char errbuf[_POSIX2_LINE_MAX];
-   char name[1024];
-   int count, pagesize, pid_count;
+   static int pagesize = 0;
 
-   kern = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
-   if (!kern) return NULL;
-
-   kp = kvm_getprocs(kern, KERN_PROC_PID, pid, sizeof(*kp), &count);
-   if (!kp) return NULL;
-
-   if (count == 0) return NULL;
-   pagesize = getpagesize();
-
-   Proc_Info *p = calloc(1, sizeof(Proc_Info));
-   if (!p) return NULL;
+   if (!pagesize) pagesize = getpagesize();
 
    p->pid = kp->p_pid;
    p->uid = kp->p_uid;
@@ -425,6 +410,14 @@ proc_info_by_pid(int pid)
    p->mem_shared = kp->p_uru_ixrss;
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
+   p->tid = kp->p_tid;
+}
+
+static void
+_cmd_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
+{
+   char **args;
+   char name[1024];
 
    if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
      {
@@ -444,6 +437,29 @@ proc_info_by_pid(int pid)
 
    if (!p->command)
      p->command = strdup(kp->p_comm);
+}
+
+Proc_Info *
+proc_info_by_pid(int pid)
+{
+   struct kinfo_proc *kp, *kpt;
+   kvm_t *kern;
+   char errbuf[_POSIX2_LINE_MAX];
+   int count, pid_count;
+
+   kern = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
+   if (!kern) return NULL;
+
+   kp = kvm_getprocs(kern, KERN_PROC_PID, pid, sizeof(*kp), &count);
+   if (!kp) return NULL;
+
+   if (count == 0) return NULL;
+
+   Proc_Info *p = calloc(1, sizeof(Proc_Info));
+   if (!p) return NULL;
+
+   _proc_get(p, kp);
+   _cmd_get(p, kern, kp);
 
    kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
 
@@ -452,29 +468,21 @@ proc_info_by_pid(int pid)
         if (kp[i].p_pid != p->pid) continue;
 
         kpt = &kp[i];
-        p->numthreads++;
+
+        if (kpt->p_tid <= 0) continue;
 
         Proc_Info *t = calloc(1, sizeof(Proc_Info));
         if (!t) continue;
 
-        t->pid = kpt->p_pid;
-        t->uid = kpt->p_uid;
-        t->cpu_id = kpt->p_cpuid;
-        t->state = _process_state_name(kpt->p_stat);
-        t->cpu_time = kpt->p_uticks + kpt->p_sticks + kpt->p_iticks;
-        t->mem_virt = p->mem_size = (kpt->p_vm_tsize * pagesize) +
-           (kpt->p_vm_dsize * pagesize) + (kpt->p_vm_ssize * pagesize);
-        t->mem_rss = kpt->p_vm_rssize * pagesize;
-        t->mem_shared = kpt->p_uru_ixrss;
-        t->priority = kpt->p_priority - PZERO;
-        t->nice = kpt->p_nice - NZERO;
+        _proc_get(t, kpt);
 
-        int tid = kpt->p_tid;
-        if (tid < 0) tid = 0;
-        t->command = strdup(eina_slstr_printf("%s:%d", kpt->p_comm, tid));
+        t->tid = kpt->p_tid;
+        t->thread_name = strdup(kpt->p_comm);
 
         p->threads = eina_list_append(p->threads, t);
      }
+
+   p->numthreads = eina_list_count(p->threads);
 
    kvm_close(kern);
 
@@ -486,11 +494,9 @@ _process_list_openbsd_get(void)
 {
    struct kinfo_proc *kps, *kp;
    Proc_Info *p;
-   char **args;
    char errbuf[4096];
-   char name[1024];
    kvm_t *kern;
-   int pid_count, pagesize;
+   int pid_count;
    Eina_List *list = NULL;
 
    kern = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, errbuf);
@@ -499,43 +505,15 @@ _process_list_openbsd_get(void)
    kps = kvm_getprocs(kern, KERN_PROC_ALL, 0, sizeof(*kps), &pid_count);
    if (!kps) return NULL;
 
-   pagesize = getpagesize();
-
    for (int i = 0; i < pid_count; i++)
      {
         p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
 
         kp = &kps[i];
-        p->pid = kp->p_pid;
-        p->uid = kp->p_uid;
-        p->cpu_id = kp->p_cpuid;
-        p->state = _process_state_name(kp->p_stat);
-        p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-        p->mem_size = p->mem_virt = (kp->p_vm_tsize * pagesize) +
-           (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
-        p->mem_rss = kp->p_vm_rssize * pagesize;
-        p->mem_shared = kp->p_uru_ixrss;
-        p->priority = kp->p_priority - PZERO;
-        p->nice = kp->p_nice - NZERO;
 
-        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
-          {
-             Eina_Strbuf *buf = eina_strbuf_new();
-             for (int i = 0; args[i]; i++)
-               {
-                  eina_strbuf_append(buf, args[i]);
-                  if (args[i + 1])
-                    eina_strbuf_append(buf, " ");
-               }
-             p->arguments = eina_strbuf_string_steal(buf);
-             eina_strbuf_free(buf);
-
-             if (args[0] && ecore_file_exists(args[0]))
-                p->command = strdup(ecore_file_file_get(args[0]));
-          }
-        if (!p->command)
-          p->command = strdup(kp->p_comm);
+        _proc_get(p, kp);
+        _cmd_get(p, kern, kp);
 
         list = eina_list_append(list, p);
      }
