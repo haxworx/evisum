@@ -393,7 +393,7 @@ proc_info_by_pid(int pid)
 Proc_Info *
 proc_info_by_pid(int pid)
 {
-   struct kinfo_proc *kp;
+   struct kinfo_proc *kp, *kpt;
    kvm_t *kern;
    char **args;
    char errbuf[_POSIX2_LINE_MAX];
@@ -423,7 +423,6 @@ proc_info_by_pid(int pid)
    p->mem_shared = kp->p_uru_ixrss;
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
-   p->numthreads = -1;
 
    if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
      {
@@ -431,7 +430,8 @@ proc_info_by_pid(int pid)
         for (int i = 0; args[i]; i++)
           {
              eina_strbuf_append(buf, args[i]);
-             eina_strbuf_append(buf, " ");
+             if (args[i + 1])
+               eina_strbuf_append(buf, " ");
           }
         p->arguments = eina_strbuf_string_steal(buf);
         eina_strbuf_free(buf);
@@ -447,8 +447,31 @@ proc_info_by_pid(int pid)
 
    for (int i = 0; i < pid_count; i++)
      {
-        if (kp[i].p_pid == p->pid)
-          p->numthreads++;
+        if (kp[i].p_pid != p->pid) continue;
+
+        kpt = &kp[i];
+        p->numthreads++;
+
+        Proc_Info *t = calloc(1, sizeof(Proc_Info));
+        if (!t) continue;
+
+        t->pid = kpt->p_pid;
+        t->uid = kpt->p_uid;
+        t->cpu_id = kpt->p_cpuid;
+        t->state = _process_state_name(kpt->p_stat);
+        t->cpu_time = kpt->p_uticks + kpt->p_sticks + kpt->p_iticks;
+        t->mem_virt = p->mem_size = (kpt->p_vm_tsize * pagesize) +
+           (kpt->p_vm_dsize * pagesize) + (kpt->p_vm_ssize * pagesize);
+        t->mem_rss = kpt->p_vm_rssize * pagesize;
+        t->mem_shared = kpt->p_uru_ixrss;
+        t->priority = kpt->p_priority - PZERO;
+        t->nice = kpt->p_nice - NZERO;
+
+        int tid = kpt->p_tid;
+        if (tid < 0) tid = 0;
+        t->command = strdup(eina_slstr_printf("%s:%d", kpt->p_comm, tid));
+
+        p->threads = eina_list_append(p->threads, t);
      }
 
    kvm_close(kern);
@@ -493,14 +516,15 @@ _process_list_openbsd_get(void)
         p->mem_shared = kp->p_uru_ixrss;
         p->priority = kp->p_priority - PZERO;
         p->nice = kp->p_nice - NZERO;
-        p->numthreads = -1;
+
         if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
           {
              Eina_Strbuf *buf = eina_strbuf_new();
              for (int i = 0; args[i]; i++)
                {
                   eina_strbuf_append(buf, args[i]);
-                  eina_strbuf_append(buf, " ");
+                  if (args[i + 1])
+                    eina_strbuf_append(buf, " ");
                }
              p->arguments = eina_strbuf_string_steal(buf);
              eina_strbuf_free(buf);
@@ -513,23 +537,6 @@ _process_list_openbsd_get(void)
 
         list = eina_list_append(list, p);
      }
-
-   /* We don't need to count the threads for our usage in Evisum.
-
-     If necessary this can be re-enabled. Our single process query is
-     sufficient.
-
-   kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
-
-   EINA_LIST_FOREACH(list, l, p)
-     {
-        for (int i = 0; i < pid_count; i++)
-          {
-             if (kp[i].p_pid == p->pid)
-               p->numthreads++;
-          }
-     }
-   */
 
    kvm_close(kern);
 
@@ -909,7 +916,7 @@ _process_list_freebsd_get(void)
         if (p->cpu_id == -1)
           p->cpu_id = kp->ki_lastcpu;
 
-	_cmd_get(p, kp);
+        _cmd_get(p, kp);
 
         usage = &kp->ki_rusage;
         p->cpu_time = (usage->ru_utime.tv_sec * 1000000) +
