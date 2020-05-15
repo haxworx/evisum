@@ -108,6 +108,6 @@ ui_tab_disk_update(Ui *ui)
         free(path);
      }
    if (disks)
-     free(disks);
+     eina_list_free(disks);
 }
 
