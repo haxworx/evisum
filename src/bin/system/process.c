@@ -669,37 +669,80 @@ _cmd_get(Proc_Info *p, int pid)
    free(argv);
 }
 
+static Proc_Info *
+_proc_pidinfo(size_t pid)
+{
+   struct proc_taskallinfo taskinfo;
+   int size = proc_pidinfo(pid, PROC_PIDTASKALLINFO, 0, &taskinfo, sizeof(taskinfo));
+   if (size != sizeof(taskinfo)) return NULL;
+
+   Proc_Info *p = calloc(1, sizeof(Proc_Info));
+   if (!p) return NULL;
+
+   p->pid = pid;
+   p->uid = taskinfo.pbsd.pbi_uid;
+   p->cpu_id = -1;
+   p->cpu_time = taskinfo.ptinfo.pti_total_user +
+      taskinfo.ptinfo.pti_total_system;
+   p->cpu_time /= 10000000;
+   p->state = _process_state_name(taskinfo.pbsd.pbi_status);
+   p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
+   p->mem_rss = taskinfo.ptinfo.pti_resident_size;
+   p->mem_shared = 0;
+   p->priority = taskinfo.ptinfo.pti_priority;
+   p->nice = taskinfo.pbsd.pbi_nice;
+   p->numthreads = taskinfo.ptinfo.pti_threadnum;
+   _cmd_get(p, pid);
+
+   return p;
+}
+
 static Eina_List *
-_process_list_macos_get(void)
+_process_list_macos_fallback_get(void)
 {
    Eina_List *list = NULL;
 
    for (int i = 1; i <= PID_MAX; i++)
      {
-        struct proc_taskallinfo taskinfo;
-        int size = proc_pidinfo(i, PROC_PIDTASKALLINFO, 0, &taskinfo, sizeof(taskinfo));
-        if (size != sizeof(taskinfo)) continue;
-
-        Proc_Info *p = calloc(1, sizeof(Proc_Info));
-        if (!p) return NULL;
-
-        p->pid = i;
-        p->uid = taskinfo.pbsd.pbi_uid;
-        p->cpu_id = -1;
-        p->cpu_time = taskinfo.ptinfo.pti_total_user +
-           taskinfo.ptinfo.pti_total_system;
-        p->cpu_time /= 10000000;
-        p->state = _process_state_name(taskinfo.pbsd.pbi_status);
-        p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
-        p->mem_rss = taskinfo.ptinfo.pti_resident_size;
-        p->mem_shared = 0;
-        p->priority = taskinfo.ptinfo.pti_priority;
-        p->nice = taskinfo.pbsd.pbi_nice;
-        p->numthreads = taskinfo.ptinfo.pti_threadnum;
-        _cmd_get(p, i);
-
-        list = eina_list_append(list, p);
+        Proc_Info *p = _proc_pidinfo(i);
+        if (p)
+          list = eina_list_append(list, p);
      }
+
+   return list;
+}
+
+static Eina_List *
+_process_list_macos_get(void)
+{
+   Eina_List *list = NULL;
+   pid_t *pids = NULL;
+   int size, pid_count;
+
+   size = proc_listpids(PROC_ALL_PIDS, 0, NULL, 0);
+   if (size == -1)
+     return _process_list_macos_fallback_get();
+
+   pids = malloc(size * sizeof(pid_t));
+   if (!pids) return NULL;
+
+   size = proc_listpids(PROC_ALL_PIDS, 0, pids, size * sizeof(pid_t));
+   if (size == -1)
+     {
+        free(pids);
+        return _process_list_macos_fallback_get();
+     }
+
+   pid_count = size / sizeof(pid_t);
+   for (int i = 0; i < pid_count; i++)
+     {
+        pid_t pid = pids[i];
+        Proc_Info *p = _proc_pidinfo(pid);
+        if (p)
+          list = eina_list_append(list, p);
+     }
+
+   free(pids);
 
    return list;
 }
