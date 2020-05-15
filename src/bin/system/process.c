@@ -985,6 +985,7 @@ _proc_info_by_pid_fallback(int pid)
    p->nice = kp.ki_nice - NZERO;
    p->priority = kp.ki_pri.pri_level - PZERO;
    p->numthreads = kp.ki_numthreads;
+   p->tid = kp.ki_tid;
 
    return p;
 }
@@ -1002,10 +1003,9 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
 
    p->pid = kp->ki_pid;
    p->uid = kp->ki_uid;
+
    if (!is_thread)
      _cmd_get(p, kp);
-   else
-     p->command = strdup(kp->ki_tdname);
 
    p->cpu_id = kp->ki_oncpu;
    if (p->cpu_id == -1)
@@ -1023,6 +1023,9 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;
    p->numthreads = kp->ki_numthreads;
+
+   p->tid = kp->ki_tid;
+   p->thread_name = strdup(kp->ki_tdname);
 
    return p;
 }
