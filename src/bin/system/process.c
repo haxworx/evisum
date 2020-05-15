@@ -162,6 +162,7 @@ _mem_size(Proc_Info *proc)
              proc->mem_rss = resident * getpagesize();
              proc->mem_shared = shared * getpagesize();
              proc->mem_size = proc->mem_rss - proc->mem_shared;
+             proc->mem_virt = size * getpagesize();
           }
      }
 
@@ -312,7 +313,6 @@ _process_list_linux_get(void)
         p->nice = st.nice;
         p->priority = st.pri;
         p->numthreads = st.numthreads;
-        p->mem_virt = st.mem_virt;
         _mem_size(p);
         _cmd_args(p, st.name, sizeof(st.name));
 
@@ -380,7 +380,6 @@ proc_info_by_pid(int pid)
    p->priority = st.pri;
    p->nice = st.nice;
    p->numthreads = st.numthreads;
-   p->mem_virt = st.mem_virt;
    _mem_size(p);
    _cmd_args(p, st.name, sizeof(st.name));
 
