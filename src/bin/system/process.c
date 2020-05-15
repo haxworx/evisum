@@ -967,8 +967,8 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
    p->command = strdup(name);
 }
 
-Proc_Info *
-proc_info_by_pid(int pid)
+static Proc_Info *
+_proc_info_by_pid_fallback(int pid)
 {
    struct rusage *usage;
    struct kinfo_proc kp;
@@ -1014,6 +1014,86 @@ proc_info_by_pid(int pid)
    return p;
 }
 
+static Proc_Info *
+_proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
+{
+   struct rusage *usage;
+   Proc_Info *p;
+   static int pagesize = 0;
+
+   if (!pagesize) pagesize = getpagesize();
+
+   p = calloc(1, sizeof(Proc_Info));
+
+   p->pid = kp->ki_pid;
+   p->uid = kp->ki_uid;
+   if (!is_thread)
+     _cmd_get(p, kp);
+   else
+     p->command = strdup(kp->ki_tdname);
+
+   p->cpu_id = kp->ki_oncpu;
+   if (p->cpu_id == -1)
+     p->cpu_id = kp->ki_lastcpu;
+
+   usage = &kp->ki_rusage;
+
+   p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec +
+       (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
+   p->cpu_time /= 10000;
+   p->state = _process_state_name(kp->ki_stat);
+   p->mem_virt = kp->ki_size;
+   p->mem_rss = kp->ki_rssize * pagesize;
+   p->mem_size = p->mem_virt;
+   p->nice = kp->ki_nice - NZERO;
+   p->priority = kp->ki_pri.pri_level - PZERO;
+   p->numthreads = kp->ki_numthreads;
+
+   return p;
+}
+
+Proc_Info *
+proc_info_by_pid(int pid)
+{
+   kvm_t *kern;
+   struct kinfo_proc *kps, *kp;
+   char errbuf[_POSIX2_LINE_MAX];
+   int pid_count;
+
+   kern = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
+   if (!kern)
+     return _proc_info_by_pid_fallback(pid);
+
+   kps = kvm_getprocs(kern, KERN_PROC_ALL, 0, &pid_count);
+   if (!kps)
+     {
+        kvm_close(kern);
+        return _proc_info_by_pid_fallback(pid);
+     }
+
+   Proc_Info *p = NULL;
+
+   for (int i = 0; i < pid_count; i++)
+     {
+        if (kps[i].ki_flag & P_KPROC)
+          continue;
+        if (kps[i].ki_pid != pid)
+          continue;
+
+        kp = &kps[i];
+        Proc_Info *t = _proc_thread_info(kp, EINA_TRUE);
+        if (!p)
+          p = _proc_thread_info(kp, EINA_FALSE);
+
+        p->threads = eina_list_append(p->threads, t);
+     }
+
+   kvm_close(kern);
+
+   if (!p) return _proc_info_by_pid_fallback(pid);
+
+   return p;
+}
 #endif
 
 void
