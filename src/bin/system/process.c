@@ -820,105 +820,6 @@ _process_list_freebsd_fallback_get(void)
    return list;
 }
 
-static Eina_List *
-_process_list_freebsd_get(void)
-{
-   kvm_t *kern;
-   Eina_List *list = NULL;
-   struct kinfo_proc *kps, *kp;
-   struct rusage *usage;
-   char **args;
-   char errbuf[_POSIX2_LINE_MAX];
-   char name[1024];
-   int pid_count;
-   static int pagesize = 0;
-
-   if (!pagesize) pagesize = getpagesize();
-
-   kern = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
-   if (!kern)
-     return _process_list_freebsd_fallback_get();
-
-   kps = kvm_getprocs(kern, KERN_PROC_PROC, 0, &pid_count);
-   if (!kps)
-     {
-        kvm_close(kern);
-        return _process_list_freebsd_fallback_get();
-     }
-
-   for (int i = 0; i < pid_count; i++)
-     {
-        Eina_Bool have_command = EINA_FALSE;
-
-        if (kps[i].ki_flag & P_KPROC)
-          continue;
-
-        kp = &kps[i];
-
-        Proc_Info *p = calloc(1, sizeof(Proc_Info));
-        if (!p) continue;
-        p->pid = kp->ki_pid;
-        p->uid = kp->ki_uid;
-
-        p->cpu_id = kp->ki_oncpu;
-        if (p->cpu_id == -1)
-          p->cpu_id = kp->ki_lastcpu;
-
-        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
-          {
-             if (args[0])
-               {
-                  char *base = strdup(args[0]);
-                  if (base)
-                    {
-                       char *spc = strchr(base, ' ');
-                       if (spc) *spc = '\0';
-
-                       if (ecore_file_exists(base))
-                         {
-                            snprintf(name, sizeof(name), "%s", basename(base));
-                            have_command = EINA_TRUE;
-                         }
-                       free(base);
-                    }
-               }
-             Eina_Strbuf *buf = eina_strbuf_new();
-             for (int i = 0; args[i] != NULL; i++)
-               {
-                  eina_strbuf_append(buf, args[i]);
-                  if (args[i + 1])
-                    eina_strbuf_append(buf, " ");
-               }
-             p->arguments = eina_strbuf_string_steal(buf);
-             eina_strbuf_free(buf);
-          }
-
-        if (!have_command)
-         snprintf(name, sizeof(name), "%s", kp->ki_comm);
-
-        p->command = strdup(name);
-
-        usage = &kp->ki_rusage;
-        p->cpu_time = (usage->ru_utime.tv_sec * 1000000) +
-           usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) +
-           usage->ru_stime.tv_usec;
-        p->cpu_time /= 10000;
-        p->state = _process_state_name(kp->ki_stat);
-        p->mem_virt = kp->ki_size;
-        p->mem_rss = kp->ki_rssize * pagesize;
-        p->mem_size = p->mem_virt;
-        p->nice = kp->ki_nice - NZERO;
-        p->priority = kp->ki_pri.pri_level - PZERO;
-        p->numthreads = kp->ki_numthreads;
-
-        list = eina_list_append(list, p);
-     }
-
-   kvm_close(kern);
-
-   return list;
-}
-
 static void
 _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
 {
@@ -965,6 +866,74 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
      snprintf(name, sizeof(name), "%s", kp->ki_comm);
 
    p->command = strdup(name);
+}
+
+
+static Eina_List *
+_process_list_freebsd_get(void)
+{
+   kvm_t *kern;
+   Eina_List *list = NULL;
+   struct kinfo_proc *kps, *kp;
+   struct rusage *usage;
+   char **args;
+   char errbuf[_POSIX2_LINE_MAX];
+   char name[1024];
+   int pid_count;
+   static int pagesize = 0;
+
+   if (!pagesize) pagesize = getpagesize();
+
+   kern = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
+   if (!kern)
+     return _process_list_freebsd_fallback_get();
+
+   kps = kvm_getprocs(kern, KERN_PROC_PROC, 0, &pid_count);
+   if (!kps)
+     {
+        kvm_close(kern);
+        return _process_list_freebsd_fallback_get();
+     }
+
+   for (int i = 0; i < pid_count; i++)
+     {
+        Eina_Bool have_command = EINA_FALSE;
+
+        if (kps[i].ki_flag & P_KPROC)
+          continue;
+
+        kp = &kps[i];
+
+        Proc_Info *p = calloc(1, sizeof(Proc_Info));
+        if (!p) continue;
+        p->pid = kp->ki_pid;
+        p->uid = kp->ki_uid;
+
+        p->cpu_id = kp->ki_oncpu;
+        if (p->cpu_id == -1)
+          p->cpu_id = kp->ki_lastcpu;
+
+	_cmd_get(p, kp);
+
+        usage = &kp->ki_rusage;
+        p->cpu_time = (usage->ru_utime.tv_sec * 1000000) +
+           usage->ru_utime.tv_usec + (usage->ru_stime.tv_sec * 1000000) +
+           usage->ru_stime.tv_usec;
+        p->cpu_time /= 10000;
+        p->state = _process_state_name(kp->ki_stat);
+        p->mem_virt = kp->ki_size;
+        p->mem_rss = kp->ki_rssize * pagesize;
+        p->mem_size = p->mem_virt;
+        p->nice = kp->ki_nice - NZERO;
+        p->priority = kp->ki_pri.pri_level - PZERO;
+        p->numthreads = kp->ki_numthreads;
+
+        list = eina_list_append(list, p);
+     }
+
+   kvm_close(kern);
+
+   return list;
 }
 
 static Proc_Info *
