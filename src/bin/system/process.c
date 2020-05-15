@@ -876,9 +876,7 @@ _process_list_freebsd_get(void)
    Eina_List *list = NULL;
    struct kinfo_proc *kps, *kp;
    struct rusage *usage;
-   char **args;
    char errbuf[_POSIX2_LINE_MAX];
-   char name[1024];
    int pid_count;
    static int pagesize = 0;
 
@@ -897,8 +895,6 @@ _process_list_freebsd_get(void)
 
    for (int i = 0; i < pid_count; i++)
      {
-        Eina_Bool have_command = EINA_FALSE;
-
         if (kps[i].ki_flag & P_KPROC)
           continue;
 
