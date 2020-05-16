@@ -598,6 +598,10 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
    list = _list_sort(ui, list);
    EINA_LIST_FREE(list, proc)
      {
+        Proc_Info *prev = elm_object_item_data_get(it);
+        if (prev)
+          proc_info_free(prev);
+
         elm_object_item_data_set(it, proc);
         elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
