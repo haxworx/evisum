@@ -943,10 +943,7 @@ _process_list_freebsd_get(void)
 
         Proc_Info *p = _proc_thread_info(kp, EINA_FALSE);
         if (p)
-          {
-             _cmd_get(p, kp);
-             list = eina_list_append(list, p);
-          }
+          list = eina_list_append(list, p);
      }
 
    kvm_close(kern);
