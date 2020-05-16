@@ -796,25 +796,22 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
    Eina_Bool have_command = EINA_FALSE;
 
    kern = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
-   if (kern != NULL)
+   if (kern)
      {
-        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
+        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)) && (args[0]))
           {
-             if (args[0])
+             char *base = strdup(args[0]);
+             if (base)
                {
-                  char *base = strdup(args[0]);
-                  if (base)
-                    {
-                       char *spc = strchr(base, ' ');
-                       if (spc) *spc = '\0';
+                  char *spc = strchr(base, ' ');
+                  if (spc) *spc = '\0';
 
-                       if (ecore_file_exists(base))
-                         {
-                            snprintf(name, sizeof(name), "%s", basename(base));
-                            have_command = EINA_TRUE;
-                         }
-                       free(base);
+                  if (ecore_file_exists(base))
+                    {
+                       snprintf(name, sizeof(name), "%s", basename(base));
+                       have_command = EINA_TRUE;
                     }
+                  free(base);
                }
              Eina_Strbuf *buf = eina_strbuf_new();
              for (int i = 0; args[i] != NULL; i++)
