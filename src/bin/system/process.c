@@ -1010,8 +1010,12 @@ proc_info_by_pid(int pid)
         kp = &kps[i];
         Proc_Info *t = _proc_thread_info(kp, EINA_TRUE);
         if (!p)
-          p = _proc_thread_info(kp, EINA_FALSE);
+          {
+             p = _proc_thread_info(kp, EINA_FALSE);
+             p->cpu_time = 0;
+          }
 
+        p->cpu_time += t->cpu_time;
         p->threads = eina_list_append(p->threads, t);
      }
 
