@@ -34,6 +34,12 @@ typedef struct _Ui_Process {
    Evas_Object  *entry_pid_state;
    Evas_Object  *entry_pid_cpu_usage;
 
+   Evas_Object  *btn_thread_id;
+   Evas_Object  *btn_thread_name;
+   Evas_Object  *btn_thread_state;
+   Evas_Object  *btn_thread_cpu_id;
+   Evas_Object  *btn_thread_cpu_usage;
+
    Eina_Hash    *hash_cpu_times;
 
    Eina_List   *item_cache;
@@ -43,6 +49,7 @@ typedef struct _Ui_Process {
    int          selected_pid;
    int64_t      pid_cpu_time;
    Eina_Bool    info_init;
+   Eina_Bool    threads_ready;
 
    Ecore_Timer *timer_pid;
 } Ui_Process;

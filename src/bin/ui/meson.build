@@ -10,6 +10,6 @@ src += files([
    'ui_memory.c',
    'ui_cpu.c',
    'ui_cpu.h',
-   'ui_process.c',
-   'ui_process.h',
+   'ui_process_view.c',
+   'ui_process_view.h',
 ])

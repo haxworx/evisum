@@ -1,4 +1,4 @@
-#include "ui_process.h"
+#include "ui_process_view.h"
 #include "../system/process.h"
 
 Eina_List *
@@ -89,45 +89,42 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 static Evas_Object *
 _item_column_add(Evas_Object *table, const char *text, int col)
 {
-   Evas_Object *rect, *hbox, *label;
-
-   hbox = elm_box_add(table);
-   evas_object_size_hint_align_set(hbox, 0.0, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
+   Evas_Object *rect, *label;
 
    label = elm_label_add(table);
    evas_object_size_hint_align_set(label, 0.0, EVAS_HINT_EXPAND);
-   evas_object_size_hint_weight_set(label, 0.5, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(label, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_data_set(table, text, label);
    evas_object_show(label);
-   elm_box_pack_end(hbox, label);
 
    rect = evas_object_rectangle_add(table);
    evas_object_data_set(label, "rect", rect);
 
-   elm_table_pack(table, hbox, col, 0, 1, 1);
+   elm_table_pack(table, label, col, 0, 1, 1);
    elm_table_pack(table, rect, col, 0, 1, 1);
 
-   return table;
+   return label;
 }
 
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *table;
+   Evas_Object *table, *label;
 
    table = elm_table_add(parent);
    evas_object_size_hint_align_set(table, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_weight_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
    evas_object_show(table);
 
-   _item_column_add(table, "tid", 0);
+   label = _item_column_add(table, "tid", 0);
+   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
    _item_column_add(table, "name", 1);
-   _item_column_add(table, "state", 2);
-   _item_column_add(table, "cpu_id", 3);
-   _item_column_add(table, "cpu_usage", 4);
+   label = _item_column_add(table, "state", 2);
+   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
+   label = _item_column_add(table, "cpu_id", 3);
+   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
+
+   label = _item_column_add(table, "cpu_usage", 4);
 
    return table;
 }
@@ -186,6 +183,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (!th) return NULL;
    ui = evas_object_data_get(obj, "ui");
    if (!ui) return NULL;
+   if (!ui->threads_ready) return NULL;
 
    Item_Cache *it = _cache_get(ui);
    if (!it)
@@ -194,30 +192,31 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         exit(-1);
      }
 
-   evas_object_geometry_get(ui->win, NULL, NULL, &w, NULL);
-
-   w = w / 6;
-
+   evas_object_geometry_get(ui->btn_thread_id, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "tid");
    elm_object_text_set(l, eina_slstr_printf("%d", th->tid));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
+   evas_object_geometry_get(ui->btn_thread_name, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "name");
    elm_object_text_set(l, eina_slstr_printf("%s", th->name));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
+   evas_object_geometry_get(ui->btn_thread_state, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "state");
    elm_object_text_set(l, eina_slstr_printf("%s", th->state));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
+   evas_object_geometry_get(ui->btn_thread_cpu_id, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "cpu_id");
    elm_object_text_set(l, eina_slstr_printf("%d", th->cpu_id));
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
+   evas_object_geometry_get(ui->btn_thread_cpu_usage, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "cpu_usage");
    elm_object_text_set(l, eina_slstr_printf("%1.1f%%", th->cpu_usage));
    r = evas_object_data_get(l, "rect");
@@ -607,11 +606,53 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
 static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
-   Evas_Object *box, *genlist;
+   Evas_Object *box, *hbox, *btn, *genlist;
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+
+   hbox = elm_box_add(box);
+   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   elm_box_homogeneous_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   ui->btn_thread_id = btn = elm_button_add(hbox);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("ID"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
+
+   ui->btn_thread_name = btn = elm_button_add(hbox);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("Name"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
+
+   ui->btn_thread_state = btn = elm_button_add(hbox);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("State"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
+
+   ui->btn_thread_cpu_id = btn = elm_button_add(hbox);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("CPU ID"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
+
+   ui->btn_thread_cpu_usage = btn = elm_button_add(hbox);
+   evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(btn, _("CPU Usage"));
+   evas_object_show(btn);
+   elm_box_pack_end(hbox, btn);
 
    ui->genlist_threads = genlist = elm_genlist_add(parent);
    evas_object_data_set(genlist, "ui", ui);
@@ -623,6 +664,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
 
    evas_object_smart_callback_add(ui->genlist_threads, "unrealized", _item_unrealized_cb, ui);
 
+   elm_box_pack_end(box, hbox);
    elm_box_pack_end(box, genlist);
 
    return box;
@@ -679,6 +721,7 @@ _btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_in
    Ui_Process *ui;
 
    ui = data;
+   ui->threads_ready = EINA_TRUE;
 
    _hide_all(ui, obj);
    evas_object_show(ui->thread_view);
@@ -800,6 +843,7 @@ ui_process_win_add(int pid, const char *cmd)
    ui->selected_pid = pid;
    ui->selected_cmd = strdup(cmd);
    ui->poll_delay = 3.0;
+   ui->item_cache = NULL;
 
    ui->win = win = elm_win_util_standard_add("evisum", "evisum");
    _win_title_set(win, "%s (%d)", cmd, pid);
@@ -835,10 +879,7 @@ ui_process_win_add(int pid, const char *cmd)
    evas_object_resize(win, 540 * elm_config_scale_get(), 480 * elm_config_scale_get());
    evas_object_show(win);
 
-   ui->item_cache = NULL;
-
    _cache_init(ui);
-
    _proc_info_update(ui);
 }
 

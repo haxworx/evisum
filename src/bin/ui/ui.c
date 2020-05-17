@@ -4,7 +4,7 @@
 #include "ui/ui_misc.h"
 #include "ui/ui_memory.h"
 #include "ui/ui_cpu.h"
-#include "ui/ui_process.h"
+#include "ui/ui_process_view.h"
 
 #include <stdio.h>
 #include <sys/types.h>
