@@ -48,7 +48,7 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
          {
             if (it->obj == o)
               {
-                 it->used = EINA_FALSE;
+                 it->used = 0;
                  break;
               }
           }
@@ -129,6 +129,17 @@ _item_create(Evas_Object *parent)
    return table;
 }
 
+static void
+_cache_free(Eina_List *cache)
+{
+   Item_Cache *it;
+   EINA_LIST_FREE(cache, it)
+     {
+        free(it);
+     }
+
+   eina_list_free(cache);
+}
 
 static void
 _cache_init(Ui_Process *ui)
@@ -977,8 +988,11 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUS
      ecore_timer_del(ui->timer_pid);
    if (ui->selected_cmd)
      free(ui->selected_cmd);
+   if (ui->item_cache)
+     _cache_free(ui->item_cache);
 
    evas_object_del(win);
+
    free(ui);
 }
 static void
