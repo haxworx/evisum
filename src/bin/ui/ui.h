@@ -8,8 +8,8 @@
 
 #define _(STR) gettext(STR)
 
-#define EVISUM_SIZE_WIDTH  640
-#define EVISUM_SIZE_HEIGHT 480
+#define EVISUM_SIZE_WIDTH  600
+#define EVISUM_SIZE_HEIGHT 520
 
 typedef enum
 {
