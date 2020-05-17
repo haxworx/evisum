@@ -153,12 +153,11 @@ _sort_by_cpu_usage(const void *p1, const void *p2)
    one = inf1->cpu_usage;
    two = inf2->cpu_usage;
 
-   if (one < two)
-     return -1;
-   if (two > one)
+   if (one > two)
      return 1;
-
-   return 0;
+   else if (one < two)
+     return -1;
+   else return 0;
 }
 
 static int

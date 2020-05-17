@@ -57,14 +57,14 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 
 typedef struct {
    int     tid;
-   char    *name;
-   char    *state;
+   char   *name;
+   char   *state;
    int     cpu_id;
    double  cpu_usage;
 } Thread_Info;
 
 static Thread_Info *
-_t_new(Proc_Info *thr, double cpu_usage)
+_thread_info_new(Proc_Info *thr, double cpu_usage)
 {
    Thread_Info *t = calloc(1, sizeof(Thread_Info));
    t->tid = thr->tid;
@@ -123,8 +123,8 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
    label = _item_column_add(table, "cpu_id", 3);
    evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
-
    label = _item_column_add(table, "cpu_usage", 4);
+   evas_object_size_hint_align_set(label, 0.5, EVAS_HINT_EXPAND);
 
    return table;
 }
@@ -259,6 +259,62 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
    elm_genlist_item_class_free(itc);
 }
 
+static int
+_sort_by_cpu_usage(const void *p1, const void *p2)
+{
+   const Thread_Info *inf1, *inf2;
+   double one, two;
+
+   inf1 = p1; inf2 = p2;
+   one = inf1->cpu_usage; two = inf2->cpu_usage;
+
+   if (one > two)
+     return 1;
+   else if (one < two)
+     return -1;
+   else return 0;
+}
+
+static int
+_sort_by_cpu_id(const void *p1, const void *p2)
+{
+   const Thread_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->cpu_id - inf2->cpu_id;
+}
+
+static int
+_sort_by_state(const void *p1, const void *p2)
+{
+   const Thread_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return strcmp(inf1->state, inf2->state);
+}
+
+static int
+_sort_by_name(const void *p1, const void *p2)
+{
+   const Thread_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return strcmp(inf1->name, inf2->name);
+}
+
+static int
+_sort_by_tid(const void *p1, const void *p2)
+{
+   const Thread_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->tid - inf2->tid;
+}
+
 
 static void
 _hash_free_cb(void *data)
@@ -272,46 +328,55 @@ static void
 _thread_info_set(Ui_Process *ui, Proc_Info *proc)
 {
    Eina_List *l;
-   Proc_Info *t;
+   Proc_Info *p;
+   Thread_Info *t;
    Elm_Object_Item *it;
+   Eina_List *threads = NULL;
 
    if (!ui->hash_cpu_times)
-     {
-        ui->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
-     }
+     ui->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
 
    _genlist_ensure_n_items(ui->genlist_threads, eina_list_count(proc->threads));
 
-   it = elm_genlist_first_item_get(ui->genlist_threads);
-
-   EINA_LIST_FOREACH(proc->threads, l, t)
+   EINA_LIST_FOREACH(proc->threads, l, p)
      {
         long *cpu_time, *cpu_time_prev;
         double cpu_usage = 0.0;
-        const char *key = eina_slstr_printf("%s:%d", t->thread_name, t->tid);
+        const char *key = eina_slstr_printf("%s:%d", p->thread_name, p->tid);
 
         if ((cpu_time_prev = eina_hash_find(ui->hash_cpu_times, key)) == NULL)
           {
              cpu_time = malloc(sizeof(long));
-             *cpu_time = t->cpu_time;
+             *cpu_time = p->cpu_time;
              eina_hash_add(ui->hash_cpu_times, key, cpu_time);
           }
         else
           {
-             cpu_usage = (double) (t->cpu_time - *cpu_time_prev) / ui->poll_delay;
-             *cpu_time_prev = t->cpu_time;
+             cpu_usage = (double) (p->cpu_time - *cpu_time_prev) / ui->poll_delay;
+             *cpu_time_prev = p->cpu_time;
           }
 
-        Thread_Info *tinfo = elm_object_item_data_get(it);
-        if (tinfo)
-          _item_del(tinfo, NULL);
+        t = _thread_info_new(p, cpu_usage);
+        if (t)
+          threads = eina_list_append(threads, t);
+     }
 
-        tinfo = _t_new(t, cpu_usage);
-        elm_object_item_data_set(it, tinfo);
-        elm_genlist_item_update(it);
+   if (ui->sort_cb)
+     threads = eina_list_sort(threads, eina_list_count(threads), ui->sort_cb);
+   if (ui->sort_reverse)
+     threads = eina_list_reverse(threads);
 
+   it = elm_genlist_first_item_get(ui->genlist_threads);
+
+   EINA_LIST_FOREACH(threads, l, t)
+     {
+        Thread_Info *prev = elm_object_item_data_get(it);
+	if (prev) _item_del(prev, NULL);
+        elm_object_item_data_set(it, t);
+	elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
+   eina_list_free(threads);
 }
 
 static void
@@ -603,6 +668,86 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    return scroller;
 }
 
+static void
+_btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
+{
+   Evas_Object *icon = elm_icon_add(button);
+
+   if (reverse)
+     elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
+   else
+     elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
+
+   elm_object_part_content_set(button, "icon", icon);
+
+   evas_object_show(icon);
+}
+
+static void
+_btn_name_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui = data;
+
+   if (ui->sort_cb == _sort_by_name)
+     ui->sort_reverse = !ui->sort_reverse;
+
+   _btn_icon_state_set(obj, ui->sort_reverse);
+   ui->sort_cb = _sort_by_name;
+}
+
+static void
+_btn_thread_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui = data;
+
+   if (ui->sort_cb == _sort_by_tid)
+     ui->sort_reverse = !ui->sort_reverse;
+
+   _btn_icon_state_set(obj, ui->sort_reverse);
+   ui->sort_cb = _sort_by_tid;
+}
+
+static void
+_btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui = data;
+
+   if (ui->sort_cb == _sort_by_state)
+     ui->sort_reverse = !ui->sort_reverse;
+
+   _btn_icon_state_set(obj, ui->sort_reverse);
+   ui->sort_cb = _sort_by_state;
+}
+
+static void
+_btn_cpu_id_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui = data;
+
+   if (ui->sort_cb == _sort_by_cpu_id)
+     ui->sort_reverse = !ui->sort_reverse;
+
+   ui->sort_cb = _sort_by_cpu_id;
+   _btn_icon_state_set(obj, ui->sort_reverse);
+}
+
+static void
+_btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Ui_Process *ui = data;
+
+   if (ui->sort_cb == _sort_by_cpu_usage)
+     ui->sort_reverse = !ui->sort_reverse;
+
+   ui->sort_cb = _sort_by_cpu_usage;
+   _btn_icon_state_set(obj, ui->sort_reverse);
+}
+
 static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
@@ -623,35 +768,45 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(btn, _("ID"));
+   _btn_icon_state_set(btn, ui->sort_reverse);
    evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_thread_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    ui->btn_thread_name = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(btn, _("Name"));
+   _btn_icon_state_set(btn, ui->sort_reverse);
    evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_name_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    ui->btn_thread_state = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(btn, _("State"));
+   _btn_icon_state_set(btn, ui->sort_reverse);
    evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_state_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    ui->btn_thread_cpu_id = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(btn, _("CPU ID"));
+   _btn_icon_state_set(btn, ui->sort_reverse);
    evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_cpu_id_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    ui->btn_thread_cpu_usage = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_object_text_set(btn, _("CPU Usage"));
+   _btn_icon_state_set(btn, ui->sort_reverse);
    evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _btn_cpu_usage_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    ui->genlist_threads = genlist = elm_genlist_add(parent);
@@ -842,8 +997,10 @@ ui_process_win_add(int pid, const char *cmd)
    Ui_Process *ui = calloc(1, sizeof(Ui_Process));
    ui->selected_pid = pid;
    ui->selected_cmd = strdup(cmd);
-   ui->poll_delay = 3.0;
+   ui->poll_delay = 3;
    ui->item_cache = NULL;
+   ui->sort_reverse = EINA_TRUE;
+   ui->sort_cb = _sort_by_cpu_usage;
 
    ui->win = win = elm_win_util_standard_add("evisum", "evisum");
    _win_title_set(win, "%s (%d)", cmd, pid);

@@ -50,6 +50,9 @@ typedef struct _Ui_Process {
    int64_t      pid_cpu_time;
    Eina_Bool    info_init;
    Eina_Bool    threads_ready;
+   Eina_Bool    sort_reverse;
+
+   int          (*sort_cb)(const void *p1, const void *p2);
 
    Ecore_Timer *timer_pid;
 } Ui_Process;

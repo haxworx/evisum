@@ -1,6 +1,6 @@
 ##### Project
 project('evisum', 'c',
-	version      : '0.4.0',
+	version      : '0.5.0-alpha',
 	meson_version : '>= 0.40.0')
 
 efl_version = '>= 1.22.0'

@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2018-2019. Alastair Poole <netstar@gmail.com>
  *
  * http://haxlab.org.
@@ -46,6 +46,18 @@ int
 main(int argc, char **argv)
 {
    Ui *ui;
+   int i;
+
+   for (i = 0; i < argc; i++)
+     {
+        if ((!strcmp(argv[i], "-h")) || (!strcmp(argv[i], "-help")) ||
+            (!strcmp(argv[i], "--help") || !strcasecmp(argv[i], "-v")))
+          {
+             printf("(c) 2018-2020 Alastair Poole <netstar@gmail.com>\n");
+             printf("Evisum version: %s\n", PACKAGE_VERSION);
+             exit(0);
+          }
+     }
 
    eina_init();
    ecore_init();
