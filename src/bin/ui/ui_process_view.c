@@ -60,9 +60,9 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
    elm_genlist_item_all_contents_unset(event_info, &contents);
 
    EINA_LIST_FREE(contents, o)
-    {
-       evisum_ui_item_cache_item_release(ui->cache, o);
-    }
+     {
+        evisum_ui_item_cache_item_release(ui->cache, o);
+     }
 }
 
 static void
@@ -278,11 +278,10 @@ _hash_free_cb(void *data)
 static void
 _thread_info_set(Ui_Process *ui, Proc_Info *proc)
 {
-   Eina_List *l;
    Proc_Info *p;
    Thread_Info *t;
    Elm_Object_Item *it;
-   Eina_List *threads = NULL;
+   Eina_List *l, *threads = NULL;
 
    if (!ui->hash_cpu_times)
      ui->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
@@ -322,7 +321,8 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
    EINA_LIST_FOREACH(threads, l, t)
      {
         Thread_Info *prev = elm_object_item_data_get(it);
-        if (prev) _item_del(prev, NULL);
+        if (prev)
+          _item_del(prev, NULL);
         elm_object_item_data_set(it, t);
         elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
