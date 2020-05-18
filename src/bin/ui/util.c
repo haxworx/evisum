@@ -25,6 +25,13 @@ _man2entry(const char *text)
              memcpy(&str[i], "&gt;", 4);
              i += 4;
           }
+        else if (*p == '&')
+          {
+             tmp = realloc(str, (len += 5));
+             str = tmp;
+             memcpy(&str[i], "&amp;", 5);
+             i += 5;
+          }
         else if (*p == '\t')
           {
              tmp = realloc(str, (len += 8));
