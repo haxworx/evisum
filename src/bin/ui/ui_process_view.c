@@ -461,21 +461,21 @@ _label_add(Evas_Object *parent, const char *text)
 static Evas_Object *
 _process_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
-   Evas_Object *hbox, *scroller, *table;
+   Evas_Object *frame, *hbox, *table;
    Evas_Object *label, *entry, *button, *border;
    int i = 0;
+
+   frame = elm_frame_add(parent);
+   elm_object_text_set(frame, _("General"));
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(frame);
 
    table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(table, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_show(ui->content);
-
-   scroller = elm_scroller_add(parent);
-   evas_object_size_hint_weight_set(scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(scroller, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
-   evas_object_show(scroller);
-   elm_object_content_set(scroller, table);
+   evas_object_show(table);
+   elm_object_content_set(frame, table);
 
    label = _label_add(parent, _("Command:"));
    elm_table_pack(table, label, 0, i, 1, 1);
@@ -561,7 +561,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_box_horizontal_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
-   elm_table_pack(table, hbox, 1, i, 2, 1);
+   elm_table_pack(table, hbox, 0, i, 2, 1);
 
    border = elm_frame_add(parent);
    evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -571,7 +571,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_box_pack_end(hbox, border);
 
    border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_weight_set(border, 0.2, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(border, EVAS_HINT_FILL, 0.5);
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
@@ -586,7 +586,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_box_pack_end(hbox, border);
 
    border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, 0);
+   evas_object_size_hint_weight_set(border, 0.2, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(border, EVAS_HINT_FILL, 0.5);
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
@@ -601,7 +601,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_smart_callback_add(button, "clicked", _btn_start_clicked_cb, ui);
 
    border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, 0.1);
+   evas_object_size_hint_weight_set(border, 0.2, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(border, EVAS_HINT_FILL, 0.5);
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
@@ -612,10 +612,11 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_text_set(button, _("Kill"));
    elm_box_pack_end(hbox, border);
    evas_object_show(button);
+
    elm_object_content_set(border, button);
    evas_object_smart_callback_add(button, "clicked", _btn_kill_clicked_cb, ui);
 
-   return scroller;
+   return frame;
 }
 
 static void
@@ -701,11 +702,18 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
-   Evas_Object *box, *hbox, *btn, *genlist;
+   Evas_Object *frame, *box, *hbox, *btn, *genlist;
+
+   frame = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(frame, _("Threads"));
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(box);
+   elm_object_content_set(frame, box);
 
    hbox = elm_box_add(box);
    evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
@@ -772,17 +780,24 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_box_pack_end(box, hbox);
    elm_box_pack_end(box, genlist);
 
-   return box;
+   return frame;
 }
 
 static Evas_Object *
 _info_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
-   Evas_Object *box, *entry;
+   Evas_Object *frame, *box, *entry;
+
+   frame = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_object_text_set(frame, _("Documentation"));
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(box);
+   elm_object_content_set(frame, box);
 
    ui->entry_info = entry = elm_entry_add(box);
    evas_object_size_hint_weight_set(entry, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -794,7 +809,7 @@ _info_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(entry);
    elm_box_pack_end(box, entry);
 
-   return box;
+   return frame;
 }
 
 static void
@@ -867,6 +882,12 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 
         eina_list_free(lines);
      }
+   else
+     {
+        elm_object_text_set(ui->entry_info, eina_slstr_printf(_("No documentation found for %s."),
+                            ui->selected_cmd));
+     }
+
    ui->info_init = EINA_TRUE;
 }
 
@@ -986,7 +1007,6 @@ ui_process_win_add(int pid, const char *cmd)
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, ui);
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
-   evas_object_resize(win, 540 * elm_config_scale_get(), 480 * elm_config_scale_get());
    evas_object_show(win);
 
    ui->cache = evisum_ui_item_cache_new(ui->genlist_threads, _item_create, 10);
