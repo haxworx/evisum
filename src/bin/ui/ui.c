@@ -115,10 +115,10 @@ _sort_by_size(const void *p1, const void *p2)
    size1 = inf1->mem_size;
    size2 = inf2->mem_size;
 
+   if (size1 > size2)
+     return 1;
    if (size1 < size2)
      return -1;
-   if (size2 > size1)
-     return 1;
 
    return 0;
 }
@@ -134,10 +134,10 @@ _sort_by_rss(const void *p1, const void *p2)
    size1 = inf1->mem_rss;
    size2 = inf2->mem_rss;
 
+   if (size1 > size2)
+     return 1;
    if (size1 < size2)
      return -1;
-   if (size2 > size1)
-     return 1;
 
    return 0;
 }
