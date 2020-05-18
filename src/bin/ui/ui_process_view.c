@@ -1,5 +1,6 @@
 #include "ui_process_view.h"
 #include "../system/process.h"
+#include "util.c"
 
 typedef struct {
    int     tid;
@@ -39,7 +40,7 @@ _exe_response(const char *command)
 
    while ((fgets(buf, sizeof(buf), p)) != NULL)
      {
-        lines = eina_list_append(lines, elm_entry_markup_to_utf8(buf));
+        lines = eina_list_append(lines, _man2entry(buf));
      }
 
    pclose(p);
