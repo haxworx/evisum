@@ -303,35 +303,21 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
    _proc_pid_cpu_time_save(ui, proc);
 }
 
-#define ITEM_CACHE_INIT_SIZE 50
-
-typedef struct _Item_Cache {
-   Evas_Object *obj;
-   Eina_Bool   used;
-} Item_Cache;
-
 static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui *ui;
-   Item_Cache *it;
    Evas_Object *o;
-   Eina_List *l, *contents = NULL;
+   Eina_List *contents = NULL;
 
    ui = data;
 
    elm_genlist_item_all_contents_unset(event_info, &contents);
+
    EINA_LIST_FREE(contents, o)
-    {
-       EINA_LIST_FOREACH(ui->item_cache, l, it)
-         {
-            if (it->obj == o)
-              {
-                 it->used = EINA_FALSE;
-                 break;
-              }
-          }
-    }
+     {
+        evisum_ui_item_cache_item_release(ui->cache, o);
+     }
 }
 
 static void
@@ -389,45 +375,6 @@ _item_create(Evas_Object *parent)
    return table;
 }
 
-static void
-_item_cache_init(Ui *ui)
-{
-   for (int i = 0; i < ITEM_CACHE_INIT_SIZE; i++)
-     {
-        Item_Cache *it = calloc(1, sizeof(Item_Cache));
-        if (it)
-          {
-             it->obj = _item_create(ui->genlist_procs);
-             ui->item_cache = eina_list_append(ui->item_cache, it);
-          }
-     }
-}
-
-static Item_Cache *
-_item_cache_get(Ui *ui)
-{
-   Eina_List *l;
-   Item_Cache *it;
-
-   EINA_LIST_FOREACH(ui->item_cache, l, it)
-     {
-        if (it->used == 0)
-          {
-             it->used = 1;
-             return it;
-          }
-     }
-
-   it = calloc(1, sizeof(Item_Cache));
-   if (it)
-     {
-        it->obj = _item_create(ui->genlist_procs);
-        it->used = 1;
-        ui->item_cache = eina_list_append(ui->item_cache, it);
-     }
-   return it;
-}
-
 static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source)
 {
@@ -444,7 +391,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (!proc) return NULL;
    if (!ui->ready) return NULL;
 
-   Item_Cache *it = _item_cache_get(ui);
+   Item_Cache *it = evisum_ui_item_cache_item_get(ui->cache);
    if (!it)
      {
         fprintf(stderr, "Error: Object cache creation failed.\n");
@@ -1560,8 +1507,6 @@ evisum_icon_path_get(const char *name)
 void
 evisum_ui_shutdown(Ui *ui)
 {
-   Item_Cache *it;
-
    evas_object_del(ui->win);
 
    if (ui->timer_pid)
@@ -1581,16 +1526,10 @@ evisum_ui_shutdown(Ui *ui)
 
    _proc_pid_cpu_times_free(ui);
 
-   EINA_LIST_FREE(ui->item_cache, it)
-     {
-        free(it);
-     }
-
    if (ui->cpu_list)
      eina_list_free(ui->cpu_list);
 
-   if (ui->item_cache)
-     eina_list_free(ui->item_cache);
+   evisum_ui_item_cache_free(ui->cache);
 
    eina_lock_free(&_lock);
 }
@@ -1713,7 +1652,6 @@ _ui_init(Evas_Object *parent)
    ui->mem_visible = ui->misc_visible = EINA_TRUE;
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
-   ui->item_cache = NULL;
 
    _ui = NULL;
    _evisum_config = NULL;
@@ -1729,7 +1667,7 @@ _ui_init(Evas_Object *parent)
    ui_tab_disk_add(ui);
    ui_tab_misc_add(ui);
 
-   _item_cache_init(ui);
+   ui->cache = evisum_ui_item_cache_new(ui->genlist_procs, _item_create, 50);
 
    return ui;
 }

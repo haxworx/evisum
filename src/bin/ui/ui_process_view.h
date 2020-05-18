@@ -2,6 +2,7 @@
 #define __UI_PROCESS_H__
 
 #include "ui.h"
+#include "ui_cache.h"
 
 typedef struct _Ui_Process {
    Evas_Object  *win;
@@ -15,8 +16,9 @@ typedef struct _Ui_Process {
    Evas_Object  *btn_info;
    Evas_Object  *btn_thread;
 
-   Evas_Object  *entry_info;
-   Evas_Object  *genlist_threads;
+   Evas_Object     *entry_info;
+   Evas_Object     *genlist_threads;
+   Evisum_Ui_Cache *cache;
 
    Evas_Object  *entry_pid_cmd;
    Evas_Object  *entry_pid_cmd_args;
@@ -41,8 +43,6 @@ typedef struct _Ui_Process {
    Evas_Object  *btn_thread_cpu_usage;
 
    Eina_Hash    *hash_cpu_times;
-
-   Eina_List   *item_cache;
 
    int          poll_delay;
    char        *selected_cmd;

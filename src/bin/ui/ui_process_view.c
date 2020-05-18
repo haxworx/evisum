@@ -1,6 +1,29 @@
 #include "ui_process_view.h"
 #include "../system/process.h"
 
+typedef struct {
+   int     tid;
+   char   *name;
+   char   *state;
+   int     cpu_id;
+   double  cpu_usage;
+} Thread_Info;
+
+static Thread_Info *
+_thread_info_new(Proc_Info *thr, double cpu_usage)
+{
+   Thread_Info *t = calloc(1, sizeof(Thread_Info));
+   if (!t) return NULL;
+
+   t->tid = thr->tid;
+   t->name = strdup(thr->thread_name);
+   t->state = strdup(thr->state);
+   t->cpu_id = thr->cpu_id;
+   t->cpu_usage = cpu_usage;
+
+   return t;
+}
+
 Eina_List *
 _exe_response(const char *command)
 {
@@ -24,56 +47,21 @@ _exe_response(const char *command)
    return lines;
 }
 
-#define ITEM_CACHE_INIT_SIZE 25
-
-typedef struct _Item_Cache {
-   Evas_Object *obj;
-   Eina_Bool used;
-} Item_Cache;
-
 static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
-   Item_Cache *it;
    Evas_Object *o;
-   Eina_List *l, *contents = NULL;
+   Eina_List *contents = NULL;
 
    ui = data;
 
    elm_genlist_item_all_contents_unset(event_info, &contents);
+
    EINA_LIST_FREE(contents, o)
     {
-       EINA_LIST_FOREACH(ui->item_cache, l, it)
-         {
-            if (it->obj == o)
-              {
-                 it->used = 0;
-                 break;
-              }
-          }
+       evisum_ui_item_cache_item_release(ui->cache, o);
     }
-}
-
-typedef struct {
-   int     tid;
-   char   *name;
-   char   *state;
-   int     cpu_id;
-   double  cpu_usage;
-} Thread_Info;
-
-static Thread_Info *
-_thread_info_new(Proc_Info *thr, double cpu_usage)
-{
-   Thread_Info *t = calloc(1, sizeof(Thread_Info));
-   t->tid = thr->tid;
-   t->name = strdup(thr->thread_name);
-   t->state = strdup(thr->state);
-   t->cpu_id = thr->cpu_id;
-   t->cpu_usage = cpu_usage;
-
-   return t;
 }
 
 static void
@@ -81,8 +69,10 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
    Thread_Info *t = data;
 
-   if (t->name) free(t->name);
-   if (t->state) free(t->state);
+   if (t->name)
+     free(t->name);
+   if (t->state)
+     free(t->state);
    free(t);
 }
 
@@ -129,57 +119,6 @@ _item_create(Evas_Object *parent)
    return table;
 }
 
-static void
-_cache_free(Eina_List *cache)
-{
-   Item_Cache *it;
-   EINA_LIST_FREE(cache, it)
-     {
-        free(it);
-     }
-
-   eina_list_free(cache);
-}
-
-static void
-_cache_init(Ui_Process *ui)
-{
-   for (int i = 0; i < ITEM_CACHE_INIT_SIZE; i++)
-     {
-        Item_Cache *it = calloc(1, sizeof(Item_Cache));
-        if (it)
-          {
-             it->obj = _item_create(ui->genlist_threads);
-             ui->item_cache = eina_list_append(ui->item_cache, it);
-          }
-     }
-}
-
-static Item_Cache *
-_cache_get(Ui_Process *ui)
-{
-   Eina_List *l;
-   Item_Cache *it;
-
-   EINA_LIST_FOREACH(ui->item_cache, l, it)
-     {
-        if (it->used == 0)
-          {
-             it->used = 1;
-             return it;
-          }
-     }
-
-   it = calloc(1, sizeof(Item_Cache));
-   if (it)
-     {
-        it->obj = _item_create(ui->genlist_threads);
-        it->used = 1;
-        ui->item_cache = eina_list_append(ui->item_cache, it);
-     }
-   return it;
-}
-
 static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source)
 {
@@ -196,7 +135,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (!ui) return NULL;
    if (!ui->threads_ready) return NULL;
 
-   Item_Cache *it = _cache_get(ui);
+   Item_Cache *it = evisum_ui_item_cache_item_get(ui->cache);
    if (!it)
      {
         fprintf(stderr, "Error: Object cache creation failed.\n");
@@ -382,9 +321,9 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
    EINA_LIST_FOREACH(threads, l, t)
      {
         Thread_Info *prev = elm_object_item_data_get(it);
-	if (prev) _item_del(prev, NULL);
+        if (prev) _item_del(prev, NULL);
         elm_object_item_data_set(it, t);
-	elm_genlist_item_update(it);
+        elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
    eina_list_free(threads);
@@ -988,8 +927,8 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUS
      ecore_timer_del(ui->timer_pid);
    if (ui->selected_cmd)
      free(ui->selected_cmd);
-   if (ui->item_cache)
-     _cache_free(ui->item_cache);
+   if (ui->cache)
+     evisum_ui_item_cache_free(ui->cache);
 
    evas_object_del(win);
 
@@ -1012,7 +951,7 @@ ui_process_win_add(int pid, const char *cmd)
    ui->selected_pid = pid;
    ui->selected_cmd = strdup(cmd);
    ui->poll_delay = 3;
-   ui->item_cache = NULL;
+   ui->cache = NULL;
    ui->sort_reverse = EINA_TRUE;
    ui->sort_cb = _sort_by_cpu_usage;
 
@@ -1050,7 +989,8 @@ ui_process_win_add(int pid, const char *cmd)
    evas_object_resize(win, 540 * elm_config_scale_get(), 480 * elm_config_scale_get());
    evas_object_show(win);
 
-   _cache_init(ui);
+   ui->cache = evisum_ui_item_cache_new(ui->genlist_threads, _item_create, 10);
+
    _proc_info_update(ui);
 }
 

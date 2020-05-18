@@ -5,6 +5,7 @@
 #include "gettext.h"
 #include "system/process.h"
 #include "../evisum_config.h"
+#include "ui/ui_cache.h"
 
 #define _(STR) gettext(STR)
 
@@ -106,9 +107,9 @@ typedef struct Ui
    Evas_Object  *btn_state;
    Evas_Object  *btn_cpu_usage;
 
-   Eina_List    *item_cache;
-   Evas_Object  *genlist_procs;
-   Evas_Object  *entry_search;
+   Evisum_Ui_Cache *cache;
+   Evas_Object     *genlist_procs;
+   Evas_Object     *entry_search;
 
    Ecore_Thread *thread_system;
    Ecore_Thread *thread_process;
