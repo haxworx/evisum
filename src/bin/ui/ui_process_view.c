@@ -895,62 +895,78 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 static Evas_Object *
 _tabs_add(Evas_Object *parent, Ui_Process *ui)
 {
-   Evas_Object *hbox, *btn, *border;
+   Evas_Object *hbox, *pad, *btn;
 
    hbox = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, 0.5);
    elm_box_horizontal_set(hbox, EINA_TRUE);
-   elm_box_homogeneous_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(border, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
+   pad = elm_frame_add(parent);
+   elm_object_style_set(pad, "pad_medium");
+   evas_object_size_hint_weight_set(pad, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(pad, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(pad);
+   elm_box_pack_end(hbox, pad);
+
+   pad = elm_frame_add(parent);
+   elm_object_style_set(pad, "pad_small");
+   evas_object_size_hint_weight_set(pad, 0.0, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(pad, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(pad);
 
    ui->btn_main = btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_min_set(btn, TAB_BTN_SIZE * elm_config_scale_get(), 1);
    elm_object_text_set(btn, _("Process"));
    elm_object_disabled_set(btn, EINA_TRUE);
    evas_object_show(btn);
-   elm_object_content_set(border, btn);
-   elm_box_pack_end(hbox, border);
+   elm_object_content_set(pad, btn);
+   elm_box_pack_end(hbox, pad);
    evas_object_smart_callback_add(btn, "clicked", _btn_process_clicked_cb, ui);
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(border, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
+   pad = elm_frame_add(parent);
+   elm_object_style_set(pad, "pad_small");
+   evas_object_size_hint_weight_set(pad, 0.0, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(pad, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(pad);
 
    ui->btn_thread = btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_min_set(btn, TAB_BTN_SIZE * elm_config_scale_get(), 1);
    elm_object_text_set(btn, _("Threads"));
    elm_object_disabled_set(btn, EINA_FALSE);
    evas_object_show(btn);
-   elm_object_content_set(border, btn);
-   elm_box_pack_end(hbox, border);
+   elm_object_content_set(pad, btn);
+   elm_box_pack_end(hbox, pad);
    evas_object_smart_callback_add(btn, "clicked", _btn_threads_clicked_cb, ui);
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(border, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
+   pad = elm_frame_add(parent);
+   elm_object_style_set(pad, "pad_small");
+   evas_object_size_hint_weight_set(pad, 0.0, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(pad, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(pad);
 
    ui->btn_info = btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(btn, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_min_set(btn, TAB_BTN_SIZE * elm_config_scale_get(), 1);
    elm_object_text_set(btn, _("Information"));
    elm_object_disabled_set(btn, EINA_FALSE);
    evas_object_show(btn);
-   elm_object_content_set(border, btn);
-   elm_box_pack_end(hbox, border);
+   elm_object_content_set(pad, btn);
+   elm_box_pack_end(hbox, pad);
    evas_object_smart_callback_add(btn, "clicked", _btn_info_clicked_cb, ui);
+
+   pad = elm_frame_add(parent);
+   elm_object_style_set(pad, "pad_medium");
+   evas_object_size_hint_weight_set(pad, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(pad, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_show(pad);
+   elm_box_pack_end(hbox, pad);
 
    return hbox;
 }

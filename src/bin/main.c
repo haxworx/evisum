@@ -1,8 +1,6 @@
 /*
  * Copyright 2018-2019. Alastair Poole <netstar@gmail.com>
  *
- * http://haxlab.org.
- *
  * See LICENSE file for details.
  */
 
