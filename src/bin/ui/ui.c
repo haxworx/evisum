@@ -292,7 +292,8 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
           {
              if (tmp->cpu_time_prev && proc->cpu_time > tmp->cpu_time_prev)
                {
-                  proc->cpu_usage = (double) (proc->cpu_time - tmp->cpu_time_prev) /
+                  proc->cpu_usage =
+                     (double) (proc->cpu_time - tmp->cpu_time_prev) /
                      ui->poll_delay;
                }
              _proc_pid_cpu_time_save(ui, proc);
@@ -304,7 +305,8 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
 }
 
 static void
-_item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
 {
    Ui *ui;
    Evas_Object *o;
@@ -489,7 +491,8 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
 
    for (i = existing; i < items; i++)
      {
-        elm_genlist_item_append(genlist, itc, NULL, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
+        elm_genlist_item_append(genlist, itc, NULL, NULL,
+           ELM_GENLIST_ITEM_NONE, NULL, NULL);
      }
 
    elm_genlist_item_class_free(itc);
@@ -510,7 +513,8 @@ _bring_in(Ui *ui)
 }
 
 static void
-_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msg EINA_UNUSED)
+_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
+                          void *msg EINA_UNUSED)
 {
    Ui *ui;
    Eina_List *list, *l, *l_next;
@@ -526,8 +530,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
         if ((ui->search_text && ui->search_text[0] &&
-           strncasecmp(proc->command, ui->search_text, strlen(ui->search_text))) ||
-           (!ui->show_self && proc->pid == ui->program_pid))
+            strncasecmp(proc->command, ui->search_text, strlen(ui->search_text))
+            ) || (!ui->show_self && proc->pid == ui->program_pid))
          {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
@@ -612,7 +616,8 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
 }
 
 static void
-_btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -630,7 +635,8 @@ _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 }
 
 static void
-_btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -648,7 +654,8 @@ _btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 }
 
 static void
-_btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                          void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -666,7 +673,8 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_
 }
 
 static void
-_btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -684,7 +692,8 @@ _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static void
-_btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -702,7 +711,8 @@ _btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 }
 
 static void
-_btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -720,7 +730,8 @@ _btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 }
 
 static void
-_btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                      void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -738,13 +749,15 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
 }
 
 static void
-_btn_quit_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_quit_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    exit(0);
 }
 
 static void
-_item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *ev EINA_UNUSED)
+_item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj,
+                        void *ev EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -754,7 +767,8 @@ _item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *ev EINA_
 }
 
 static void
-_item_menu_start_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_menu_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
 {
    Proc_Info *proc;
 
@@ -765,7 +779,8 @@ _item_menu_start_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info E
 }
 
 static void
-_item_menu_stop_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_menu_stop_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                   void *event_info EINA_UNUSED)
 {
    Proc_Info *proc;
 
@@ -776,7 +791,8 @@ _item_menu_stop_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EI
 }
 
 static void
-_item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                   void *event_info EINA_UNUSED)
 {
    Proc_Info *proc;
 
@@ -787,7 +803,8 @@ _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EI
 }
 
 static void
-_item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -796,7 +813,8 @@ _item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static void
-_item_menu_priority_increase_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_menu_priority_increase_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                                void *event_info EINA_UNUSED)
 {
    Proc_Info *proc = data;
    if (!proc) return;
@@ -805,7 +823,8 @@ _item_menu_priority_increase_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 }
 
 static void
-_item_menu_priority_decrease_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_menu_priority_decrease_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                                void *event_info EINA_UNUSED)
 {
    Proc_Info *proc = data;
    if (!proc) return;
@@ -814,7 +833,8 @@ _item_menu_priority_decrease_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 }
 
 static void
-_item_menu_priority_add(Evas_Object *menu, Elm_Object_Item *menu_it, Proc_Info *proc)
+_item_menu_priority_add(Evas_Object *menu, Elm_Object_Item *menu_it,
+                        Proc_Info *proc)
 {
    Elm_Object_Item *it;
 
@@ -858,7 +878,8 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
 }
 
 static void
-_item_pid_secondary_clicked_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
+_item_pid_secondary_clicked_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
+                               Evas_Object *obj, void *event_info)
 {
    Evas_Object *menu;
    Evas_Event_Mouse_Up *ev;
@@ -1140,7 +1161,8 @@ _tab_state_changed(Ui *ui, Evas_Object *btn_active, Evas_Object *view)
 }
 
 static void
-_tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                                void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1150,7 +1172,8 @@ _tab_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 }
 
 static void
-_tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                                void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1160,7 +1183,8 @@ _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *
 }
 
 static void
-_tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                              void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1170,7 +1194,8 @@ _tab_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *ev
 }
 
 static void
-_tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1180,7 +1205,8 @@ _tab_misc_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static void
-_tab_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_tab_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                             void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1199,7 +1225,8 @@ _evisum_process_filter(Ui *ui, const char *text)
 }
 
 static void
-_evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
+_evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
+                           void *event_info)
 {
    Ui * ui;
    const char *markup;
@@ -1529,7 +1556,8 @@ evisum_ui_shutdown(Ui *ui)
    if (ui->cpu_list)
      eina_list_free(ui->cpu_list);
 
-   evisum_ui_item_cache_free(ui->cache);
+   if (ui->cache)
+     evisum_ui_item_cache_free(ui->cache);
 
    eina_lock_free(&_lock);
 }

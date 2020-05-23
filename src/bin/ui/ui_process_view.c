@@ -49,7 +49,8 @@ _exe_response(const char *command)
 }
 
 static void
-_item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
    Evas_Object *o;
@@ -356,7 +357,8 @@ _proc_info_update(void *data)
            ecore_timer_del(ui->timer_pid);
          ui->timer_pid = NULL;
 
-        _win_title_set(ui->win, _("%s (%d) - Not running"), ui->selected_cmd, ui->selected_pid);
+        _win_title_set(ui->win, _("%s (%d) - Not running"), ui->selected_cmd,
+                       ui->selected_pid);
 
         return ECORE_CALLBACK_CANCEL;
      }
@@ -402,7 +404,8 @@ _proc_info_update(void *data)
 }
 
 static void
-_btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                      void *event_info EINA_UNUSED)
 {
    Ui_Process *ui = data;
 
@@ -413,7 +416,8 @@ _btn_start_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
 }
 
 static void
-_btn_stop_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_stop_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    Ui_Process *ui = data;
 
@@ -424,7 +428,8 @@ _btn_stop_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info 
 }
 
 static void
-_btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_kill_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    Ui_Process *ui = data;
 
@@ -637,7 +642,7 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
 
 static void
 _btn_name_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
+                     void *event_info EINA_UNUSED)
 {
    Ui_Process *ui = data;
 
@@ -663,7 +668,7 @@ _btn_thread_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
+                      void *event_info EINA_UNUSED)
 {
    Ui_Process *ui = data;
 
@@ -689,7 +694,7 @@ _btn_cpu_id_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
+                          void *event_info EINA_UNUSED)
 {
    Ui_Process *ui = data;
 
@@ -826,7 +831,8 @@ _hide_all(Ui_Process *ui, Evas_Object *btn)
 }
 
 static void
-_btn_process_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_process_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                        void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
 
@@ -837,7 +843,8 @@ _btn_process_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_in
 }
 
 static void
-_btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                        void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
 
@@ -849,7 +856,8 @@ _btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_in
 }
 
 static void
-_btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
    char *line;
@@ -972,7 +980,8 @@ _tabs_add(Evas_Object *parent, Ui_Process *ui)
 }
 
 static void
-_win_del_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
+            void *event_info EINA_UNUSED)
 {
    Evas_Object *win;
    Ui_Process *ui;

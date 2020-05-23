@@ -8,15 +8,16 @@ typedef struct _Ui_Process {
    Evas_Object  *win;
    Evas_Object  *content;
 
-   Evas_Object  *main_view;
-   Evas_Object  *info_view;
-   Evas_Object  *thread_view;
-
    Evas_Object  *btn_main;
    Evas_Object  *btn_info;
    Evas_Object  *btn_thread;
 
-   Evas_Object     *entry_info;
+   Evas_Object  *main_view;
+   Evas_Object  *info_view;
+   Evas_Object  *thread_view;
+
+   Evas_Object  *entry_info;
+
    Evas_Object     *genlist_threads;
    Evisum_Ui_Cache *cache;
 

@@ -1,7 +1,8 @@
 #include "ui_cache.h"
 
 Evisum_Ui_Cache *
-evisum_ui_item_cache_new(Evas_Object *parent, Evas_Object *(create_cb)(Evas_Object *), int size)
+evisum_ui_item_cache_new(Evas_Object *parent,
+                         Evas_Object *(create_cb)(Evas_Object *), int size)
 {
    Evisum_Ui_Cache *cache = malloc(sizeof(Evisum_Ui_Cache));
    if (!cache) return NULL;
