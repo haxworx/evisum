@@ -11,26 +11,27 @@ _battery_usage_add(Evas_Object *box, power_t *power)
           continue;
 
         frame = elm_frame_add(box);
-        evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-        evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_size_hint_align_set(frame, FILL, FILL);
+        evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
         elm_object_style_set(frame, "pad_small");
         evas_object_show(frame);
 
         vbox = elm_box_add(box);
-        evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-        evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_size_hint_align_set(vbox, FILL, FILL);
+        evas_object_size_hint_weight_set(vbox, EXPAND, EXPAND);
         evas_object_show(vbox);
 
         label = elm_label_add(box);
-        evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
-        evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_size_hint_align_set(label, 1.0, FILL);
+        evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
         evas_object_show(label);
         elm_box_pack_end(vbox, label);
 
         Eina_Strbuf *buf = eina_strbuf_new();
         if (buf)
           {
-             eina_strbuf_append_printf(buf, "<bigger>%s ", power->battery_names[i]);
+             eina_strbuf_append_printf(buf, "<bigger>%s ",
+                             power->battery_names[i]);
              if (power->have_ac && i == 0)
                {
                     eina_strbuf_append(buf, _("(plugged in)"));
@@ -41,23 +42,25 @@ _battery_usage_add(Evas_Object *box, power_t *power)
           }
 
         hbox = elm_box_add(box);
-        evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-        evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_size_hint_align_set(hbox, FILL, FILL);
+        evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
         elm_box_horizontal_set(hbox, EINA_TRUE);
         evas_object_show(hbox);
 
         ic = elm_image_add(box);
         elm_image_file_set(ic, evisum_icon_path_get("battery"), NULL);
-        evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
+        evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(),
+                        32 * elm_config_scale_get());
         evas_object_show(ic);
         elm_box_pack_end(hbox, ic);
 
         progress = elm_progressbar_add(frame);
-        evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
-        evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+        evas_object_size_hint_align_set(progress, FILL, FILL);
+        evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
         elm_progressbar_span_size_set(progress, 1.0);
         elm_progressbar_unit_format_set(progress, "%1.0f%%");
-        elm_progressbar_value_set(progress, (double) power->batteries[i]->percent / 100);
+        elm_progressbar_value_set(progress,
+                        (double) power->batteries[i]->percent / 100);
         evas_object_show(progress);
 
         elm_box_pack_end(hbox, progress);
@@ -99,8 +102,8 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
    char *tmp;
 
    vbox = elm_box_add(box);
-   evas_object_size_hint_align_set(vbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(vbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(vbox, FILL, FILL);
+   evas_object_size_hint_weight_set(vbox, EXPAND, EXPAND);
    evas_object_show(vbox);
 
    label = elm_label_add(box);
@@ -109,26 +112,27 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
    else
      elm_object_text_set(label, _("<bigger>Network Outgoing</bigger>"));
 
-   evas_object_size_hint_align_set(label, 1.0, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(label, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(label, 1.0, FILL);
+   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
    evas_object_show(label);
    elm_box_pack_end(vbox, label);
 
    hbox = elm_box_add(box);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(hbox, FILL, FILL);
+   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    elm_box_horizontal_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
 
    ic = elm_image_add(box);
    elm_image_file_set(ic, evisum_icon_path_get("network"), NULL);
-   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(), 32 * elm_config_scale_get());
+   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(),
+                   32 * elm_config_scale_get());
    evas_object_show(ic);
    elm_box_pack_end(hbox, ic);
 
    progress = elm_progressbar_add(box);
-   evas_object_size_hint_align_set(progress, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(progress, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(progress, FILL, FILL);
+   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
    elm_progressbar_span_size_set(progress, 1.0);
    evas_object_show(progress);
    elm_box_pack_end(hbox, progress);
@@ -147,13 +151,15 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
           {
              if (ui->incoming_max < bytes)
                ui->incoming_max = bytes;
-             elm_progressbar_value_set(progress, (double) bytes / ui->incoming_max);
+             elm_progressbar_value_set(progress,
+                             (double) bytes / ui->incoming_max);
           }
         else
           {
              if (ui->outgoing_max < bytes)
                ui->outgoing_max = bytes;
-             elm_progressbar_value_set(progress, (double) bytes / ui->outgoing_max);
+             elm_progressbar_value_set(progress,
+                             (double) bytes / ui->outgoing_max);
           }
      }
 
@@ -168,26 +174,27 @@ ui_tab_misc_add(Ui *ui)
    parent = ui->content;
 
    ui->misc_view = box = elm_box_add(parent);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(box, FILL, FILL);
    elm_table_pack(ui->content, ui->misc_view, 0, 1, 1, 1);
    evas_object_hide(box);
 
    ui->misc_activity = hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EVAS_HINT_EXPAND, 0);
-   evas_object_size_hint_align_set(hbox, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, FILL, FILL);
    evas_object_show(hbox);
 
    frame = elm_frame_add(box);
    elm_object_style_set(frame, "pad_small");
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_show(frame);
 
    scroller = elm_scroller_add(parent);
-   evas_object_size_hint_weight_set(scroller, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-   evas_object_size_hint_align_set(scroller, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   elm_scroller_policy_set(scroller, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
+   evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(scroller, FILL, FILL);
+   elm_scroller_policy_set(scroller,
+                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
    elm_object_content_set(scroller, hbox);
 
@@ -206,8 +213,8 @@ ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
    elm_box_clear(ui->misc_activity);
 
    box = elm_box_add(ui->content);
-   evas_object_size_hint_align_set(box, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(box, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(box, FILL, FILL);
+   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
    _battery_usage_add(box, &sysinfo->power);
@@ -215,8 +222,8 @@ ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
    _network_usage_add(ui, box, sysinfo->outgoing, EINA_FALSE);
 
    frame = elm_frame_add(ui->misc_activity);
-   evas_object_size_hint_align_set(frame, EVAS_HINT_FILL, EVAS_HINT_FILL);
-   evas_object_size_hint_weight_set(frame, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    elm_object_style_set(frame, "pad_medium");
    evas_object_show(frame);
    elm_object_content_set(frame, box);

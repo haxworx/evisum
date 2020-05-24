@@ -12,6 +12,9 @@
 #define EVISUM_SIZE_WIDTH  600
 #define EVISUM_SIZE_HEIGHT 520
 
+#define FILL EVAS_HINT_FILL
+#define EXPAND EVAS_HINT_EXPAND
+
 typedef enum
 {
    PROCESS_INFO_FIELD_PID,
@@ -30,8 +33,6 @@ typedef enum
    // Not used yet in UI.
    PROCESS_INFO_FIELD_CPU_TIME,
 } Proc_Info_Field;
-
-#define PROCESS_INFO_FIELDS 7
 
 typedef enum
 {
