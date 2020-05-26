@@ -1701,7 +1701,6 @@ _ui_init(Evas_Object *parent)
    Ui *ui = calloc(1, sizeof(Ui));
    if (!ui) return NULL;
 
-   /* Settings */
    ui->win = parent;
    ui->poll_delay = 3;
    ui->sort_reverse = EINA_FALSE;
@@ -1718,7 +1717,6 @@ _ui_init(Evas_Object *parent)
 
    _config_load(ui);
 
-   /* UI content creation */
    _ui_tabs_add(parent, ui);
    _ui_tab_system_add(ui);
 
@@ -1737,11 +1735,9 @@ evisum_ui_add(Evas_Object *parent)
 {
    eina_lock_new(&_lock);
 
-   /* Create our user interface. */
    Ui *ui = _ui = _ui_init(parent);
    if (!ui) return NULL;
 
-   /* Start polling our data */
    _ui_launch(ui);
 
    return ui;
