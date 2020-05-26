@@ -438,7 +438,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cmd");
-   elm_object_text_set(l, eina_slstr_printf("%s", proc->command));
+   elm_object_text_set(l, eina_slstr_printf("  %s", proc->command));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cmd, w, 1);
    r = evas_object_data_get(l, "rect");
