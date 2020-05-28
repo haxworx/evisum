@@ -930,7 +930,7 @@ _tabs_add(Evas_Object *parent, Ui_Process *ui)
    ui->btn_main = btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, TAB_BTN_SIZE, 1);
+   evas_object_size_hint_min_set(btn, elm_config_scale_get() * TAB_BTN_SIZE, 1);
    elm_object_text_set(btn, _("Process"));
    elm_object_disabled_set(btn, EINA_TRUE);
    evas_object_show(btn);
@@ -947,7 +947,7 @@ _tabs_add(Evas_Object *parent, Ui_Process *ui)
    ui->btn_thread = btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, TAB_BTN_SIZE, 1);
+   evas_object_size_hint_min_set(btn, elm_config_scale_get() * TAB_BTN_SIZE, 1);
    elm_object_text_set(btn, _("Threads"));
    elm_object_disabled_set(btn, EINA_FALSE);
    evas_object_show(btn);
@@ -964,7 +964,7 @@ _tabs_add(Evas_Object *parent, Ui_Process *ui)
    ui->btn_info = btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, TAB_BTN_SIZE, 1);
+   evas_object_size_hint_min_set(btn, elm_config_scale_get() * TAB_BTN_SIZE, 1);
    elm_object_text_set(btn, _("Information"));
    elm_object_disabled_set(btn, EINA_FALSE);
    evas_object_show(btn);

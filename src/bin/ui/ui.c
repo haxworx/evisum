@@ -1315,7 +1315,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_disabled_set(ui->btn_general, EINA_TRUE);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("General"));
    evas_object_show(button);
    elm_object_content_set(border, button);
@@ -1332,7 +1332,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_cpu = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("CPU"));
    elm_object_content_set(border, button);
    evas_object_show(button);
@@ -1349,7 +1349,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_mem = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("Memory"));
    evas_object_show(button);
    elm_object_content_set(border, button);
@@ -1366,7 +1366,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_storage = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("Storage"));
    evas_object_show(button);
    elm_object_content_set(border, button);
@@ -1383,7 +1383,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_misc = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, FILL, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("Misc"));
    evas_object_show(button);
    elm_object_content_set(border, button);
