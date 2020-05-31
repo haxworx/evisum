@@ -895,7 +895,7 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    else
      {
         elm_object_text_set(ui->entry_info,
-			eina_slstr_printf(_("No documentation found for %s."),
+                        eina_slstr_printf(_("No documentation found for %s."),
                         ui->selected_cmd));
      }
 
