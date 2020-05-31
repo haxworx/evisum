@@ -268,7 +268,6 @@ _sort_by_tid(const void *p1, const void *p2)
    return inf1->tid - inf2->tid;
 }
 
-
 static void
 _hash_free_cb(void *data)
 {
