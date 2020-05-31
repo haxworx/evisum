@@ -32,19 +32,17 @@ typedef struct _Proc_Info
    int8_t      priority;
    int         cpu_id;
    int32_t     numthreads;
+   long        cpu_time;
+   double      cpu_usage;
 
    int64_t     mem_size;
    int64_t     mem_virt;
    int64_t     mem_rss;
    int64_t     mem_shared;
 
-   double      cpu_usage;
    char       *command;
    char       *arguments;
    const char *state;
-
-   // Not used yet in UI.
-   long        cpu_time;
 
    int         tid;
    char       *thread_name;
@@ -55,7 +53,7 @@ typedef struct _Proc_Info
 /**
  * Query a full list of running processes and return a list.
  *
- * @return A list of proc_t members for all processes.
+ * @return A list of Proc_Info pointers for all processes.
  */
 Eina_List *
 proc_info_all_get(void);
@@ -65,7 +63,7 @@ proc_info_all_get(void);
  *
  * @param pid The process ID to query.
  *
- * @return A proc_t pointer containing the process information.
+ * @return A Proc_Info pointer containing the process information.
  */
 Proc_Info *
 proc_info_by_pid(int pid);
