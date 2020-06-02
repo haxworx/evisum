@@ -17,25 +17,6 @@
 
 typedef enum
 {
-   PROCESS_INFO_FIELD_PID,
-   PROCESS_INFO_FIELD_UID,
-   PROCESS_INFO_FIELD_SIZE,
-   PROCESS_INFO_FIELD_RSS,
-   PROCESS_INFO_FIELD_COMMAND,
-   PROCESS_INFO_FIELD_STATE,
-   PROCESS_INFO_FIELD_CPU_USAGE,
-
-   // Not displayed in the main UI.
-   PROCESS_INFO_FIELD_NICE,
-   PROCESS_INFO_FIELD_PRI,
-   PROCESS_INFO_FIELD_CPU,
-   PROCESS_INFO_FIELD_THREADS,
-   // Not used yet in UI.
-   PROCESS_INFO_FIELD_CPU_TIME,
-} Proc_Info_Field;
-
-typedef enum
-{
    DATA_UNIT_B  = 'B',
    DATA_UNIT_KB = 'K',
    DATA_UNIT_MB = 'M',
@@ -62,83 +43,80 @@ typedef enum
 
 typedef struct Ui
 {
-   Evas_Object  *win;
-   Evas_Object  *menu;
-   Evas_Object  *scroller;
-   Evas_Object  *content;
-   Evas_Object  *btn_general;
-   Evas_Object  *btn_cpu;
-   Evas_Object  *btn_mem;
-   Evas_Object  *btn_storage;
-   Evas_Object  *btn_misc;
+   Evas_Object     *win;
+   Evas_Object     *menu;
+   Evas_Object     *scroller;
+   Evas_Object     *content;
+   Evas_Object     *btn_general;
+   Evas_Object     *btn_cpu;
+   Evas_Object     *btn_mem;
+   Evas_Object     *btn_storage;
+   Evas_Object     *btn_misc;
 
-   Evas_Object  *disk_view;
-   Evas_Object  *disk_activity;
-   Evas_Object  *cpu_view;
-   Evas_Object  *cpu_activity;
-   Evas_Object  *mem_view;
-   Evas_Object  *mem_activity;
-   Evas_Object  *misc_view;
-   Evas_Object  *misc_activity;
-   Evas_Object  *system_activity;
+   Evas_Object     *disk_view;
+   Evas_Object     *disk_activity;
+   Evas_Object     *cpu_view;
+   Evas_Object     *cpu_activity;
+   Evas_Object     *mem_view;
+   Evas_Object     *mem_activity;
+   Evas_Object     *misc_view;
+   Evas_Object     *misc_activity;
+   Evas_Object     *system_activity;
 
-   Elm_Transit  *transit;
-   Evas_Object  *current_view;
+   Elm_Transit     *transit;
+   Evas_Object     *current_view;
 
-   Eina_Bool     cpu_visible;
-   Eina_Bool     misc_visible;
-   Eina_Bool     disk_visible;
-   Eina_Bool     mem_visible;
+   Eina_Bool       cpu_visible;
+   Eina_Bool       misc_visible;
+   Eina_Bool       disk_visible;
+   Eina_Bool       mem_visible;
 
-   Evas_Object  *progress_cpu;
-   Evas_Object  *progress_mem;
+   Evas_Object     *progress_cpu;
+   Evas_Object     *progress_mem;
 
-   Evas_Object  *title_mem;
-   Evas_Object  *progress_mem_used;
-   Evas_Object  *progress_mem_cached;
-   Evas_Object  *progress_mem_buffered;
-   Evas_Object  *progress_mem_shared;
-   Evas_Object  *progress_mem_swap;
+   Evas_Object     *title_mem;
+   Evas_Object     *progress_mem_used;
+   Evas_Object     *progress_mem_cached;
+   Evas_Object     *progress_mem_buffered;
+   Evas_Object     *progress_mem_shared;
+   Evas_Object     *progress_mem_swap;
 
-   Evas_Object  *btn_pid;
-   Evas_Object  *btn_uid;
-   Evas_Object  *btn_size;
-   Evas_Object  *btn_rss;
-   Evas_Object  *btn_cmd;
-   Evas_Object  *btn_state;
-   Evas_Object  *btn_cpu_usage;
+   Evas_Object     *btn_pid;
+   Evas_Object     *btn_uid;
+   Evas_Object     *btn_size;
+   Evas_Object     *btn_rss;
+   Evas_Object     *btn_cmd;
+   Evas_Object     *btn_state;
+   Evas_Object     *btn_cpu_usage;
 
    Evisum_Ui_Cache *cache;
    Evas_Object     *genlist_procs;
    Evas_Object     *entry_search;
 
-   Ecore_Thread *thread_system;
-   Ecore_Thread *thread_process;
+   Ecore_Thread    *thread_system;
+   Ecore_Thread    *thread_process;
 
-   Ecore_Timer  *timer_pid;
-   pid_t         selected_pid;
-   pid_t         program_pid;
+   Ecore_Timer     *timer_pid;
+   pid_t           selected_pid;
+   pid_t           program_pid;
 
-   char         *search_text;
-   Evas_Object  *list_pid;
+   char            *search_text;
 
-   Eina_Bool     skip_wait;
-   Eina_Bool     ready;
+   Eina_Bool       skip_wait;
+   Eina_Bool       ready;
 
-   Eina_List    *cpu_times;
+   Eina_List       *cpu_times;
+   Eina_List       *cpu_list;
+   Evas_Object     *temp_label;
 
-   Eina_List    *cpu_list;
-   Evas_Object  *temp_label;
+   int             poll_delay;
 
-   int           poll_delay;
+   Sort_Type       sort_type;
+   Eina_Bool       sort_reverse;
+   Eina_Bool       show_self;
 
-   Sort_Type     sort_type;
-   Eina_Bool     sort_reverse;
-   Eina_Bool     searching;
-   Eina_Bool     show_self;
-
-   uint64_t      incoming_max;
-   uint64_t      outgoing_max;
+   uint64_t        incoming_max;
+   uint64_t        outgoing_max;
 } Ui;
 
 Ui *

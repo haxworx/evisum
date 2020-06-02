@@ -520,6 +520,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    Eina_List *list, *l, *l_next;
    Proc_Info *proc;
    Elm_Object_Item *it;
+   int len = 0;
 
    ui = data;
 
@@ -527,11 +528,15 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 
    list = proc_info_all_get();
 
+   if (ui->search_text && ui->search_text[0])
+     {
+        len = strlen(ui->search_text);
+     }
+
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if ((ui->search_text && ui->search_text[0] &&
-            strncasecmp(proc->command, ui->search_text, strlen(ui->search_text))
-            ) || (!ui->show_self && proc->pid == ui->program_pid))
+        if (((len && (strncasecmp(proc->command, ui->search_text, len))) ||
+            (!ui->show_self && (proc->pid == ui->program_pid))))
          {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
@@ -571,8 +576,6 @@ _process_list_update(Ui *ui)
    _process_list_feedback_cb(ui, NULL, NULL);
 }
 
-#define POLL_ONE_SEC 4
-
 static void
 _process_list(void *data, Ecore_Thread *thread)
 {
@@ -584,7 +587,7 @@ _process_list(void *data, Ecore_Thread *thread)
    while (1)
      {
         ecore_thread_feedback(thread, ui);
-        for (int i = 0; i < delay * POLL_ONE_SEC; i++)
+        for (int i = 0; i < delay * 4; i++)
           {
              if (ecore_thread_check(thread)) return;
 
@@ -1315,7 +1318,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_disabled_set(ui->btn_general, EINA_TRUE);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button,
+                   elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("General"));
    evas_object_show(button);
    elm_object_content_set(border, button);
@@ -1332,7 +1336,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_cpu = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button,
+                   elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("CPU"));
    elm_object_content_set(border, button);
    evas_object_show(button);
@@ -1349,7 +1354,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_mem = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button,
+                   elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("Memory"));
    evas_object_show(button);
    elm_object_content_set(border, button);
@@ -1366,7 +1372,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_storage = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button,
+                   elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("Storage"));
    evas_object_show(button);
    elm_object_content_set(border, button);
@@ -1383,7 +1390,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    ui->btn_misc = button = elm_button_add(hbox);
    evas_object_size_hint_weight_set(button, FILL, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button, elm_config_scale_get() * TAB_BTN_SIZE, 0);
+   evas_object_size_hint_min_set(button,
+                   elm_config_scale_get() * TAB_BTN_SIZE, 0);
    elm_object_text_set(button, _("Misc"));
    evas_object_show(button);
    elm_object_content_set(border, button);
@@ -1674,18 +1682,16 @@ out:
 static void
 _ui_launch(Ui *ui)
 {
-   Ecore_Thread *thr;
-
    _process_list_update(ui);
 
-   thr = ecore_thread_feedback_run(_sys_info_all_poll,
-		   _sys_info_all_poll_feedback_cb, _thread_end_cb,
+   ui->thread_system =
+      ecore_thread_feedback_run(_sys_info_all_poll,
+                   _sys_info_all_poll_feedback_cb, _thread_end_cb,
                    _thread_error_cb, ui, EINA_FALSE);
-   ui->thread_system = thr;
 
-   thr = ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
+   ui->thread_process =
+      ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
                    _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
-   ui->thread_process = thr;
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
                     _evisum_resize_cb, ui);

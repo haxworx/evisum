@@ -303,7 +303,8 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
           }
         else
           {
-             cpu_usage = (double) (p->cpu_time - *cpu_time_prev) / ui->poll_delay;
+             cpu_usage = (double) (p->cpu_time - *cpu_time_prev)
+                       / ui->poll_delay;
              *cpu_time_prev = p->cpu_time;
           }
 
@@ -375,24 +376,29 @@ _proc_info_update(void *data)
 
    elm_object_text_set(ui->entry_pid_pid, eina_slstr_printf("%d", proc->pid));
    elm_object_text_set(ui->entry_pid_uid, eina_slstr_printf("%d", proc->uid));
-   elm_object_text_set(ui->entry_pid_cpu, eina_slstr_printf("%d", proc->cpu_id));
-   elm_object_text_set(ui->entry_pid_threads, eina_slstr_printf("%d", proc->numthreads));
+   elm_object_text_set(ui->entry_pid_cpu,
+                   eina_slstr_printf("%d", proc->cpu_id));
+   elm_object_text_set(ui->entry_pid_threads,
+                   eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(ui->entry_pid_virt, evisum_size_format(proc->mem_virt));
    elm_object_text_set(ui->entry_pid_rss, evisum_size_format(proc->mem_rss));
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__MacOS__) || defined(__OpenBSD__)
+#if !defined(__linux__)
    elm_object_text_set(ui->entry_pid_shared, "N/A");
 #else
-   elm_object_text_set(ui->entry_pid_shared, evisum_size_format(proc->mem_shared));
+   elm_object_text_set(ui->entry_pid_shared,
+                   evisum_size_format(proc->mem_shared));
 #endif
    elm_object_text_set(ui->entry_pid_size, evisum_size_format(proc->mem_size));
    elm_object_text_set(ui->entry_pid_nice, eina_slstr_printf("%d", proc->nice));
-   elm_object_text_set(ui->entry_pid_pri, eina_slstr_printf("%d", proc->priority));
+   elm_object_text_set(ui->entry_pid_pri,
+                   eina_slstr_printf("%d", proc->priority));
    elm_object_text_set(ui->entry_pid_state, proc->state);
 
    if (ui->pid_cpu_time && proc->cpu_time >= ui->pid_cpu_time)
      cpu_usage = (double)(proc->cpu_time - ui->pid_cpu_time) / ui->poll_delay;
 
-   elm_object_text_set(ui->entry_pid_cpu_usage, eina_slstr_printf("%.1f%%", cpu_usage));
+   elm_object_text_set(ui->entry_pid_cpu_usage,
+                   eina_slstr_printf("%.1f%%", cpu_usage));
 
    ui->pid_cpu_time = proc->cpu_time;
 
@@ -770,7 +776,8 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_text_set(btn, _("CPU Usage"));
    _btn_icon_state_set(btn, ui->sort_reverse);
    evas_object_show(btn);
-   evas_object_smart_callback_add(btn, "clicked", _btn_cpu_usage_clicked_cb, ui);
+   evas_object_smart_callback_add(btn, "clicked",
+                   _btn_cpu_usage_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    ui->genlist_threads = genlist = elm_genlist_add(parent);
@@ -781,7 +788,8 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_show(genlist);
 
-   evas_object_smart_callback_add(ui->genlist_threads, "unrealized", _item_unrealized_cb, ui);
+   evas_object_smart_callback_add(ui->genlist_threads, "unrealized",
+                   _item_unrealized_cb, ui);
 
    elm_box_pack_end(box, hbox);
    elm_box_pack_end(box, genlist);
@@ -993,7 +1001,6 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->hash_cpu_times)
      eina_hash_free(ui->hash_cpu_times);
-
    if (ui->timer_pid)
      ecore_timer_del(ui->timer_pid);
    if (ui->selected_cmd)
@@ -1055,7 +1062,8 @@ ui_process_win_add(int pid, const char *cmd)
    elm_box_pack_end(box, ui->content);
    elm_object_content_set(win, box);
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
+                   _win_resize_cb, ui);
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
    evas_object_show(win);
 
