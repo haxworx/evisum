@@ -9,8 +9,8 @@
 
 #define _(STR) gettext(STR)
 
-#define EVISUM_SIZE_WIDTH  600
-#define EVISUM_SIZE_HEIGHT 520
+#define EVISUM_WIN_WIDTH  600
+#define EVISUM_WIN_HEIGHT 520
 
 #define FILL EVAS_HINT_FILL
 #define EXPAND EVAS_HINT_EXPAND

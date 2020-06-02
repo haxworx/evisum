@@ -1,3 +1,4 @@
+
 static char *
 _man2entry(const char *text)
 {
