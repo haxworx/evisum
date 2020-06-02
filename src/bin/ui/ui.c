@@ -944,6 +944,7 @@ _ui_tab_system_add(Ui *ui)
 {
    Evas_Object *parent, *box, *hbox, *frame, *table;
    Evas_Object *progress, *button, *plist;
+   int i = 0;
 
    parent = ui->content;
 
@@ -1007,7 +1008,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("PID"));
    evas_object_show(button);
-   elm_table_pack(table, button, 0, 0, 1, 1);
+   elm_table_pack(table, button, i++, 0, 1, 1);
 
    ui->btn_uid = button = elm_button_add(parent);
    if (ui->sort_type == SORT_BY_UID)
@@ -1022,7 +1023,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("UID"));
    evas_object_show(button);
-   elm_table_pack(table, button, 1, 0, 1, 1);
+   elm_table_pack(table, button, i++, 0, 1, 1);
 
    ui->btn_size = button = elm_button_add(parent);
    if (ui->sort_type == SORT_BY_SIZE)
@@ -1037,7 +1038,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Size"));
    evas_object_show(button);
-   elm_table_pack(table, button, 2, 0, 1, 1);
+   elm_table_pack(table, button, i++, 0, 1, 1);
 
    ui->btn_rss = button = elm_button_add(parent);
    if (ui->sort_type == SORT_BY_RSS)
@@ -1052,7 +1053,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Res"));
    evas_object_show(button);
-   elm_table_pack(table, button, 3, 0, 1, 1);
+   elm_table_pack(table, button, i++, 0, 1, 1);
 
    ui->btn_cmd = button = elm_button_add(parent);
    if (ui->sort_type == SORT_BY_CMD)
@@ -1067,7 +1068,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Command"));
    evas_object_show(button);
-   elm_table_pack(table, button, 4, 0, 1, 1);
+   elm_table_pack(table, button, i++, 0, 1, 1);
 
    ui->btn_state = button = elm_button_add(parent);
    if (ui->sort_type == SORT_BY_STATE)
@@ -1082,7 +1083,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("State"));
    evas_object_show(button);
-   elm_table_pack(table, button, 5, 0, 1, 1);
+   elm_table_pack(table, button, i++, 0, 1, 1);
 
    ui->btn_cpu_usage = button = elm_button_add(parent);
    if (ui->sort_type == SORT_BY_CPU_USAGE)
@@ -1097,7 +1098,7 @@ _ui_tab_system_add(Ui *ui)
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("CPU %"));
    evas_object_show(button);
-   elm_table_pack(table, button, 6, 0, 1, 1);
+   elm_table_pack(table, button, i++, 0, 1, 1);
 
    ui->scroller = ui->genlist_procs = plist = elm_genlist_add(parent);
    elm_scroller_gravity_set(ui->scroller, 0.0, 1.0);
