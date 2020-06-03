@@ -4,6 +4,7 @@ static void
 _battery_usage_add(Evas_Object *box, power_t *power)
 {
    Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
+   Eina_Strbuf *buf;
 
    for (int i = 0; i < power->battery_count; i++)
      {
@@ -27,7 +28,7 @@ _battery_usage_add(Evas_Object *box, power_t *power)
         evas_object_show(label);
         elm_box_pack_end(vbox, label);
 
-        Eina_Strbuf *buf = eina_strbuf_new();
+        buf = eina_strbuf_new();
         if (buf)
           {
              eina_strbuf_append_printf(buf, "<bigger>%s ",
