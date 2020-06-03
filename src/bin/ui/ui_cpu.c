@@ -32,8 +32,8 @@ ui_tab_cpu_add(Ui *ui)
    elm_scroller_policy_set(scroller,
                    ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
-   elm_object_content_set(scroller, hbox);
 
+   elm_object_content_set(scroller, hbox);
    elm_object_content_set(frame, scroller);
    elm_box_pack_end(box, frame);
 
@@ -42,33 +42,29 @@ ui_tab_cpu_add(Ui *ui)
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   cpu_count = system_cpu_online_count_get();
+   frame = elm_frame_add(box);
+   evas_object_size_hint_align_set(frame, FILL, 0);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_show(frame);
+   elm_object_style_set(frame, "pad_large");
+   elm_box_pack_end(box, frame);
 
+   label = elm_label_add(box);
+   evas_object_size_hint_align_set(label, FILL, 0);
+   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+   elm_object_text_set(label, _("<subtitle>CPUs</subtitle>"));
+   evas_object_show(label);
+   elm_box_pack_end(box, label);
+
+   ui->temp_label = label = elm_label_add(box);
+   evas_object_size_hint_align_set(label, FILL, 0);
+   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+   evas_object_show(label);
+   elm_box_pack_end(box, label);
+
+   cpu_count = system_cpu_online_count_get();
    for (int i = 0; i < cpu_count; i++)
      {
-        if (i == 0)
-          {
-             frame = elm_frame_add(box);
-             evas_object_size_hint_align_set(frame, FILL, 0);
-             evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-             evas_object_show(frame);
-             elm_object_style_set(frame, "pad_large");
-             elm_box_pack_end(box, frame);
-
-             label = elm_label_add(box);
-             evas_object_size_hint_align_set(label, FILL, 0);
-             evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-             elm_object_text_set(label, _("<subtitle>CPUs</subtitle>"));
-             evas_object_show(label);
-             elm_box_pack_end(box, label);
-
-             ui->temp_label = label = elm_label_add(box);
-             evas_object_size_hint_align_set(label, FILL, 0);
-             evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-             evas_object_show(label);
-             elm_box_pack_end(box, label);
-          }
-
         frame = elm_frame_add(box);
         evas_object_size_hint_align_set(frame, FILL, 0);
         evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
