@@ -12,6 +12,18 @@ _label_mem(Evas_Object *parent, const char *text)
    return label;
 }
 
+static Evas_Object *
+_progress_add(Evas_Object *parent)
+{
+   Evas_Object *progress = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(progress, FILL, FILL);
+   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
+   elm_progressbar_span_size_set(progress, 1.0);
+   evas_object_show(progress);
+
+   return progress;
+}
+
 void
 ui_tab_memory_add(Ui *ui)
 {
@@ -80,55 +92,27 @@ ui_tab_memory_add(Ui *ui)
    evas_object_show(table);
 
    label = _label_mem(box, _("Used"));
-
-   ui->progress_mem_used = progress = elm_progressbar_add(table);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
-
+   ui->progress_mem_used = progress = _progress_add(table);
    elm_table_pack(table, label, 0, 0, 1, 1);
    elm_table_pack(table, progress, 1, 0, 1, 1);
 
    label = _label_mem(box, _("Cached"));
-
-   ui->progress_mem_cached = progress = elm_progressbar_add(frame);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
-
+   ui->progress_mem_cached = progress = _progress_add(table);
    elm_table_pack(table, label, 0, 1, 1, 1);
    elm_table_pack(table, progress, 1, 1, 1, 1);
 
    label = _label_mem(box, _("Buffered"));
-
-   ui->progress_mem_buffered = progress = elm_progressbar_add(frame);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
-
+   ui->progress_mem_buffered = progress = _progress_add(table);
    elm_table_pack(table, label, 0, 2, 1, 1);
    elm_table_pack(table, progress, 1, 2, 1, 1);
 
    label = _label_mem(box, _("Shared"));
-
-   ui->progress_mem_shared = progress = elm_progressbar_add(frame);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   evas_object_show(progress);
-
+   ui->progress_mem_shared = progress = _progress_add(table);
    elm_table_pack(table, label, 0, 3, 1, 1);
    elm_table_pack(table, progress, 1, 3, 1, 1);
 
    label = _label_mem(box, _("Swapped"));
-
-   ui->progress_mem_swap = progress = elm_progressbar_add(frame);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   evas_object_show(progress);
-
+   ui->progress_mem_swap = progress = _progress_add(frame);
    elm_table_pack(table, label, 0, 4, 1, 1);
    elm_table_pack(table, progress, 1, 4, 1, 1);
 
