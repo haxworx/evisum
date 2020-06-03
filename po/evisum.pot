@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-04-23 12:26+0100\n"
+"POT-Creation-Date: 2020-06-03 13:56+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,221 +17,254 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: src/bin/ui.c:2048
+#: src/bin/ui/ui_process_view.c:531
+msgid " Memory :"
+msgstr ""
+
+#: src/bin/ui/ui_process_view.c:541
+msgid " Resident memory:"
+msgstr ""
+
+#: src/bin/ui/ui_process_view.c:536
 msgid " Shared memory:"
 msgstr ""
 
-#: src/bin/ui.c:2033
-msgid " Total memory :"
-msgstr ""
-
-#: src/bin/ui.c:2063
+#: src/bin/ui/ui_process_view.c:546
 msgid " Virtual memory:"
 msgstr ""
 
-#: src/bin/ui.c:180
+#: src/bin/ui/ui_process_view.c:361
+#, c-format
+msgid "%s (%d) - Not running"
+msgstr ""
+
+#: src/bin/ui/ui_misc.c:38
 msgid "(plugged in)"
 msgstr ""
 
-#: src/bin/ui.c:233
+#: src/bin/ui/ui_misc.c:112
 msgid "<bigger>Network Incoming</bigger>"
 msgstr ""
 
-#: src/bin/ui.c:235
+#: src/bin/ui/ui_misc.c:114
 msgid "<bigger>Network Outgoing</bigger>"
 msgstr ""
 
-#: src/bin/ui.c:479
+#: src/bin/ui/ui_disk.c:57
 #, c-format
-msgid "<header>Core at (%d °C)</header>"
+msgid "<subtitle>%s</subtitle><br><bigger>mounted at %s</bigger><br>%s of %s"
 msgstr ""
 
-#: src/bin/ui.c:346
-#, c-format
-msgid ""
-"<subtitle>%s</subtitle><br><bigger>mounted at %s</bigger><br>%1.1f%c of %1.1f"
-"%c"
+#: src/bin/ui/ui_cpu.c:55
+msgid "<subtitle>CPUs</subtitle>"
 msgstr ""
 
-#: src/bin/ui.c:2317
-#, c-format
-msgid "<subtitle>CPUs</subtitle><br><bigger>Total of %d CPUs</bigger>"
-msgstr ""
-
-#: src/bin/ui.c:2412
+#: src/bin/ui/ui_memory.c:77
 msgid "<subtitle>Memory</subtitle>"
 msgstr ""
 
-#: src/bin/ui.c:416
-#, c-format
-msgid ""
-"<subtitle>Memory</subtitle><br><bigger>Physical %s</bigger><br><br>Swap %s"
-msgstr ""
-
-#: src/bin/ui.c:2451
+#: src/bin/ui/ui_memory.c:104
 msgid "Buffered"
 msgstr ""
 
-#: src/bin/ui.c:2677
+#: src/bin/ui/ui.c:1300
 msgid "CPU"
 msgstr ""
 
-#: src/bin/ui.c:2002
+#: src/bin/ui/ui_process_view.c:520
 msgid "CPU #:"
 msgstr ""
 
-#: src/bin/ui.c:1835
+#: src/bin/ui/ui.c:1057
 msgid "CPU %"
 msgstr ""
 
-#: src/bin/ui.c:2123
+#: src/bin/ui/ui_process_view.c:566
 msgid "CPU %:"
 msgstr ""
 
-#: src/bin/ui.c:2440
+#: src/bin/ui/ui_process_view.c:767
+msgid "CPU ID"
+msgstr ""
+
+#: src/bin/ui/ui_process_view.c:776
+msgid "CPU Usage"
+msgstr ""
+
+#: src/bin/ui/ui_memory.c:99
 msgid "Cached"
 msgstr ""
 
-#: src/bin/ui.c:1617
+#: src/bin/ui/ui.c:891
 msgid "Cancel"
 msgstr ""
 
-#: src/bin/ui.c:2777
+#: src/bin/ui/ui.c:1413
 msgid "Close"
 msgstr ""
 
-#: src/bin/ui.c:1805
+#: src/bin/ui/ui.c:1039
 msgid "Command"
 msgstr ""
 
-#: src/bin/ui.c:1939
+#: src/bin/ui/ui_process_view.c:497
 msgid "Command line:"
 msgstr ""
 
-#: src/bin/ui.c:1924
+#: src/bin/ui/ui_process_view.c:492
 msgid "Command:"
 msgstr ""
 
-#: src/bin/ui.c:1586
+#: src/bin/ui/ui_cpu.c:103
+#, c-format
+msgid "Core at (%d °C)"
+msgstr ""
+
+#: src/bin/ui/ui.c:850
 msgid "Decrease"
 msgstr ""
 
-#: src/bin/main.c:32
-msgid "Evisum: System Monitor"
+#: src/bin/ui/ui_process_view.c:808
+msgid "Documentation"
 msgstr ""
 
-#: src/bin/ui.c:1585
+#: src/bin/main.c:30
+msgid "EFL System Monitor"
+msgstr ""
+
+#: src/bin/ui/ui.c:1282 src/bin/ui/ui_process_view.c:481
+msgid "General"
+msgstr ""
+
+#: src/bin/ui/ui_process_view.c:740
+msgid "ID"
+msgstr ""
+
+#: src/bin/ui/ui.c:848
 msgid "Increase"
 msgstr ""
 
-#: src/bin/ui.c:2183
+#: src/bin/ui/ui_process_view.c:975
+msgid "Information"
+msgstr ""
+
+#: src/bin/ui/ui_process_view.c:624
 msgid "Kill"
 msgstr ""
 
-#: src/bin/ui.c:2693
+#: src/bin/ui/ui.c:1318
 msgid "Memory"
 msgstr ""
 
-#: src/bin/ui.c:2725
+#: src/bin/ui/ui.c:1354
 msgid "Misc"
 msgstr ""
 
-#: src/bin/ui.c:2078
+#: src/bin/ui/ui_process_view.c:749
+msgid "Name"
+msgstr ""
+
+#: src/bin/ui/ui_process_view.c:551
 msgid "Nice:"
 msgstr ""
 
-#: src/bin/ui.c:2640
+#: src/bin/ui/ui_process_view.c:906
+#, c-format
+msgid "No documentation found for %s."
+msgstr ""
+
+#: src/bin/ui/ui.c:1253
 msgid "Options"
 msgstr ""
 
-#: src/bin/ui.c:1745
+#: src/bin/ui/ui.c:1003
 msgid "PID"
 msgstr ""
 
-#: src/bin/ui.c:1954
+#: src/bin/ui/ui_process_view.c:502
 msgid "PID:"
 msgstr ""
 
-#: src/bin/ui.c:1607
+#: src/bin/ui/ui.c:874
 msgid "Priority"
 msgstr ""
 
-#: src/bin/ui.c:2093
+#: src/bin/ui/ui_process_view.c:556
 msgid "Priority:"
 msgstr ""
 
-#: src/bin/ui.c:1905
-msgid "Process Statistics"
+#: src/bin/ui/ui_process_view.c:941
+msgid "Process"
 msgstr ""
 
-#: src/bin/ui.c:2661
-msgid "Processes"
-msgstr ""
-
-#: src/bin/ui.c:1790
+#: src/bin/ui/ui.c:1030
 msgid "Res"
 msgstr ""
 
-#: src/bin/ui.c:2462
+#: src/bin/ui/ui_memory.c:109
 msgid "Shared"
 msgstr ""
 
-#: src/bin/ui.c:1775
+#: src/bin/ui/ui.c:1021
 msgid "Size"
 msgstr ""
 
-#: src/bin/ui.c:1611 src/bin/ui.c:2168
+#: src/bin/ui/ui.c:879 src/bin/ui/ui_process_view.c:609
 msgid "Start"
 msgstr ""
 
-#: src/bin/ui.c:1820
+#: src/bin/ui/ui.c:1048 src/bin/ui/ui_process_view.c:758
 msgid "State"
 msgstr ""
 
-#: src/bin/ui.c:2108
+#: src/bin/ui/ui_process_view.c:561
 msgid "State:"
 msgstr ""
 
-#: src/bin/ui.c:1613 src/bin/ui.c:2153
+#: src/bin/ui/ui.c:883 src/bin/ui/ui_process_view.c:594
 msgid "Stop"
 msgstr ""
 
-#: src/bin/ui.c:2709
+#: src/bin/ui/ui.c:1336
 msgid "Storage"
 msgstr ""
 
-#: src/bin/ui.c:2472
+#: src/bin/ui/ui_memory.c:114
 msgid "Swapped"
 msgstr ""
 
-#: src/bin/ui.c:1703
+#: src/bin/ui/ui.c:967
 msgid "System CPU"
 msgstr ""
 
-#: src/bin/ui.c:1718
+#: src/bin/ui/ui.c:982
 msgid "System Memory"
 msgstr ""
 
-#: src/bin/ui.c:2018
+#: src/bin/ui/ui_process_view.c:722 src/bin/ui/ui_process_view.c:958
+msgid "Threads"
+msgstr ""
+
+#: src/bin/ui/ui_process_view.c:526
 msgid "Threads:"
 msgstr ""
 
-#: src/bin/ui.c:1760
+#: src/bin/ui/ui.c:1012
 msgid "UID"
 msgstr ""
 
-#: src/bin/ui.c:1984
+#: src/bin/ui/ui_process_view.c:512
 msgid "UID:"
 msgstr ""
 
-#: src/bin/ui.c:2429
+#: src/bin/ui/ui_memory.c:94
 msgid "Used"
 msgstr ""
 
-#: src/bin/ui.c:1969
+#: src/bin/ui/ui_process_view.c:507
 msgid "Username:"
 msgstr ""
 
-#: src/bin/ui.c:2000
+#: src/bin/ui/ui_process_view.c:518
 msgid "WQ #:"
 msgstr ""
