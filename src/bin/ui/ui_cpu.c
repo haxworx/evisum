@@ -58,9 +58,7 @@ ui_tab_cpu_add(Ui *ui)
              label = elm_label_add(box);
              evas_object_size_hint_align_set(label, FILL, 0);
              evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-             elm_object_text_set(label,
-                        eina_slstr_printf(_("<subtitle>CPUs</subtitle><br>"
-                        "<bigger>Total of %d CPUs</bigger>"), cpu_count));
+             elm_object_text_set(label, _("<subtitle>CPUs</subtitle>"));
              evas_object_show(label);
              elm_box_pack_end(box, label);
 
