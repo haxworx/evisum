@@ -501,13 +501,17 @@ _memory_usage_get(meminfo_t *memory)
    len = sizeof(memory->total);
    if (sysctl(mib, 2, &memory->total, &len, NULL, 0) == -1)
      return;
-   if ((active = _sysctlfromname("vm.stats.vm.v_active_count", mib, 4, &len)) < 0)
+   if ((active =
+        _sysctlfromname("vm.stats.vm.v_active_count", mib, 4, &len)) < 0)
      return;
-   if ((inactive = _sysctlfromname("vm.stats.vm.v_inactive_count", mib, 4, &len)) < 0)
+   if ((inactive =
+        _sysctlfromname("vm.stats.vm.v_inactive_count", mib, 4, &len)) < 0)
      return;
-   if ((wired = _sysctlfromname("vm.stats.vm.v_wire_count", mib, 4, &len)) < 0)
+   if ((wired =
+        _sysctlfromname("vm.stats.vm.v_wire_count", mib, 4, &len)) < 0)
      return;
-   if ((cached = _sysctlfromname("vm.stats.vm.v_cache_count", mib, 4, &len)) < 0)
+   if ((cached =
+        _sysctlfromname("vm.stats.vm.v_cache_count", mib, 4, &len)) < 0)
      return;
    if ((free = _sysctlfromname("vm.stats.vm.v_free_count", mib, 4, &len)) < 0)
      return;
