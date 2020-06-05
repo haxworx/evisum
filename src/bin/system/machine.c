@@ -93,14 +93,6 @@
 #define RESULTS_MEM_GB    0x80
 #define RESULTS_CPU_CORES 0x100
 
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-static void
-_memsize_bytes_to_kb(unsigned long *bytes)
-{
-   *bytes /= 1024;
-}
-#endif
-
 #if defined(__linux__)
 static char *
 file_contents(const char *path)
@@ -490,6 +482,14 @@ _memory_usage_get(meminfo_t *memory)
    memory->used = memory->total - tmp_free - memory->cached - memory->buffered;
    memory->swap_used = memory->swap_total - swap_free;
 
+   memory->total *= 1024;
+   memory->used *= 1024;
+   memory->buffered *= 1024;
+   memory->cached *= 1024;
+   memory->shared *= 1024;
+   memory->swap_total *= 1024;
+   memory->swap_used *= 1024;
+
    fclose(f);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int free = 0, active = 0, inactive = 0, wired = 0;
@@ -518,19 +518,14 @@ _memory_usage_get(meminfo_t *memory)
    if ((buffered = _sysctlfromname("vfs.bufspace", mib, 2, &len)) < 0)
      return;
 
-   _memsize_bytes_to_kb(&memory->total);
    memory->used = ((active + wired + cached) * page_size);
-   _memsize_bytes_to_kb(&memory->used);
    memory->buffered = buffered;
-   _memsize_bytes_to_kb(&memory->buffered);
    memory->cached = (cached * page_size);
-   _memsize_bytes_to_kb(&memory->cached);
 
    result = _sysctlfromname("vm.swap_total", mib, 2, &len);
    if (result < 0)
      return;
-
-   memory->swap_total = (result / 1024);
+   memory->swap_total = result;
 
    miblen = 3;
    if (sysctlnametomib("vm.swap_info", mib, &miblen) == -1) return;
@@ -547,9 +542,6 @@ _memory_usage_get(meminfo_t *memory)
 
         memory->swap_used += (unsigned long) xsw.xsw_used * page_size;
      }
-
-   memory->swap_used >>= 10;
-
 #elif defined(__OpenBSD__)
    static int mib[] = { CTL_HW, HW_PHYSMEM64 };
    static int bcstats_mib[] = { CTL_VFS, VFS_GENERIC, VFS_BCACHESTAT };
@@ -592,23 +584,17 @@ _memory_usage_get(meminfo_t *memory)
              memory->swap_total += (swdev[i].se_nblks / (1024 / DEV_BSIZE));
           }
      }
+
+   memory->swap_total *= 1024;
+   memory->swap_used *= 1024;
 swap_out:
    if (swdev)
      free(swdev);
 
-   memory->total /= 1024;
-
    memory->cached = (uvmexp.pagesize * bcstats.numbufpages);
-   _memsize_bytes_to_kb(&memory->cached);
-
    memory->used = (uvmexp.active * uvmexp.pagesize);
-   _memsize_bytes_to_kb(&memory->used);
-
    memory->buffered = (uvmexp.pagesize * (uvmexp.npages - uvmexp.free));
-   _memsize_bytes_to_kb(&memory->buffered);
-
    memory->shared = (uvmexp.pagesize * uvmexp.wired);
-   _memsize_bytes_to_kb(&memory->shared);
 #elif defined(__MacOS__)
    int mib[2] = { CTL_HW, HW_MEMSIZE };
    size_t total;
@@ -624,20 +610,15 @@ swap_out:
    mach_port = mach_host_self();
    count = sizeof(vm_stats) / sizeof(natural_t);
 
-   total >>= 10;
    memory->total = total;
 
    if (host_page_size(mach_port, &page_size) == KERN_SUCCESS &&
        host_statistics64(mach_port, HOST_VM_INFO, (host_info64_t)&vm_stats, &count) == KERN_SUCCESS)
      {
         memory->used = vm_stats.active_count + vm_stats.inactive_count + vm_stats.wire_count * page_size;
-        memory->used >>= 10;
         memory->cached = vm_stats.active_count * page_size;
-        memory->cached >>= 10;
         memory->shared = vm_stats.wire_count * page_size;
-        memory->shared >>= 10;
         memory->buffered = vm_stats.inactive_count * page_size;
-        memory->buffered >>= 10;
      }
 
    total = sizeof(xsu);
@@ -646,6 +627,8 @@ swap_out:
         memory->swap_total = xsu.xsu_total;
         memory->swap_used = xsu.xsu_used;
      }
+   memory->swap_total *= 1024;
+   memory->swap_used *= 1024;
 #endif
 }
 

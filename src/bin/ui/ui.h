@@ -121,6 +121,6 @@ const char *
 evisum_icon_path_get(const char *name);
 
 const char *
-evisum_size_format(unsigned long value);
+evisum_size_format(unsigned long bytes);
 
 #endif

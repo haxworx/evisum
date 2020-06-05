@@ -1464,12 +1464,13 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 const char *
-evisum_size_format(unsigned long value)
+evisum_size_format(unsigned long bytes)
 {
    const char *s, *unit = "BKMGTPEZY";
-   unsigned long int powi = 1;
+   unsigned long int value, powi = 1;
    unsigned int precision = 2, powj = 1;
 
+   value = bytes;
    while (value > 1024)
      {
        if ((value / 1024) < powi) break;
@@ -1484,7 +1485,7 @@ evisum_size_format(unsigned long value)
      {
         powj *= 10;
         if ((value / powi) < powj) break;
-	--precision;
+        --precision;
      }
 
    s = eina_slstr_printf("%1.*f %c", precision, (double) value / powi, *unit);
@@ -1632,8 +1633,8 @@ _sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    value = sysinfo->memory.used / ratio;
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s",
-                   evisum_size_format(sysinfo->memory.used << 10),
-                   evisum_size_format(sysinfo->memory.total << 10)));
+                   evisum_size_format(sysinfo->memory.used),
+                   evisum_size_format(sysinfo->memory.total)));
 out:
    free(sysinfo->cores);
    free(sysinfo);

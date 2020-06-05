@@ -142,8 +142,8 @@ ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.used << 10),
-                   evisum_size_format(sysinfo->memory.total << 10),
+                   evisum_size_format(sysinfo->memory.used),
+                   evisum_size_format(sysinfo->memory.total),
                    value));
 
    progress = ui->progress_mem_cached;
@@ -152,8 +152,8 @@ ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.cached << 10),
-                   evisum_size_format(sysinfo->memory.total << 10),
+                   evisum_size_format(sysinfo->memory.cached),
+                   evisum_size_format(sysinfo->memory.total),
                    value));
 
    progress = ui->progress_mem_buffered;
@@ -162,8 +162,8 @@ ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.buffered << 10),
-                   evisum_size_format(sysinfo->memory.total << 10),
+                   evisum_size_format(sysinfo->memory.buffered),
+                   evisum_size_format(sysinfo->memory.total),
                    value));
 
    progress = ui->progress_mem_shared;
@@ -172,8 +172,8 @@ ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.shared << 10),
-                   evisum_size_format(sysinfo->memory.total << 10),
+                   evisum_size_format(sysinfo->memory.shared),
+                   evisum_size_format(sysinfo->memory.total),
                    value));
 
    progress = ui->progress_mem_swap;
@@ -187,8 +187,8 @@ ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
    elm_progressbar_value_set(progress, value / 100);
    elm_progressbar_unit_format_set(progress,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.swap_used << 10),
-                   evisum_size_format(sysinfo->memory.swap_total << 10),
+                   evisum_size_format(sysinfo->memory.swap_used),
+                   evisum_size_format(sysinfo->memory.swap_total),
                    value));
 }
 
