@@ -97,7 +97,7 @@
 static void
 _memsize_bytes_to_kb(unsigned long *bytes)
 {
-   *bytes = (unsigned int)*bytes >> 10;
+   *bytes /= 1024;
 }
 #endif
 
@@ -492,7 +492,8 @@ _memory_usage_get(meminfo_t *memory)
 
    fclose(f);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
-   int total_pages = 0, free_pages = 0, inactive_pages = 0;
+   unsigned int free = 0, active = 0, inactive = 0, wired = 0;
+   unsigned int cached = 0, buffered = 0;
    long int result = 0;
    int page_size = getpagesize();
    int mib[4] = { CTL_HW, HW_PHYSMEM, 0, 0 };
@@ -500,46 +501,31 @@ _memory_usage_get(meminfo_t *memory)
    len = sizeof(memory->total);
    if (sysctl(mib, 2, &memory->total, &len, NULL, 0) == -1)
      return;
-   memory->total /= 1024;
-
-   total_pages =
-     _sysctlfromname("vm.stats.vm.v_page_count", mib, 4, &len);
-   if (total_pages < 0)
+   if ((active = _sysctlfromname("vm.stats.vm.v_active_count", mib, 4, &len)) < 0)
+     return;
+   if ((inactive = _sysctlfromname("vm.stats.vm.v_inactive_count", mib, 4, &len)) < 0)
+     return;
+   if ((wired = _sysctlfromname("vm.stats.vm.v_wire_count", mib, 4, &len)) < 0)
+     return;
+   if ((cached = _sysctlfromname("vm.stats.vm.v_cache_count", mib, 4, &len)) < 0)
+     return;
+   if ((free = _sysctlfromname("vm.stats.vm.v_free_count", mib, 4, &len)) < 0)
+     return;
+   if ((buffered = _sysctlfromname("vfs.bufspace", mib, 2, &len)) < 0)
      return;
 
-   free_pages = _sysctlfromname("vm.stats.vm.v_free_count", mib, 4, &len);
-   if (free_pages < 0)
-     return;
-
-   inactive_pages =
-     _sysctlfromname("vm.stats.vm.v_inactive_count", mib, 4, &len);
-   if (inactive_pages < 0)
-     return;
-
-   memory->used = (total_pages - free_pages - inactive_pages) * page_size;
+   _memsize_bytes_to_kb(&memory->total);
+   memory->used = ((active + wired + cached) * page_size);
    _memsize_bytes_to_kb(&memory->used);
-
-   result = _sysctlfromname("vfs.bufspace", mib, 2, &len);
-   if (result < 0)
-     return;
-   memory->buffered = (result);
+   memory->buffered = buffered;
    _memsize_bytes_to_kb(&memory->buffered);
-
-   result = _sysctlfromname("vm.stats.vm.v_active_count", mib, 4, &len);
-   if (result < 0)
-     return;
-   memory->cached = (result * page_size);
+   memory->cached = (cached * page_size);
    _memsize_bytes_to_kb(&memory->cached);
-
-   result = _sysctlfromname("vm.stats.vm.v_cache_count", mib, 4, &len);
-   if (result < 0)
-     return;
-   memory->shared = (result * page_size);
-   _memsize_bytes_to_kb(&memory->shared);
 
    result = _sysctlfromname("vm.swap_total", mib, 2, &len);
    if (result < 0)
      return;
+
    memory->swap_total = (result / 1024);
 
    miblen = 3;

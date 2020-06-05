@@ -1466,28 +1466,29 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 const char *
 evisum_size_format(unsigned long value)
 {
-   const char *s;
-   double res = value;
+   const char *s, *unit = "BKMGTPEZY";
+   unsigned long int powi = 1;
+   unsigned int precision = 2, powj = 1;
 
-   if (value > (1024 * 1024 * 1024))
+   while (value > 1024)
      {
-        res /= (1024 * 1024 * 1024);
-        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_GB);
+       if ((value / 1024) < powi) break;
+       if (unit[1] == '\0') break;
+       powi *= 1024;
+       ++unit;
      }
-   else if (value > (1024 * 1024))
+
+   if (*unit == 'B') precision = 0;
+
+   while (precision > 0)
      {
-        res /= (1024 * 1024);
-        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_MB);
+        powj *= 10;
+        if ((value / powi) < powj) break;
+	--precision;
      }
-   else if (value > (1024))
-     {
-        res /= (1024);
-        s = eina_slstr_printf("%1.1f %c", res, DATA_UNIT_KB);
-     }
-   else
-     {
-        s = eina_slstr_printf("%1.0f %c", res, DATA_UNIT_B);
-     }
+
+   s = eina_slstr_printf("%1.*f %c", precision, (double) value / powi, *unit);
+
    return s;
 }
 

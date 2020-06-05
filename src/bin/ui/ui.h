@@ -17,14 +17,6 @@
 
 typedef enum
 {
-   DATA_UNIT_B  = 'B',
-   DATA_UNIT_KB = 'K',
-   DATA_UNIT_MB = 'M',
-   DATA_UNIT_GB = 'G',
-} Data_Unit;
-
-typedef enum
-{
    SORT_BY_NONE,
    SORT_BY_PID,
    SORT_BY_UID,
