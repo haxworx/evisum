@@ -699,27 +699,27 @@ _temperature_cpu_get(int *temperature)
 
    while ((dh = readdir(dir)) != NULL)
      {
-        if (!strncmp(dh->d_name, "thermal_zone", 12))
+        if (strncmp(dh->d_name, "thermal_zone", 12))
+          continue;
+
+        snprintf(path, sizeof(path), "/sys/class/thermal/%s/type", dh->d_name);
+        char *type = file_contents(path);
+        if (type)
           {
-             snprintf(path, sizeof(path), "/sys/class/thermal/%s/type", dh->d_name);
-             char *type = file_contents(path);
-             if (type)
+             /* This should ensure we get the highest available core temperature */
+             if (strstr(type, "_pkg_temp"))
                {
-                  /* This should ensure we get the highest available core temperature */
-                  if (strstr(type, "_pkg_temp"))
+                  snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp", dh->d_name);
+                  char *value = file_contents(path);
+                  if (value)
                     {
-                       snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp", dh->d_name);
-                       char *value = file_contents(path);
-                       if (value)
-                         {
-                            *temperature = atoi(value) / 1000;
-                            free(value);
-                            free(type);
-                            break;
-                         }
+                       *temperature = atoi(value) / 1000;
+                       free(value);
+                       free(type);
+                       break;
                     }
-                  free(type);
                }
+             free(type);
           }
      }
 
@@ -896,6 +896,7 @@ _battery_state_get(power_t *power)
    struct dirent *dh;
    struct stat st;
    DIR *dir;
+   char *model, *vendor;
    char *buf, *naming = NULL;
    int i = 0;
    unsigned long charge_full = 0;
@@ -926,9 +927,7 @@ _battery_state_get(power_t *power)
         closedir(dir);
 
         if (!naming)
-          {
-             continue;
-          }
+          continue;
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full", power->battery_names[i], naming);
         buf = file_contents(path);
@@ -944,8 +943,6 @@ _battery_state_get(power_t *power)
              charge_current = atol(buf);
              free(buf);
           }
-
-        char *model, *vendor;
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", power->battery_names[i]);
         vendor = file_contents(path);
@@ -982,14 +979,7 @@ _battery_state_get(power_t *power)
           free(model);
         if (vendor)
           free(vendor);
-
         free(naming);
-
-        if (i == MAX_BATTERIES)
-          {
-             fprintf(stderr, "Error: Should not be here!\n");
-             exit(-1);
-          }
      }
 #endif
 }
@@ -1130,7 +1120,7 @@ _linux_generic_network_status(unsigned long int *in,
    while (fgets(buf, sizeof(buf), f))
      {
         if (17 == sscanf(buf, "%s %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu "
-                              "%lu %lu %lu %lu\n", dummy_s, &tmp_in, &dummy, &dummy,
+                         "%lu %lu %lu %lu\n", dummy_s, &tmp_in, &dummy, &dummy,
                          &dummy, &dummy, &dummy, &dummy, &dummy, &tmp_out, &dummy,
                          &dummy, &dummy, &dummy, &dummy, &dummy, &dummy))
           {
