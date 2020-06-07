@@ -101,14 +101,14 @@ ui_tab_disk_update(Ui *ui)
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
-        File_System *fs = disk_mount_file_system_get(path);
+        Filesystem_Info *fs = filesystem_info_get(path);
         if (fs)
           {
-             if (fs->type == 0x2FC12FC1)
+             if (fs->type == filesystem_id_by_name("ZFS"))
                zfs_mounted = EINA_TRUE;
 
              _ui_disk_add(ui, fs->path, fs->mount, fs->usage.total, fs->usage.used);
-             disk_mount_file_system_free(fs);
+             filesystem_info_free(fs);
           }
         free(path);
      }

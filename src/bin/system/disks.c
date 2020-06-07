@@ -80,37 +80,6 @@ disk_mount_point_get(const char *path)
    return NULL;
 }
 
-File_System *
-disk_mount_file_system_get(const char *path)
-{
-   File_System *fs;
-   const char *mountpoint;
-   struct statfs stats;
-
-   mountpoint = disk_mount_point_get(path);
-   if (!mountpoint) return NULL;
-
-   if (statfs(mountpoint, &stats) < 0)
-     return NULL;
-
-   fs = calloc(1, sizeof(File_System));
-   fs->mount = strdup(mountpoint);
-   fs->path  = strdup(path);
-   fs->type  = stats.f_type;
-   fs->usage.total = stats.f_bsize * stats.f_blocks;
-   fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
-
-   return fs;
-}
-
-void
-disk_mount_file_system_free(File_System *fs)
-{
-   free(fs->mount);
-   free(fs->path);
-   free(fs);
-}
-
 static int
 _cmp_cb(const void *p1, const void *p2)
 {
@@ -131,13 +100,13 @@ disk_zfs_mounted_get(void)
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
-        File_System *fs = disk_mount_file_system_get(path);
+        Filesystem_Info *fs = filesystem_info_get(path);
         if (fs)
           {
-             if (fs->type == 0x2FC12FC1)
+             if (fs->type == filesystem_id_by_name("ZFS"))
                zfs_mounted = EINA_TRUE;
 
-             disk_mount_file_system_free(fs);
+             filesystem_info_free(fs);
           }
         free(path);
      }
