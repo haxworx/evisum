@@ -91,6 +91,7 @@ ui_tab_disk_update(Ui *ui)
 {
    Eina_List *disks;
    char *path;
+   Eina_Bool zfs_mounted = EINA_FALSE;
 
    if (!ui->disk_visible)
      return;
@@ -103,6 +104,9 @@ ui_tab_disk_update(Ui *ui)
         File_System *fs = disk_mount_file_system_get(path);
         if (fs)
           {
+             if (fs->type == 0x2FC12FC1)
+               zfs_mounted = EINA_TRUE;
+
              _ui_disk_add(ui, fs->path, fs->mount, fs->usage.total, fs->usage.used);
              disk_mount_file_system_free(fs);
           }
@@ -110,5 +114,7 @@ ui_tab_disk_update(Ui *ui)
      }
    if (disks)
      eina_list_free(disks);
+
+   if (!zfs_mounted) ui->zfs_mounted = EINA_FALSE;
 }
 

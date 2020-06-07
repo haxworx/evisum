@@ -20,6 +20,8 @@ typedef struct
    unsigned long shared;
    unsigned long swap_total;
    unsigned long swap_used;
+
+   unsigned long zfs_arc_used;
 } meminfo_t;
 
 #define MAX_BATTERIES 10

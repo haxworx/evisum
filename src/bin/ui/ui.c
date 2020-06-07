@@ -1628,6 +1628,9 @@ _sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
 
+   if (ui->zfs_mounted)
+     sysinfo->memory.used += sysinfo->memory.zfs_arc_used;
+
    progress = ui->progress_mem;
    ratio = sysinfo->memory.total / 100.0;
    value = sysinfo->memory.used / ratio;
@@ -1678,6 +1681,8 @@ _ui_init(Evas_Object *parent)
    ui->mem_visible = ui->misc_visible = EINA_TRUE;
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
+
+   ui->zfs_mounted = disk_zfs_mounted_get();
 
    _ui = NULL;
    _evisum_config = NULL;

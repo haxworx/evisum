@@ -107,6 +107,8 @@ typedef struct Ui
    Eina_Bool       sort_reverse;
    Eina_Bool       show_self;
 
+   Eina_Bool       zfs_mounted;
+
    uint64_t        incoming_max;
    uint64_t        outgoing_max;
 } Ui;

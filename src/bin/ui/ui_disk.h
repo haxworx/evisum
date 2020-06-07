@@ -2,6 +2,7 @@
 #define __UI_DISK_H__
 
 #include "ui.h"
+#include "system/disks.h"
 
 void
 ui_tab_disk_add(Ui *ui);

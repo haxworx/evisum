@@ -136,6 +136,9 @@ ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
    if (!ui->mem_visible)
      return;
 
+   if (ui->zfs_mounted)
+     sysinfo->memory.used += sysinfo->memory.zfs_arc_used;
+
    progress = ui->progress_mem_used;
    ratio = sysinfo->memory.total / 100.0;
    value = sysinfo->memory.used / ratio;

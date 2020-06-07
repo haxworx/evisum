@@ -493,10 +493,10 @@ _memory_usage_get(meminfo_t *memory)
    fclose(f);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int free = 0, active = 0, inactive = 0, wired = 0;
-   unsigned int cached = 0, buffered = 0;
+   unsigned int cached = 0, buffered = 0, zfs_arc = 0;
    long int result = 0;
    int page_size = getpagesize();
-   int mib[4] = { CTL_HW, HW_PHYSMEM, 0, 0 };
+   int mib[5] = { CTL_HW, HW_PHYSMEM, 0, 0, 0 };
 
    len = sizeof(memory->total);
    if (sysctl(mib, 2, &memory->total, &len, NULL, 0) == -1)
@@ -529,6 +529,11 @@ _memory_usage_get(meminfo_t *memory)
 
    miblen = 3;
    if (sysctlnametomib("vm.swap_info", mib, &miblen) == -1) return;
+
+   if ((zfs_arc = _sysctlfromname("kstat.zfs.misc.arcstats.c", mib, 5, &len)) != -1)
+     {
+        memory->zfs_arc_used = zfs_arc;
+     }
 
    struct xswdev xsw;
    /* previous mib is important for this one... */

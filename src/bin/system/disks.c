@@ -121,6 +121,32 @@ _cmp_cb(const void *p1, const void *p2)
    return strcmp(s1, s2);
 }
 
+Eina_Bool
+disk_zfs_mounted_get(void)
+{
+   Eina_List *disks;
+   char *path;
+   Eina_Bool zfs_mounted = EINA_FALSE;
+
+   disks = disks_get();
+   EINA_LIST_FREE(disks, path)
+     {
+        File_System *fs = disk_mount_file_system_get(path);
+        if (fs)
+          {
+             if (fs->type == 0x2FC12FC1)
+               zfs_mounted = EINA_TRUE;
+
+             disk_mount_file_system_free(fs);
+          }
+        free(path);
+     }
+   if (disks)
+     eina_list_free(disks);
+
+   return zfs_mounted;
+}
+
 Eina_List *
 disks_get(void)
 {
@@ -170,6 +196,7 @@ disks_get(void)
    list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
 
    return list;
+
 #elif defined(__OpenBSD__) || defined(__NetBSD__)
    static const int mib[] = { CTL_HW, HW_DISKNAMES };
    static const unsigned int miblen = 2;

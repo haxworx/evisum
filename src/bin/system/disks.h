@@ -16,6 +16,9 @@ typedef struct _File_System {
    Disk_Usage   usage;
 } File_System;
 
+Eina_Bool
+disk_zfs_mounted_get(void);
+
 File_System *
 disk_mount_file_system_get(const char *path);
 
