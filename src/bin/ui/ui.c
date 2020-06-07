@@ -1099,7 +1099,7 @@ _tabs_hide(Ui *ui)
    ui->disk_visible = EINA_FALSE;
    ui->cpu_visible = EINA_FALSE;
 
-   evas_object_hide(ui->entry_search);
+   evas_object_hide(ui->entry_search_border);
    evas_object_hide(ui->system_activity);
    evas_object_hide(ui->cpu_view);
    evas_object_hide(ui->mem_view);
@@ -1163,7 +1163,7 @@ _tab_system_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _tab_state_changed(ui, obj, ui->system_activity);
 
-   evas_object_show(ui->entry_search);
+   evas_object_show(ui->entry_search_border);
 }
 
 static void
@@ -1385,7 +1385,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
 
-   border = elm_frame_add(parent);
+   ui->entry_search_border = border = elm_frame_add(parent);
    evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
    evas_object_size_hint_align_set(border, FILL, FILL);
    elm_object_style_set(border, "pad_small");
