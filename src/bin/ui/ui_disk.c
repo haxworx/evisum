@@ -91,7 +91,6 @@ ui_tab_disk_update(Ui *ui)
 {
    Eina_List *disks;
    char *path;
-   unsigned long total, used;
 
    if (!ui->disk_visible)
      return;
@@ -101,14 +100,11 @@ ui_tab_disk_update(Ui *ui)
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
-        char *mount = disk_mount_point_get(path);
-        if (mount)
+        File_System *fs = disk_mount_file_system_get(path);
+        if (fs)
           {
-             if (disk_usage_get(mount, &total, &used))
-               {
-                  _ui_disk_add(ui, path, mount, total, used);
-               }
-             free(mount);
+             _ui_disk_add(ui, fs->path, fs->mount, fs->usage.total, fs->usage.used);
+             disk_mount_file_system_free(fs);
           }
         free(path);
      }

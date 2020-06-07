@@ -80,18 +80,35 @@ disk_mount_point_get(const char *path)
    return NULL;
 }
 
-Eina_Bool
-disk_usage_get(const char *mountpoint, unsigned long *total, unsigned long *used)
+File_System *
+disk_mount_file_system_get(const char *path)
 {
+   File_System *fs;
+   const char *mountpoint;
    struct statfs stats;
 
+   mountpoint = disk_mount_point_get(path);
+   if (!mountpoint) return NULL;
+
    if (statfs(mountpoint, &stats) < 0)
-     return EINA_FALSE;
+     return NULL;
 
-   *total = stats.f_bsize * stats.f_blocks;
-   *used = *total - (stats.f_bsize * stats.f_bfree);
+   fs = calloc(1, sizeof(File_System));
+   fs->mount = strdup(mountpoint);
+   fs->path  = strdup(path);
+   fs->type  = stats.f_type;
+   fs->usage.total = stats.f_bsize * stats.f_blocks;
+   fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
 
-   return EINA_TRUE;
+   return fs;
+}
+
+void
+disk_mount_file_system_free(File_System *fs)
+{
+   free(fs->mount);
+   free(fs->path);
+   free(fs);
 }
 
 static int
