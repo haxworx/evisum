@@ -29,7 +29,12 @@
 # include <sys/mount.h>
 #endif
 
-Filesystem_Magic _magique[] = {
+typedef struct {
+   unsigned int  magic;
+   const char   *name;
+} _Magic;
+
+static _Magic _magique[] = {
    { .magic = 0xdf5,      .name = "ADFS" },
    { .magic = 0xadff,     .name = "AFFS" },
    { .magic = 0x5346414F, .name = "AFS" },

@@ -1,11 +1,6 @@
 #ifndef __FILESYSTEMS_H__
 #define __FILESYSTEMS_H__
 
-typedef struct _Filesystem_Magic {
-   unsigned int  magic;
-   const char   *name;
-} Filesystem_Magic;
-
 typedef struct {
    unsigned long long total;
    unsigned long long used;
