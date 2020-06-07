@@ -1464,10 +1464,11 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 const char *
-evisum_size_format(unsigned long bytes)
+evisum_size_format(unsigned long long bytes)
 {
    const char *s, *unit = "BKMGTPEZY";
-   unsigned long int value, powi = 1;
+   unsigned long powi = 1;
+   unsigned long long value;
    unsigned int precision = 2, powj = 1;
 
    value = bytes;
