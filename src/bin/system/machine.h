@@ -13,15 +13,15 @@ typedef struct
 
 typedef struct
 {
-   unsigned long total;
-   unsigned long used;
-   unsigned long cached;
-   unsigned long buffered;
-   unsigned long shared;
-   unsigned long swap_total;
-   unsigned long swap_used;
+   unsigned long long total;
+   unsigned long long used;
+   unsigned long long cached;
+   unsigned long long buffered;
+   unsigned long long shared;
+   unsigned long long swap_total;
+   unsigned long long swap_used;
 
-   unsigned long zfs_arc_used;
+   unsigned long long zfs_arc_used;
 } meminfo_t;
 
 #define MAX_BATTERIES 10

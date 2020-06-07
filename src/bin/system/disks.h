@@ -5,8 +5,8 @@
 #include <Ecore.h>
 
 typedef struct _Disk_Usage {
-   unsigned long total;
-   unsigned long used;
+   unsigned long long total;
+   unsigned long long used;
 } Disk_Usage;
 
 typedef struct _File_System {
