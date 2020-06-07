@@ -1402,7 +1402,6 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_box_pack_end(box, border);
 
    border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, 0.1, 0);
    evas_object_size_hint_align_set(border, FILL, FILL);
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
@@ -1410,6 +1409,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    button = elm_button_add(parent);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
+   evas_object_size_hint_min_set(button,
+                   TAB_BTN_SIZE * elm_config_scale_get(), 0),
    elm_object_text_set(button, _("Close"));
    elm_object_content_set(border, button);
    elm_box_pack_end(box, border);
@@ -1475,9 +1476,9 @@ evisum_size_format(unsigned long long bytes)
    while (value > 1024)
      {
        if ((value / 1024) < powi) break;
-       if (unit[1] == '\0') break;
        powi *= 1024;
        ++unit;
+       if (unit[1] == '\0') break;
      }
 
    if (*unit == 'B') precision = 0;
