@@ -145,7 +145,7 @@ filesystem_info_get(const char *path)
    fs->mount = strdup(mountpoint);
    fs->path  = strdup(path);
    fs->type  = stats.f_type;
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if !defined(__linux__)
    fs->type_name = strdup(stats.f_fstypename);
 #endif
    fs->usage.total = stats.f_bsize * stats.f_blocks;
