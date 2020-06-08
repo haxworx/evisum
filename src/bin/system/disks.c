@@ -107,8 +107,6 @@ disk_zfs_mounted_get(void)
           }
         free(path);
      }
-   if (disks)
-     eina_list_free(disks);
 
    return zfs_mounted;
 }
@@ -116,10 +114,10 @@ disk_zfs_mounted_get(void)
 Eina_List *
 disks_get(void)
 {
+   Eina_List *list = NULL;
 #if defined(__FreeBSD__) || defined(__DragonFly__)
    struct statfs *mounts;
    char *drives, *dev, *end;
-   Eina_List *list = NULL;
    int count;
    size_t len;
 
@@ -159,7 +157,6 @@ disks_get(void)
    static const unsigned int miblen = 2;
    struct statfs *mounts;
    char *drives, *dev, *end;
-   Eina_List *list = NULL;
    size_t len;
    int count;
 
@@ -204,10 +201,7 @@ disks_get(void)
    char buf[4096];
    Eina_List *devs, *list;
 
-   list = NULL;
-
    devs = ecore_file_ls("/dev");
-
    EINA_LIST_FREE(devs, name)
      {
         if (!strncmp(name, "disk", 4))
@@ -216,9 +210,6 @@ disks_get(void)
           }
         free(name);
      }
-
-   if (devs)
-     eina_list_free(devs);
 #elif defined(__linux__)
    char *name;
    Eina_List *devs, *list;
@@ -231,8 +222,6 @@ disks_get(void)
         devs = ecore_file_ls(disk_search);
      }
 
-   list = NULL;
-
    EINA_LIST_FREE(devs, name)
      {
         char *real = realpath(eina_slstr_printf("%s/%s", disk_search, name), NULL);
@@ -243,18 +232,12 @@ disks_get(void)
         free(name);
      }
 
-   if (devs)
-     eina_list_free(devs);
-
    devs = ecore_file_ls("/dev/mapper");
    EINA_LIST_FREE(devs, name)
      {
         list = eina_list_append(list, strdup(eina_slstr_printf("/dev/mapper/%s", name)));
         free(name);
      }
-
-   if (devs)
-     eina_list_free(devs);
 #endif
    list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
 
