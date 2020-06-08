@@ -38,11 +38,14 @@ ui_tab_disk_add(Ui *ui)
 }
 
 static void
-_ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total,
-             unsigned long used)
+_ui_disk_add(Ui *ui, Filesystem_Info *inf)
 {
    Evas_Object *box, *frame, *progress, *label;
+   const char *type;
    double ratio, value;
+
+   type = filesystem_name_by_id(inf->type);
+   if (!type) type = "unknown";
 
    box = elm_box_add(ui->disk_activity);
    evas_object_size_hint_align_set(box, FILL, FILL);
@@ -54,10 +57,10 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total,
    evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
    elm_object_text_set(label,
                    eina_slstr_printf(_(
-                   "<subtitle>%s</subtitle><br><bigger>mounted at %s</bigger>"
+                   "<subtitle>%s</subtitle><br><bigger>mounted at %s (%s)</bigger>"
                    "<br>%s of %s"),
-                   path, mount, evisum_size_format(used),
-                   evisum_size_format(total)));
+                   inf->path, inf->mount, type, evisum_size_format(inf->usage.used),
+                   evisum_size_format(inf->usage.total)));
    evas_object_show(label);
    elm_box_pack_end(box, label);
 
@@ -67,10 +70,10 @@ _ui_disk_add(Ui *ui, const char *path, const char *mount, unsigned long total,
    elm_progressbar_span_size_set(progress, 1.0);
    evas_object_show(progress);
 
-   ratio = total / 100.0;
-   value = used / ratio;
+   ratio = inf->usage.total / 100.0;
+   value = inf->usage.used / ratio;
 
-   if (used == 0 && total == 0)
+   if (inf->usage.used == 0 && inf->usage.total == 0)
      elm_progressbar_value_set(progress, 1.0);
    else
      elm_progressbar_value_set(progress, value / 100.0);
@@ -111,7 +114,7 @@ ui_tab_disk_update(Ui *ui)
              if (fs->type == filesystem_id_by_name("ZFS"))
                zfs_mounted = EINA_TRUE;
 
-             _ui_disk_add(ui, fs->path, fs->mount, fs->usage.total, fs->usage.used);
+             _ui_disk_add(ui, fs);
              filesystem_info_free(fs);
           }
         free(path);

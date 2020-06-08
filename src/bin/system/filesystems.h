@@ -11,6 +11,7 @@ typedef struct {
 typedef struct _Filesystem_Info {
    char         *path;
    char         *mount;
+   char         *type_name;
    unsigned int  type;
    _Usage        usage;
 } Filesystem_Info;
