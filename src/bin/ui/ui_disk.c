@@ -44,7 +44,9 @@ _ui_disk_add(Ui *ui, Filesystem_Info *inf)
    const char *type;
    double ratio, value;
 
-   type = filesystem_name_by_id(inf->type);
+   type = inf->type_name;
+   if (!type)
+     type = filesystem_name_by_id(inf->type);
    if (!type) type = "unknown";
 
    box = elm_box_add(ui->disk_activity);

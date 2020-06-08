@@ -107,19 +107,20 @@ static _magic _magique[] = {
 unsigned int
 filesystem_id_by_name(const char *name)
 {
-   for (int i = 0; i < sizeof(_magique); i++)
+   size_t n = sizeof(_magique) / sizeof(_magic);
+   for (int i = 0; i < n; i++)
      {
         if (!strcasecmp(name, _magique[i].name))
           return _magique[i].magic;
      }
-
    return 0;
 }
 
 const char *
 filesystem_name_by_id(unsigned int id)
 {
-   for (int i = 0; i < sizeof(_magique); i++)
+   size_t n = sizeof(_magique) / sizeof(_magic);
+   for (int i = 0; i < n; i++)
      {
         if (_magique[i].magic == id)
           return _magique[i].name;
@@ -144,6 +145,9 @@ filesystem_info_get(const char *path)
    fs->mount = strdup(mountpoint);
    fs->path  = strdup(path);
    fs->type  = stats.f_type;
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+   fs->type_name = strdup(stats.f_fstypename);
+#endif
    fs->usage.total = stats.f_bsize * stats.f_blocks;
    fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
 
