@@ -712,7 +712,8 @@ _temperature_cpu_get(int *temperature)
         if (type)
           {
              /* This should ensure we get the highest available core temperature */
-             if (strstr(type, "_pkg_temp"))
+             if ((strstr(type, "_pkg_temp")) ||
+                 (!strncmp(type, "cpu-thermal", 11))) /* RPI4 */
                {
                   snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp", dh->d_name);
                   char *value = file_contents(path);
