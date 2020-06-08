@@ -197,9 +197,8 @@ disks_get(void)
         list = eina_list_append(list, strdup(mounts[i].f_mntfromname));
      }
 #elif defined(__MacOS__)
+   Eina_List *devs;
    char *name;
-   char buf[4096];
-   Eina_List *devs, *list;
 
    devs = ecore_file_ls("/dev");
    EINA_LIST_FREE(devs, name)
@@ -211,8 +210,8 @@ disks_get(void)
         free(name);
      }
 #elif defined(__linux__)
+   Eina_List *devs;
    char *name;
-   Eina_List *devs, *list;
    const char *disk_search = "/dev/disk/by-uuid";
 
    devs = ecore_file_ls(disk_search);
@@ -239,8 +238,7 @@ disks_get(void)
         free(name);
      }
 #endif
-   list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
 
-   return list;
+   return eina_list_sort(list, eina_list_count(list), _cmp_cb);
 }
 
