@@ -58,7 +58,7 @@ disk_mount_point_get(const char *path)
         start = &buf[0];
         end = strchr(start, ' ');
         if (!end) continue;
-        *end = 0x0;
+        *end = '\0';
 
         if (!strcmp(path, start))
           {
@@ -66,16 +66,13 @@ disk_mount_point_get(const char *path)
              if (!start) continue;
              end = strchr(start, ' ');
              if (!end) continue;
-             *end = 0x0;
+             *end = '\0';
              fclose(f);
              return strdup(start);
           }
      }
 
    fclose(f);
-
-   return NULL;
-#else
 #endif
    return NULL;
 }
@@ -121,9 +118,9 @@ disks_get(void)
 {
 #if defined(__FreeBSD__) || defined(__DragonFly__)
    struct statfs *mounts;
-   int i, count;
    char *drives, *dev, *end;
-   char buf[4096];
+   Eina_List *list = NULL;
+   int count;
    size_t len;
 
    if ((sysctlbyname("kern.disks", NULL, &len, NULL, 0)) == -1)
@@ -137,19 +134,15 @@ disks_get(void)
         return NULL;
      }
 
-   Eina_List *list = NULL;
    dev = drives;
    while (dev)
      {
         end = strchr(dev, ' ');
         if (!end)
           break;
-
         *end = '\0';
 
-        snprintf(buf, sizeof(buf), "/dev/%s", dev);
-
-        list = eina_list_append(list, strdup(buf));
+        list = eina_list_append(list, strdup(eina_slstr_printf("/dev/%s", dev)));
 
         dev = end + 1;
      }
@@ -157,23 +150,18 @@ disks_get(void)
    free(drives);
 
    count = getmntinfo(&mounts, MNT_WAIT);
-   for (i = 0; i < count; i++)
+   for (int i = 0; i < count; i++)
      {
         list = eina_list_append(list, strdup(mounts[i].f_mntfromname));
      }
-
-   list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
-
-   return list;
-
 #elif defined(__OpenBSD__) || defined(__NetBSD__)
    static const int mib[] = { CTL_HW, HW_DISKNAMES };
    static const unsigned int miblen = 2;
    struct statfs *mounts;
    char *drives, *dev, *end;
-   char buf[4096];
+   Eina_List *list = NULL;
    size_t len;
-   int i, count;
+   int count;
 
    if ((sysctl(mib, miblen, NULL, &len, NULL, 0)) == -1)
      return NULL;
@@ -186,8 +174,6 @@ disks_get(void)
         return NULL;
      }
 
-   Eina_List *list = NULL;
-
    dev = drives;
    while (dev)
      {
@@ -199,9 +185,7 @@ disks_get(void)
         if (dev[0] == ',')
           dev++;
 
-        snprintf(buf, sizeof(buf), "/dev/%s", dev);
-
-        list = eina_list_append(list, strdup(buf));
+        list = eina_list_append(list, strdup(eina_slstr_printf("/dev/%s", dev)));
 
         end++;
         dev = strchr(end, ',');
@@ -211,14 +195,10 @@ disks_get(void)
    free(drives);
 
    count = getmntinfo(&mounts, MNT_WAIT);
-   for (i = 0; i < count; i++)
+   for (int i = 0; i < count; i++)
      {
         list = eina_list_append(list, strdup(mounts[i].f_mntfromname));
      }
-
-   list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
-
-   return list;
 #elif defined(__MacOS__)
    char *name;
    char buf[4096];
@@ -232,18 +212,13 @@ disks_get(void)
      {
         if (!strncmp(name, "disk", 4))
           {
-             snprintf(buf, sizeof(buf), "/dev/%s", name);
-             list = eina_list_append(list, strdup(buf));
+             list = eina_list_append(list, strdup(eina_slstr_printf("/dev/%s", name)));
           }
         free(name);
      }
 
    if (devs)
      eina_list_free(devs);
-
-   list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
-
-   return list;
 #elif defined(__linux__)
    char *name;
    Eina_List *devs, *list;
@@ -280,13 +255,9 @@ disks_get(void)
 
    if (devs)
      eina_list_free(devs);
-
+#endif
    list = eina_list_sort(list, eina_list_count(list), _cmp_cb);
 
    return list;
-#else
-
-   return NULL;
-#endif
 }
 
