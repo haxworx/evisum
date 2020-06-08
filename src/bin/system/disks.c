@@ -87,30 +87,6 @@ _cmp_cb(const void *p1, const void *p2)
    return strcmp(s1, s2);
 }
 
-Eina_Bool
-disk_zfs_mounted_get(void)
-{
-   Eina_List *disks;
-   char *path;
-   Eina_Bool zfs_mounted = EINA_FALSE;
-
-   disks = disks_get();
-   EINA_LIST_FREE(disks, path)
-     {
-        Filesystem_Info *fs = filesystem_info_get(path);
-        if (fs)
-          {
-             if (fs->type == filesystem_id_by_name("ZFS"))
-               zfs_mounted = EINA_TRUE;
-
-             filesystem_info_free(fs);
-          }
-        free(path);
-     }
-
-   return zfs_mounted;
-}
-
 Eina_List *
 disks_get(void)
 {

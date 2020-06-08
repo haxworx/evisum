@@ -1,6 +1,8 @@
 #ifndef __FILESYSTEMS_H__
 #define __FILESYSTEMS_H__
 
+#include <Eina.h>
+
 typedef struct {
    unsigned long long total;
    unsigned long long used;
@@ -24,5 +26,8 @@ filesystem_info_get(const char *path);
 
 void
 filesystem_info_free(Filesystem_Info *fs);
+
+Eina_Bool
+filesystem_in_use(const char *name);
 
 #endif

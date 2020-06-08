@@ -96,6 +96,7 @@ ui_tab_disk_update(Ui *ui)
    if (!ui->disk_visible)
      return;
 
+   // FIXME
    elm_box_clear(ui->disk_activity);
 
    disks = disks_get();
@@ -104,6 +105,9 @@ ui_tab_disk_update(Ui *ui)
         Filesystem_Info *fs = filesystem_info_get(path);
         if (fs)
           {
+             // ZFS usage may have changed during application's lifetime.
+             // Keep track of ZFS mounts else we may report bogus use
+             // of memory.
              if (fs->type == filesystem_id_by_name("ZFS"))
                zfs_mounted = EINA_TRUE;
 
@@ -115,6 +119,9 @@ ui_tab_disk_update(Ui *ui)
    if (disks)
      eina_list_free(disks);
 
+   // Need to keep track of ZFS mounts. If we have no mounts
+   // then memory usage should not take into account the ZFS
+   // ARC memory allocation.
    if (!zfs_mounted) ui->zfs_mounted = EINA_FALSE;
 }
 

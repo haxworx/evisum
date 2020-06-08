@@ -158,3 +158,28 @@ filesystem_info_free(Filesystem_Info *fs)
    free(fs);
 }
 
+Eina_Bool
+filesystem_in_use(const char *name)
+{
+   Eina_List *disks;
+   char *path;
+   Eina_Bool fs_mounted = EINA_FALSE;
+   if (!name) return EINA_FALSE;
+
+   disks = disks_get();
+   EINA_LIST_FREE(disks, path)
+     {
+        Filesystem_Info *fs = filesystem_info_get(path);
+        if (fs)
+          {
+             if (fs->type == filesystem_id_by_name(name))
+               fs_mounted = EINA_TRUE;
+
+             filesystem_info_free(fs);
+          }
+        free(path);
+     }
+
+   return fs_mounted;
+}
+
