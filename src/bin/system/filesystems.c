@@ -34,6 +34,9 @@ typedef struct {
    const char   *name;
 } _magic;
 
+/* These values are reliable though some variants may be ambiguous. We use
+ * these superblock constants to detect unusual file systems such as ZFS.
+ */
 static _magic _magique[] = {
    { .magic = 0xdf5,      .name = "adfs" },
    { .magic = 0xadff,     .name = "affs" },
@@ -101,7 +104,7 @@ static _magic _magique[] = {
    { .magic = 0x5a4f4653, .name = "zonefs" },
    { .magic = 0x15013346, .name = "udf" },
    { .magic = 0x2fc12fc1, .name = "zfs" },
-   { .magic = 0x482b,     .name = "hfs+" },
+   { .magic = 0x482b,     .name = "hfsplus" },
 };
 
 unsigned int
@@ -128,6 +131,41 @@ filesystem_name_by_id(unsigned int id)
    return NULL;
 }
 
+#if defined(__linux__)
+static char *
+filesystem_type_name(const char *mountpoint)
+{
+   FILE *f;
+   char *mount, *res, *type, *end;
+   char buf[4096];
+
+   res = NULL;
+
+   f = fopen("/proc/mounts", "r");
+   if (!f) return NULL;
+
+   while ((fgets(buf, sizeof(buf), f)) != NULL)
+     {
+        mount = strchr(buf, ' ') + 1;
+        if (!mount) continue;
+        type = strchr(mount, ' ');
+        if (!type) continue;
+        end = type;
+        *end = '\0';
+        if (strcmp(mount, mountpoint))
+          continue;
+        type++;
+        end = strchr(type, ' ');
+        if (!end) continue;
+        res = strndup(type, end - type);
+        break;
+     }
+   fclose(f);
+   return res;
+}
+
+#endif
+
 Filesystem_Info *
 filesystem_info_get(const char *path)
 {
@@ -145,7 +183,9 @@ filesystem_info_get(const char *path)
    fs->mount = strdup(mountpoint);
    fs->path  = strdup(path);
    fs->type  = stats.f_type;
-#if !defined(__linux__)
+#if defined(__linux__)
+   fs->type_name = filesystem_type_name(fs->mount);
+#else
    fs->type_name = strdup(stats.f_fstypename);
 #endif
    fs->usage.total = stats.f_bsize * stats.f_blocks;
