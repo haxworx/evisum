@@ -619,6 +619,17 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
 }
 
 static void
+_btn_clicked_state_save(Ui *ui, Evas_Object *btn)
+{
+   _btn_icon_state_set(btn, ui->sort_reverse);
+
+   _config_save(ui);
+   _process_list_update(ui);
+
+   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+}
+
+static void
 _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
@@ -626,15 +637,9 @@ _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->sort_type == SORT_BY_PID)
      ui->sort_reverse = !ui->sort_reverse;
-
-   _btn_icon_state_set(ui->btn_pid, ui->sort_reverse);
-
    ui->sort_type = SORT_BY_PID;
 
-   _config_save(ui);
-   _process_list_update(ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+   _btn_clicked_state_save(ui, ui->btn_pid);
 }
 
 static void
@@ -645,15 +650,9 @@ _btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->sort_type == SORT_BY_UID)
      ui->sort_reverse = !ui->sort_reverse;
-
-   _btn_icon_state_set(ui->btn_uid, ui->sort_reverse);
-
    ui->sort_type = SORT_BY_UID;
 
-   _config_save(ui);
-   _process_list_update(ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+   _btn_clicked_state_save(ui, ui->btn_uid);
 }
 
 static void
@@ -664,15 +663,9 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->sort_type == SORT_BY_CPU_USAGE)
      ui->sort_reverse = !ui->sort_reverse;
-
-   _btn_icon_state_set(ui->btn_cpu_usage, ui->sort_reverse);
-
    ui->sort_type = SORT_BY_CPU_USAGE;
 
-   _config_save(ui);
-   _process_list_update(ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+   _btn_clicked_state_save(ui, ui->btn_cpu_usage);
 }
 
 static void
@@ -683,15 +676,9 @@ _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->sort_type == SORT_BY_SIZE)
      ui->sort_reverse = !ui->sort_reverse;
-
-   _btn_icon_state_set(ui->btn_size, ui->sort_reverse);
-
    ui->sort_type = SORT_BY_SIZE;
 
-   _config_save(ui);
-   _process_list_update(ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+   _btn_clicked_state_save(ui, ui->btn_size);
 }
 
 static void
@@ -702,15 +689,9 @@ _btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->sort_type == SORT_BY_RSS)
      ui->sort_reverse = !ui->sort_reverse;
-
-   _btn_icon_state_set(ui->btn_rss, ui->sort_reverse);
-
    ui->sort_type = SORT_BY_RSS;
 
-   _config_save(ui);
-   _process_list_update(ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+   _btn_clicked_state_save(ui, ui->btn_rss);
 }
 
 static void
@@ -721,15 +702,9 @@ _btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->sort_type == SORT_BY_CMD)
      ui->sort_reverse = !ui->sort_reverse;
-
-   _btn_icon_state_set(ui->btn_cmd, ui->sort_reverse);
-
    ui->sort_type = SORT_BY_CMD;
 
-   _config_save(ui);
-   _process_list_update(ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+   _btn_clicked_state_save(ui, ui->btn_cmd);
 }
 
 static void
@@ -740,15 +715,9 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->sort_type == SORT_BY_STATE)
      ui->sort_reverse = !ui->sort_reverse;
-
-   _btn_icon_state_set(ui->btn_state, ui->sort_reverse);
-
    ui->sort_type = SORT_BY_STATE;
 
-   _config_save(ui);
-   _process_list_update(ui);
-
-   elm_scroller_page_bring_in(ui->scroller, 0, 0);
+   _btn_clicked_state_save(ui, ui->btn_state);
 }
 
 static void
