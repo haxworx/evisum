@@ -320,7 +320,7 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
 
    it = elm_genlist_first_item_get(ui->genlist_threads);
 
-   EINA_LIST_FOREACH(threads, l, t)
+   EINA_LIST_FREE(threads, t)
      {
         Thread_Info *prev = elm_object_item_data_get(it);
         if (prev)
@@ -329,7 +329,6 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
         elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
-   eina_list_free(threads);
 }
 
 static void

@@ -319,9 +319,6 @@ _process_list_linux_get(void)
         list = eina_list_append(list, p);
      }
 
-   if (files)
-     eina_list_free(files);
-
    return list;
 }
 
@@ -356,9 +353,6 @@ _proc_thread_info(Proc_Info *p)
 
         p->threads = eina_list_append(p->threads, t);
      }
-
-   if (files)
-     eina_list_free(files);
 }
 
 Proc_Info *
@@ -1033,9 +1027,6 @@ proc_info_free(Proc_Info *proc)
      {
         proc_info_free(t);
      }
-
-   if (proc->threads)
-     eina_list_free(proc->threads);
 
    if (proc->command)
      free(proc->command);

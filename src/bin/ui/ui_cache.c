@@ -81,8 +81,5 @@ evisum_ui_item_cache_free(Evisum_Ui_Cache *cache)
      {
         free(it);
      }
-
-   eina_list_free(cache->items);
-
    free(cache);
 }
