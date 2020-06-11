@@ -182,12 +182,18 @@ filesystem_info_get(const char *path)
    fs = calloc(1, sizeof(Filesystem_Info));
    fs->mount = strdup(mountpoint);
    fs->path  = strdup(path);
+
+#if defined(__OpenBSD__)
+#else
    fs->type  = stats.f_type;
+#endif
+
 #if defined(__linux__)
    fs->type_name = filesystem_type_name(fs->mount);
 #else
    fs->type_name = strdup(stats.f_fstypename);
 #endif
+
    fs->usage.total = stats.f_bsize * stats.f_blocks;
    fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
 
