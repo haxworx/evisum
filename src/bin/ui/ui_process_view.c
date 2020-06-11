@@ -893,12 +893,9 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                eina_strbuf_append_printf(buf, "%s<br>", line);
              free(line);
           }
-
         eina_strbuf_append(buf, "</code>");
         elm_object_text_set(ui->entry_info, eina_strbuf_string_get(buf));
         eina_strbuf_free(buf);
-
-        eina_list_free(lines);
      }
    else
      {

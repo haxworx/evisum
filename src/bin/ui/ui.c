@@ -251,9 +251,6 @@ _proc_pid_cpu_times_free(Ui *ui)
      {
         free(tmp);
      }
-
-   if (ui->cpu_times)
-     eina_list_free(ui->cpu_times);
 }
 
 static void
@@ -561,9 +558,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
         elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
-
-   if (list)
-     eina_list_free(list);
 
    eina_lock_release(&_lock);
 

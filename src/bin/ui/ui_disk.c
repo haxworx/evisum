@@ -121,8 +121,6 @@ ui_tab_disk_update(Ui *ui)
           }
         free(path);
      }
-   if (disks)
-     eina_list_free(disks);
 
    // Need to keep track of ZFS mounts. If we have no mounts
    // then memory usage should not take into account the ZFS
