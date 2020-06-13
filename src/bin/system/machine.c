@@ -662,6 +662,8 @@ _temperature_cpu_get(int *temperature)
           break;
         else if (!strcmp("km0", snsrdev.xname))
           break;
+        else if (!strncmp("bcmt", snsrdev.xname, 4))
+          break;
      }
 
    for (numt = 0; numt < snsrdev.maxnumt[SENSOR_TEMP]; numt++) {
