@@ -638,7 +638,7 @@ swap_out:
 }
 
 static void
-_temperature_cpu_get(int *temperature)
+_thermal_zone_temp_get(float *temperature)
 {
 #if defined(__OpenBSD__) || defined(__NetBSD__)
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
@@ -721,7 +721,7 @@ _temperature_cpu_get(int *temperature)
                   char *value = file_contents(path);
                   if (value)
                     {
-                       *temperature = atoi(value) / 1000;
+                       *temperature = (float)atoi(value) / 1000.0;
                        free(value);
                        free(type);
                        break;
@@ -1176,12 +1176,12 @@ _results_cpu(cpu_core_t **cores, int cpu_count)
    return total;
 }
 
-int
-system_temperature_cpu_get(void)
+float
+system_thermal_zone_temp_get(void)
 {
-   int temp;
+   float temp;
 
-   _temperature_cpu_get(&temp);
+   _thermal_zone_temp_get(&temp);
 
    return temp;
 }
@@ -1276,7 +1276,7 @@ sys_info_all_get(void)
    if (_power_battery_count_get(&results->power))
      _power_state_get(&results->power);
 
-   _temperature_cpu_get(&results->temperature);
+   _thermal_zone_temp_get(&results->temperature);
 
    if (!error)
      {

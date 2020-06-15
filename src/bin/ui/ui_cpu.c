@@ -100,7 +100,7 @@ ui_tab_cpu_update(Ui *ui, Sys_Info *sysinfo)
 
    if (sysinfo->temperature != INVALID_TEMP)
      elm_object_text_set(ui->temp_label,
-                    eina_slstr_printf(_("Core at (%d °C)"),
+                    eina_slstr_printf(_("Thermal Zone: %1.1f°C"),
                     sysinfo->temperature));
 
    EINA_LIST_FOREACH(ui->cpu_list, l, pb)

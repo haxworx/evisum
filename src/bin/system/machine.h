@@ -61,7 +61,7 @@ struct Sys_Info
 
    unsigned long incoming;
    unsigned long outgoing;
-   int           temperature;
+   float         temperature;
 };
 
 Sys_Info *
