@@ -83,15 +83,15 @@
 static char *
 file_contents(const char *path)
 {
-   char *buf;
-   char byte[1];
-   size_t count, bytes = 0;
    FILE *f;
+   char *buf, *tmp;
+   char byte[1];
+   size_t count, n, bytes = 0;
 
    f = fopen(path, "r");
    if (!f) return NULL;
 
-   int n = 1024;
+   n = 1024;
 
    buf = malloc(n * sizeof(byte) + 1);
    if (!buf) return NULL;
@@ -102,7 +102,7 @@ file_contents(const char *path)
         if (bytes == (n * sizeof(byte)))
           {
              n *= 2;
-             char *tmp = realloc(buf, n * sizeof(byte) + 1);
+             tmp = realloc(buf, n * sizeof(byte) + 1);
              if (!tmp) return NULL;
              buf = tmp;
           }
@@ -303,7 +303,8 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
              line = strchr(line, ' ') + 1;
              unsigned long cpu_times[4] = { 0 };
 
-             if (4 != sscanf(line, "%lu %lu %lu %lu", &cpu_times[0], &cpu_times[1], &cpu_times[2], &cpu_times[3]))
+             if (4 != sscanf(line, "%lu %lu %lu %lu", &cpu_times[0],
+                   &cpu_times[1], &cpu_times[2], &cpu_times[3]))
                return;
 
              total = cpu_times[0] + cpu_times[1] + cpu_times[2] + cpu_times[3];
@@ -687,6 +688,7 @@ _sensors_thermal_get(Sys_Info *sysinfo)
    sensor_t *sensor;
    struct dirent *dh;
    DIR *dir;
+   char *value, *type;
    char path[PATH_MAX];
 
    dir = opendir("/sys/class/thermal");
@@ -698,14 +700,19 @@ _sensors_thermal_get(Sys_Info *sysinfo)
           continue;
 
         snprintf(path, sizeof(path), "/sys/class/thermal/%s/type", dh->d_name);
-        char *type = file_contents(path);
+        type = file_contents(path);
         if (type)
           {
-             sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
-             sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
+             sensors =
+                realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
+             sensors[sysinfo->snsr_count++] =
+                 sensor = calloc(1, sizeof(sensor_t));
+
              sensor->name = strdup(dh->d_name);
-             snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp", dh->d_name);
-             char *value = file_contents(path);
+             snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp",
+                      dh->d_name);
+
+             value = file_contents(path);
              if (!value)
                sensor->invalid = true;
              else
@@ -776,6 +783,7 @@ _power_battery_count_get(power_t *power)
         sysctlnametomib("hw.acpi.acline", power->ac_mibs, &len);
      }
 #elif defined(__linux__)
+   char *type;
    char path[PATH_MAX];
    struct dirent **names;
    int i, n;
@@ -783,13 +791,17 @@ _power_battery_count_get(power_t *power)
    n = scandir("/sys/class/power_supply", &names, 0, alphasort);
    if (n < 0) return power->battery_count;
 
-   for (i = 0; i < n; i++){
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", names[i]->d_name);
-        char *type = file_contents(path);
+   for (i = 0; i < n; i++)
+     {
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type",
+                 names[i]->d_name);
+
+        type = file_contents(path);
         if (type)
           {
              if (!strncmp(type, "Battery", 7))
-               power->battery_names[power->battery_count++] = strdup(names[i]->d_name);
+               power->battery_names[power->battery_count++] =
+                  strdup(names[i]->d_name);
              free(type);
           }
 
@@ -899,7 +911,8 @@ _battery_state_get(power_t *power)
    for (i = 0; i < power->battery_count; i++)
      {
         naming = NULL;
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s", power->battery_names[i]);
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s",
+                 power->battery_names[i]);
 
         if (stat(path, &st) < 0) continue;
         if (S_ISLNK(st.st_mode)) continue;
@@ -923,14 +936,16 @@ _battery_state_get(power_t *power)
         if (!naming)
           continue;
 
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full", power->battery_names[i], naming);
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full",
+                 power->battery_names[i], naming);
         buf = file_contents(path);
         if (buf)
           {
              charge_full = atol(buf);
              free(buf);
           }
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_now", power->battery_names[i], naming);
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_now",
+                 power->battery_names[i], naming);
         buf = file_contents(path);
         if (buf)
           {
@@ -938,10 +953,12 @@ _battery_state_get(power_t *power)
              free(buf);
           }
 
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", power->battery_names[i]);
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer",
+                 power->battery_names[i]);
         vendor = file_contents(path);
 
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", power->battery_names[i]);
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name",
+                 power->battery_names[i]);
         model = file_contents(path);
 
         if (vendor && vendor[0] && model && model[0])
@@ -1018,8 +1035,9 @@ _power_state_get(power_t *power)
 
    for (i = 0; i < power->battery_count; i++)
      {
-        double percent =
-           100 * (power->batteries[i]->charge_current / power->batteries[i]->charge_full);
+        double percent = 100 *
+           (power->batteries[i]->charge_current /
+                                    power->batteries[i]->charge_full);
         power->batteries[i]->percent = percent;
         if (power->bat_mibs[i])
           free(power->bat_mibs[i]);
@@ -1045,8 +1063,7 @@ _freebsd_generic_network_status(unsigned long int *in,
      return;
 
    for (i = 1; i <= count; i++) {
-        int mib[] =
-        {
+        int mib[] = {
            CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, i, IFDATA_GENERAL
         };
         len = sizeof(*ifmd);
@@ -1116,10 +1133,11 @@ _linux_generic_network_status(unsigned long int *in,
 
    while (fgets(buf, sizeof(buf), f))
      {
-        if (17 == sscanf(buf, "%s %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu "
-                         "%lu %lu %lu %lu\n", dummy_s, &tmp_in, &dummy, &dummy,
-                         &dummy, &dummy, &dummy, &dummy, &dummy, &tmp_out, &dummy,
-                         &dummy, &dummy, &dummy, &dummy, &dummy, &dummy))
+        if (17 == sscanf(buf, "%s %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu "
+                         "%lu %lu %lu %lu %lu\n", dummy_s, &tmp_in, &dummy,
+                         &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
+                         &tmp_out, &dummy, &dummy, &dummy, &dummy, &dummy,
+                         &dummy, &dummy))
           {
              *in += tmp_in;
              *out += tmp_out;
