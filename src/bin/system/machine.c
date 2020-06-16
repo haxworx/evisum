@@ -38,9 +38,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/param.h>
-#if defined(__linux__)
-# define BORING_USER 1
-#else
+#if !defined(__linux__)
 # include <sys/sysctl.h>
 #endif
 #include <sys/ioctl.h>
@@ -682,16 +680,17 @@ _sensors_thermal_get(Sys_Info *sysinfo)
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
-   unsigned int value;
+   sensor_t *sensor;
+   int value;
    size_t len = sizeof(value);
-   if ((sysctlbyname
-          ("hw.acpi.thermal.tz0.temperature", &value, &len, NULL,
-          0)) != -1)
+
+   if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
-        *temperature = (value -  2732) / 10;
+        sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
+        sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensor->name = strdup("hw.acpi.thermal.tz0");
+        sensor->value = (float) (value -  2732) / 10;
      }
-   else
-     *temperature = INVALID_TEMP;
 #elif defined(__linux__)
    sensor_t *sensor;
    struct dirent *dh;
