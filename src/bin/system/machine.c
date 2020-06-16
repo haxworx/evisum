@@ -642,13 +642,13 @@ _sensors_thermal_get(Sys_Info *sysinfo)
 {
    sensor_t **sensors = sysinfo->sensors;
 #if defined(__OpenBSD__) || defined(__NetBSD__)
+   sensor_t *sensor;
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
    int devn, n;
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
    struct sensordev snsrdev;
    size_t sdlen = sizeof(struct sensordev);
-   sensor_t *sensor;
 
    for (devn = 0;; devn++)
      {
@@ -659,16 +659,6 @@ _sensors_thermal_get(Sys_Info *sysinfo)
              if (errno == ENOENT) break;
              continue;
           }
-
-        if ((strcmp("cpu0", snsrdev.xname)) && (strcmp("kmo", snsrdev.xname)) &&
-            (strcmp("acpitz0", snsrdev.xname)) && (strncmp("bcmt", snsrdev.xname, 4)))
-          {
-             continue;
-          }
-
-        sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
-        sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
-        sensor->name = strdup(snsrdev.xname);
 
         for (n = 0; n < snsrdev.maxnumt[SENSOR_TEMP]; n++)
           {
@@ -681,10 +671,15 @@ _sensors_thermal_get(Sys_Info *sysinfo)
                break;
           }
 
-        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) != -1)
-          sensor->value = (snsr.value - 273150000) / 1000000.0;
-        else
-          sensor->invalid = true;
+        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
+          continue;
+        if (snsr.type != SENSOR_TEMP)
+          continue;
+
+        sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
+        sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensor->name = strdup(snsrdev.xname);
+        sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int value;
