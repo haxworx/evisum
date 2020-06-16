@@ -24,6 +24,13 @@ typedef struct
    unsigned long long zfs_arc_used;
 } meminfo_t;
 
+typedef struct
+{
+   char   *name;
+   double value;
+   bool   invalid;
+} sensor_t;
+
 #define MAX_BATTERIES 10
 
 typedef struct
@@ -54,14 +61,14 @@ struct Sys_Info
 {
    int           cpu_count;
    cpu_core_t  **cores;
-
    meminfo_t     memory;
-
    power_t       power;
+
+   int            snsr_count;
+   sensor_t     **sensors;
 
    unsigned long incoming;
    unsigned long outgoing;
-   float         temperature;
 };
 
 Sys_Info *

@@ -100,7 +100,6 @@ typedef struct Ui
 
    Eina_List       *cpu_times;
    Eina_List       *cpu_list;
-   Evas_Object     *temp_label;
 
    int             poll_delay;
 

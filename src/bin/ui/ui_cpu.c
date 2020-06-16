@@ -56,12 +56,6 @@ ui_tab_cpu_add(Ui *ui)
    evas_object_show(label);
    elm_box_pack_end(box, label);
 
-   ui->temp_label = label = elm_label_add(box);
-   evas_object_size_hint_align_set(label, FILL, 0);
-   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-   evas_object_show(label);
-   elm_box_pack_end(box, label);
-
    cpu_count = system_cpu_online_count_get();
    for (int i = 0; i < cpu_count; i++)
      {
@@ -97,11 +91,6 @@ ui_tab_cpu_update(Ui *ui, Sys_Info *sysinfo)
 
    if (!ui->cpu_visible)
      return;
-
-   if (sysinfo->temperature != INVALID_TEMP)
-     elm_object_text_set(ui->temp_label,
-                    eina_slstr_printf(_("Thermal Zone: %1.1f°C"),
-                    sysinfo->temperature));
 
    EINA_LIST_FOREACH(ui->cpu_list, l, pb)
      {

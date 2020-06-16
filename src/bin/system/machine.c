@@ -638,51 +638,54 @@ swap_out:
 }
 
 static void
-_thermal_zone_temp_get(float *temperature)
+_sensors_thermal_get(Sys_Info *sysinfo)
 {
+   sensor_t **sensors = sysinfo->sensors;
 #if defined(__OpenBSD__) || defined(__NetBSD__)
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
-   int devn, numt;
+   int devn, n;
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
    struct sensordev snsrdev;
    size_t sdlen = sizeof(struct sensordev);
+   sensor_t *sensor;
 
-   for (devn = 0;; devn++) {
+   for (devn = 0;; devn++)
+     {
         mibs[2] = devn;
 
         if (sysctl(mibs, 3, &snsrdev, &sdlen, NULL, 0) == -1)
           {
-             if (errno == ENOENT)
-               break;
-             else
-               continue;
+             if (errno == ENOENT) break;
+             continue;
           }
-        if (!strcmp("cpu0", snsrdev.xname))
-          break;
-        else if (!strcmp("km0", snsrdev.xname))
-          break;
-        else if (!strncmp("bcmt", snsrdev.xname, 4))
-          break;
+
+        if ((strcmp("cpu0", snsrdev.xname)) && (strcmp("kmo", snsrdev.xname)) &&
+            (strcmp("acpitz0", snsrdev.xname)) && (strncmp("bcmt", snsrdev.xname, 4)))
+          {
+             continue;
+          }
+
+        sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
+        sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensor->name = strdup(snsrdev.xname);
+
+        for (n = 0; n < snsrdev.maxnumt[SENSOR_TEMP]; n++)
+          {
+             mibs[4] = n;
+
+             if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
+               continue;
+
+             if (slen > 0 && (snsr.flags & SENSOR_FINVALID) == 0)
+               break;
+          }
+
+        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) != -1)
+          sensor->value = (snsr.value - 273150000) / 1000000.0;
+        else
+          sensor->invalid = true;
      }
-
-   for (numt = 0; numt < snsrdev.maxnumt[SENSOR_TEMP]; numt++) {
-        mibs[4] = numt;
-
-        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
-          continue;
-
-        if (slen > 0 && (snsr.flags & SENSOR_FINVALID) == 0)
-          break;
-     }
-
-   if (sysctl(mibs, 5, &snsr, &slen, NULL, 0)
-       != -1)
-     {
-        *temperature = (snsr.value - 273150000) / 1000000.0;
-     }
-   else
-     *temperature = INVALID_TEMP;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int value;
    size_t len = sizeof(value);
@@ -735,6 +738,7 @@ _thermal_zone_temp_get(float *temperature)
 #elif defined(__MacOS__)
    *temperature = INVALID_TEMP;
 #endif
+   sysinfo->sensors = sensors;
 }
 
 static int
@@ -1176,16 +1180,6 @@ _results_cpu(cpu_core_t **cores, int cpu_count)
    return total;
 }
 
-float
-system_thermal_zone_temp_get(void)
-{
-   float temp;
-
-   _thermal_zone_temp_get(&temp);
-
-   return temp;
-}
-
 void
 system_power_state_get(power_t *power)
 {
@@ -1276,7 +1270,7 @@ sys_info_all_get(void)
    if (_power_battery_count_get(&results->power))
      _power_state_get(&results->power);
 
-   _thermal_zone_temp_get(&results->temperature);
+   _sensors_thermal_get(results);
 
    if (!error)
      {

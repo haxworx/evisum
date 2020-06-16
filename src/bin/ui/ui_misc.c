@@ -77,6 +77,23 @@ _battery_usage_add(Evas_Object *box, power_t *power)
      free(power->batteries);
 }
 
+static void
+_sensor_usage_add(Evas_Object *box, Sys_Info *sysinfo)
+{
+   sensor_t *snsr;
+
+   for (int i = 0; i < sysinfo->snsr_count; i++)
+     {
+        snsr = sysinfo->sensors[i];
+        printf("%s => %1.2f\n", snsr->name, snsr->value);
+        if (snsr->name)
+          free(snsr->name);
+        free(snsr);
+     }
+   if (sysinfo->sensors)
+     free(sysinfo->sensors);
+}
+
 static char *
 _network_transfer_format(double rate)
 {
@@ -219,6 +236,7 @@ ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
    evas_object_show(box);
 
    _battery_usage_add(box, &sysinfo->power);
+   _sensor_usage_add(box, sysinfo);
    _network_usage_add(ui, box, sysinfo->incoming, EINA_TRUE);
    _network_usage_add(ui, box, sysinfo->outgoing, EINA_FALSE);
 
