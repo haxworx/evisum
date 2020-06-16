@@ -736,7 +736,6 @@ _sensors_thermal_get(Sys_Info *sysinfo)
 
    closedir(dir);
 #elif defined(__MacOS__)
-   *temperature = INVALID_TEMP;
 #endif
    sysinfo->sensors = sensors;
 }
