@@ -56,7 +56,7 @@
 # include <net/if_mib.h>
 #endif
 
-#if defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__OpenBSD__)
 # include <sys/sched.h>
 # include <sys/swap.h>
 # include <sys/mount.h>
@@ -171,7 +171,7 @@ cpu_count(void)
      }
 
    fclose(f);
-#elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
    size_t len;
    int mib[2] = { CTL_HW, HW_NCPU };
 
@@ -210,7 +210,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
    double ratio, percent;
    unsigned long total, idle, used;
    cpu_core_t *core;
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
    size_t size;
    int i, j;
 #endif
@@ -337,13 +337,17 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 
    count = HOST_CPU_LOAD_INFO_COUNT;
    mach_port = mach_host_self();
-   if (host_processor_info(mach_port, PROCESSOR_CPU_LOAD_INFO, &cpu_count, (processor_info_array_t *)&load, &count) != KERN_SUCCESS)
+   if (host_processor_info(mach_port, PROCESSOR_CPU_LOAD_INFO, &cpu_count,
+                (processor_info_array_t *)&load, &count) != KERN_SUCCESS)
      exit(-1);
 
    for (i = 0; i < ncpu; i++) {
         core = cores[i];
 
-        total = load[i].cpu_ticks[CPU_STATE_USER] + load[i].cpu_ticks[CPU_STATE_SYSTEM] + load[i].cpu_ticks[CPU_STATE_IDLE] + load[i].cpu_ticks[CPU_STATE_NICE];
+        total = load[i].cpu_ticks[CPU_STATE_USER] +
+           load[i].cpu_ticks[CPU_STATE_SYSTEM] +
+           load[i].cpu_ticks[CPU_STATE_IDLE] +
+           load[i].cpu_ticks[CPU_STATE_NICE];
         idle = load[i].cpu_ticks[CPU_STATE_IDLE];
 
         diff_total = total - core->total;
@@ -602,9 +606,11 @@ swap_out:
    memory->total = total;
 
    if (host_page_size(mach_port, &page_size) == KERN_SUCCESS &&
-       host_statistics64(mach_port, HOST_VM_INFO, (host_info64_t)&vm_stats, &count) == KERN_SUCCESS)
+       host_statistics64(mach_port, HOST_VM_INFO,
+                 (host_info64_t)&vm_stats, &count) == KERN_SUCCESS)
      {
-        memory->used = vm_stats.active_count + vm_stats.inactive_count + vm_stats.wire_count * page_size;
+        memory->used = vm_stats.active_count + vm_stats.inactive_count
+           + vm_stats.wire_count * page_size;
         memory->cached = vm_stats.active_count * page_size;
         memory->shared = vm_stats.wire_count * page_size;
         memory->buffered = vm_stats.inactive_count * page_size;
@@ -625,7 +631,7 @@ static void
 _sensors_thermal_get(Sys_Info *sysinfo)
 {
    sensor_t **sensors = sysinfo->sensors;
-#if defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__OpenBSD__)
    sensor_t *sensor;
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
    int devn, n;
@@ -720,7 +726,7 @@ _sensors_thermal_get(Sys_Info *sysinfo)
 static int
 _power_battery_count_get(power_t *power)
 {
-#if defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__OpenBSD__)
    struct sensordev snsrdev;
    size_t sdlen = sizeof(struct sensordev);
    int mib[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
@@ -806,7 +812,7 @@ _power_battery_count_get(power_t *power)
 static void
 _battery_state_get(power_t *power)
 {
-#if defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__OpenBSD__)
    int *mib;
    double charge_full, charge_current;
    size_t slen = sizeof(struct sensor);
@@ -976,7 +982,7 @@ static void
 _power_state_get(power_t *power)
 {
    int i;
-#if defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__OpenBSD__)
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
@@ -986,7 +992,7 @@ _power_state_get(power_t *power)
    char *buf;
 #endif
 
-#if defined(__OpenBSD__) || defined(__NetBSD__)
+#if defined(__OpenBSD__)
    power->ac_mibs[3] = 9;
    power->ac_mibs[4] = 0;
 
@@ -1039,7 +1045,10 @@ _freebsd_generic_network_status(unsigned long int *in,
      return;
 
    for (i = 1; i <= count; i++) {
-        int mib[] = { CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, i, IFDATA_GENERAL };
+        int mib[] =
+        {
+           CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, i, IFDATA_GENERAL
+        };
         len = sizeof(*ifmd);
         if (sysctl(mib, 6, ifmd, &len, NULL, 0) < 0) continue;
         if (!strcmp(ifmd->ifmd_name, "lo0"))
