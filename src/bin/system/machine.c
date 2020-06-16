@@ -79,18 +79,6 @@
 # define CPU_STATES      5
 #endif
 
-/* Filter requests and results */
-#define RESULTS_CPU       0x01
-#define RESULTS_MEM       0x02
-#define RESULTS_PWR       0x04
-#define RESULTS_TMP       0x08
-#define RESULTS_AUD       0x10
-#define RESULTS_NET       0x20
-#define RESULTS_DEFAULT   0x3f
-#define RESULTS_MEM_MB    0x40
-#define RESULTS_MEM_GB    0x80
-#define RESULTS_CPU_CORES 0x100
-
 #if defined(__linux__)
 static char *
 file_contents(const char *path)
@@ -534,7 +522,6 @@ _memory_usage_get(meminfo_t *memory)
      }
 
    struct xswdev xsw;
-   /* previous mib is important for this one... */
 
    for (i = 0; ; i++)
      {
@@ -567,7 +554,6 @@ _memory_usage_get(meminfo_t *memory)
    if (sysctl(bcstats_mib, 3, &bcstats, &len, NULL, 0) == -1)
      return;
 
-   /* Don't fail if there's not swap! */
    nswap = swapctl(SWAP_NSWAP, 0, 0);
    if (nswap == 0)
      goto swap_out;
@@ -1137,7 +1123,7 @@ _linux_generic_network_status(unsigned long int *in,
 #endif
 
 static void
-_network_transfer_get(Sys_Info *results)
+_network_transfer_get(Sys_Info *sysinfo)
 {
    unsigned long first_in = 0, first_out = 0;
    unsigned long last_in = 0, last_out = 0;
@@ -1154,113 +1140,76 @@ _network_transfer_get(Sys_Info *results)
    usleep(1000000);
    _freebsd_generic_network_status(&last_in, &last_out);
 #endif
-   results->incoming = last_in - first_in;
-   results->outgoing = last_out - first_out;
-}
-
-static double
-_results_cpu(cpu_core_t **cores, int cpu_count)
-{
-   double total = 0;
-   for (int i = 0; i < cpu_count; i++)
-     total += cores[i]->percent;
-
-   total = total / cpu_count;
-
-   return total;
-}
-
-void
-system_power_state_get(power_t *power)
-{
-   if (_power_battery_count_get(power))
-     _power_state_get(power);
-}
-
-bool
-system_network_transfer_get(unsigned long *incoming, unsigned long *outgoing)
-{
-   unsigned long first_in = 0, first_out = 0;
-   unsigned long last_in = 0, last_out = 0;
-#if defined(__linux__)
-   _linux_generic_network_status(&first_in, &first_out);
-   usleep(1000000);
-   _linux_generic_network_status(&last_in, &last_out);
-#elif defined(__OpenBSD__)
-   _openbsd_generic_network_status(&first_in, &first_out);
-   usleep(1000000);
-   _openbsd_generic_network_status(&last_in, &last_out);
-#elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
-   _freebsd_generic_network_status(&first_in, &first_out);
-   usleep(1000000);
-   _freebsd_generic_network_status(&last_in, &last_out);
-#else
-   return false;
-#endif
-   *incoming = last_in - first_in;
-   *outgoing = last_out - first_out;
-
-   return true;
-}
-
-int
-system_cpu_memory_get(double *percent_cpu, long *memory_total, long *memory_used)
-{
-   Sys_Info results;
-
-   memset(&results, 0, sizeof(results));
-
-   results.cores = _cpu_cores_state_get(&results.cpu_count);
-
-   _memory_usage_get(&results.memory);
-
-   *percent_cpu = _results_cpu(results.cores, results.cpu_count);
-   *memory_total = results.memory.total;
-   *memory_used = results.memory.used;
-
-   for (int i = 0; i < results.cpu_count; i++)
-     {
-        free(results.cores[i]);
-     }
-
-   free(results.cores);
-
-   return results.cpu_count;
+   sysinfo->incoming = last_in - first_in;
+   sysinfo->outgoing = last_out - first_out;
 }
 
 static void *
 _network_transfer_get_thread_cb(void *arg)
 {
-   Sys_Info *results = arg;
+   Sys_Info *sysinfo = arg;
 
-   _network_transfer_get(results);
+   _network_transfer_get(sysinfo);
 
    return (void *)0;
+}
+
+void
+sys_info_all_free(Sys_Info *sysinfo)
+{
+   sensor_t *snsr;
+   int i;
+
+   for (i = 0; i < sysinfo->cpu_count; i++)
+     {
+        free(sysinfo->cores[i]);
+     }
+   free(sysinfo->cores);
+
+   for (i = 0; i < sysinfo->snsr_count; i++)
+     {
+        snsr = sysinfo->sensors[i];
+        if (snsr->name) free(snsr->name);
+        free(snsr);
+     }
+   if (sysinfo->sensors)
+     free(sysinfo->sensors);
+
+   for (i = 0; i < sysinfo->power.battery_count; i++)
+     {
+        if (sysinfo->power.battery_names[i])
+          free(sysinfo->power.battery_names[i]);
+        free(sysinfo->power.batteries[i]);
+     }
+   if (sysinfo->power.batteries)
+     free(sysinfo->power.batteries);
+
+   free(sysinfo);
 }
 
 Sys_Info *
 sys_info_all_get(void)
 {
-   Sys_Info *results;
+   Sys_Info *sysinfo;
    void *ret;
    pthread_t tid;
    int error;
 
-   results = calloc(1, sizeof(Sys_Info));
-   if (!results) return NULL;
+   sysinfo = calloc(1, sizeof(Sys_Info));
+   if (!sysinfo) return NULL;
 
-   results->cores = _cpu_cores_state_get(&results->cpu_count);
+   sysinfo->cores = _cpu_cores_state_get(&sysinfo->cpu_count);
 
-   _memory_usage_get(&results->memory);
+   _memory_usage_get(&sysinfo->memory);
 
-   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, results);
+   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, sysinfo);
    if (error)
-     _network_transfer_get(results);
+     _network_transfer_get(sysinfo);
 
-   if (_power_battery_count_get(&results->power))
-     _power_state_get(&results->power);
+   if (_power_battery_count_get(&sysinfo->power))
+     _power_state_get(&sysinfo->power);
 
-   _sensors_thermal_get(results);
+   _sensors_thermal_get(sysinfo);
 
    if (!error)
      {
@@ -1268,6 +1217,6 @@ sys_info_all_get(void)
         pthread_join(tid, ret);
      }
 
-   return results;
+   return sysinfo;
 }
 

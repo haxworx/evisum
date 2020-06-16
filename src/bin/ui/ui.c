@@ -1586,7 +1586,6 @@ _sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    for (int i = 0; i < sysinfo->cpu_count; i++)
      {
         cpu_usage += sysinfo->cores[i]->percent;
-        free(sysinfo->cores[i]);
      }
 
    cpu_usage = cpu_usage / system_cpu_online_count_get();
@@ -1604,8 +1603,7 @@ _sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
                    evisum_size_format(sysinfo->memory.used),
                    evisum_size_format(sysinfo->memory.total)));
 out:
-   free(sysinfo->cores);
-   free(sysinfo);
+   sys_info_all_free(sysinfo);
 }
 
 static void

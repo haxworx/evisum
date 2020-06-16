@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
+
 typedef struct
 {
    float         percent;
@@ -31,8 +33,6 @@ typedef struct
    bool   invalid;
 } sensor_t;
 
-#define MAX_BATTERIES 10
-
 typedef struct
 {
    double  charge_full;
@@ -47,14 +47,11 @@ typedef struct
    int      battery_count;
 
    bat_t  **batteries;
-
-   // Necessary evils.
+#define MAX_BATTERIES 10
    char    *battery_names[MAX_BATTERIES];
    int     *bat_mibs[MAX_BATTERIES];
    int      ac_mibs[5];
 } power_t;
-
-#define INVALID_TEMP -999
 
 typedef struct Sys_Info Sys_Info;
 struct Sys_Info
@@ -73,6 +70,9 @@ struct Sys_Info
 
 Sys_Info *
 sys_info_all_get(void);
+
+void
+sys_info_all_free(Sys_Info *);
 
 int
 system_cpu_online_count_get();

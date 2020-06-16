@@ -68,13 +68,7 @@ _battery_usage_add(Evas_Object *box, power_t *power)
         elm_box_pack_end(vbox, hbox);
         elm_object_content_set(frame, vbox);
         elm_box_pack_end(box, frame);
-
-        free(power->battery_names[i]);
-        free(power->batteries[i]);
      }
-
-   if (power->batteries)
-     free(power->batteries);
 }
 
 static void
@@ -86,12 +80,7 @@ _sensor_usage_add(Evas_Object *box, Sys_Info *sysinfo)
      {
         snsr = sysinfo->sensors[i];
         printf("%s => %1.2f\n", snsr->name, snsr->value);
-        if (snsr->name)
-          free(snsr->name);
-        free(snsr);
      }
-   if (sysinfo->sensors)
-     free(sysinfo->sensors);
 }
 
 static char *
