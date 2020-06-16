@@ -698,11 +698,10 @@ _sensors_thermal_get(Sys_Info *sysinfo)
    else
      *temperature = INVALID_TEMP;
 #elif defined(__linux__)
+   sensor_t *sensor;
    struct dirent *dh;
    DIR *dir;
    char path[PATH_MAX];
-
-   *temperature = INVALID_TEMP;
 
    dir = opendir("/sys/class/thermal");
    if (!dir) return;
@@ -716,19 +715,17 @@ _sensors_thermal_get(Sys_Info *sysinfo)
         char *type = file_contents(path);
         if (type)
           {
-             /* This should ensure we get the highest available core temperature */
-             if ((strstr(type, "_pkg_temp")) ||
-                 (!strncmp(type, "cpu-thermal", 11))) /* RPI4 */
+             sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
+             sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
+             sensor->name = strdup(dh->d_name);
+             snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp", dh->d_name);
+             char *value = file_contents(path);
+             if (!value)
+               sensor->invalid = true;
+             else
                {
-                  snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp", dh->d_name);
-                  char *value = file_contents(path);
-                  if (value)
-                    {
-                       *temperature = (float)atoi(value) / 1000.0;
-                       free(value);
-                       free(type);
-                       break;
-                    }
+                  sensor->value = (float)atoi(value) / 1000.0;
+                  free(value);
                }
              free(type);
           }
