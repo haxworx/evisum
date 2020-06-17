@@ -8,6 +8,6 @@ void
 ui_tab_memory_add(Ui *ui);
 
 void
-ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo);
+ui_tab_memory_update(Ui *ui, Sys_Info *info);
 
 #endif

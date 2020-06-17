@@ -906,7 +906,7 @@ static void
 _ui_tab_system_add(Ui *ui)
 {
    Evas_Object *parent, *box, *hbox, *frame, *table;
-   Evas_Object *progress, *button, *plist;
+   Evas_Object *pb, *button, *plist;
    int i = 0;
 
    parent = ui->content;
@@ -931,13 +931,13 @@ _ui_tab_system_add(Ui *ui)
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
 
-   ui->progress_cpu = progress = elm_progressbar_add(parent);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   elm_progressbar_unit_format_set(progress, "%1.2f%%");
-   elm_object_content_set(frame, progress);
-   evas_object_show(progress);
+   ui->progress_cpu = pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_progressbar_span_size_set(pb, 1.0);
+   elm_progressbar_unit_format_set(pb, "%1.2f%%");
+   elm_object_content_set(frame, pb);
+   evas_object_show(pb);
 
    frame = elm_frame_add(hbox);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
@@ -946,12 +946,12 @@ _ui_tab_system_add(Ui *ui)
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
 
-   ui->progress_mem = progress = elm_progressbar_add(parent);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
-   elm_object_content_set(frame, progress);
+   ui->progress_mem = pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_progressbar_span_size_set(pb, 1.0);
+   evas_object_show(pb);
+   elm_object_content_set(frame, pb);
 
    table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, 0);
@@ -1541,14 +1541,14 @@ _sys_info_all_poll(void *data, Ecore_Thread *thread)
 
    while (1)
      {
-        Sys_Info *sysinfo = sys_info_all_get();
-        if (!sysinfo)
+        Sys_Info *info = sys_info_all_get();
+        if (!info)
           {
              ecore_main_loop_quit();
              return;
           }
 
-        ecore_thread_feedback(thread, sysinfo);
+        ecore_thread_feedback(thread, info);
 
         for (int i = 0; i < 4; i++)
           {
@@ -1568,24 +1568,24 @@ static void
 _sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
    Ui *ui;
-   Evas_Object *progress;
-   Sys_Info *sysinfo;
+   Evas_Object *pb;
+   Sys_Info *info;
    double ratio, value, cpu_usage = 0.0;
 
    ui = data;
-   sysinfo = msg;
+   info = msg;
 
    if (ecore_thread_check(thread))
      goto out;
 
-   ui_tab_cpu_update(ui, sysinfo);
-   ui_tab_memory_update(ui, sysinfo);
+   ui_tab_cpu_update(ui, info);
+   ui_tab_memory_update(ui, info);
    ui_tab_disk_update(ui);
-   ui_tab_misc_update(ui, sysinfo);
+   ui_tab_misc_update(ui, info);
 
-   for (int i = 0; i < sysinfo->cpu_count; i++)
+   for (int i = 0; i < info->cpu_count; i++)
      {
-        cpu_usage += sysinfo->cores[i]->percent;
+        cpu_usage += info->cores[i]->percent;
      }
 
    cpu_usage = cpu_usage / system_cpu_online_count_get();
@@ -1593,17 +1593,17 @@ _sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
 
    if (ui->zfs_mounted)
-     sysinfo->memory.used += sysinfo->memory.zfs_arc_used;
+     info->memory.used += info->memory.zfs_arc_used;
 
-   progress = ui->progress_mem;
-   ratio = sysinfo->memory.total / 100.0;
-   value = sysinfo->memory.used / ratio;
-   elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress, eina_slstr_printf("%s / %s",
-                   evisum_size_format(sysinfo->memory.used),
-                   evisum_size_format(sysinfo->memory.total)));
+   pb = ui->progress_mem;
+   ratio = info->memory.total / 100.0;
+   value = info->memory.used / ratio;
+   elm_progressbar_value_set(pb, value / 100);
+   elm_progressbar_unit_format_set(pb, eina_slstr_printf("%s / %s",
+                   evisum_size_format(info->memory.used),
+                   evisum_size_format(info->memory.total)));
 out:
-   sys_info_all_free(sysinfo);
+   sys_info_all_free(info);
 }
 
 static void

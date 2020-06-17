@@ -4,7 +4,7 @@ void
 ui_tab_cpu_add(Ui *ui)
 {
    Evas_Object *parent, *box, *hbox, *frame, *label, *scroller;
-   Evas_Object *progress;
+   Evas_Object *pb;
    unsigned int cpu_count;
 
    parent = ui->content;
@@ -65,25 +65,25 @@ ui_tab_cpu_add(Ui *ui)
         evas_object_show(frame);
         elm_object_style_set(frame, "pad_large");
 
-        progress = elm_progressbar_add(frame);
-        evas_object_size_hint_align_set(progress, FILL, FILL);
-        evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-        elm_progressbar_span_size_set(progress, 1.0);
-        elm_progressbar_unit_format_set(progress, "%1.2f%%");
-        evas_object_show(progress);
-        elm_progressbar_value_set(progress, 0.0);
+        pb = elm_progressbar_add(frame);
+        evas_object_size_hint_align_set(pb, FILL, FILL);
+        evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+        elm_progressbar_span_size_set(pb, 1.0);
+        elm_progressbar_unit_format_set(pb, "%1.2f%%");
+        evas_object_show(pb);
+        elm_progressbar_value_set(pb, 0.0);
 
-        elm_object_content_set(frame, progress);
+        elm_object_content_set(frame, pb);
         elm_box_pack_end(box, frame);
 
-        ui->cpu_list = eina_list_append(ui->cpu_list, progress);
+        ui->cpu_list = eina_list_append(ui->cpu_list, pb);
      }
 
    elm_box_pack_end(ui->cpu_activity, box);
 }
 
 void
-ui_tab_cpu_update(Ui *ui, Sys_Info *sysinfo)
+ui_tab_cpu_update(Ui *ui, Sys_Info *info)
 {
    Eina_List *l;
    Evas_Object *pb;
@@ -94,7 +94,7 @@ ui_tab_cpu_update(Ui *ui, Sys_Info *sysinfo)
 
    EINA_LIST_FOREACH(ui->cpu_list, l, pb)
      {
-        elm_progressbar_value_set(pb, sysinfo->cores[i]->percent / 100);
+        elm_progressbar_value_set(pb, info->cores[i]->percent / 100);
         ++i;
      }
 }

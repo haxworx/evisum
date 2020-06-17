@@ -8,7 +8,7 @@ void
 ui_tab_cpu_add(Ui *ui);
 
 void
-ui_tab_cpu_update(Ui *ui, Sys_Info *sysinfo);
+ui_tab_cpu_update(Ui *ui, Sys_Info *info);
 
 
 #endif

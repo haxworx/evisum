@@ -40,7 +40,7 @@ ui_tab_disk_add(Ui *ui)
 static void
 _ui_disk_add(Ui *ui, Filesystem_Info *inf)
 {
-   Evas_Object *box, *frame, *progress, *label;
+   Evas_Object *box, *frame, *pb, *label;
    const char *type;
    double ratio, value;
 
@@ -66,19 +66,19 @@ _ui_disk_add(Ui *ui, Filesystem_Info *inf)
    evas_object_show(label);
    elm_box_pack_end(box, label);
 
-   progress = elm_progressbar_add(box);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
+   pb = elm_progressbar_add(box);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_progressbar_span_size_set(pb, 1.0);
+   evas_object_show(pb);
 
    ratio = inf->usage.total / 100.0;
    value = inf->usage.used / ratio;
 
    if (inf->usage.used == 0 && inf->usage.total == 0)
-     elm_progressbar_value_set(progress, 1.0);
+     elm_progressbar_value_set(pb, 1.0);
    else
-     elm_progressbar_value_set(progress, value / 100.0);
+     elm_progressbar_value_set(pb, value / 100.0);
 
    frame = elm_frame_add(ui->misc_activity);
    evas_object_size_hint_align_set(frame, FILL, FILL);
@@ -86,7 +86,7 @@ _ui_disk_add(Ui *ui, Filesystem_Info *inf)
    elm_object_style_set(frame, "pad_large");
    evas_object_show(frame);
 
-   elm_box_pack_end(box, progress);
+   elm_box_pack_end(box, pb);
    elm_object_content_set(frame, box);
    elm_box_pack_end(ui->disk_activity, frame);
 }

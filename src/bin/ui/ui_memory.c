@@ -15,19 +15,19 @@ _label_mem(Evas_Object *parent, const char *text)
 static Evas_Object *
 _progress_add(Evas_Object *parent)
 {
-   Evas_Object *progress = elm_progressbar_add(parent);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
+   Evas_Object *pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_progressbar_span_size_set(pb, 1.0);
+   evas_object_show(pb);
 
-   return progress;
+   return pb;
 }
 
 void
 ui_tab_memory_add(Ui *ui)
 {
-   Evas_Object *parent, *box, *hbox, *frame, *progress, *scroller;
+   Evas_Object *parent, *box, *hbox, *frame, *pb, *scroller;
    Evas_Object *label, *table;
 
    parent = ui->content;
@@ -92,29 +92,29 @@ ui_tab_memory_add(Ui *ui)
    evas_object_show(table);
 
    label = _label_mem(box, _("Used"));
-   ui->progress_mem_used = progress = _progress_add(table);
+   ui->progress_mem_used = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 0, 1, 1);
-   elm_table_pack(table, progress, 1, 0, 1, 1);
+   elm_table_pack(table, pb, 1, 0, 1, 1);
 
    label = _label_mem(box, _("Cached"));
-   ui->progress_mem_cached = progress = _progress_add(table);
+   ui->progress_mem_cached = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 1, 1, 1);
-   elm_table_pack(table, progress, 1, 1, 1, 1);
+   elm_table_pack(table, pb, 1, 1, 1, 1);
 
    label = _label_mem(box, _("Buffered"));
-   ui->progress_mem_buffered = progress = _progress_add(table);
+   ui->progress_mem_buffered = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 2, 1, 1);
-   elm_table_pack(table, progress, 1, 2, 1, 1);
+   elm_table_pack(table, pb, 1, 2, 1, 1);
 
    label = _label_mem(box, _("Shared"));
-   ui->progress_mem_shared = progress = _progress_add(table);
+   ui->progress_mem_shared = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 3, 1, 1);
-   elm_table_pack(table, progress, 1, 3, 1, 1);
+   elm_table_pack(table, pb, 1, 3, 1, 1);
 
    label = _label_mem(box, _("Swapped"));
-   ui->progress_mem_swap = progress = _progress_add(frame);
+   ui->progress_mem_swap = pb = _progress_add(frame);
    elm_table_pack(table, label, 0, 4, 1, 1);
-   elm_table_pack(table, progress, 1, 4, 1, 1);
+   elm_table_pack(table, pb, 1, 4, 1, 1);
 
    frame = elm_frame_add(ui->mem_activity);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
@@ -128,70 +128,70 @@ ui_tab_memory_add(Ui *ui)
 }
 
 void
-ui_tab_memory_update(Ui *ui, Sys_Info *sysinfo)
+ui_tab_memory_update(Ui *ui, Sys_Info *info)
 {
-   Evas_Object *progress;
+   Evas_Object *pb;
    double ratio, value;
 
    if (!ui->mem_visible)
      return;
 
    if (ui->zfs_mounted)
-     sysinfo->memory.used += sysinfo->memory.zfs_arc_used;
+     info->memory.used += info->memory.zfs_arc_used;
 
-   progress = ui->progress_mem_used;
-   ratio = sysinfo->memory.total / 100.0;
-   value = sysinfo->memory.used / ratio;
-   elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress,
+   pb = ui->progress_mem_used;
+   ratio = info->memory.total / 100.0;
+   value = info->memory.used / ratio;
+   elm_progressbar_value_set(pb, value / 100);
+   elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.used),
-                   evisum_size_format(sysinfo->memory.total),
+                   evisum_size_format(info->memory.used),
+                   evisum_size_format(info->memory.total),
                    value));
 
-   progress = ui->progress_mem_cached;
-   ratio = sysinfo->memory.total / 100.0;
-   value = sysinfo->memory.cached / ratio;
-   elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress,
+   pb = ui->progress_mem_cached;
+   ratio = info->memory.total / 100.0;
+   value = info->memory.cached / ratio;
+   elm_progressbar_value_set(pb, value / 100);
+   elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.cached),
-                   evisum_size_format(sysinfo->memory.total),
+                   evisum_size_format(info->memory.cached),
+                   evisum_size_format(info->memory.total),
                    value));
 
-   progress = ui->progress_mem_buffered;
-   ratio = sysinfo->memory.total / 100.0;
-   value = sysinfo->memory.buffered / ratio;
-   elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress,
+   pb = ui->progress_mem_buffered;
+   ratio = info->memory.total / 100.0;
+   value = info->memory.buffered / ratio;
+   elm_progressbar_value_set(pb, value / 100);
+   elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.buffered),
-                   evisum_size_format(sysinfo->memory.total),
+                   evisum_size_format(info->memory.buffered),
+                   evisum_size_format(info->memory.total),
                    value));
 
-   progress = ui->progress_mem_shared;
-   ratio = sysinfo->memory.total / 100.0;
-   value = sysinfo->memory.shared / ratio;
-   elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress,
+   pb = ui->progress_mem_shared;
+   ratio = info->memory.total / 100.0;
+   value = info->memory.shared / ratio;
+   elm_progressbar_value_set(pb, value / 100);
+   elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.shared),
-                   evisum_size_format(sysinfo->memory.total),
+                   evisum_size_format(info->memory.shared),
+                   evisum_size_format(info->memory.total),
                    value));
 
-   progress = ui->progress_mem_swap;
-   if (sysinfo->memory.swap_total)
+   pb = ui->progress_mem_swap;
+   if (info->memory.swap_total)
      {
-        ratio = sysinfo->memory.swap_total / 100.0;
-        value = sysinfo->memory.swap_used / ratio;
+        ratio = info->memory.swap_total / 100.0;
+        value = info->memory.swap_used / ratio;
      }
    else value = 0.0;
 
-   elm_progressbar_value_set(progress, value / 100);
-   elm_progressbar_unit_format_set(progress,
+   elm_progressbar_value_set(pb, value / 100);
+   elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s (%1.0f &#37;)",
-                   evisum_size_format(sysinfo->memory.swap_used),
-                   evisum_size_format(sysinfo->memory.swap_total),
+                   evisum_size_format(info->memory.swap_used),
+                   evisum_size_format(info->memory.swap_total),
                    value));
 }
 

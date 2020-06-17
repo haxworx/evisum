@@ -629,9 +629,9 @@ swap_out:
 }
 
 static void
-_sensors_thermal_get(Sys_Info *sysinfo)
+_sensors_thermal_get(Sys_Info *info)
 {
-   sensor_t **sensors = sysinfo->sensors;
+   sensor_t **sensors = info->sensors;
 #if defined(__OpenBSD__)
    sensor_t *sensor;
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
@@ -667,8 +667,8 @@ _sensors_thermal_get(Sys_Info *sysinfo)
         if (snsr.type != SENSOR_TEMP)
           continue;
 
-        sensors = realloc(sensors, 1 + sysinfo->sensor_count * sizeof(sensor_t *));
-        sensors[sysinfo->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensors = realloc(sensors, 1 + info->sensor_count * sizeof(sensor_t *));
+        sensors[info->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup(snsrdev.xname);
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
      }
@@ -679,8 +679,8 @@ _sensors_thermal_get(Sys_Info *sysinfo)
 
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
-        sensors = realloc(sensors, 1 + sysinfo->sensor_count * sizeof(sensor_t *));
-        sensors[sysinfo->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensors = realloc(sensors, 1 + info->sensor_count * sizeof(sensor_t *));
+        sensors[info->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup("hw.acpi.thermal.tz0");
         sensor->value = (float) (value -  2732) / 10;
      }
@@ -704,8 +704,8 @@ _sensors_thermal_get(Sys_Info *sysinfo)
         if (type)
           {
              sensors =
-                realloc(sensors, 1 + sysinfo->sensor_count * sizeof(sensor_t *));
-             sensors[sysinfo->sensor_count++] =
+                realloc(sensors, 1 + info->sensor_count * sizeof(sensor_t *));
+             sensors[info->sensor_count++] =
                  sensor = calloc(1, sizeof(sensor_t));
 
              sensor->name = strdup(dh->d_name);
@@ -727,7 +727,7 @@ _sensors_thermal_get(Sys_Info *sysinfo)
    closedir(dir);
 #elif defined(__MacOS__)
 #endif
-   sysinfo->sensors = sensors;
+   info->sensors = sensors;
 }
 
 static int
@@ -1150,7 +1150,7 @@ _linux_generic_network_status(unsigned long int *in,
 #endif
 
 static void
-_network_transfer_get(Sys_Info *sysinfo)
+_network_transfer_get(Sys_Info *info)
 {
    unsigned long first_in = 0, first_out = 0;
    unsigned long last_in = 0, last_out = 0;
@@ -1167,76 +1167,76 @@ _network_transfer_get(Sys_Info *sysinfo)
    usleep(1000000);
    _freebsd_generic_network_status(&last_in, &last_out);
 #endif
-   sysinfo->incoming = last_in - first_in;
-   sysinfo->outgoing = last_out - first_out;
+   info->incoming = last_in - first_in;
+   info->outgoing = last_out - first_out;
 }
 
 static void *
 _network_transfer_get_thread_cb(void *arg)
 {
-   Sys_Info *sysinfo = arg;
+   Sys_Info *info = arg;
 
-   _network_transfer_get(sysinfo);
+   _network_transfer_get(info);
 
    return (void *)0;
 }
 
 void
-sys_info_all_free(Sys_Info *sysinfo)
+sys_info_all_free(Sys_Info *info)
 {
    sensor_t *snsr;
    int i;
 
-   for (i = 0; i < sysinfo->cpu_count; i++)
+   for (i = 0; i < info->cpu_count; i++)
      {
-        free(sysinfo->cores[i]);
+        free(info->cores[i]);
      }
-   free(sysinfo->cores);
+   free(info->cores);
 
-   for (i = 0; i < sysinfo->sensor_count; i++)
+   for (i = 0; i < info->sensor_count; i++)
      {
-        snsr = sysinfo->sensors[i];
+        snsr = info->sensors[i];
         if (snsr->name) free(snsr->name);
         free(snsr);
      }
-   if (sysinfo->sensors)
-     free(sysinfo->sensors);
+   if (info->sensors)
+     free(info->sensors);
 
-   for (i = 0; i < sysinfo->power.battery_count; i++)
+   for (i = 0; i < info->power.battery_count; i++)
      {
-        if (sysinfo->power.battery_names[i])
-          free(sysinfo->power.battery_names[i]);
-        free(sysinfo->power.batteries[i]);
+        if (info->power.battery_names[i])
+          free(info->power.battery_names[i]);
+        free(info->power.batteries[i]);
      }
-   if (sysinfo->power.batteries)
-     free(sysinfo->power.batteries);
+   if (info->power.batteries)
+     free(info->power.batteries);
 
-   free(sysinfo);
+   free(info);
 }
 
 Sys_Info *
 sys_info_all_get(void)
 {
-   Sys_Info *sysinfo;
+   Sys_Info *info;
    void *ret;
    pthread_t tid;
    int error;
 
-   sysinfo = calloc(1, sizeof(Sys_Info));
-   if (!sysinfo) return NULL;
+   info = calloc(1, sizeof(Sys_Info));
+   if (!info) return NULL;
 
-   sysinfo->cores = _cpu_cores_state_get(&sysinfo->cpu_count);
+   info->cores = _cpu_cores_state_get(&info->cpu_count);
 
-   _memory_usage_get(&sysinfo->memory);
+   _memory_usage_get(&info->memory);
 
-   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, sysinfo);
+   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, info);
    if (error)
-     _network_transfer_get(sysinfo);
+     _network_transfer_get(info);
 
-   if (_power_battery_count_get(&sysinfo->power))
-     _power_state_get(&sysinfo->power);
+   if (_power_battery_count_get(&info->power))
+     _power_state_get(&info->power);
 
-   _sensors_thermal_get(sysinfo);
+   _sensors_thermal_get(info);
 
    if (!error)
      {
@@ -1244,6 +1244,6 @@ sys_info_all_get(void)
         pthread_join(tid, ret);
      }
 
-   return sysinfo;
+   return info;
 }
 

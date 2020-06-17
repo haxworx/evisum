@@ -3,7 +3,7 @@
 static Eina_Bool
 _battery_usage_add(Evas_Object *box, power_t *power)
 {
-   Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
+   Evas_Object *frame, *vbox, *hbox, *pb, *ic, *label;
    const char *fmt;
 
    for (int i = 0; i < power->battery_count; i++)
@@ -48,16 +48,16 @@ _battery_usage_add(Evas_Object *box, power_t *power)
         evas_object_show(ic);
         elm_box_pack_end(hbox, ic);
 
-        progress = elm_progressbar_add(frame);
-        evas_object_size_hint_align_set(progress, FILL, FILL);
-        evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-        elm_progressbar_span_size_set(progress, 1.0);
-        elm_progressbar_unit_format_set(progress, "%1.0f%%");
-        elm_progressbar_value_set(progress,
+        pb = elm_progressbar_add(frame);
+        evas_object_size_hint_align_set(pb, FILL, FILL);
+        evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+        elm_progressbar_span_size_set(pb, 1.0);
+        elm_progressbar_unit_format_set(pb, "%1.0f%%");
+        elm_progressbar_value_set(pb,
                         (double) power->batteries[i]->percent / 100);
-        evas_object_show(progress);
+        evas_object_show(pb);
 
-        elm_box_pack_end(hbox, progress);
+        elm_box_pack_end(hbox, pb);
         elm_box_pack_end(vbox, hbox);
         elm_object_content_set(frame, vbox);
         elm_box_pack_end(box, frame);
@@ -67,14 +67,14 @@ _battery_usage_add(Evas_Object *box, power_t *power)
 }
 
 static Eina_Bool
-_sensor_usage_add(Evas_Object *box, Sys_Info *sysinfo)
+_sensor_usage_add(Evas_Object *box, Sys_Info *info)
 {
-   Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
+   Evas_Object *frame, *vbox, *hbox, *pb, *ic, *label;
    sensor_t *snsr;
 
-   for (int i = 0; i < sysinfo->sensor_count; i++)
+   for (int i = 0; i < info->sensor_count; i++)
      {
-        snsr = sysinfo->sensors[i];
+        snsr = info->sensors[i];
 
         frame = elm_frame_add(box);
         evas_object_size_hint_align_set(frame, FILL, FILL);
@@ -109,22 +109,22 @@ _sensor_usage_add(Evas_Object *box, Sys_Info *sysinfo)
         evas_object_show(ic);
         elm_box_pack_end(hbox, ic);
 
-        progress = elm_progressbar_add(frame);
-        evas_object_size_hint_align_set(progress, FILL, FILL);
-        evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-        elm_progressbar_span_size_set(progress, 1.0);
-        elm_progressbar_unit_format_set(progress, "%1.0f°C");
-        elm_progressbar_value_set(progress,
+        pb = elm_progressbar_add(frame);
+        evas_object_size_hint_align_set(pb, FILL, FILL);
+        evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+        elm_progressbar_span_size_set(pb, 1.0);
+        elm_progressbar_unit_format_set(pb, "%1.0f°C");
+        elm_progressbar_value_set(pb,
                         (double) snsr->value / 100);
-        evas_object_show(progress);
+        evas_object_show(pb);
 
-        elm_box_pack_end(hbox, progress);
+        elm_box_pack_end(hbox, pb);
         elm_box_pack_end(vbox, hbox);
         elm_object_content_set(frame, vbox);
         elm_box_pack_end(box, frame);
      }
 
-   return !!sysinfo->sensor_count;
+   return !!info->sensor_count;
 }
 
 static char *
@@ -149,7 +149,7 @@ _network_transfer_format(double rate)
 static void
 _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
 {
-   Evas_Object *vbox, *hbox, *label, *progress, *ic;
+   Evas_Object *vbox, *hbox, *label, *pb, *ic;
    char *tmp;
 
    vbox = elm_box_add(box);
@@ -181,18 +181,18 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
    evas_object_show(ic);
    elm_box_pack_end(hbox, ic);
 
-   progress = elm_progressbar_add(box);
-   evas_object_size_hint_align_set(progress, FILL, FILL);
-   evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(progress, 1.0);
-   evas_object_show(progress);
-   elm_box_pack_end(hbox, progress);
+   pb = elm_progressbar_add(box);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_progressbar_span_size_set(pb, 1.0);
+   evas_object_show(pb);
+   elm_box_pack_end(hbox, pb);
    elm_box_pack_end(vbox, hbox);
 
    tmp = _network_transfer_format(bytes);
    if (tmp)
      {
-        elm_progressbar_unit_format_set(progress, tmp);
+        elm_progressbar_unit_format_set(pb, tmp);
         free(tmp);
      }
 
@@ -202,15 +202,13 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
           {
              if (ui->incoming_max < bytes)
                ui->incoming_max = bytes;
-             elm_progressbar_value_set(progress,
-                             (double) bytes / ui->incoming_max);
+             elm_progressbar_value_set(pb, (double) bytes / ui->incoming_max);
           }
         else
           {
              if (ui->outgoing_max < bytes)
                ui->outgoing_max = bytes;
-             elm_progressbar_value_set(progress,
-                             (double) bytes / ui->outgoing_max);
+             elm_progressbar_value_set(pb, (double) bytes / ui->outgoing_max);
           }
      }
 
@@ -275,7 +273,7 @@ ui_tab_misc_add(Ui *ui)
 }
 
 void
-ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
+ui_tab_misc_update(Ui *ui, Sys_Info *info)
 {
    Evas_Object *box, *frame;
 
@@ -289,12 +287,12 @@ ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   _network_usage_add(ui, box, sysinfo->incoming, EINA_TRUE);
-   _network_usage_add(ui, box, sysinfo->outgoing, EINA_FALSE);
+   _network_usage_add(ui, box, info->incoming, EINA_TRUE);
+   _network_usage_add(ui, box, info->outgoing, EINA_FALSE);
    _separator_add(box);
-   if (_battery_usage_add(box, &sysinfo->power))
+   if (_battery_usage_add(box, &info->power))
      _separator_add(box);
-   if (_sensor_usage_add(box, sysinfo))
+   if (_sensor_usage_add(box, info))
      _separator_add(box);
 
    frame = elm_frame_add(ui->misc_activity);
