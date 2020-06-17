@@ -67,10 +67,10 @@ struct Sys_Info
 };
 
 Sys_Info *
-sys_info_all_get(void);
+system_info_all_get(void);
 
 void
-sys_info_all_free(Sys_Info *);
+system_info_all_free(Sys_Info *);
 
 int
 system_cpu_online_count_get();

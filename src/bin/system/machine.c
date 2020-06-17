@@ -1182,7 +1182,7 @@ _network_transfer_get_thread_cb(void *arg)
 }
 
 void
-sys_info_all_free(Sys_Info *info)
+system_info_all_free(Sys_Info *info)
 {
    sensor_t *snsr;
    int i;
@@ -1215,7 +1215,7 @@ sys_info_all_free(Sys_Info *info)
 }
 
 Sys_Info *
-sys_info_all_get(void)
+system_info_all_get(void)
 {
    Sys_Info *info;
    void *ret;

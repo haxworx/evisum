@@ -1535,13 +1535,13 @@ _thread_error_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
 }
 
 static void
-_sys_info_all_poll(void *data, Ecore_Thread *thread)
+_system_info_all_poll(void *data, Ecore_Thread *thread)
 {
    Ui *ui = data;
 
    while (1)
      {
-        Sys_Info *info = sys_info_all_get();
+        Sys_Info *info = system_info_all_get();
         if (!info)
           {
              ecore_main_loop_quit();
@@ -1565,7 +1565,7 @@ _sys_info_all_poll(void *data, Ecore_Thread *thread)
 }
 
 static void
-_sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
+_system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
    Ui *ui;
    Evas_Object *pb;
@@ -1603,7 +1603,7 @@ _sys_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
                    evisum_size_format(info->memory.used),
                    evisum_size_format(info->memory.total)));
 out:
-   sys_info_all_free(info);
+   system_info_all_free(info);
 }
 
 static void
@@ -1612,8 +1612,8 @@ _ui_launch(Ui *ui)
    _process_list_update(ui);
 
    ui->thread_system =
-      ecore_thread_feedback_run(_sys_info_all_poll,
-                   _sys_info_all_poll_feedback_cb, _thread_end_cb,
+      ecore_thread_feedback_run(_system_info_all_poll,
+                   _system_info_all_poll_feedback_cb, _thread_end_cb,
                    _thread_error_cb, ui, EINA_FALSE);
 
    ui->thread_process =
