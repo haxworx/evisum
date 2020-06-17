@@ -8,27 +8,27 @@ typedef struct {
    unsigned long long used;
 } _Usage;
 
-typedef struct _Filesystem_Info {
+typedef struct _File_System {
    char         *path;
    char         *mount;
    char         *type_name;
    unsigned int  type;
    _Usage        usage;
-} Filesystem_Info;
+} File_System;
 
 const char *
-filesystem_name_by_id(unsigned int id);
+file_system_name_by_id(unsigned int id);
 
 unsigned int
-filesystem_id_by_name(const char *name);
+file_system_id_by_name(const char *name);
 
-Filesystem_Info *
-filesystem_info_get(const char *path);
+File_System *
+file_system_info_get(const char *path);
 
 void
-filesystem_info_free(Filesystem_Info *fs);
+file_system_info_free(File_System *fs);
 
 Eina_Bool
-filesystem_in_use(const char *name);
+file_system_in_use(const char *name);
 
 #endif

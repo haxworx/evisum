@@ -38,7 +38,7 @@ ui_tab_disk_add(Ui *ui)
 }
 
 static void
-_ui_disk_add(Ui *ui, Filesystem_Info *inf)
+_ui_disk_add(Ui *ui, File_System *inf)
 {
    Evas_Object *box, *frame, *pb, *label;
    const char *type;
@@ -46,7 +46,7 @@ _ui_disk_add(Ui *ui, Filesystem_Info *inf)
 
    type = inf->type_name;
    if (!type)
-     type = filesystem_name_by_id(inf->type);
+     type = file_system_name_by_id(inf->type);
    if (!type) type = "unknown";
 
    box = elm_box_add(ui->disk_activity);
@@ -107,17 +107,17 @@ ui_tab_disk_update(Ui *ui)
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
-        Filesystem_Info *fs = filesystem_info_get(path);
+        File_System *fs = file_system_info_get(path);
         if (fs)
           {
              // ZFS usage may have changed during application's lifetime.
              // Keep track of ZFS mounts else we may report bogus use
              // of memory.
-             if (fs->type == filesystem_id_by_name("ZFS"))
+             if (fs->type == file_system_id_by_name("ZFS"))
                zfs_mounted = EINA_TRUE;
 
              _ui_disk_add(ui, fs);
-             filesystem_info_free(fs);
+             file_system_info_free(fs);
           }
         free(path);
      }

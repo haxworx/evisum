@@ -108,7 +108,7 @@ static _magic _magique[] = {
 };
 
 unsigned int
-filesystem_id_by_name(const char *name)
+file_system_id_by_name(const char *name)
 {
    size_t n = sizeof(_magique) / sizeof(_magic);
    for (int i = 0; i < n; i++)
@@ -120,7 +120,7 @@ filesystem_id_by_name(const char *name)
 }
 
 const char *
-filesystem_name_by_id(unsigned int id)
+file_system_name_by_id(unsigned int id)
 {
    size_t n = sizeof(_magique) / sizeof(_magic);
    for (int i = 0; i < n; i++)
@@ -133,7 +133,7 @@ filesystem_name_by_id(unsigned int id)
 
 #if defined(__linux__)
 static char *
-filesystem_type_name(const char *mountpoint)
+file_system_type_name(const char *mountpoint)
 {
    FILE *f;
    char *mount, *res, *type, *end;
@@ -166,10 +166,10 @@ filesystem_type_name(const char *mountpoint)
 
 #endif
 
-Filesystem_Info *
-filesystem_info_get(const char *path)
+File_System *
+file_system_info_get(const char *path)
 {
-   Filesystem_Info *fs;
+   File_System *fs;
    const char *mountpoint;
    struct statfs stats;
 
@@ -179,7 +179,7 @@ filesystem_info_get(const char *path)
    if (statfs(mountpoint, &stats) < 0)
      return NULL;
 
-   fs = calloc(1, sizeof(Filesystem_Info));
+   fs = calloc(1, sizeof(File_System));
    fs->mount = strdup(mountpoint);
    fs->path  = strdup(path);
 
@@ -189,7 +189,7 @@ filesystem_info_get(const char *path)
 #endif
 
 #if defined(__linux__)
-   fs->type_name = filesystem_type_name(fs->mount);
+   fs->type_name = file_system_type_name(fs->mount);
 #else
    fs->type_name = strdup(stats.f_fstypename);
 #endif
@@ -201,7 +201,7 @@ filesystem_info_get(const char *path)
 }
 
 void
-filesystem_info_free(Filesystem_Info *fs)
+file_system_info_free(File_System *fs)
 {
    free(fs->mount);
    free(fs->path);
@@ -211,7 +211,7 @@ filesystem_info_free(Filesystem_Info *fs)
 }
 
 Eina_Bool
-filesystem_in_use(const char *name)
+file_system_in_use(const char *name)
 {
    Eina_List *disks;
    char *path;
@@ -221,13 +221,13 @@ filesystem_in_use(const char *name)
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
-        Filesystem_Info *fs = filesystem_info_get(path);
+        File_System *fs = file_system_info_get(path);
         if (fs)
           {
-             if (fs->type == filesystem_id_by_name(name))
+             if (fs->type == file_system_id_by_name(name))
                fs_mounted = EINA_TRUE;
 
-             filesystem_info_free(fs);
+             file_system_info_free(fs);
           }
         free(path);
      }

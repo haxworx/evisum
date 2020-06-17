@@ -1646,7 +1646,7 @@ _ui_init(Evas_Object *parent)
    ui->cpu_list = NULL;
 
    // Only take account of the ZFS ARC if there is an active mount.
-   ui->zfs_mounted = filesystem_in_use("ZFS");
+   ui->zfs_mounted = file_system_in_use("ZFS");
 
    _ui = NULL;
    _evisum_config = NULL;
