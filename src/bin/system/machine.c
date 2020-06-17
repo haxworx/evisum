@@ -835,28 +835,27 @@ _battery_state_get(power_t *power)
         charge_full = charge_current = 0;
 
         mib = power->bat_mibs[i];
-        mib[3] = 7;
+        mib[3] = SENSOR_WATTHOUR;
         mib[4] = 0;
 
         if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
           charge_full = (double)snsr.value;
 
-        mib[3] = 7;
+        mib[3] = SENSOR_WATTHOUR;
         mib[4] = 3;
 
         if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
           charge_current = (double)snsr.value;
 
-        /* ACPI bug workaround... */
         if (charge_current == 0 || charge_full == 0)
           {
-             mib[3] = 8;
+             mib[3] = SENSOR_AMPHOUR;
              mib[4] = 0;
 
              if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
                charge_full = (double)snsr.value;
 
-             mib[3] = 8;
+             mib[3] = SENSOR_AMPHOUR;
              mib[4] = 3;
 
              if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
