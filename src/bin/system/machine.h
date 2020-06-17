@@ -4,13 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
-
 typedef struct
 {
-   float         percent;
    unsigned long total;
    unsigned long idle;
+   float         percent;
 } cpu_core_t;
 
 typedef struct
@@ -29,8 +27,8 @@ typedef struct
 typedef struct
 {
    char   *name;
-   double value;
-   bool   invalid;
+   double  value;
+   bool    invalid;
 } sensor_t;
 
 typedef struct
@@ -61,7 +59,7 @@ struct Sys_Info
    meminfo_t     memory;
    power_t       power;
 
-   int            snsr_count;
+   int           sensor_count;
    sensor_t     **sensors;
 
    unsigned long incoming;

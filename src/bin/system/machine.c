@@ -667,8 +667,8 @@ _sensors_thermal_get(Sys_Info *sysinfo)
         if (snsr.type != SENSOR_TEMP)
           continue;
 
-        sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
-        sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensors = realloc(sensors, 1 + sysinfo->sensor_count * sizeof(sensor_t *));
+        sensors[sysinfo->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup(snsrdev.xname);
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
      }
@@ -679,8 +679,8 @@ _sensors_thermal_get(Sys_Info *sysinfo)
 
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
-        sensors = realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
-        sensors[sysinfo->snsr_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensors = realloc(sensors, 1 + sysinfo->sensor_count * sizeof(sensor_t *));
+        sensors[sysinfo->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup("hw.acpi.thermal.tz0");
         sensor->value = (float) (value -  2732) / 10;
      }
@@ -704,8 +704,8 @@ _sensors_thermal_get(Sys_Info *sysinfo)
         if (type)
           {
              sensors =
-                realloc(sensors, 1 + sysinfo->snsr_count * sizeof(sensor_t *));
-             sensors[sysinfo->snsr_count++] =
+                realloc(sensors, 1 + sysinfo->sensor_count * sizeof(sensor_t *));
+             sensors[sysinfo->sensor_count++] =
                  sensor = calloc(1, sizeof(sensor_t));
 
              sensor->name = strdup(dh->d_name);
@@ -1193,7 +1193,7 @@ sys_info_all_free(Sys_Info *sysinfo)
      }
    free(sysinfo->cores);
 
-   for (i = 0; i < sysinfo->snsr_count; i++)
+   for (i = 0; i < sysinfo->sensor_count; i++)
      {
         snsr = sysinfo->sensors[i];
         if (snsr->name) free(snsr->name);

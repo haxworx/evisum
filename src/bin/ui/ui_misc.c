@@ -1,10 +1,10 @@
 #include "ui_misc.h"
 
-static void
+static Eina_Bool
 _battery_usage_add(Evas_Object *box, power_t *power)
 {
    Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
-   Eina_Strbuf *buf;
+   const char *fmt;
 
    for (int i = 0; i < power->battery_count; i++)
      {
@@ -28,20 +28,13 @@ _battery_usage_add(Evas_Object *box, power_t *power)
         evas_object_show(label);
         elm_box_pack_end(vbox, label);
 
-        buf = eina_strbuf_new();
-        if (buf)
-          {
-             eina_strbuf_append_printf(buf, "<bigger>%s ",
-                             power->battery_names[i]);
-             if (power->have_ac && i == 0)
-               {
-                    eina_strbuf_append(buf, _("(plugged in)"));
-               }
-             eina_strbuf_append(buf, "</bigger>");
-             elm_object_text_set(label, eina_strbuf_string_get(buf));
-             eina_strbuf_free(buf);
-          }
+        if (power->have_ac && i == 0)
+          fmt = _("<bigger>%s (plugged in) </bigger>");
+        else
+          fmt = _("<bigger>%s</bigger>");
 
+        elm_object_text_set(label, eina_slstr_printf(fmt,
+                        power->battery_names[i]));
         hbox = elm_box_add(box);
         evas_object_size_hint_align_set(hbox, FILL, FILL);
         evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
@@ -69,18 +62,69 @@ _battery_usage_add(Evas_Object *box, power_t *power)
         elm_object_content_set(frame, vbox);
         elm_box_pack_end(box, frame);
      }
+
+   return !!power->battery_count;
 }
 
-static void
+static Eina_Bool
 _sensor_usage_add(Evas_Object *box, Sys_Info *sysinfo)
 {
+   Evas_Object *frame, *vbox, *hbox, *progress, *ic, *label;
    sensor_t *snsr;
 
-   for (int i = 0; i < sysinfo->snsr_count; i++)
+   for (int i = 0; i < sysinfo->sensor_count; i++)
      {
         snsr = sysinfo->sensors[i];
-        printf("%s => %1.2f\n", snsr->name, snsr->value);
+
+        frame = elm_frame_add(box);
+        evas_object_size_hint_align_set(frame, FILL, FILL);
+        evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+        elm_object_style_set(frame, "pad_small");
+        evas_object_show(frame);
+
+        vbox = elm_box_add(box);
+        evas_object_size_hint_align_set(vbox, FILL, FILL);
+        evas_object_size_hint_weight_set(vbox, EXPAND, EXPAND);
+        evas_object_show(vbox);
+
+        label = elm_label_add(box);
+        evas_object_size_hint_align_set(label, 1.0, FILL);
+        evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+        evas_object_show(label);
+        elm_box_pack_end(vbox, label);
+
+        elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",
+                        snsr->name));
+
+        hbox = elm_box_add(box);
+        evas_object_size_hint_align_set(hbox, FILL, FILL);
+        evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
+        elm_box_horizontal_set(hbox, EINA_TRUE);
+        evas_object_show(hbox);
+
+        ic = elm_image_add(box);
+        elm_image_file_set(ic, evisum_icon_path_get("sensor"), NULL);
+        evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(),
+                        32 * elm_config_scale_get());
+        evas_object_show(ic);
+        elm_box_pack_end(hbox, ic);
+
+        progress = elm_progressbar_add(frame);
+        evas_object_size_hint_align_set(progress, FILL, FILL);
+        evas_object_size_hint_weight_set(progress, EXPAND, EXPAND);
+        elm_progressbar_span_size_set(progress, 1.0);
+        elm_progressbar_unit_format_set(progress, "%1.0f°C");
+        elm_progressbar_value_set(progress,
+                        (double) snsr->value / 100);
+        evas_object_show(progress);
+
+        elm_box_pack_end(hbox, progress);
+        elm_box_pack_end(vbox, hbox);
+        elm_object_content_set(frame, vbox);
+        elm_box_pack_end(box, frame);
      }
+
+   return !!sysinfo->sensor_count;
 }
 
 static char *
@@ -173,6 +217,27 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
    elm_box_pack_end(box, vbox);
 }
 
+static void
+_separator_add(Evas_Object *box)
+{
+   Evas_Object *hbox, *sep;
+
+   hbox = elm_box_add(box);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(hbox, FILL, FILL);
+   evas_object_show(hbox);
+
+   sep = elm_separator_add(hbox);
+   evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(sep, FILL, FILL);
+   elm_separator_horizontal_set(sep, EINA_TRUE);
+   evas_object_show(sep);
+
+   elm_box_pack_end(hbox, sep);
+   elm_box_pack_end(box, hbox);
+}
+
 void
 ui_tab_misc_add(Ui *ui)
 {
@@ -224,8 +289,10 @@ ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   _battery_usage_add(box, &sysinfo->power);
-   _sensor_usage_add(box, sysinfo);
+   if (_battery_usage_add(box, &sysinfo->power))
+     _separator_add(box);
+   if (_sensor_usage_add(box, sysinfo))
+     _separator_add(box);
    _network_usage_add(ui, box, sysinfo->incoming, EINA_TRUE);
    _network_usage_add(ui, box, sysinfo->outgoing, EINA_FALSE);
 
