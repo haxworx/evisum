@@ -360,7 +360,21 @@ _proc_info_update(void *data)
         _win_title_set(ui->win, _("%s (%d) - Not running"), ui->selected_cmd,
                        ui->selected_pid);
 
+        elm_object_disabled_set(ui->btn_start, EINA_TRUE);
+        elm_object_disabled_set(ui->btn_stop, EINA_TRUE);
+        elm_object_disabled_set(ui->btn_kill, EINA_TRUE);
         return ECORE_CALLBACK_CANCEL;
+     }
+
+   if (!strcmp(proc->state, "stop"))
+     {
+        elm_object_disabled_set(ui->btn_stop, EINA_TRUE);
+        elm_object_disabled_set(ui->btn_start, EINA_FALSE);
+     }
+   else
+     {
+        elm_object_disabled_set(ui->btn_stop, EINA_FALSE);
+        elm_object_disabled_set(ui->btn_start, EINA_TRUE);
      }
 
    elm_object_text_set(ui->entry_pid_cmd, proc->command);
@@ -587,7 +601,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = elm_button_add(parent);
+   ui->btn_stop = button = elm_button_add(parent);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Stop"));
@@ -602,7 +616,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = elm_button_add(parent);
+   ui->btn_start = button = elm_button_add(parent);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Start"));
@@ -617,7 +631,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = elm_button_add(parent);
+   ui->btn_kill = button = elm_button_add(parent);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Kill"));

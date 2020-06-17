@@ -289,12 +289,13 @@ ui_tab_misc_update(Ui *ui, Sys_Info *sysinfo)
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
+   _network_usage_add(ui, box, sysinfo->incoming, EINA_TRUE);
+   _network_usage_add(ui, box, sysinfo->outgoing, EINA_FALSE);
+   _separator_add(box);
    if (_battery_usage_add(box, &sysinfo->power))
      _separator_add(box);
    if (_sensor_usage_add(box, sysinfo))
      _separator_add(box);
-   _network_usage_add(ui, box, sysinfo->incoming, EINA_TRUE);
-   _network_usage_add(ui, box, sysinfo->outgoing, EINA_FALSE);
 
    frame = elm_frame_add(ui->misc_activity);
    evas_object_size_hint_align_set(frame, FILL, FILL);

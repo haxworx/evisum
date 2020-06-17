@@ -36,6 +36,9 @@ typedef struct _Ui_Process {
    Evas_Object  *entry_pid_pri;
    Evas_Object  *entry_pid_state;
    Evas_Object  *entry_pid_cpu_usage;
+   Evas_Object  *btn_start;
+   Evas_Object  *btn_stop;
+   Evas_Object  *btn_kill;
 
    Evas_Object  *btn_thread_id;
    Evas_Object  *btn_thread_name;

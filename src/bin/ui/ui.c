@@ -828,7 +828,7 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    evas_object_smart_callback_add(menu, "dismissed",
                    _item_menu_dismissed_cb, ui);
 
-   stopped = !!strcmp(proc->state, "stop");
+   stopped = !(!strcmp(proc->state, "stop"));
 
    menu_it = elm_menu_item_add(menu, NULL, evisum_icon_path_get("window"),
                    proc->command, NULL, NULL);
@@ -841,11 +841,11 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("start"),
                    _("Start"), _item_menu_start_cb, proc);
 
-   if (stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
+   elm_object_item_disabled_set(menu_it2, stopped);
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("stop"),
                    _("Stop"), _item_menu_stop_cb, proc);
 
-   if (!stopped) elm_object_item_disabled_set(menu_it2, EINA_TRUE);
+   elm_object_item_disabled_set(menu_it2, !stopped);
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("kill"), "Kill",
                    _item_menu_kill_cb, proc);
 
