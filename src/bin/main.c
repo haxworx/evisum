@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019. Alastair Poole <netstar@gmail.com>
+ * Copyright 2018-2019. Alastair Roy Poole <netstar@gmail.com>
  *
  * See LICENSE file for details.
  */
@@ -51,7 +51,7 @@ main(int argc, char **argv)
         if ((!strcmp(argv[i], "-h")) || (!strcmp(argv[i], "-help")) ||
             (!strcmp(argv[i], "--help") || !strcasecmp(argv[i], "-v")))
           {
-             printf("(c) 2018-2020 Alastair Poole <netstar@gmail.com>\n");
+             printf("(c) 2018-2020 Alastair Roy Poole <netstar@gmail.com>\n");
              printf("Evisum version: %s\n", PACKAGE_VERSION);
              exit(0);
           }
