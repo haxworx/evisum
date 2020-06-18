@@ -215,7 +215,7 @@ file_system_in_use(const char *name)
 {
    Eina_List *disks;
    char *path;
-   Eina_Bool fs_mounted = EINA_FALSE;
+   Eina_Bool mounted = EINA_FALSE;
    if (!name) return EINA_FALSE;
 
    disks = disks_get();
@@ -225,13 +225,13 @@ file_system_in_use(const char *name)
         if (fs)
           {
              if (fs->type == file_system_id_by_name(name))
-               fs_mounted = EINA_TRUE;
+               mounted = EINA_TRUE;
 
              file_system_info_free(fs);
           }
         free(path);
      }
 
-   return fs_mounted;
+   return mounted;
 }
 

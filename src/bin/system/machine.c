@@ -610,8 +610,7 @@ swap_out:
        host_statistics64(mach_port, HOST_VM_INFO,
                  (host_info64_t)&vm_stats, &count) == KERN_SUCCESS)
      {
-        memory->used = vm_stats.active_count + vm_stats.inactive_count
-           + vm_stats.wire_count * page_size;
+        memory->used = memory->total - (vm_stats.inactive_count * page_size);
         memory->cached = vm_stats.active_count * page_size;
         memory->shared = vm_stats.wire_count * page_size;
         memory->buffered = vm_stats.inactive_count * page_size;
@@ -623,8 +622,6 @@ swap_out:
         memory->swap_total = xsu.xsu_total;
         memory->swap_used = xsu.xsu_used;
      }
-   memory->swap_total *= 1024;
-   memory->swap_used *= 1024;
 #endif
 }
 
