@@ -66,7 +66,6 @@ typedef struct Ui
    Evas_Object     *progress_cpu;
    Evas_Object     *progress_mem;
 
-   Evas_Object     *title_mem;
    Evas_Object     *progress_mem_used;
    Evas_Object     *progress_mem_cached;
    Evas_Object     *progress_mem_buffered;

@@ -4,7 +4,7 @@ static Evas_Object *
 _label_mem(Evas_Object *parent, const char *text)
 {
    Evas_Object *label = elm_label_add(parent);
-   evas_object_size_hint_weight_set(label, 0.1, EXPAND);
+   evas_object_size_hint_weight_set(label, 0, EXPAND);
    evas_object_size_hint_align_set(label, FILL, FILL);
    elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",text));
    evas_object_show(label);
@@ -64,27 +64,6 @@ ui_tab_memory_add(Ui *ui)
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, FILL, 0);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_show(frame);
-   elm_object_style_set(frame, "pad_medium");
-   elm_box_pack_end(box, frame);
-
-   ui->title_mem = label = elm_label_add(parent);
-   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(label, FILL, FILL);
-   elm_object_text_set(label, _("<subtitle>Memory</subtitle>"));
-   evas_object_show(label);
-   elm_box_pack_end(box, label);
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, FILL, 0);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_show(frame);
-   elm_object_style_set(frame, "pad_large");
-   elm_box_pack_end(box, frame);
-
    table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
    evas_object_size_hint_align_set(table, FILL, FILL);
@@ -119,7 +98,7 @@ ui_tab_memory_add(Ui *ui)
    frame = elm_frame_add(ui->mem_activity);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_style_set(frame, "pad_large");
+   elm_object_style_set(frame, "pad_huge");
    evas_object_show(frame);
 
    elm_box_pack_end(box, table);
