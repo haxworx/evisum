@@ -369,8 +369,8 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 #endif
 }
 
-static cpu_core_t **
-_cpu_usage_get(int *ncpu)
+cpu_core_t **
+system_cpu_usage_get(int *ncpu)
 {
    cpu_core_t **cores;
    int i;
@@ -405,8 +405,8 @@ _meminfo_parse_line(const char *line)
 
 #endif
 
-static void
-_memory_usage_get(meminfo_t *memory)
+void
+system_memory_usage_get(meminfo_t *memory)
 {
 #if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
    size_t len = 0, miblen;
@@ -628,10 +628,10 @@ swap_out:
 #endif
 }
 
-static void
-_sensors_thermal_get(Sys_Info *info)
+sensor_t **
+system_sensors_thermal_get(int *sensor_count)
 {
-   sensor_t **sensors = info->sensors;
+   sensor_t **sensors = NULL;
 #if defined(__OpenBSD__)
    sensor_t *sensor;
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
@@ -667,8 +667,8 @@ _sensors_thermal_get(Sys_Info *info)
         if (snsr.type != SENSOR_TEMP)
           continue;
 
-        sensors = realloc(sensors, 1 + info->sensor_count * sizeof(sensor_t *));
-        sensors[info->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensors = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup(snsrdev.xname);
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
      }
@@ -679,8 +679,8 @@ _sensors_thermal_get(Sys_Info *info)
 
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
-        sensors = realloc(sensors, 1 + info->sensor_count * sizeof(sensor_t *));
-        sensors[info->sensor_count++] = sensor = calloc(1, sizeof(sensor_t));
+        sensors = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup("hw.acpi.thermal.tz0");
         sensor->value = (float) (value -  2732) / 10;
      }
@@ -692,7 +692,7 @@ _sensors_thermal_get(Sys_Info *info)
    int i, n;
 
    n = scandir("/sys/class/thermal", &names, 0, alphasort);
-   if (n < 0) return;
+   if (n < 0) return NULL;
 
    for (i = 0; i < n; i++)
      {
@@ -708,8 +708,8 @@ _sensors_thermal_get(Sys_Info *info)
         if (type)
           {
              sensors =
-                realloc(sensors, 1 + info->sensor_count * sizeof(sensor_t *));
-             sensors[info->sensor_count++] =
+                realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
+             sensors[(*sensor_count)++] =
                  sensor = calloc(1, sizeof(sensor_t));
 
              sensor->name = strdup(names[i]->d_name);
@@ -733,7 +733,7 @@ _sensors_thermal_get(Sys_Info *info)
    free(names);
 #elif defined(__MacOS__)
 #endif
-   info->sensors = sensors;
+   return sensors;
 }
 
 static int
@@ -1012,8 +1012,8 @@ _battery_state_get(power_t *power)
 #endif
 }
 
-static void
-_power_state_get(power_t *power)
+void
+system_power_state_get(power_t *power)
 {
    int i;
 #if defined(__OpenBSD__)
@@ -1167,8 +1167,8 @@ _linux_generic_network_status(unsigned long int *in,
 
 #endif
 
-static void
-_network_transfer_get(Sys_Info *info)
+void
+system_network_transfer_get(network_t *usage)
 {
    unsigned long first_in = 0, first_out = 0;
    unsigned long last_in = 0, last_out = 0;
@@ -1185,16 +1185,16 @@ _network_transfer_get(Sys_Info *info)
    usleep(1000000);
    _freebsd_generic_network_status(&last_in, &last_out);
 #endif
-   info->incoming = last_in - first_in;
-   info->outgoing = last_out - first_out;
+   usage->incoming = last_in - first_in;
+   usage->outgoing = last_out - first_out;
 }
 
 static void *
 _network_transfer_get_thread_cb(void *arg)
 {
-   Sys_Info *info = arg;
+   network_t *usage = arg;
 
-   _network_transfer_get(info);
+   system_network_transfer_get(usage);
 
    return (void *)0;
 }
@@ -1214,7 +1214,8 @@ system_info_all_free(Sys_Info *info)
    for (i = 0; i < info->sensor_count; i++)
      {
         snsr = info->sensors[i];
-        if (snsr->name) free(snsr->name);
+        if (snsr->name)
+          free(snsr->name);
         free(snsr);
      }
    if (info->sensors)
@@ -1247,16 +1248,16 @@ system_info_all_get(void)
    info = calloc(1, sizeof(Sys_Info));
    if (!info) return NULL;
 
-   info->cores = _cpu_usage_get(&info->cpu_count);
+   info->cores = system_cpu_usage_get(&info->cpu_count);
 
-   _memory_usage_get(&info->memory);
+   system_memory_usage_get(&info->memory);
 
-   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, info);
+   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb, &info->network_usage);
    if (error)
-     _network_transfer_get(info);
+     system_network_transfer_get(&info->network_usage);
 
-   _power_state_get(&info->power);
-   _sensors_thermal_get(info);
+   system_power_state_get(&info->power);
+   info->sensors = system_sensors_thermal_get(&info->sensor_count);
 
    if (!error)
      {

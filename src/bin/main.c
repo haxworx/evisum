@@ -4,9 +4,18 @@
  * See LICENSE file for details.
  */
 
+#define DEVELOPMENT 1
+
 #include "config.h"
 #include "evisum_config.h"
 #include "ui/ui.h"
+
+#if defined(DEVELOPMENT)
+# include "system/machine.h"
+# include "system/process.h"
+# include "system/disks.h"
+# include "system/filesystems.h"
+#endif
 
 static void
 _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
@@ -40,6 +49,47 @@ _win_add(void)
    return ui;
 }
 
+#if defined(DEVELOPMENT)
+static void
+_test(void)
+{
+   Sys_Info *inf;
+   Eina_List *procs, *disks;
+   Proc_Info *proc;
+   File_System *fs;
+   char *path, *mount;
+
+   printf("Starting testing\n");
+   inf = system_info_all_get();
+   system_info_all_free(inf);
+
+   eina_init();
+   ecore_init();
+
+   procs = proc_info_all_get();
+   EINA_LIST_FREE(procs, proc)
+     proc_info_free(proc);
+
+   disks = disks_get();
+   EINA_LIST_FREE(disks, path)
+     {
+        mount = disk_mount_point_get(path);
+        if (mount)
+          {
+             fs = file_system_info_get(mount);
+             if (fs)
+               file_system_info_free(fs);
+             free(mount);
+          }
+        free(path);
+     }
+   printf("Ending testing\n");
+
+   ecore_shutdown();
+   eina_shutdown();
+}
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -55,6 +105,13 @@ main(int argc, char **argv)
              printf("Evisum version: %s\n", PACKAGE_VERSION);
              exit(0);
           }
+#if defined(DEVELOPMENT)
+        else if (!strcmp(argv[i], "-t"))
+          {
+             _test();
+             exit(0);
+          }
+#endif
      }
 
    eina_init();

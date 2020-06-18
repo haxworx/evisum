@@ -287,8 +287,8 @@ ui_tab_misc_update(Ui *ui, Sys_Info *info)
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   _network_usage_add(ui, box, info->incoming, EINA_TRUE);
-   _network_usage_add(ui, box, info->outgoing, EINA_FALSE);
+   _network_usage_add(ui, box, info->network_usage.incoming, EINA_TRUE);
+   _network_usage_add(ui, box, info->network_usage.outgoing, EINA_FALSE);
    _separator_add(box);
    if (_battery_usage_add(box, &info->power))
      _separator_add(box);

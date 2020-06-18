@@ -52,6 +52,12 @@ typedef struct
    int      ac_mibs[5];
 } power_t;
 
+typedef struct
+{
+   unsigned long incoming;
+   unsigned long outgoing;
+} network_t;
+
 typedef struct Sys_Info Sys_Info;
 struct Sys_Info
 {
@@ -63,8 +69,7 @@ struct Sys_Info
    int           sensor_count;
    sensor_t     **sensors;
 
-   unsigned long incoming;
-   unsigned long outgoing;
+   network_t     network_usage;
 };
 
 Sys_Info *
@@ -75,5 +80,17 @@ system_info_all_free(Sys_Info *);
 
 int
 system_cpu_online_count_get();
+
+cpu_core_t **
+system_cpu_usage_get(int *ncpu);
+
+void
+system_memory_usage_get(meminfo_t *memory);
+
+void
+system_power_state_get(power_t *power);
+
+void
+system_network_transfer_get(network_t *usage);
 
 #endif
