@@ -149,8 +149,14 @@ _network_transfer_format(double rate)
 static void
 _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
 {
-   Evas_Object *vbox, *hbox, *label, *pb, *ic;
+   Evas_Object *frame, *vbox, *hbox, *label, *pb, *ic;
    char *tmp;
+
+   frame = elm_frame_add(box);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
 
    vbox = elm_box_add(box);
    evas_object_size_hint_align_set(vbox, FILL, FILL);
@@ -212,7 +218,8 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
           }
      }
 
-   elm_box_pack_end(box, vbox);
+   elm_object_content_set(frame, vbox);
+   elm_box_pack_end(box, frame);
 }
 
 static void
