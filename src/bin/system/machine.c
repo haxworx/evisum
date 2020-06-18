@@ -712,7 +712,7 @@ system_sensors_thermal_get(int *sensor_count)
              sensors[(*sensor_count)++] =
                  sensor = calloc(1, sizeof(sensor_t));
 
-             sensor->name = strdup(names[i]->d_name);
+             sensor->name = strdup(type);
              snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp",
                       names[i]->d_name);
 
