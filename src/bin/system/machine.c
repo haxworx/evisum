@@ -753,10 +753,14 @@ _power_battery_count_get(power_t *power)
              snprintf(buf, sizeof(buf), "acpibat%d", i);
              if (!strcmp(buf, snsrdev.xname))
                {
-                  power->bat_mibs[power->battery_count] =
-                    malloc(sizeof(int) * 5);
-                  power->battery_names[power->battery_count] = strdup(buf);
-                  int *tmp = power->bat_mibs[power->battery_count++];
+                  power->batteries = realloc(power->batteries, 1 +
+                                     power->battery_count * sizeof(bat_t **));
+                  power->batteries[i] = calloc(1, sizeof(bat_t)
+                  power->batteries[i]->name = strdup(buf);
+                  power->batteries[i]->present = true;
+                  power->battery_count++;
+                  power->batteries[i]->mibs = malloc(sizeof(int) * 5);
+                  int *tmp = power->batteries[i]->mib;
                   tmp[0] = mib[0];
                   tmp[1] = mib[1];
                   tmp[2] = mib[2];
@@ -782,6 +786,13 @@ _power_battery_count_get(power_t *power)
      {
         sysctlnametomib("hw.acpi.acline", power->ac_mibs, &len);
      }
+
+   power->batteries = malloc(power->battery_count * sizeof(bat_t **));
+   for (int i = 0; i < power->battery_count; i++)
+     {
+        power->batteries[i] = calloc(1, sizeof(bat_t));
+        power->batteries[i]->present = true;
+     }
 #elif defined(__linux__)
    char *type;
    char path[PATH_MAX];
@@ -800,8 +811,14 @@ _power_battery_count_get(power_t *power)
         if (type)
           {
              if (!strncmp(type, "Battery", 7))
-               power->battery_names[power->battery_count++] =
-                  strdup(names[i]->d_name);
+               {
+                  power->batteries = realloc(power->batteries, 1 +
+                                     power->battery_count * sizeof(bat_t **));
+                  power->batteries[i] = calloc(1, sizeof(bat_t));
+                  power->batteries[i]->name = strdup(names[i]->d_name);
+                  power->batteries[i]->present = true;
+                  power->battery_count++;
+               }
              free(type);
           }
 
@@ -810,13 +827,6 @@ _power_battery_count_get(power_t *power)
 
    free(names);
 #endif
-
-   power->batteries = malloc(power->battery_count * sizeof(bat_t **));
-   for (int i = 0; i < power->battery_count; i++)
-     {
-        power->batteries[i] = calloc(1, sizeof(bat_t));
-        power->batteries[i]->present = true;
-     }
 
    return power->battery_count;
 }
@@ -911,7 +921,7 @@ _battery_state_get(power_t *power)
      {
         naming = NULL;
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s",
-                 power->battery_names[i]);
+                 power->batteries[i]->name);
 
         if (stat(path, &st) < 0) continue;
         if (S_ISLNK(st.st_mode)) continue;
@@ -936,7 +946,7 @@ _battery_state_get(power_t *power)
           continue;
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full",
-                 power->battery_names[i], naming);
+                 power->batteries[i]->name, naming);
         buf = file_contents(path);
         if (buf)
           {
@@ -944,7 +954,7 @@ _battery_state_get(power_t *power)
              free(buf);
           }
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_now",
-                 power->battery_names[i], naming);
+                 power->batteries[i]->name, naming);
         buf = file_contents(path);
         if (buf)
           {
@@ -953,11 +963,11 @@ _battery_state_get(power_t *power)
           }
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer",
-                 power->battery_names[i]);
+                 power->batteries[i]->name);
         vendor = file_contents(path);
 
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name",
-                 power->battery_names[i]);
+                 power->batteries[i]->name);
         model = file_contents(path);
 
         if (vendor && vendor[0] && model && model[0])
@@ -977,9 +987,9 @@ _battery_state_get(power_t *power)
                   model[len - 1] = '\0';
                }
 
-             free(power->battery_names[i]);
+             free(power->batteries[i]->name);;
              snprintf(name, sizeof(name), "%s %s", vendor, model);
-             power->battery_names[i] = strdup(name);
+             power->batteries[i]->name = strdup(name);
           }
 
         power->batteries[i]->charge_full = charge_full;
@@ -1038,8 +1048,10 @@ _power_state_get(power_t *power)
            (power->batteries[i]->charge_current /
                                     power->batteries[i]->charge_full);
         power->batteries[i]->percent = percent;
-        if (power->bat_mibs[i])
-          free(power->bat_mibs[i]);
+#if defined(__OpenBSD__)
+        if (power->batteries[i]->mibs);
+          free(power->batteries[i]->mibs);
+#endif
      }
 }
 
@@ -1203,8 +1215,8 @@ system_info_all_free(Sys_Info *info)
 
    for (i = 0; i < info->power.battery_count; i++)
      {
-        if (info->power.battery_names[i])
-          free(info->power.battery_names[i]);
+        if (info->power.batteries[i]->name)
+          free(info->power.batteries[i]->name);
         free(info->power.batteries[i]);
      }
    if (info->power.batteries)

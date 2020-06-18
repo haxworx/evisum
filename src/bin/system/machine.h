@@ -33,10 +33,14 @@ typedef struct
 
 typedef struct
 {
+   char   *name;
    double  charge_full;
    double  charge_current;
    uint8_t percent;
    bool    present;
+#if defined(__OpenBSD__)
+   int    *mibs;
+#endif
 } bat_t;
 
 typedef struct
@@ -45,9 +49,6 @@ typedef struct
    int      battery_count;
 
    bat_t  **batteries;
-#define MAX_BATTERIES 10
-   char    *battery_names[MAX_BATTERIES];
-   int     *bat_mibs[MAX_BATTERIES];
    int      ac_mibs[5];
 } power_t;
 

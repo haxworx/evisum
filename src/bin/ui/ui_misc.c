@@ -34,7 +34,7 @@ _battery_usage_add(Evas_Object *box, power_t *power)
           fmt = _("<bigger>%s</bigger>");
 
         elm_object_text_set(label, eina_slstr_printf(fmt,
-                        power->battery_names[i]));
+                        power->batteries[i]->name));
         hbox = elm_box_add(box);
         evas_object_size_hint_align_set(hbox, FILL, FILL);
         evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
