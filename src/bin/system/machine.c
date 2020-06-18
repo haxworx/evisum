@@ -894,7 +894,7 @@ _battery_state_get(power_t *power)
                power->batteries[i]->charge_full = battio.bif.lfcap;
           }
         snprintf(name, sizeof(name), "%s %s", battio.bif.oeminfo, battio.bif.model);
-        power->battery_names[i] = strdup(name);
+        power->batteries[i]->name = strdup(name);
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
           {
