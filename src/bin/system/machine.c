@@ -797,7 +797,7 @@ _power_battery_count_get(power_t *power)
    char *type;
    char path[PATH_MAX];
    struct dirent **names;
-   int i, n;
+   int i, n, id;
 
    n = scandir("/sys/class/power_supply", &names, 0, alphasort);
    if (n < 0) return power->battery_count;
@@ -812,11 +812,12 @@ _power_battery_count_get(power_t *power)
           {
              if (!strncmp(type, "Battery", 7))
                {
-                  power->batteries = realloc(power->batteries, 1 +
-                                     power->battery_count * sizeof(bat_t **));
-                  power->batteries[i] = calloc(1, sizeof(bat_t));
-                  power->batteries[i]->name = strdup(names[i]->d_name);
-                  power->batteries[i]->present = true;
+                  id = power->battery_count;
+                  power->batteries = realloc(power->batteries, (1 +
+                                     power->battery_count) * sizeof(bat_t **));
+                  power->batteries[id] = calloc(1, sizeof(bat_t));
+                  power->batteries[id]->name = strdup(names[i]->d_name);
+                  power->batteries[id]->present = true;
                   power->battery_count++;
                }
              free(type);
