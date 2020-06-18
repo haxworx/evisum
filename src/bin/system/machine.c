@@ -370,7 +370,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 }
 
 static cpu_core_t **
-_cpu_cores_state_get(int *ncpu)
+_cpu_usage_get(int *ncpu)
 {
    cpu_core_t **cores;
    int i;
@@ -696,6 +696,11 @@ _sensors_thermal_get(Sys_Info *info)
 
    for (i = 0; i < n; i++)
      {
+        if (strncmp(names[i]->d_name, "thermal_zone", 12))
+          {
+             free(names[i]);
+             continue;
+          }
         snprintf(path, sizeof(path), "/sys/class/thermal/%s/type",
                  names[i]->d_name);
 
@@ -1021,6 +1026,9 @@ _power_state_get(power_t *power)
    char *buf;
 #endif
 
+   if (!_power_battery_count_get(power))
+     return;
+
 #if defined(__OpenBSD__)
    power->ac_mibs[3] = 9;
    power->ac_mibs[4] = 0;
@@ -1239,7 +1247,7 @@ system_info_all_get(void)
    info = calloc(1, sizeof(Sys_Info));
    if (!info) return NULL;
 
-   info->cores = _cpu_cores_state_get(&info->cpu_count);
+   info->cores = _cpu_usage_get(&info->cpu_count);
 
    _memory_usage_get(&info->memory);
 
@@ -1247,9 +1255,7 @@ system_info_all_get(void)
    if (error)
      _network_transfer_get(info);
 
-   if (_power_battery_count_get(&info->power))
-     _power_state_get(&info->power);
-
+   _power_state_get(&info->power);
    _sensors_thermal_get(info);
 
    if (!error)
