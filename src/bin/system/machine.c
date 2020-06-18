@@ -737,7 +737,7 @@ _power_battery_count_get(power_t *power)
    struct sensordev snsrdev;
    size_t sdlen = sizeof(struct sensordev);
    int mib[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
-   int i, devn;
+   int i, devn, id;
    for (devn = 0;; devn++) {
         mib[2] = devn;
         if (sysctl(mib, 3, &snsrdev, &sdlen, NULL, 0) == -1)
@@ -748,22 +748,23 @@ _power_battery_count_get(power_t *power)
                break;
           }
 
-        for (i = 0; i < MAX_BATTERIES; i++) {
+        for (i = 0; i < 10; i++) {
              char buf[64];
              snprintf(buf, sizeof(buf), "acpibat%d", i);
              if (!strcmp(buf, snsrdev.xname))
                {
+                  id = power->battery_count;
                   power->batteries = realloc(power->batteries, 1 +
                                      power->battery_count * sizeof(bat_t **));
-                  power->batteries[i] = calloc(1, sizeof(bat_t)
-                  power->batteries[i]->name = strdup(buf);
-                  power->batteries[i]->present = true;
-                  power->battery_count++;
-                  power->batteries[i]->mibs = malloc(sizeof(int) * 5);
-                  int *tmp = power->batteries[i]->mib;
+                  power->batteries[id] = calloc(1, sizeof(bat_t));
+                  power->batteries[id]->name = strdup(buf);
+                  power->batteries[id]->present = true;
+                  power->batteries[id]->mibs = malloc(sizeof(int) * 5);
+                  int *tmp = power->batteries[id]->mibs;
                   tmp[0] = mib[0];
                   tmp[1] = mib[1];
                   tmp[2] = mib[2];
+                  power->battery_count++;
                }
           }
 
@@ -845,7 +846,7 @@ _battery_state_get(power_t *power)
      {
         charge_full = charge_current = 0;
 
-        mib = power->bat_mibs[i];
+        mib = power->batteries[i]->mibs;
         mib[3] = SENSOR_WATTHOUR;
         mib[4] = 0;
 
@@ -1049,10 +1050,6 @@ _power_state_get(power_t *power)
            (power->batteries[i]->charge_current /
                                     power->batteries[i]->charge_full);
         power->batteries[i]->percent = percent;
-#if defined(__OpenBSD__)
-        if (power->batteries[i]->mibs);
-          free(power->batteries[i]->mibs);
-#endif
      }
 }
 
@@ -1218,6 +1215,10 @@ system_info_all_free(Sys_Info *info)
      {
         if (info->power.batteries[i]->name)
           free(info->power.batteries[i]->name);
+#if defined(__OpenBSD__)
+        if (info->power.batteries[i]->mibs)
+          free(info->power.batteries[i]->mibs);
+#endif
         free(info->power.batteries[i]);
      }
    if (info->power.batteries)
