@@ -686,20 +686,19 @@ _sensors_thermal_get(Sys_Info *info)
      }
 #elif defined(__linux__)
    sensor_t *sensor;
-   struct dirent *dh;
-   DIR *dir;
-   char *value, *type;
+   char *type, *value;
    char path[PATH_MAX];
+   struct dirent **names;
+   int i, n;
 
-   dir = opendir("/sys/class/thermal");
-   if (!dir) return;
+   n = scandir("/sys/class/thermal", &names, 0, alphasort);
+   if (n < 0) return;
 
-   while ((dh = readdir(dir)) != NULL)
+   for (i = 0; i < n; i++)
      {
-        if (strncmp(dh->d_name, "thermal_zone", 12))
-          continue;
+        snprintf(path, sizeof(path), "/sys/class/thermal/%s/type",
+                 names[i]->d_name);
 
-        snprintf(path, sizeof(path), "/sys/class/thermal/%s/type", dh->d_name);
         type = file_contents(path);
         if (type)
           {
@@ -708,9 +707,9 @@ _sensors_thermal_get(Sys_Info *info)
              sensors[info->sensor_count++] =
                  sensor = calloc(1, sizeof(sensor_t));
 
-             sensor->name = strdup(dh->d_name);
+             sensor->name = strdup(names[i]->d_name);
              snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp",
-                      dh->d_name);
+                      names[i]->d_name);
 
              value = file_contents(path);
              if (!value)
@@ -722,9 +721,11 @@ _sensors_thermal_get(Sys_Info *info)
                }
              free(type);
           }
+
+        free(names[i]);
      }
 
-   closedir(dir);
+   free(names);
 #elif defined(__MacOS__)
 #endif
    info->sensors = sensors;
