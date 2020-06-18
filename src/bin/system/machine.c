@@ -585,10 +585,10 @@ swap_out:
    if (swdev)
      free(swdev);
 
-   memory->cached = (uvmexp.pagesize * bcstats.numbufpages);
-   memory->used = (uvmexp.active * uvmexp.pagesize);
-   memory->buffered = (uvmexp.pagesize * (uvmexp.npages - uvmexp.free));
-   memory->shared = (uvmexp.pagesize * uvmexp.wired);
+   memory->cached = (uint64_t)(uvmexp.pagesize * bcstats.numbufpages);
+   memory->used = (uint64_t)(uvmexp.active * uvmexp.pagesize);
+   memory->buffered = (uint64_t)(uvmexp.pagesize * (uint64_t)(uvmexp.npages - uvmexp.free));
+   memory->shared = (uint64_t)(uvmexp.pagesize * uvmexp.wired);
 #elif defined(__MacOS__)
    int mib[2] = { CTL_HW, HW_MEMSIZE };
    size_t total;
