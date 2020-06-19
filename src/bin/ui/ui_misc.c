@@ -305,7 +305,7 @@ ui_tab_misc_update(Ui *ui, Sys_Info *info)
    frame = elm_frame_add(ui->misc_activity);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   elm_object_style_set(frame, "pad_medium");
+   elm_object_style_set(frame, "pad_huge");
    evas_object_show(frame);
    elm_object_content_set(frame, box);
 

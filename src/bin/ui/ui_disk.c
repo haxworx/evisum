@@ -37,11 +37,42 @@ ui_tab_disk_add(Ui *ui)
    elm_box_pack_end(box, frame);
 }
 
+static char *
+_file_system_usage_format(File_System *inf)
+{
+   return strdup(eina_slstr_printf("%s / %s",
+               evisum_size_format(inf->usage.used),
+               evisum_size_format(inf->usage.total)));
+}
+
+static void
+_separator_add(Evas_Object *box)
+{
+   Evas_Object *hbox, *sep;
+
+   hbox = elm_box_add(box);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(hbox, FILL, FILL);
+   evas_object_show(hbox);
+
+   sep = elm_separator_add(hbox);
+   evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(sep, FILL, FILL);
+   elm_separator_horizontal_set(sep, EINA_TRUE);
+   evas_object_show(sep);
+
+   elm_box_pack_end(hbox, sep);
+   elm_box_pack_end(box, hbox);
+}
+
 static void
 _ui_disk_add(Ui *ui, File_System *inf)
 {
-   Evas_Object *box, *frame, *pb, *label;
+   Evas_Object *frame, *vbox, *hbox, *pb, *ic, *label;
+   Evas_Object *parent;
    const char *type;
+   char *usage;
    double ratio, value;
 
    type = inf->type_name;
@@ -49,28 +80,54 @@ _ui_disk_add(Ui *ui, File_System *inf)
      type = file_system_name_by_id(inf->type);
    if (!type) type = "unknown";
 
-   box = elm_box_add(ui->disk_activity);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
-   evas_object_show(box);
+   parent = ui->disk_activity;
 
-   label = elm_label_add(box);
-   evas_object_size_hint_align_set(label, FILL, FILL);
+   frame = elm_frame_add(parent);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   elm_object_style_set(frame, "pad_huge");
+   evas_object_show(frame);
+
+   vbox = elm_box_add(parent);
+   evas_object_size_hint_align_set(vbox, FILL, FILL);
+   evas_object_size_hint_weight_set(vbox, EXPAND, EXPAND);
+   evas_object_show(vbox);
+
+   label = elm_label_add(parent);
+   evas_object_size_hint_align_set(label, 1.0, FILL);
    evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-   elm_object_text_set(label,
-                   eina_slstr_printf(_(
-                   "<subtitle>%s</subtitle><br><bigger>mounted at %s (%s)</bigger>"
-                   "<br>%s of %s"),
-                   inf->path, inf->mount, type, evisum_size_format(inf->usage.used),
-                   evisum_size_format(inf->usage.total)));
    evas_object_show(label);
-   elm_box_pack_end(box, label);
+   elm_box_pack_end(vbox, label);
 
-   pb = elm_progressbar_add(box);
+   elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",
+                   inf->mount));
+
+   hbox = elm_box_add(parent);
+   evas_object_size_hint_align_set(hbox, FILL, FILL);
+   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   ic = elm_image_add(parent);
+   elm_image_file_set(ic, evisum_icon_path_get("mount"), NULL);
+   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(),
+                   32 * elm_config_scale_get());
+   evas_object_show(ic);
+   elm_box_pack_end(hbox, ic);
+
+
+   pb = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    elm_progressbar_span_size_set(pb, 1.0);
    evas_object_show(pb);
+
+   usage = _file_system_usage_format(inf);
+   if (usage)
+     {
+        elm_progressbar_unit_format_set(pb, usage);
+        free(usage);
+     }
 
    ratio = inf->usage.total / 100.0;
    value = inf->usage.used / ratio;
@@ -80,14 +137,21 @@ _ui_disk_add(Ui *ui, File_System *inf)
    else
      elm_progressbar_value_set(pb, value / 100.0);
 
-   frame = elm_frame_add(ui->misc_activity);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   elm_object_style_set(frame, "pad_large");
-   evas_object_show(frame);
+   label = elm_label_add(parent);
+   evas_object_size_hint_align_set(label, 1.0, FILL);
+   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+   evas_object_show(label);
 
-   elm_box_pack_end(box, pb);
-   elm_object_content_set(frame, box);
+   elm_object_text_set(label,
+                   eina_slstr_printf("<bigger>%s <b>(%s)</b></bigger>",
+                   inf->path, type));
+
+   elm_box_pack_end(vbox, label);
+   elm_box_pack_end(hbox, pb);
+   elm_box_pack_end(vbox, hbox);
+   _separator_add(vbox);
+
+   elm_object_content_set(frame, vbox);
    elm_box_pack_end(ui->disk_activity, frame);
 }
 
@@ -101,7 +165,6 @@ ui_tab_disk_update(Ui *ui)
    if (!ui->disk_visible)
      return;
 
-   // FIXME
    elm_box_clear(ui->disk_activity);
 
    disks = disks_get();
@@ -110,9 +173,7 @@ ui_tab_disk_update(Ui *ui)
         File_System *fs = file_system_info_get(path);
         if (fs)
           {
-             // ZFS usage may have changed during application's lifetime.
-             // Keep track of ZFS mounts else we may report bogus use
-             // of memory.
+             // Check for ZFS mount.
              if (fs->type == file_system_id_by_name("ZFS"))
                zfs_mounted = EINA_TRUE;
 
@@ -122,9 +183,7 @@ ui_tab_disk_update(Ui *ui)
         free(path);
      }
 
-   // Need to keep track of ZFS mounts. If we have no mounts
-   // then memory usage should not take into account the ZFS
-   // ARC memory allocation.
-   if (!zfs_mounted) ui->zfs_mounted = EINA_FALSE;
+   // Need to keep track of ZFS mounts (ARC memory usage).
+   ui->zfs_mounted = zfs_mounted;
 }
 
