@@ -1520,6 +1520,8 @@ evisum_ui_shutdown(Ui *ui)
      evisum_ui_item_cache_free(ui->cache);
 
    eina_lock_free(&_lock);
+
+   free(ui);
 }
 
 static void

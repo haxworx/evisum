@@ -85,31 +85,23 @@ file_contents(const char *path)
 {
    FILE *f;
    char *buf, *tmp;
-   char byte[1];
-   size_t count, n, bytes = 0;
+   size_t n = 1, len = 0;
+   const size_t block = 4096;
 
    f = fopen(path, "r");
    if (!f) return NULL;
 
-   n = 1024;
+   buf = NULL;
 
-   buf = malloc(n * sizeof(byte) + 1);
-   if (!buf) return NULL;
-
-   while ((count = (fread(byte, sizeof(byte), 1, f))) > 0)
+   while ((!feof(f)) && (!ferror(f)))
      {
-        bytes += sizeof(byte);
-        if (bytes == (n * sizeof(byte)))
-          {
-             n *= 2;
-             tmp = realloc(buf, n * sizeof(byte) + 1);
-             if (!tmp) return NULL;
-             buf = tmp;
-          }
-        memcpy(&buf[bytes - sizeof(byte)], byte, sizeof(byte));
+        tmp = realloc(buf, ++n * (sizeof(char) * block) + 1);
+        if (!tmp) return NULL;
+        buf = tmp;
+        len += fread(buf + len, sizeof(char), block, f);
      }
 
-   if (!feof(f))
+   if (ferror(f))
      {
         free(buf);
         fclose(f);
@@ -117,7 +109,7 @@ file_contents(const char *path)
      }
    fclose(f);
 
-   buf[bytes] = 0;
+   buf[len] = 0;
 
    return buf;
 }

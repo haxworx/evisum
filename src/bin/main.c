@@ -131,7 +131,6 @@ main(int argc, char **argv)
      {
         ecore_main_loop_begin();
         evisum_ui_shutdown(ui);
-        free(ui);
      }
 
    elm_shutdown();
