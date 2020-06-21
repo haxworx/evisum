@@ -1199,6 +1199,31 @@ _evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 }
 
 static Evas_Object *
+_btn_custom_add(Evas_Object *parent, const char *text)
+{
+   Evas_Object *button, *label;
+
+   button = elm_button_add(parent);
+   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(button, FILL, FILL);
+   evas_object_size_hint_min_set(button,
+                   TAB_BTN_WIDTH * elm_config_scale_get(),
+                   TAB_BTN_HEIGHT * elm_config_scale_get());
+   evas_object_show(button);
+
+   label = elm_label_add(parent);
+   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(label, FILL, FILL);
+   evas_object_show(label);
+
+   elm_object_text_set(label,
+                   eina_slstr_printf("<bigger>%s</bigger>", text));
+   elm_layout_content_set(button, "elm.swallow.content", label);
+
+   return button;
+}
+
+static Evas_Object *
 _ui_tabs_add(Evas_Object *parent, Ui *ui)
 {
    Evas_Object *table, *box, *entry, *hbox, *frame, *button;
@@ -1236,15 +1261,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   ui->btn_general = button = elm_button_add(hbox);
-   elm_object_disabled_set(ui->btn_general, EINA_TRUE);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button,
-                   elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(button, _("General"));
-   evas_object_show(button);
+   ui->btn_general = button = _btn_custom_add(parent, _("General"));
+   elm_object_disabled_set(button, EINA_TRUE);
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
    evas_object_smart_callback_add(button, "clicked",
@@ -1256,15 +1274,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   ui->btn_cpu = button = elm_button_add(hbox);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button,
-                   elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(button, _("CPU"));
+   ui->btn_cpu = button = _btn_custom_add(parent, _("CPU"));
    elm_object_content_set(border, button);
-   evas_object_show(button);
    elm_box_pack_end(hbox, border);
    evas_object_smart_callback_add(button, "clicked",
                    _tab_cpu_activity_clicked_cb, ui);
@@ -1275,14 +1286,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   ui->btn_mem = button = elm_button_add(hbox);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button,
-                   elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(button, _("Memory"));
-   evas_object_show(button);
+   ui->btn_mem = button = _btn_custom_add(parent, _("Memory"));
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
    evas_object_smart_callback_add(button, "clicked",
@@ -1294,14 +1298,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   ui->btn_storage = button = elm_button_add(hbox);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button,
-                   elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(button, _("Storage"));
-   evas_object_show(button);
+   ui->btn_storage = button = _btn_custom_add(parent, _("Storage"));
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
    evas_object_smart_callback_add(button, "clicked",
@@ -1313,14 +1310,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   ui->btn_misc = button = elm_button_add(hbox);
-   evas_object_size_hint_weight_set(button, FILL, EXPAND);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button,
-                   elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(button, _("Misc"));
-   evas_object_show(button);
+   ui->btn_misc = button = _btn_custom_add(parent, _("Misc"));
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
    evas_object_smart_callback_add(button, "clicked", _tab_misc_clicked_cb, ui);
@@ -1374,13 +1364,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = elm_button_add(parent);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_min_set(button,
-                   TAB_BTN_WIDTH * elm_config_scale_get(),
-                   TAB_BTN_HEIGHT * elm_config_scale_get()),
-   elm_object_text_set(button, _("Close"));
+   button = _btn_custom_add(parent, _("Close"));
    elm_object_content_set(border, button);
    elm_box_pack_end(box, border);
    evas_object_show(button);
