@@ -899,7 +899,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    ui->selected_pid = proc->pid;
-   ui_process_win_add(proc->pid, proc->command);
+   ui_process_win_add(ui->win, proc->pid, proc->command);
 }
 
 static void

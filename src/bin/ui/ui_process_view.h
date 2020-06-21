@@ -62,6 +62,6 @@ typedef struct _Ui_Process {
 } Ui_Process;
 
 void
-ui_process_win_add(int pid, const char *cmd);
+ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd);
 
 #endif

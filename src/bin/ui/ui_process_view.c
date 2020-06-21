@@ -1014,9 +1014,10 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_process_win_add(int pid, const char *cmd)
+ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
 {
    Evas_Object *win, *ic, *box, *tabs;
+   Evas_Coord x, y, w, h;
 
    Ui_Process *ui = calloc(1, sizeof(Ui_Process));
    ui->selected_pid = pid;
@@ -1057,7 +1058,13 @@ ui_process_win_add(int pid, const char *cmd)
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                    _win_resize_cb, ui);
-   elm_win_center(win, EINA_TRUE, EINA_TRUE);
+
+   evas_object_geometry_get(parent_win, &x, &y, &w, &h);
+   if (x > 0 && y > 0)
+     evas_object_move(win, x + 20, y + 10);
+   else
+     elm_win_center(win, EINA_TRUE, EINA_TRUE);
+
    evas_object_show(win);
 
    ui->cache = evisum_ui_item_cache_new(ui->genlist_threads, _item_create, 10);
