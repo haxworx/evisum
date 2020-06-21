@@ -1202,7 +1202,7 @@ static Evas_Object *
 _ui_tabs_add(Evas_Object *parent, Ui *ui)
 {
    Evas_Object *table, *box, *entry, *hbox, *frame, *btn;
-   Evas_Object *border;
+   Evas_Object *border, *tb;
 
    ui->content = table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
@@ -1327,6 +1327,15 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_TRUE);
    evas_object_show(entry);
+
+   tb = elm_entry_textblock_get(entry);
+   if (tb)
+     {
+        int font_size = evisum_ui_textblock_font_size_get(tb);
+        if (font_size)
+          evisum_ui_textblock_font_size_set(tb, font_size + 2);
+     }
+
    elm_object_content_set(border, entry);
    elm_box_pack_end(box, border);
 

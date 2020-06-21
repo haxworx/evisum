@@ -19,4 +19,10 @@ evisum_size_format(unsigned long long bytes);
 const char *
 evisum_icon_path_get(const char *name);
 
+int
+evisum_ui_textblock_font_size_get(Evas_Object *tb);
+void
+evisum_ui_textblock_font_size_set(Evas_Object *tb, int new_size);
+
+
 #endif

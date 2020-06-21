@@ -106,3 +106,46 @@ evisum_icon_path_get(const char *name)
    return icon_path;
 }
 
+void
+evisum_ui_textblock_font_size_set(Evas_Object *tb, int new_size)
+{
+   Evas_Textblock_Style *ts;
+
+   if (!tb) return;
+
+   ts = evas_textblock_style_new();
+
+   evas_textblock_style_set(ts,
+                 eina_slstr_printf("DEFAULT='font_size=%d'", new_size));
+   evas_object_textblock_style_user_push(tb, ts);
+}
+
+int
+evisum_ui_textblock_font_size_get(Evas_Object *tb)
+{
+   const char *style;
+   char *p, *p1;
+   Evas_Textblock_Style *ts;
+   int size = 0;
+
+   if (!tb) return size;
+
+   ts = evas_object_textblock_style_get(tb);
+   if (!ts) return size;
+
+   style = evas_textblock_style_get(ts);
+   if (!style && !style[0]) return size;
+
+   p = strdup(style);
+
+   p1 = strstr(p, "font_size=");
+   if (p1)
+     {
+        p1 += 10;
+        size = atoi(p1);
+     }
+
+   free(p);
+
+   return size;
+}
