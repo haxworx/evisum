@@ -5,15 +5,13 @@
 #include "gettext.h"
 #include "system/process.h"
 #include "../evisum_config.h"
+#include "ui/ui_util.h"
 #include "ui/ui_cache.h"
 
 #define _(STR) gettext(STR)
 
 #define EVISUM_WIN_WIDTH  600
 #define EVISUM_WIN_HEIGHT 520
-
-#define FILL EVAS_HINT_FILL
-#define EXPAND EVAS_HINT_EXPAND
 
 typedef enum
 {
@@ -30,9 +28,6 @@ typedef enum
    SORT_BY_STATE,
    SORT_BY_CPU_USAGE,
 } Sort_Type;
-
-#define TAB_BTN_WIDTH  96
-#define TAB_BTN_HEIGHT 32
 
 typedef struct Ui
 {
@@ -118,11 +113,5 @@ evisum_ui_add(Evas_Object *win);
 
 void
 evisum_ui_shutdown(Ui *ui);
-
-const char *
-evisum_icon_path_get(const char *name);
-
-const char *
-evisum_size_format(unsigned long long bytes);
 
 #endif

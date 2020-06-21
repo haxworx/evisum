@@ -944,17 +944,11 @@ _tabs_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_size_hint_align_set(pad, FILL, FILL);
    evas_object_show(pad);
 
-   ui->btn_main = btn = elm_button_add(parent);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(btn, _("Process"));
-   elm_object_disabled_set(btn, EINA_TRUE);
-   evas_object_show(btn);
+   btn = evisum_ui_button_add(parent, &ui->btn_main, _("Process"),
+                   _btn_process_clicked_cb, ui);
+   elm_object_disabled_set(ui->btn_main, EINA_TRUE);
    elm_object_content_set(pad, btn);
    elm_box_pack_end(hbox, pad);
-   evas_object_smart_callback_add(btn, "clicked", _btn_process_clicked_cb, ui);
 
    pad = elm_frame_add(parent);
    elm_object_style_set(pad, "pad_small");
@@ -962,17 +956,10 @@ _tabs_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_size_hint_align_set(pad, FILL, FILL);
    evas_object_show(pad);
 
-   ui->btn_thread = btn = elm_button_add(parent);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(btn, _("Threads"));
-   elm_object_disabled_set(btn, EINA_FALSE);
-   evas_object_show(btn);
+   btn = evisum_ui_button_add(parent, &ui->btn_thread, _("Threads"),
+                   _btn_threads_clicked_cb, ui);
    elm_object_content_set(pad, btn);
    elm_box_pack_end(hbox, pad);
-   evas_object_smart_callback_add(btn, "clicked", _btn_threads_clicked_cb, ui);
 
    pad = elm_frame_add(parent);
    elm_object_style_set(pad, "pad_small");
@@ -980,16 +967,10 @@ _tabs_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_size_hint_align_set(pad, FILL, FILL);
    evas_object_show(pad);
 
-   ui->btn_info = btn = elm_button_add(parent);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, elm_config_scale_get() * TAB_BTN_WIDTH,
-                   elm_config_scale_get() * TAB_BTN_HEIGHT);
-   elm_object_text_set(btn, _("Manual"));
-   evas_object_show(btn);
+   btn = evisum_ui_button_add(parent, &ui->btn_info, _("Manual"),
+                   _btn_info_clicked_cb, ui);
    elm_object_content_set(pad, btn);
    elm_box_pack_end(hbox, pad);
-   evas_object_smart_callback_add(btn, "clicked", _btn_info_clicked_cb, ui);
 
    pad = elm_frame_add(parent);
    elm_object_style_set(pad, "pad_medium");

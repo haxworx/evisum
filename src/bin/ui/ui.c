@@ -1199,46 +1199,6 @@ _evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 }
 
 static Evas_Object *
-_btn_custom_add(Evas_Object *parent, Evas_Object **alias, const char *text,
-                Evas_Smart_Cb clicked_cb, void *data)
-{
-   Evas_Object *tbl, *rect, *button, *label;
-
-   tbl = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-
-   rect = evas_object_rectangle_add(tbl);
-   evas_object_size_hint_weight_set(rect, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(rect, FILL, FILL);
-   evas_object_size_hint_min_set(rect,
-                   TAB_BTN_WIDTH * elm_config_scale_get(),
-                   TAB_BTN_HEIGHT * elm_config_scale_get());
-
-   button = elm_button_add(parent);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_show(button);
-   evas_object_smart_callback_add(button, "clicked", clicked_cb, data);
-
-   label = elm_label_add(parent);
-   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(label, FILL, FILL);
-   evas_object_show(label);
-   elm_object_text_set(label,
-                   eina_slstr_printf("<bigger>%s</bigger>", text));
-   elm_layout_content_set(button, "elm.swallow.content", label);
-
-   elm_table_pack(tbl, rect, 0, 0, 1, 1);
-   elm_table_pack(tbl, button, 0, 0, 1, 1);
-
-   if (alias)
-     *alias = button;
-
-   return tbl;
-}
-
-static Evas_Object *
 _ui_tabs_add(Evas_Object *parent, Ui *ui)
 {
    Evas_Object *table, *box, *entry, *hbox, *frame, *btn;
@@ -1276,7 +1236,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = _btn_custom_add(parent, &ui->btn_general, _("General"),
+   btn = evisum_ui_button_add(parent, &ui->btn_general, _("General"),
                    _tab_system_activity_clicked_cb, ui);
    elm_object_disabled_set(ui->btn_general, EINA_TRUE);
    elm_object_content_set(border, btn);
@@ -1288,7 +1248,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = _btn_custom_add(parent, &ui->btn_cpu, _("CPU"),
+   btn = evisum_ui_button_add(parent, &ui->btn_cpu, _("CPU"),
                    _tab_cpu_activity_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);
@@ -1299,7 +1259,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = _btn_custom_add(parent, &ui->btn_mem, _("Memory"),
+   btn = evisum_ui_button_add(parent, &ui->btn_mem, _("Memory"),
                    _tab_memory_activity_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);
@@ -1310,7 +1270,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = _btn_custom_add(parent, &ui->btn_storage, _("Storage"),
+   btn = evisum_ui_button_add(parent, &ui->btn_storage, _("Storage"),
                    _tab_disk_activity_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);
@@ -1321,7 +1281,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = _btn_custom_add(parent, &ui->btn_misc, _("Misc"),
+   btn = evisum_ui_button_add(parent, &ui->btn_misc, _("Misc"),
                    _tab_misc_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);
@@ -1375,7 +1335,8 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = _btn_custom_add(parent, NULL, _("Close"), _btn_quit_clicked_cb, ui);
+   btn = evisum_ui_button_add(parent, NULL, _("Close"), _btn_quit_clicked_cb,
+                   ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(box, border);
 
@@ -1424,70 +1385,6 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    elm_genlist_realized_items_update(ui->genlist_procs);
 
    _config_save(ui);
-}
-
-const char *
-evisum_size_format(unsigned long long bytes)
-{
-   const char *s, *unit = "BKMGTPEZY";
-   unsigned long powi = 1;
-   unsigned long long value;
-   unsigned int precision = 2, powj = 1;
-
-   value = bytes;
-   while (value > 1024)
-     {
-       if ((value / 1024) < powi) break;
-       powi *= 1024;
-       ++unit;
-       if (unit[1] == '\0') break;
-     }
-
-   if (*unit == 'B') precision = 0;
-
-   while (precision > 0)
-     {
-        powj *= 10;
-        if ((value / powi) < powj) break;
-        --precision;
-     }
-
-   s = eina_slstr_printf("%1.*f %c", precision, (double) value / powi, *unit);
-
-   return s;
-}
-
-static char *
-_path_append(const char *path, const char *file)
-{
-   char *concat;
-   int len;
-   char separator = '/';
-
-   len = strlen(path) + strlen(file) + 2;
-   concat = malloc(len * sizeof(char));
-   snprintf(concat, len, "%s%c%s", path, separator, file);
-
-   return concat;
-}
-
-const char *
-evisum_icon_path_get(const char *name)
-{
-   char *path;
-   const char *icon_path, *directory = PACKAGE_DATA_DIR "/images";
-   icon_path = name;
-
-   path = _path_append(directory, eina_slstr_printf("%s.png", name));
-   if (path)
-     {
-        if (ecore_file_exists(path))
-          icon_path = eina_slstr_printf("%s", path);
-
-        free(path);
-     }
-
-   return icon_path;
 }
 
 void
