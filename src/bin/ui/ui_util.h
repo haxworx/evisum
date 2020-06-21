@@ -8,6 +8,12 @@
 
 #define TAB_BTN_WIDTH  96
 #define TAB_BTN_HEIGHT 32
+#define BTN_WIDTH      80
+#define BTN_HEIGHT     24
+
+Evas_Object *
+evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
+                Evas_Smart_Cb clicked_cb, void *data);
 
 Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,

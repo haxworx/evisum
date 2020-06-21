@@ -1236,7 +1236,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = evisum_ui_button_add(parent, &ui->btn_general, _("General"),
+   btn = evisum_ui_tab_add(parent, &ui->btn_general, _("General"),
                    _tab_system_activity_clicked_cb, ui);
    elm_object_disabled_set(ui->btn_general, EINA_TRUE);
    elm_object_content_set(border, btn);
@@ -1248,7 +1248,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = evisum_ui_button_add(parent, &ui->btn_cpu, _("CPU"),
+   btn = evisum_ui_tab_add(parent, &ui->btn_cpu, _("CPU"),
                    _tab_cpu_activity_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);
@@ -1259,7 +1259,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = evisum_ui_button_add(parent, &ui->btn_mem, _("Memory"),
+   btn = evisum_ui_tab_add(parent, &ui->btn_mem, _("Memory"),
                    _tab_memory_activity_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);
@@ -1270,7 +1270,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = evisum_ui_button_add(parent, &ui->btn_storage, _("Storage"),
+   btn = evisum_ui_tab_add(parent, &ui->btn_storage, _("Storage"),
                    _tab_disk_activity_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);
@@ -1281,7 +1281,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = evisum_ui_button_add(parent, &ui->btn_misc, _("Misc"),
+   btn = evisum_ui_tab_add(parent, &ui->btn_misc, _("Misc"),
                    _tab_misc_clicked_cb, ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(hbox, border);

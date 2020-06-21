@@ -3,7 +3,7 @@
 #include "config.h"
 
 Evas_Object *
-evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
+evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                 Evas_Smart_Cb clicked_cb, void *data)
 {
    Evas_Object *tbl, *rect, *button, *label;
@@ -31,6 +31,46 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    evas_object_show(label);
    elm_object_text_set(label,
                    eina_slstr_printf("<bigger>%s</bigger>", text));
+   elm_layout_content_set(button, "elm.swallow.content", label);
+
+   elm_table_pack(tbl, rect, 0, 0, 1, 1);
+   elm_table_pack(tbl, button, 0, 0, 1, 1);
+
+   if (alias)
+     *alias = button;
+
+   return tbl;
+}
+
+Evas_Object *
+evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
+                Evas_Smart_Cb clicked_cb, void *data)
+{
+   Evas_Object *tbl, *rect, *button, *label;
+
+   tbl = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
+
+   rect = evas_object_rectangle_add(tbl);
+   evas_object_size_hint_weight_set(rect, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(rect, FILL, FILL);
+   evas_object_size_hint_min_set(rect,
+                   BTN_WIDTH * elm_config_scale_get(),
+                   BTN_HEIGHT * elm_config_scale_get());
+
+   button = elm_button_add(parent);
+   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(button, FILL, FILL);
+   evas_object_show(button);
+   evas_object_smart_callback_add(button, "clicked", clicked_cb, data);
+
+   label = elm_label_add(parent);
+   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(label, FILL, FILL);
+   evas_object_show(label);
+   elm_object_text_set(label,
+                   eina_slstr_printf("%s", text));
    elm_layout_content_set(button, "elm.swallow.content", label);
 
    elm_table_pack(tbl, rect, 0, 0, 1, 1);
