@@ -83,8 +83,8 @@ _ui_disk_add(Ui *ui, File_System *inf)
    parent = ui->disk_activity;
 
    frame = elm_frame_add(parent);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, 0);
+   evas_object_size_hint_weight_set(frame, EXPAND, 0);
    elm_object_style_set(frame, "pad_huge");
    evas_object_show(frame);
 
