@@ -1407,6 +1407,9 @@ evisum_ui_shutdown(Ui *ui)
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
 
+   if (ui->thread_cpu)
+     ecore_thread_cancel(ui->thread_cpu);
+
    if (ui->thread_process)
      ecore_thread_cancel(ui->thread_process);
 
@@ -1415,6 +1418,9 @@ evisum_ui_shutdown(Ui *ui)
 
    if (ui->thread_process)
      ecore_thread_wait(ui->thread_process, 1.0);
+
+   if (ui->thread_cpu)
+     ecore_thread_wait(ui->thread_cpu, 1.0);
 
    _proc_pid_cpu_times_free(ui);
 
@@ -1485,7 +1491,6 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    if (ecore_thread_check(thread))
      goto out;
 
-   ui_tab_cpu_update(ui, info);
    ui_tab_memory_update(ui, info);
    ui_tab_disk_update(ui);
    ui_tab_misc_update(ui, info);
@@ -1547,8 +1552,9 @@ _ui_init(Evas_Object *parent)
    ui->sort_type = SORT_BY_PID;
    ui->selected_pid = -1;
    ui->program_pid = getpid();
-   ui->disk_visible = ui->cpu_visible = EINA_TRUE;
+   ui->disk_visible = EINA_TRUE;
    ui->mem_visible = ui->misc_visible = EINA_TRUE;
+   ui->cpu_visible = EINA_FALSE;
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
 

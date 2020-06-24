@@ -83,6 +83,7 @@ typedef struct Ui
 
    Ecore_Thread    *thread_system;
    Ecore_Thread    *thread_process;
+   Ecore_Thread    *thread_cpu;
 
    Ecore_Timer     *timer_pid;
    pid_t           selected_pid;

@@ -8,6 +8,7 @@ typedef struct {
    Evas_Object *line;
    Evas_Object *obj;
    Evas_Object *btn;
+   Ui          *ui;
    Eina_Bool    enabled;
    int          pos;
    int          cpu_id;
@@ -44,6 +45,8 @@ animator(void *data EINA_UNUSED)
    Evas_Object *line, *obj, *bg;
    Evas_Coord x, y, w, h;
    Animation *anim = data;
+
+   if (!anim->ui->cpu_visible) return EINA_TRUE;
 
    bg = anim->bg; line = anim->line; obj = anim->obj;
 
@@ -108,6 +111,45 @@ _btn_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
      evas_object_color_set(rect, 0, 0, 0, 0);
    else
      evas_object_color_set(rect, 47, 153, 255, 255);
+}
+
+static void
+_core_times_cb(void *data, Ecore_Thread *thread)
+{
+   Progress *progress;
+   cpu_core_t **cores;
+   Eina_List *l;
+   Ui *ui;
+   int ncpu, i;
+
+   ui = data;
+   while (1)
+     {
+        if (ecore_thread_check(thread))
+          break;
+        if (!ui->cpu_visible)
+          {
+             usleep(1000000);
+             continue;
+          }
+        i = 0;
+        cores = system_cpu_usage_get(&ncpu);
+        EINA_LIST_FOREACH(ui->cpu_list, l, progress)
+          {
+             if (!cores || !cores[i])
+               {
+                  ++i;
+                  continue;
+               }
+             *progress->value = cores[i]->percent;
+             ecore_thread_main_loop_begin();
+             elm_progressbar_value_set(progress->pb, cores[i++]->percent / 100);
+             ecore_thread_main_loop_end();
+          }
+        for (i = 0; i < ncpu; i++)
+          free(cores[i]);
+        free(cores);
+     }
 }
 
 void
@@ -215,6 +257,8 @@ ui_tab_cpu_add(Ui *ui)
         anim->enabled = EINA_TRUE;
         anim->btn = btn;
         anim->cpu_id = i;
+        anim->ui = ui;
+
         progress->value = &anim->value;
         evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, anim);
         ecore_animator_add(animator, anim);
@@ -229,24 +273,8 @@ ui_tab_cpu_add(Ui *ui)
         ui->cpu_list = eina_list_append(ui->cpu_list, progress);
      }
 
+   ui->thread_cpu = ecore_thread_run(_core_times_cb, NULL, NULL, ui);
+
    elm_box_pack_end(hbox, box);
-}
-
-void
-ui_tab_cpu_update(Ui *ui, Sys_Info *info)
-{
-   Eina_List *l;
-   Progress *progress;
-   int i = 0;
-
-   if (!ui->cpu_visible)
-     return;
-
-   EINA_LIST_FOREACH(ui->cpu_list, l, progress)
-     {
-        *progress->value = info->cores[i]->percent;
-        elm_progressbar_value_set(progress->pb, info->cores[i]->percent / 100);
-        ++i;
-     }
 }
 
