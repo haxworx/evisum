@@ -22,12 +22,22 @@ typedef struct {
 } Progress;
 
 static void
-graph_clear(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
+anim_reset(Animation *anim)
 {
    uint32_t *pixels;
-   Evas_Coord x, y;
+   Evas_Object *o;
+   Evas_Coord x, y, w, h;
 
-   pixels = evas_object_image_data_get(obj, EINA_TRUE);
+   if (!anim) return;
+
+   evas_object_geometry_get(anim->bg, NULL, NULL, &w, &h);
+   if (w <= 0 || h <= 0) return;
+
+   anim->pos = anim->step = 0;
+   o = anim->obj;
+
+   pixels = evas_object_image_data_get(o, EINA_TRUE);
+   if (!pixels) return;
    for (y = 0; y < h; y++)
      {
         for (x = 0; x < w; x++)
@@ -35,7 +45,7 @@ graph_clear(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
              *(pixels++) = COLOR_BG;
           }
     }
-   evas_object_image_data_update_add(obj, 0, 0, w, h);
+   evas_object_image_data_update_add(o, 0, 0, w, h);
 }
 
 static Eina_Bool
@@ -44,6 +54,7 @@ animator(void *data EINA_UNUSED)
    uint32_t *pixels;
    Evas_Object *line, *obj, *bg;
    Evas_Coord x, y, w, h;
+   Evas_Coord fill_y;
    Animation *anim = data;
 
    if (!anim->ui->cpu_visible) return EINA_TRUE;
@@ -53,7 +64,6 @@ animator(void *data EINA_UNUSED)
    evas_object_geometry_get(bg,  &x, &y, &w, &h);
    evas_object_move(line, x + w - anim->pos, y);
    evas_object_resize(line, 1, h);
-
    if (anim->enabled)
      evas_object_show(line);
    else
@@ -63,38 +73,54 @@ animator(void *data EINA_UNUSED)
 
    pixels = evas_object_image_data_get(obj, EINA_TRUE);
 
-   int fill_y = h - (int) ((double)(h / 100.0) * anim->value);
+   fill_y = h - (int) ((double)(h / 100.0) * anim->value);
 
-   for (y = 0; y < h; y++)
+   for (y = 0; anim->enabled && y < h; y++)
      {
-       if (!anim->enabled)
-         break;
-       for (x = 0; x < w; x++)
-        {
-           if  ((x >= (w - anim->pos)) && y > fill_y)
-             {
-                 if (y % 2)
-                   *(pixels) = COLOR_FG;
-                 else
-                   *(pixels) = COLOR_BG;
-             }
-            else
-              *(pixels) = COLOR_BG;
+        for (x = 0; x < w; x++)
+          {
+             if ((x == (w - anim->pos)) && (y >= fill_y))
+               {
+                  if (y % 2)
+                    *(pixels) = COLOR_FG;
+                  else
+                    *(pixels) = COLOR_BG;
+               }
+             else if (x <= (w - anim->pos))
+               *(pixels) = COLOR_BG;
 
             pixels++;
          }
      }
+
    // XXX FPS
    anim->step += (double) w / (60 * 60);
    anim->pos = anim->step;
 
    if (anim->pos >= w)
      {
-        graph_clear(obj, w, h);
-        anim->pos = anim->step = 0;
+        anim_reset(anim);
      }
 
    return EINA_TRUE;
+}
+
+static void
+_anim_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                void *event_info EINA_UNUSED)
+{
+   Animation *anim = data;
+
+   anim_reset(anim);
+}
+
+static void
+_anim_move_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                void *event_info EINA_UNUSED)
+{
+   Animation *anim = data;
+
+   evas_object_hide(anim->line);
 }
 
 static void
@@ -242,6 +268,7 @@ ui_tab_cpu_add(Ui *ui)
         evas_object_size_hint_align_set(line, FILL, FILL);
         evas_object_size_hint_weight_set(line, EXPAND, EXPAND);
         evas_object_color_set(line, 255, 47, 153, 255);
+        evas_object_size_hint_max_set(line, 1, -1);
         evas_object_show(line);
 
         obj = evas_object_image_add(evas_object_evas_get(bg));
@@ -261,6 +288,8 @@ ui_tab_cpu_add(Ui *ui)
 
         progress->value = &anim->value;
         evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, anim);
+        evas_object_smart_callback_add(tbl, "resize", _anim_resize_cb, anim);
+        evas_object_smart_callback_add(tbl, "move", _anim_move_cb, anim);
         ecore_animator_add(animator, anim);
 
         elm_table_pack(tbl, bg, 0, 1, 1, 1);
