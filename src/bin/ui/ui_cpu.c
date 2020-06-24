@@ -30,38 +30,43 @@ anim_reset(Animation *anim)
 
    if (!anim) return;
 
+   anim->pos = anim->step = 0;
+
+   if (!anim->enabled) return;
+
    evas_object_geometry_get(anim->bg, NULL, NULL, &w, &h);
    if (w <= 0 || h <= 0) return;
 
-   anim->pos = anim->step = 0;
    o = anim->obj;
 
    pixels = evas_object_image_data_get(o, EINA_TRUE);
    if (!pixels) return;
+
    for (y = 0; y < h; y++)
      {
         for (x = 0; x < w; x++)
           {
              *(pixels++) = COLOR_BG;
           }
-    }
+     }
    evas_object_image_data_update_add(o, 0, 0, w, h);
 }
 
 static Eina_Bool
-animator(void *data EINA_UNUSED)
+animator(void *data)
 {
    uint32_t *pixels;
    Evas_Object *line, *obj, *bg;
    Evas_Coord x, y, w, h;
    Evas_Coord fill_y;
+   double value;
    Animation *anim = data;
 
    if (!anim->ui->cpu_visible) return EINA_TRUE;
 
    bg = anim->bg; line = anim->line; obj = anim->obj;
 
-   evas_object_geometry_get(bg,  &x, &y, &w, &h);
+   evas_object_geometry_get(bg, &x, &y, &w, &h);
    evas_object_move(line, x + w - anim->pos, y);
    evas_object_resize(line, 1, h);
    if (anim->enabled)
@@ -73,7 +78,9 @@ animator(void *data EINA_UNUSED)
 
    pixels = evas_object_image_data_get(obj, EINA_TRUE);
 
-   fill_y = h - (int) ((double)(h / 100.0) * anim->value);
+   value = anim->value > 0 ? anim->value : 1.0;
+
+   fill_y = h - (int) ((double)(h / 100.0) * value);
 
    for (y = 0; anim->enabled && y < h; y++)
      {
@@ -89,8 +96,8 @@ animator(void *data EINA_UNUSED)
              else if (x <= (w - anim->pos))
                *(pixels) = COLOR_BG;
 
-            pixels++;
-         }
+             pixels++;
+          }
      }
 
    // XXX FPS
@@ -111,6 +118,9 @@ _anim_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Animation *anim = data;
 
+   if (!anim->ui->cpu_visible) return;
+
+   evas_object_hide(anim->line);
    anim_reset(anim);
 }
 
@@ -149,10 +159,9 @@ _core_times_cb(void *data, Ecore_Thread *thread)
    int ncpu, i;
 
    ui = data;
-   while (1)
+
+   while (!ecore_thread_check(thread))
      {
-        if (ecore_thread_check(thread))
-          break;
         if (!ui->cpu_visible)
           {
              usleep(1000000);
@@ -162,18 +171,12 @@ _core_times_cb(void *data, Ecore_Thread *thread)
         cores = system_cpu_usage_get(&ncpu);
         EINA_LIST_FOREACH(ui->cpu_list, l, progress)
           {
-             if (!cores || !cores[i])
-               {
-                  ++i;
-                  continue;
-               }
              *progress->value = cores[i]->percent;
              ecore_thread_main_loop_begin();
-             elm_progressbar_value_set(progress->pb, cores[i++]->percent / 100);
+             elm_progressbar_value_set(progress->pb, cores[i]->percent / 100);
              ecore_thread_main_loop_end();
+             free(cores[i++]);
           }
-        for (i = 0; i < ncpu; i++)
-          free(cores[i]);
         free(cores);
      }
 }
@@ -184,7 +187,7 @@ ui_tab_cpu_add(Ui *ui)
    Evas_Object *parent, *box, *hbox, *scroller, *frame;
    Evas_Object *pb, *tbl, *lbox, *btn, *rect;
    Evas_Object *bg, *line, *obj;
-   unsigned int cpu_count;
+   int cpu_count;
 
    parent = ui->content;
 
@@ -230,7 +233,6 @@ ui_tab_cpu_add(Ui *ui)
         evas_object_size_hint_min_set(rect, 16, 16);
         evas_object_color_set(rect, 47, 153, 255, 255);
         evas_object_show(rect);
-
         elm_object_part_content_set(btn, "elm.swallow.content", rect);
 
         frame = elm_frame_add(box);
@@ -245,14 +247,9 @@ ui_tab_cpu_add(Ui *ui)
         elm_progressbar_span_size_set(pb, 1.0);
         elm_progressbar_unit_format_set(pb, "%1.2f%%");
         evas_object_show(pb);
-        elm_progressbar_value_set(pb, 0.0);
 
-        elm_box_pack_end(lbox, pb);
         elm_box_pack_end(lbox, btn);
-
-        Progress *progress = calloc(1, sizeof(Progress));
-        progress->value = calloc(1, sizeof(float));
-        progress->pb = pb;
+        elm_box_pack_end(lbox, pb);
 
         tbl = elm_table_add(box);
         evas_object_size_hint_align_set(tbl, FILL, FILL);
@@ -286,7 +283,6 @@ ui_tab_cpu_add(Ui *ui)
         anim->cpu_id = i;
         anim->ui = ui;
 
-        progress->value = &anim->value;
         evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, anim);
         evas_object_smart_callback_add(tbl, "resize", _anim_resize_cb, anim);
         evas_object_smart_callback_add(tbl, "move", _anim_move_cb, anim);
@@ -298,6 +294,11 @@ ui_tab_cpu_add(Ui *ui)
         elm_box_pack_end(lbox, tbl);
         elm_object_content_set(frame, lbox);
         elm_box_pack_end(box, frame);
+
+        Progress *progress = calloc(1, sizeof(Progress));
+        progress->value = calloc(1, sizeof(float *));
+        progress->pb = pb;
+        progress->value = &anim->value;
 
         ui->cpu_list = eina_list_append(ui->cpu_list, progress);
      }
