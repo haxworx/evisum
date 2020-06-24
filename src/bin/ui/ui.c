@@ -1344,7 +1344,7 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   btn = evisum_ui_button_add(parent, NULL, _("Close"), _btn_quit_clicked_cb,
+   btn = evisum_ui_tab_add(parent, NULL, _("Close"), _btn_quit_clicked_cb,
                    ui);
    elm_object_content_set(border, btn);
    elm_box_pack_end(box, border);
