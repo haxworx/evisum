@@ -35,7 +35,7 @@ graph_clear(Evas_Object *obj, Evas_Coord w, Evas_Coord h)
              *(pixels++) = COLOR_BG;
           }
     }
-   evas_object_image_pixels_dirty_set(obj, EINA_TRUE);
+   evas_object_image_data_update_add(obj, 0, 0, w, h);
 }
 
 static Eina_Bool
@@ -57,7 +57,7 @@ animator(void *data EINA_UNUSED)
    if (anim->enabled)
      evas_object_show(line);
    else
-    evas_object_hide(line);
+     evas_object_hide(line);
 
    evas_object_image_size_set(obj, w, h);
 
