@@ -12,6 +12,7 @@ typedef struct {
    Eina_Bool    enabled;
    int          pos;
    int          cpu_id;
+   int          counter;
    double       value;
    double       step;
 } Animation;
@@ -24,32 +25,7 @@ typedef struct {
 static void
 anim_reset(Animation *anim)
 {
-   uint32_t *pixels;
-   Evas_Object *o;
-   Evas_Coord x, y, w, h;
-
-   if (!anim) return;
-
-   anim->pos = anim->step = 0;
-
-   if (!anim->enabled) return;
-
-   evas_object_geometry_get(anim->bg, NULL, NULL, &w, &h);
-   if (w <= 0 || h <= 0) return;
-
-   o = anim->obj;
-
-   pixels = evas_object_image_data_get(o, EINA_TRUE);
-   if (!pixels) return;
-
-   for (y = 0; y < h; y++)
-     {
-        for (x = 0; x < w; x++)
-          {
-             *(pixels++) = COLOR_BG;
-          }
-     }
-   evas_object_image_data_update_add(o, 0, 0, w, h);
+   anim->counter = anim->pos = anim->step = 0;
 }
 
 static Eina_Bool
@@ -67,6 +43,7 @@ animator(void *data)
    bg = anim->bg; line = anim->line; obj = anim->obj;
 
    evas_object_geometry_get(bg, &x, &y, &w, &h);
+   evas_object_color_set(bg, 255, 255, 255, 255);
    evas_object_move(line, x + w - anim->pos, y);
    evas_object_resize(line, 1, h);
    if (anim->enabled)
@@ -86,6 +63,12 @@ animator(void *data)
      {
         for (x = 0; x < w; x++)
           {
+             if (!anim->counter)
+               {
+                  *(pixels++) = COLOR_BG;
+                  continue;
+               }
+
              if ((x == (w - anim->pos)) && (y >= fill_y))
                {
                   if (y % 2)
@@ -93,16 +76,16 @@ animator(void *data)
                   else
                     *(pixels) = COLOR_BG;
                }
-             else if (x <= (w - anim->pos))
+             else if (x == (w - anim->pos))
                *(pixels) = COLOR_BG;
 
              pixels++;
           }
      }
 
-   // XXX FPS
-   anim->step += (double) w / (60 * 60);
+   anim->step += (double) (w * ecore_animator_frametime_get()) / 60.0;
    anim->pos = anim->step;
+   anim->counter++;
 
    if (anim->pos >= w)
      {
