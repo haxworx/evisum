@@ -352,7 +352,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 }
 
 cpu_core_t **
-system_cpu_usage_get(int *ncpu)
+system_cpu_usage_delayed_get(int *ncpu, int usecs)
 {
    cpu_core_t **cores;
    int i;
@@ -365,10 +365,16 @@ system_cpu_usage_get(int *ncpu)
      cores[i] = calloc(1, sizeof(cpu_core_t));
 
    _cpu_state_get(cores, *ncpu);
-   usleep(1000000);
+   usleep(usecs);
    _cpu_state_get(cores, *ncpu);
 
    return cores;
+}
+
+cpu_core_t **
+system_cpu_usage_get(int *ncpu)
+{
+   return system_cpu_usage_delayed_get(ncpu, 1000000);
 }
 
 #if defined(__linux__)

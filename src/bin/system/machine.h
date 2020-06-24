@@ -84,6 +84,9 @@ system_cpu_online_count_get();
 cpu_core_t **
 system_cpu_usage_get(int *ncpu);
 
+cpu_core_t **
+system_cpu_usage_delayed_get(int *ncpu, int usecs);
+
 void
 system_memory_usage_get(meminfo_t *memory);
 
