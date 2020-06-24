@@ -15,7 +15,7 @@ ui_tab_disk_add(Ui *ui)
    evas_object_hide(box);
 
    ui->disk_activity = hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EXPAND, 0.5);
+   evas_object_size_hint_weight_set(hbox, EXPAND, 0.0);
    evas_object_size_hint_align_set(hbox, FILL, 0.5);
    evas_object_show(hbox);
 
