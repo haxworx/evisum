@@ -211,7 +211,7 @@ ui_tab_cpu_add(Ui *ui)
         evas_object_size_hint_align_set(frame, FILL, FILL);
         evas_object_size_hint_weight_set(frame, 0, EXPAND);
         evas_object_show(frame);
-        elm_object_style_set(frame, "pad_medium");
+        elm_object_style_set(frame, "pad_small");
 
         pb = elm_progressbar_add(frame);
         evas_object_size_hint_align_set(pb, FILL, FILL);
