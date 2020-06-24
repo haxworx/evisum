@@ -132,12 +132,17 @@ _network_transfer_format(double rate)
 {
    const char *unit = "B/s";
 
-   if (rate > 1048576)
+   if (rate > 1073741824)
+     {
+        rate /= 1073741824;
+        unit = "GB/s";
+     }
+   else if (rate > 1048576 && rate <= 1073741824)
      {
         rate /= 1048576;
         unit = "MB/s";
      }
-   else if (rate > 1024 && rate < 1048576)
+   else if (rate > 1024 && rate <= 1048576)
      {
         rate /= 1024;
         unit = "KB/s";
