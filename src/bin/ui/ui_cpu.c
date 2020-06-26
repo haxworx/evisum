@@ -157,19 +157,20 @@ _core_times_cb(void *data, Ecore_Thread *thread)
    cpu_core_t **cores;
    Eina_List *l;
    Ui *ui;
-   int ncpu, i;
+   int ncpu;
 
    ui = data;
 
-   while (!ecore_thread_check(thread))
+   for (int i = 0; !ecore_thread_check(thread); i = 0)
      {
         if (!ui->cpu_visible)
           {
              usleep(1000000);
              continue;
           }
-        i = 0;
+
         cores = system_cpu_usage_get(&ncpu);
+
         EINA_LIST_FOREACH(ui->cpu_list, l, progress)
           {
              *progress->value = cores[i]->percent;
