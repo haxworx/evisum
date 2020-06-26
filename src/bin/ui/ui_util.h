@@ -10,8 +10,8 @@
 #define TAB_BTN_HEIGHT 32
 #define BTN_WIDTH      80
 #define BTN_HEIGHT     24
-#define MISC_MAX_WIDTH 800
-#define MISC_MIN_WIDTH 640
+#define MISC_MAX_WIDTH 640
+#define MISC_MIN_WIDTH 480
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
