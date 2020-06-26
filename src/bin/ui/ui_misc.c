@@ -252,6 +252,7 @@ void
 ui_tab_misc_add(Ui *ui)
 {
    Evas_Object *parent, *box, *hbox, *frame, *scroller;
+   Evas_Object *table, *border, *rect;
 
    parent = ui->content;
 
@@ -262,7 +263,7 @@ ui_tab_misc_add(Ui *ui)
    evas_object_hide(box);
 
    ui->misc_activity = hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
+   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
    evas_object_show(hbox);
 
@@ -278,9 +279,28 @@ ui_tab_misc_add(Ui *ui)
    elm_scroller_policy_set(scroller,
                    ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
-   elm_object_content_set(scroller, hbox);
 
-   elm_object_content_set(frame, scroller);
+   border = elm_frame_add(box);
+   elm_object_style_set(border, "pad_small");
+   evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(border, FILL, FILL);
+   evas_object_show(border);
+   elm_object_content_set(border, hbox);
+
+   table = elm_table_add(parent);
+   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(table, FILL, FILL);
+   evas_object_show(table);
+
+   rect = evas_object_rectangle_add(evas_object_rectangle_add(parent));
+   evas_object_size_hint_max_set(rect, MISC_MAX_WIDTH, -1);
+   evas_object_size_hint_min_set(rect, MISC_MIN_WIDTH, 1);
+
+   elm_table_pack(table, rect, 0, 0, 1, 1);
+   elm_table_pack(table, border, 0, 0, 1, 1);
+
+   elm_object_content_set(scroller, table);
+   elm_object_content_set(frame,scroller);
    elm_box_pack_end(box, frame);
 }
 

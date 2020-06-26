@@ -6,7 +6,7 @@ _label_mem(Evas_Object *parent, const char *text)
    Evas_Object *label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, 0, EXPAND);
    evas_object_size_hint_align_set(label, FILL, FILL);
-   elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",text));
+   elm_object_text_set(label, eina_slstr_printf("%s",text));
    evas_object_show(label);
 
    return label;
@@ -27,8 +27,8 @@ _progress_add(Evas_Object *parent)
 void
 ui_tab_memory_add(Ui *ui)
 {
-   Evas_Object *parent, *box, *hbox, *frame, *pb, *scroller;
-   Evas_Object *label, *table;
+   Evas_Object *parent, *box, *hbox, *frame, *pb;
+   Evas_Object *scroller, *border, *rect, *label, *table;
 
    parent = ui->content;
 
@@ -39,7 +39,7 @@ ui_tab_memory_add(Ui *ui)
    evas_object_hide(box);
 
    ui->mem_activity = hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
+   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
    evas_object_show(hbox);
 
@@ -55,9 +55,6 @@ ui_tab_memory_add(Ui *ui)
    elm_scroller_policy_set(scroller,
                    ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
-   elm_object_content_set(scroller, hbox);
-   elm_object_content_set(frame, scroller);
-   elm_box_pack_end(box, frame);
 
    box = elm_box_add(ui->content);
    evas_object_size_hint_align_set(box, FILL, FILL);
@@ -95,15 +92,28 @@ ui_tab_memory_add(Ui *ui)
    elm_table_pack(table, label, 0, 4, 1, 1);
    elm_table_pack(table, pb, 1, 4, 1, 1);
 
-   frame = elm_frame_add(ui->mem_activity);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_style_set(frame, "pad_huge");
-   evas_object_show(frame);
+   border = elm_frame_add(parent);
+   elm_object_style_set(border, "pad_small");
+   evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(border, FILL, FILL);
+   evas_object_show(border);
+   elm_object_content_set(border, table);
 
-   elm_box_pack_end(box, table);
-   elm_object_content_set(frame, box);
-   elm_box_pack_end(ui->mem_activity, frame);
+   table = elm_table_add(parent);
+   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(table, FILL, FILL);
+   evas_object_show(table);
+
+   rect = evas_object_rectangle_add(evas_object_evas_get(parent));
+   evas_object_size_hint_max_set(rect, MISC_MAX_WIDTH, -1);
+   evas_object_size_hint_min_set(rect, MISC_MIN_WIDTH, 1);
+
+   elm_table_pack(table, rect, 0, 0, 1, 1);
+   elm_table_pack(table, border, 0, 0, 1, 1);
+
+   elm_object_content_set(scroller, table);
+   elm_object_content_set(frame, scroller);
+   elm_box_pack_end(ui->mem_view, frame);
 }
 
 void
