@@ -91,7 +91,7 @@ animator(void *data)
      {
         for (x = 0; x < w; x++)
           {
-             if ((x == (w - anim->pos)))
+             if (x == (w - anim->pos))
                {
                    *(pixels) = COLOR_BG;
                }
