@@ -4,15 +4,18 @@
 #define COLOR_BG 0xff323232
 
 typedef struct {
+   Ui          *ui;
+   int          cpu_id;
+
    Evas_Object *bg;
    Evas_Object *line;
    Evas_Object *obj;
    Evas_Object *btn;
-   Ui          *ui;
+
    Eina_Bool    enabled;
+   Eina_Bool    redraw;
+
    int          pos;
-   int          cpu_id;
-   int          counter;
    double       value;
    double       step;
 } Animation;
@@ -23,9 +26,29 @@ typedef struct {
 } Progress;
 
 static void
-anim_reset(Animation *anim)
+loop_reset(Animation *anim)
 {
-   anim->counter = anim->pos = anim->step = 0;
+   anim->pos = anim->step = 0;
+}
+
+static Eina_Bool
+_bg_fill(Animation *anim)
+{
+   uint32_t *pixels;
+   Evas_Coord x, y, w, h;
+
+   evas_object_geometry_get(anim->bg, NULL, NULL, &w, &h);
+   pixels = evas_object_image_data_get(anim->obj, EINA_TRUE);
+   if (!pixels) return EINA_FALSE;
+   for (y = 0; y < h; y++)
+     {
+        for (x = 0; x < w; x++)
+          {
+             *(pixels++) = COLOR_BG;
+          }
+     }
+   anim->redraw = EINA_FALSE;
+   return EINA_TRUE;
 }
 
 static Eina_Bool
@@ -33,8 +56,7 @@ animator(void *data)
 {
    uint32_t *pixels;
    Evas_Object *line, *obj, *bg;
-   Evas_Coord x, y, w, h;
-   Evas_Coord fill_y;
+   Evas_Coord x, y, w, h, fill_y;
    double value;
    Animation *anim = data;
 
@@ -43,7 +65,8 @@ animator(void *data)
    bg = anim->bg; line = anim->line; obj = anim->obj;
 
    evas_object_geometry_get(bg, &x, &y, &w, &h);
-   evas_object_color_set(bg, 255, 255, 255, 255);
+   evas_object_image_size_set(obj, w, h);
+
    evas_object_move(line, x + w - anim->pos, y);
    evas_object_resize(line, 1, h);
    if (anim->enabled)
@@ -51,9 +74,14 @@ animator(void *data)
    else
      evas_object_hide(line);
 
-   evas_object_image_size_set(obj, w, h);
+   if (anim->redraw)
+     {
+        _bg_fill(anim);
+        return EINA_TRUE;
+     }
 
    pixels = evas_object_image_data_get(obj, EINA_TRUE);
+   if (!pixels) return EINA_TRUE;
 
    value = anim->value > 0 ? anim->value : 1.0;
 
@@ -63,34 +91,24 @@ animator(void *data)
      {
         for (x = 0; x < w; x++)
           {
-             if (!anim->counter)
+             if ((x == (w - anim->pos)))
                {
-                  *(pixels++) = COLOR_BG;
-                  continue;
+                   *(pixels) = COLOR_BG;
                }
-
              if ((x == (w - anim->pos)) && (y >= fill_y))
                {
                   if (y % 2)
                     *(pixels) = COLOR_FG;
-                  else
-                    *(pixels) = COLOR_BG;
                }
-             else if (x == (w - anim->pos))
-               *(pixels) = COLOR_BG;
-
              pixels++;
           }
      }
 
    anim->step += (double) (w * ecore_animator_frametime_get()) / 60.0;
    anim->pos = anim->step;
-   anim->counter++;
 
    if (anim->pos >= w)
-     {
-        anim_reset(anim);
-     }
+     loop_reset(anim);
 
    return EINA_TRUE;
 }
@@ -101,10 +119,10 @@ _anim_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Animation *anim = data;
 
-   if (!anim->ui->cpu_visible) return;
+   anim->redraw = EINA_TRUE;
+   loop_reset(anim);
 
    evas_object_hide(anim->line);
-   anim_reset(anim);
 }
 
 static void
@@ -213,7 +231,8 @@ ui_tab_cpu_add(Ui *ui)
         evas_object_show(btn);
 
         rect = evas_object_rectangle_add(evas_object_evas_get(box));
-        evas_object_size_hint_min_set(rect, 16, 16);
+        evas_object_size_hint_min_set(rect, 16 * elm_config_scale_get(),
+                        16 * elm_config_scale_get());
         evas_object_color_set(rect, 47, 153, 255, 255);
         evas_object_show(rect);
         elm_object_part_content_set(btn, "elm.swallow.content", rect);
@@ -242,6 +261,7 @@ ui_tab_cpu_add(Ui *ui)
         bg = evas_object_rectangle_add(evas_object_evas_get(box));
         evas_object_size_hint_align_set(bg, FILL, FILL);
         evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+        evas_object_show(bg);
         evas_object_size_hint_min_set(bg, 1, 80);
 
         line = evas_object_rectangle_add(evas_object_evas_get(bg));
@@ -255,6 +275,7 @@ ui_tab_cpu_add(Ui *ui)
         evas_object_size_hint_align_set(obj, FILL, FILL);
         evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
         evas_object_image_filled_set(obj, EINA_TRUE);
+        evas_object_image_colorspace_set(obj, EVAS_COLORSPACE_ARGB8888);
         evas_object_show(obj);
 
         Animation *anim = calloc(1, sizeof(Animation));
@@ -265,6 +286,7 @@ ui_tab_cpu_add(Ui *ui)
         anim->btn = btn;
         anim->cpu_id = i;
         anim->ui = ui;
+        anim->redraw = EINA_TRUE;
 
         evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, anim);
         evas_object_smart_callback_add(tbl, "resize", _anim_resize_cb, anim);
