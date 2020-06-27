@@ -1303,13 +1303,13 @@ _ui_tabs_add(Evas_Object *parent, Ui *ui)
    evas_object_show(hbox);
 
    box = elm_box_add(parent);
-   evas_object_size_hint_weight_set(box, EXPAND, 0);
+   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_size_hint_align_set(box, FILL, FILL);
    elm_box_horizontal_set(box, EINA_TRUE);
    evas_object_show(box);
 
    frame = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(frame, EXPAND, 0);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);

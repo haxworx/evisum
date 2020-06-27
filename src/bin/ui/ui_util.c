@@ -30,7 +30,7 @@ evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    evas_object_size_hint_align_set(label, FILL, FILL);
    evas_object_show(label);
    elm_object_text_set(label,
-                   eina_slstr_printf("%s", text));
+                   eina_slstr_printf("<big>%s</big>", text));
    elm_layout_content_set(button, "elm.swallow.content", label);
 
    elm_table_pack(tbl, rect, 0, 0, 1, 1);

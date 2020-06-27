@@ -6,7 +6,7 @@ _label_mem(Evas_Object *parent, const char *text)
    Evas_Object *label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, 0, EXPAND);
    evas_object_size_hint_align_set(label, FILL, FILL);
-   elm_object_text_set(label, eina_slstr_printf("%s",text));
+   elm_object_text_set(label, eina_slstr_printf("<big>%s</big>",text));
    evas_object_show(label);
 
    return label;
@@ -64,7 +64,7 @@ ui_tab_memory_add(Ui *ui)
    table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
    evas_object_size_hint_align_set(table, FILL, FILL);
-   elm_table_padding_set(table, 0, 20 * elm_config_scale_get());
+   elm_table_padding_set(table, 0, 40 * elm_config_scale_get());
    evas_object_show(table);
 
    label = _label_mem(box, _("Used"));

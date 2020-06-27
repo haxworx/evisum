@@ -112,7 +112,7 @@ _ui_disk_add(Ui *ui, File_System *inf)
    evas_object_show(label);
    elm_box_pack_end(vbox, label);
 
-   elm_object_text_set(label, eina_slstr_printf("<bigger>%s</bigger>",
+   elm_object_text_set(label, eina_slstr_printf("<big>%s</big>",
                    inf->mount));
 
    hbox = elm_box_add(parent);
@@ -156,7 +156,7 @@ _ui_disk_add(Ui *ui, File_System *inf)
    evas_object_show(label);
 
    elm_object_text_set(label,
-                   eina_slstr_printf("<bigger>%s <b>(%s)</b></bigger>",
+                   eina_slstr_printf("<big>%s <b>(%s)</b></big>",
                    inf->path, type));
 
    elm_box_pack_end(vbox, label);

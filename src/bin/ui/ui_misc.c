@@ -29,9 +29,9 @@ _battery_usage_add(Evas_Object *box, power_t *power)
         elm_box_pack_end(vbox, label);
 
         if (power->have_ac && i == 0)
-          fmt = _("<b>%s (plugged in) </b>");
+          fmt = _("<big>%s (plugged in) </big>");
         else
-          fmt = _("<b>%s</b>");
+          fmt = _("<big>%s</big>");
 
         elm_object_text_set(label, eina_slstr_printf(fmt,
                         power->batteries[i]->name));
@@ -93,7 +93,7 @@ _sensor_usage_add(Evas_Object *box, Sys_Info *info)
         evas_object_show(label);
         elm_box_pack_end(vbox, label);
 
-        elm_object_text_set(label, eina_slstr_printf("<b>%s</b>",
+        elm_object_text_set(label, eina_slstr_printf("<big>%s</big>",
                         snsr->name));
 
         hbox = elm_box_add(box);
@@ -170,9 +170,9 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
 
    label = elm_label_add(box);
    if (incoming)
-     elm_object_text_set(label, _("<b>Network Incoming</b>"));
+     elm_object_text_set(label, _("<big>Network Incoming</big>"));
    else
-     elm_object_text_set(label, _("<b>Network Outgoing</b>"));
+     elm_object_text_set(label, _("<big>Network Outgoing</big>"));
 
    evas_object_size_hint_align_set(label, 1.0, FILL);
    evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
