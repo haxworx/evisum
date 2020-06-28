@@ -16,6 +16,8 @@
 #define MISC_MAX_WIDTH      640
 #define MISC_MIN_WIDTH      480
 
+#define TEXT_PAD "   "
+
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                 Evas_Smart_Cb clicked_cb, void *data);

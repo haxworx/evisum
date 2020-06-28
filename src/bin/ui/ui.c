@@ -409,7 +409,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    l = evas_object_data_get(it->obj, "proc_uid");
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
-     elm_object_text_set(l, pwd_entry->pw_name);
+     elm_object_text_set(l, eina_slstr_printf("%s%s", TEXT_PAD, pwd_entry->pw_name));
    else
      elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
@@ -435,7 +435,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cmd");
-   elm_object_text_set(l, eina_slstr_printf("  %s", proc->command));
+   elm_object_text_set(l, eina_slstr_printf("%s%s", TEXT_PAD, proc->command));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cmd, w, 1);
    r = evas_object_data_get(l, "rect");
@@ -972,7 +972,7 @@ _ui_content_system_add(Ui *ui)
             ui->sort_type == SORT_BY_UID ? ui->sort_reverse : EINA_FALSE);
    evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
    evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("UID"));
+   elm_object_text_set(button, _("User"));
    evas_object_show(button);
    elm_table_pack(table, button, i++, 0, 1, 1);
 
@@ -1028,10 +1028,10 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(plist, FILL, FILL);
    evas_object_show(plist);
-   elm_win_resize_object_add(ui->win, plist);
 
    elm_box_pack_end(box, table);
    elm_box_pack_end(box, plist);
+   elm_win_resize_object_add(ui->win, box);
 
    evas_object_smart_callback_add(ui->btn_pid, "clicked",
                    _btn_pid_clicked_cb, ui);
