@@ -190,8 +190,7 @@ ui_win_memory_add(Ui *ui)
    evas_object_show(table);
 
    rect = evas_object_rectangle_add(evas_object_evas_get(win));
-   evas_object_size_hint_max_set(rect, MISC_MAX_WIDTH, -1);
-   evas_object_size_hint_min_set(rect, MISC_MIN_WIDTH, 1);
+   evas_object_size_hint_min_set(rect, MISC_MAX_WIDTH / 2, 1);
 
    elm_table_pack(table, rect, 0, 0, 1, 1);
    elm_table_pack(table, border, 0, 0, 1, 1);
