@@ -190,10 +190,8 @@ _win_del_cb(void *data, Evas_Object *obj,
    Progress *progress;
    Ui *ui = data;
 
-   evas_object_hide(obj);
-
    ecore_thread_cancel(ui->thread_cpu);
-   ecore_thread_wait(ui->thread_cpu, 1.0);
+   evas_object_del(obj);
 
    EINA_LIST_FREE(ui->cpu_list, progress)
      {
@@ -202,7 +200,7 @@ _win_del_cb(void *data, Evas_Object *obj,
         free(progress);
      }
 
-   evas_object_del(obj);
+   ecore_thread_wait(ui->thread_cpu, 1.0);
    ui->cpu_visible = EINA_FALSE;
 }
 
