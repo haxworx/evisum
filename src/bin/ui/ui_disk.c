@@ -161,6 +161,7 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
      ecore_timer_del(ui->timer_disk);
    ui->timer_disk = NULL;
 
+   ui->disk_visible = EINA_FALSE;
    evas_object_del(obj);
 }
 
