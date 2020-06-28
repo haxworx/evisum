@@ -1,7 +1,7 @@
 #include "ui_cpu.h"
 
 #define COLOR_FG 0xff2f99ff
-#define COLOR_BG 0xff323232
+#define COLOR_BG 0xff202020
 
 typedef struct {
    Ui          *ui;
