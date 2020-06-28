@@ -495,18 +495,18 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
    elm_genlist_item_class_free(itc);
 }
 
-static void
-_bring_in(Ui *ui)
+static Eina_Bool
+_bring_in(void *data)
 {
+   Ui *ui;
    int h_page, v_page;
-   static Eina_Bool init_done = EINA_FALSE;
 
-   if (init_done || !ui->ready) return;
-
+   ui = data;
    elm_scroller_gravity_set(ui->scroller, 0.0, 0.0);
    elm_scroller_last_page_get(ui->scroller, &h_page, &v_page);
    elm_scroller_page_bring_in(ui->scroller, h_page, v_page);
-   init_done = EINA_TRUE;
+
+   return EINA_FALSE;
 }
 
 static void
@@ -560,8 +560,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
      }
 
    eina_lock_release(&_lock);
-
-   _bring_in(ui);
 }
 
 static void
@@ -1442,6 +1440,8 @@ evisum_ui_add(Evas_Object *parent)
    _ui_launch(ui);
 
    elm_object_focus_set(ui->entry_search, EINA_TRUE);
+
+   ecore_timer_add(2.0, _bring_in, ui);
 
    return ui;
 }

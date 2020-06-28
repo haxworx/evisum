@@ -150,6 +150,7 @@ ui_win_memory_add(Ui *ui)
    table = elm_table_add(win);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
    evas_object_size_hint_align_set(table, FILL, FILL);
+   elm_table_padding_set(table, 8, 2);
    evas_object_show(table);
 
    label = _label_mem(box, _("Used"));
@@ -190,7 +191,7 @@ ui_win_memory_add(Ui *ui)
    evas_object_show(table);
 
    rect = evas_object_rectangle_add(evas_object_evas_get(win));
-   evas_object_size_hint_min_set(rect, MISC_MAX_WIDTH / 2, 1);
+   evas_object_size_hint_min_set(rect, MISC_MIN_WIDTH, 1);
 
    elm_table_pack(table, rect, 0, 0, 1, 1);
    elm_table_pack(table, border, 0, 0, 1, 1);

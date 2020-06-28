@@ -11,10 +11,10 @@
 #define BTN_WIDTH      80
 #define BTN_HEIGHT     24
 
-#define UI_CHILD_WIN_WIDTH  640
-#define UI_CHILD_WIN_HEIGHT 480
-#define MISC_MAX_WIDTH      640
-#define MISC_MIN_WIDTH      480
+#define UI_CHILD_WIN_WIDTH  360
+#define UI_CHILD_WIN_HEIGHT 360
+#define MISC_MAX_WIDTH      350
+#define MISC_MIN_WIDTH      340
 
 #define TEXT_PAD "   "
 
