@@ -18,27 +18,29 @@ typedef struct {
    int          pos;
    double       value;
    double       step;
-} Animation;
+} Animate_Data;
 
 typedef struct {
-   double      *value;
-   Evas_Object *pb;
+   Ecore_Animator *animator;
+   Animate_Data   *anim_data;
+   double         *value;
+   Evas_Object    *pb;
 } Progress;
 
 static void
-loop_reset(Animation *anim)
+loop_reset(Animate_Data *ad)
 {
-   anim->pos = anim->step = 0;
+   ad->pos = ad->step = 0;
 }
 
 static Eina_Bool
-_bg_fill(Animation *anim)
+_bg_fill(Animate_Data *ad)
 {
    uint32_t *pixels;
    Evas_Coord x, y, w, h;
 
-   evas_object_geometry_get(anim->bg, NULL, NULL, &w, &h);
-   pixels = evas_object_image_data_get(anim->obj, EINA_TRUE);
+   evas_object_geometry_get(ad->bg, NULL, NULL, &w, &h);
+   pixels = evas_object_image_data_get(ad->obj, EINA_TRUE);
    if (!pixels) return EINA_FALSE;
    for (y = 0; y < h; y++)
      {
@@ -47,55 +49,53 @@ _bg_fill(Animation *anim)
              *(pixels++) = COLOR_BG;
           }
      }
-   anim->redraw = EINA_FALSE;
+   ad->redraw = EINA_FALSE;
    return EINA_TRUE;
 }
 
 static Eina_Bool
-animator(void *data)
+animate(void *data)
 {
    uint32_t *pixels;
    Evas_Object *line, *obj, *bg;
    Evas_Coord x, y, w, h, fill_y;
    double value;
-   Animation *anim = data;
+   Animate_Data *ad = data;
 
-   if (!anim->ui->cpu_visible) return EINA_TRUE;
-
-   bg = anim->bg; line = anim->line; obj = anim->obj;
+   bg = ad->bg; line = ad->line; obj = ad->obj;
 
    evas_object_geometry_get(bg, &x, &y, &w, &h);
    evas_object_image_size_set(obj, w, h);
 
-   evas_object_move(line, x + w - anim->pos, y);
+   evas_object_move(line, x + w - ad->pos, y);
    evas_object_resize(line, 1, h);
-   if (anim->enabled)
+   if (ad->enabled)
      evas_object_show(line);
    else
      evas_object_hide(line);
 
-   if (anim->redraw)
+   if (ad->redraw)
      {
-        _bg_fill(anim);
+        _bg_fill(ad);
         return EINA_TRUE;
      }
 
    pixels = evas_object_image_data_get(obj, EINA_TRUE);
    if (!pixels) return EINA_TRUE;
 
-   value = anim->value > 0 ? anim->value : 1.0;
+   value = ad->value > 0 ? ad->value : 1.0;
 
    fill_y = h - (int) ((double)(h / 100.0) * value);
 
-   for (y = 0; anim->enabled && y < h; y++)
+   for (y = 0; ad->enabled && y < h; y++)
      {
         for (x = 0; x < w; x++)
           {
-             if (x == (w - anim->pos))
+             if (x == (w - ad->pos))
                {
                    *(pixels) = COLOR_BG;
                }
-             if ((x == (w - anim->pos)) && (y >= fill_y))
+             if ((x == (w - ad->pos)) && (y >= fill_y))
                {
                   if (y % 2)
                     *(pixels) = COLOR_FG;
@@ -104,11 +104,11 @@ animator(void *data)
           }
      }
 
-   anim->step += (double) (w * ecore_animator_frametime_get()) / 60.0;
-   anim->pos = anim->step;
+   ad->step += (double) (w * ecore_animator_frametime_get()) / 60.0;
+   ad->pos = ad->step;
 
-   if (anim->pos >= w)
-     loop_reset(anim);
+   if (ad->pos >= w)
+     loop_reset(ad);
 
    return EINA_TRUE;
 }
@@ -117,21 +117,21 @@ static void
 _anim_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
                 void *event_info EINA_UNUSED)
 {
-   Animation *anim = data;
+   Animate_Data *ad = data;
 
-   anim->redraw = EINA_TRUE;
-   loop_reset(anim);
+   ad->redraw = EINA_TRUE;
+   loop_reset(ad);
 
-   evas_object_hide(anim->line);
+   evas_object_hide(ad->line);
 }
 
 static void
 _anim_move_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                void *event_info EINA_UNUSED)
+              void *event_info EINA_UNUSED)
 {
-   Animation *anim = data;
+   Animate_Data *ad = data;
 
-   evas_object_hide(anim->line);
+   evas_object_hide(ad->line);
 }
 
 static void
@@ -139,12 +139,12 @@ _btn_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                 void *event_info EINA_UNUSED)
 {
    Evas_Object *rect;
-   Animation *anim = data;
+   Animate_Data *ad = data;
 
-   anim->enabled = !anim->enabled;
+   ad->enabled = !ad->enabled;
 
-   rect = elm_object_part_content_get(anim->btn, "elm.swallow.content");
-   if (!anim->enabled)
+   rect = elm_object_part_content_get(ad->btn, "elm.swallow.content");
+   if (!ad->enabled)
      evas_object_color_set(rect, 0, 0, 0, 0);
    else
      evas_object_color_set(rect, 47, 153, 255, 255);
@@ -183,38 +183,59 @@ _core_times_cb(void *data, Ecore_Thread *thread)
      }
 }
 
-void
-ui_tab_cpu_add(Ui *ui)
+static void
+_win_del_cb(void *data, Evas_Object *obj,
+            void *event_info EINA_UNUSED)
 {
-   Evas_Object *parent, *box, *hbox, *scroller, *frame;
+   Progress *progress;
+   Ui *ui = data;
+
+   evas_object_hide(obj);
+
+   ecore_thread_cancel(ui->thread_cpu);
+   ecore_thread_wait(ui->thread_cpu, 1.0);
+
+   EINA_LIST_FREE(ui->cpu_list, progress)
+     {
+        ecore_animator_del(progress->animator);
+        free(progress->anim_data);
+        free(progress);
+     }
+
+   evas_object_del(obj);
+   ui->cpu_visible = EINA_FALSE;
+}
+
+void
+ui_win_cpu_add(Ui *ui)
+{
+   Evas_Object *win, *box, *hbox, *scroller, *frame;
    Evas_Object *pb, *tbl, *lbox, *btn, *rect;
    Evas_Object *bg, *line, *obj;
    int cpu_count;
 
-   parent = ui->content;
+   if (ui->cpu_visible) return;
 
-   ui->cpu_view = box = elm_box_add(parent);
-   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   elm_table_pack(ui->content, ui->cpu_view, 0, 1, 1, 1);
-   evas_object_hide(box);
+   ui->cpu_visible = EINA_TRUE;
 
-   ui->cpu_activity = hbox = elm_box_add(box);
+   win = elm_win_util_standard_add("evisum", _("CPU Usage"));
+   evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(win, FILL, FILL);
+
+   hbox = elm_box_add(win);
    evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
    elm_box_horizontal_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
 
-   scroller = elm_scroller_add(parent);
+   scroller = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
    evas_object_size_hint_align_set(scroller, FILL, FILL);
    elm_scroller_policy_set(scroller,
                    ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
-   elm_object_content_set(scroller, hbox);
-   elm_box_pack_end(box, scroller);
 
-   box = elm_box_add(ui->content);
+   box = elm_box_add(hbox);
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_size_hint_weight_set(box, 0.1, EXPAND);
    evas_object_show(box);
@@ -222,7 +243,7 @@ ui_tab_cpu_add(Ui *ui)
    cpu_count = system_cpu_online_count_get();
    for (int i = 0; i < cpu_count; i++)
      {
-        lbox = elm_box_add(ui->content);
+        lbox = elm_box_add(box);
         evas_object_size_hint_align_set(lbox, FILL, FILL);
         evas_object_size_hint_weight_set(lbox, 0.1, EXPAND);
         evas_object_show(lbox);
@@ -279,38 +300,49 @@ ui_tab_cpu_add(Ui *ui)
         evas_object_image_colorspace_set(obj, EVAS_COLORSPACE_ARGB8888);
         evas_object_show(obj);
 
-        Animation *anim = calloc(1, sizeof(Animation));
-        anim->bg = bg;
-        anim->obj = obj;
-        anim->line = line;
-        anim->enabled = EINA_TRUE;
-        anim->btn = btn;
-        anim->cpu_id = i;
-        anim->ui = ui;
-        anim->redraw = EINA_TRUE;
-
-        evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, anim);
-        evas_object_smart_callback_add(tbl, "resize", _anim_resize_cb, anim);
-        evas_object_smart_callback_add(tbl, "move", _anim_move_cb, anim);
-        ecore_animator_add(animator, anim);
-
         elm_table_pack(tbl, bg, 0, 1, 1, 1);
         elm_table_pack(tbl, obj, 0, 1, 1, 1);
         elm_table_pack(tbl, line, 0, 1, 1, 1);
+
         elm_box_pack_end(lbox, tbl);
         elm_object_content_set(frame, lbox);
         elm_box_pack_end(box, frame);
 
-        Progress *progress = calloc(1, sizeof(Progress));
-        progress->value = calloc(1, sizeof(float *));
-        progress->pb = pb;
-        progress->value = &anim->value;
+        Animate_Data *ad = calloc(1, sizeof(Animate_Data));
+        if (!ad) return;
 
-        ui->cpu_list = eina_list_append(ui->cpu_list, progress);
+        ad->bg = bg;
+        ad->obj = obj;
+        ad->line = line;
+        ad->enabled = EINA_TRUE;
+        ad->btn = btn;
+        ad->cpu_id = i;
+        ad->ui = ui;
+        ad->redraw = EINA_TRUE;
+
+        evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, ad);
+        evas_object_smart_callback_add(tbl, "resize", _anim_resize_cb, ad);
+        evas_object_smart_callback_add(tbl, "move", _anim_move_cb, ad);
+
+        Progress *progress = calloc(1, sizeof(Progress));
+        if (progress)
+          {
+             progress->pb = pb;
+             progress->value = &ad->value;
+             progress->animator = ecore_animator_add(animate, ad);
+             progress->anim_data = ad;
+
+             ui->cpu_list = eina_list_append(ui->cpu_list, progress);
+          }
      }
 
    ui->thread_cpu = ecore_thread_run(_core_times_cb, NULL, NULL, ui);
 
    elm_box_pack_end(hbox, box);
+   elm_object_content_set(scroller, hbox);
+
+   elm_object_content_set(win, scroller);
+   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   evisum_child_window_show(ui->win, win);
 }
 

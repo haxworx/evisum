@@ -1,55 +1,6 @@
 #include "ui_disk.h"
 #include "../system/disks.h"
 
-void
-ui_tab_disk_add(Ui *ui)
-{
-   Evas_Object *parent, *box, *hbox, *frame, *scroller;
-   Evas_Object *table, *rect;
-
-   parent = ui->content;
-
-   ui->disk_view = box = elm_box_add(parent);
-   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   elm_table_pack(ui->content, ui->disk_view, 0, 1, 1, 1);
-   evas_object_hide(box);
-
-   ui->disk_activity = hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EXPAND, 0.0);
-   evas_object_size_hint_align_set(hbox, FILL, 0.5);
-   evas_object_show(hbox);
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-
-   scroller = elm_scroller_add(parent);
-   evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(scroller, FILL, FILL);
-   elm_scroller_policy_set(scroller,
-                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
-   evas_object_show(scroller);
-
-   table = elm_table_add(parent);
-   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(table, FILL, FILL);
-   evas_object_show(table);
-
-   rect = evas_object_rectangle_add(evas_object_rectangle_add(parent));
-   evas_object_size_hint_max_set(rect, MISC_MAX_WIDTH, -1);
-   evas_object_size_hint_min_set(rect, MISC_MIN_WIDTH, 1);
-
-   elm_table_pack(table, rect, 0, 0, 1, 1);
-   elm_table_pack(table, hbox, 0, 0, 1, 1);
-   elm_object_content_set(scroller, table);
-
-   elm_object_content_set(frame, scroller);
-   elm_box_pack_end(box, frame);
-}
-
 static char *
 _file_system_usage_format(File_System *inf)
 {
@@ -168,15 +119,15 @@ _ui_disk_add(Ui *ui, File_System *inf)
    elm_box_pack_end(ui->disk_activity, frame);
 }
 
-void
-ui_tab_disk_update(Ui *ui)
+static Eina_Bool
+_disk_update(void *data)
 {
+   Ui *ui;
    Eina_List *disks;
    char *path;
    Eina_Bool zfs_mounted = EINA_FALSE;
 
-   if (!ui->disk_visible)
-     return;
+   ui = data;
 
    elm_box_clear(ui->disk_activity);
 
@@ -186,7 +137,6 @@ ui_tab_disk_update(Ui *ui)
         File_System *fs = file_system_info_get(path);
         if (fs)
           {
-             // Check for ZFS mount.
              if (fs->type == file_system_id_by_name("ZFS"))
                zfs_mounted = EINA_TRUE;
 
@@ -196,7 +146,74 @@ ui_tab_disk_update(Ui *ui)
         free(path);
      }
 
-   // Need to keep track of ZFS mounts (ARC memory usage).
    ui->zfs_mounted = zfs_mounted;
+
+   return EINA_TRUE;
+}
+
+static void
+_win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
+            void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   if (ui->timer_disk)
+     ecore_timer_del(ui->timer_disk);
+   ui->timer_disk = NULL;
+
+   evas_object_del(obj);
+}
+
+void
+ui_win_disk_add(Ui *ui)
+{
+   Evas_Object *win, *box, *vbox, *scroller;
+   Evas_Object *table, *rect;
+
+   if (ui->disk_visible) return;
+   ui->disk_visible = EINA_TRUE;
+
+   win = elm_win_util_standard_add("evisum", _("Storage"));
+   evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(win, FILL, FILL);
+
+   box = elm_box_add(win);
+   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(box, FILL, FILL);
+   evas_object_show(box);
+
+   ui->disk_activity = vbox = elm_box_add(win);
+   evas_object_size_hint_weight_set(vbox, EXPAND, 0.0);
+   evas_object_size_hint_align_set(vbox, FILL, 0.5);
+   evas_object_show(vbox);
+
+   scroller = elm_scroller_add(win);
+   evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(scroller, FILL, FILL);
+   elm_scroller_policy_set(scroller,
+                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
+   evas_object_show(scroller);
+
+   table = elm_table_add(win);
+   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(table, FILL, FILL);
+   evas_object_show(table);
+
+   rect = evas_object_rectangle_add(evas_object_rectangle_add(win));
+   evas_object_size_hint_max_set(rect, MISC_MAX_WIDTH, -1);
+   evas_object_size_hint_min_set(rect, MISC_MIN_WIDTH, 1);
+
+   elm_table_pack(table, rect, 0, 0, 1, 1);
+   elm_table_pack(table, vbox, 0, 0, 1, 1);
+
+   elm_object_content_set(scroller, table);
+   elm_box_pack_end(box, scroller);
+   elm_object_content_set(win, box);
+
+   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   evisum_child_window_show(ui->win, win);
+   _disk_update(ui);
+
+   ui->timer_disk = ecore_timer_add(3.0, _disk_update, ui);
 }
 

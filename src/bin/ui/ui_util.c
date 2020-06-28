@@ -189,3 +189,19 @@ evisum_ui_textblock_font_size_get(Evas_Object *tb)
 
    return size;
 }
+
+void
+evisum_child_window_show(Evas_Object *parent, Evas_Object *win)
+{
+   Evas_Coord x, y, w, h;
+
+   evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
+   evas_object_geometry_get(parent, &x, &y, &w, &h);
+   if (x > 0 && y > 0)
+     evas_object_move(win, x + 20, y + 10);
+   else
+     elm_win_center(win, EINA_TRUE, EINA_TRUE);
+
+   evas_object_show(win);
+}
+

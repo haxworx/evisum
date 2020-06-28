@@ -5,9 +5,6 @@
 #include "system/disks.h"
 
 void
-ui_tab_disk_add(Ui *ui);
-
-void
-ui_tab_disk_update(Ui *ui);
+ui_win_disk_add(Ui *ui);
 
 #endif

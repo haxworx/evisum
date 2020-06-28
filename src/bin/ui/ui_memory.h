@@ -5,9 +5,7 @@
 #include "../system/machine.h"
 
 void
-ui_tab_memory_add(Ui *ui);
+ui_win_memory_add(Ui *ui);
 
-void
-ui_tab_memory_update(Ui *ui, Sys_Info *info);
 
 #endif

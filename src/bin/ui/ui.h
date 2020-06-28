@@ -3,6 +3,7 @@
 
 #include <Elementary.h>
 #include "gettext.h"
+#include "system/machine.h"
 #include "system/process.h"
 #include "../evisum_config.h"
 #include "ui/ui_util.h"
@@ -35,24 +36,10 @@ typedef struct Ui
    Evas_Object     *menu;
    Evas_Object     *scroller;
    Evas_Object     *content;
-   Evas_Object     *btn_general;
-   Evas_Object     *btn_cpu;
-   Evas_Object     *btn_mem;
-   Evas_Object     *btn_storage;
-   Evas_Object     *btn_misc;
 
-   Evas_Object     *disk_view;
    Evas_Object     *disk_activity;
-   Evas_Object     *cpu_view;
-   Evas_Object     *cpu_activity;
-   Evas_Object     *mem_view;
-   Evas_Object     *mem_activity;
-   Evas_Object     *misc_view;
    Evas_Object     *misc_activity;
    Evas_Object     *system_activity;
-
-   Elm_Transit     *transit;
-   Evas_Object     *current_view;
 
    Eina_Bool       cpu_visible;
    Eina_Bool       misc_visible;
@@ -61,12 +48,6 @@ typedef struct Ui
 
    Evas_Object     *progress_cpu;
    Evas_Object     *progress_mem;
-
-   Evas_Object     *progress_mem_used;
-   Evas_Object     *progress_mem_cached;
-   Evas_Object     *progress_mem_buffered;
-   Evas_Object     *progress_mem_shared;
-   Evas_Object     *progress_mem_swap;
 
    Evas_Object     *btn_pid;
    Evas_Object     *btn_uid;
@@ -79,13 +60,16 @@ typedef struct Ui
    Evisum_Ui_Cache *cache;
    Evas_Object     *genlist_procs;
    Evas_Object     *entry_search;
-   Evas_Object     *entry_search_border;
 
    Ecore_Thread    *thread_system;
    Ecore_Thread    *thread_process;
    Ecore_Thread    *thread_cpu;
 
    Ecore_Timer     *timer_pid;
+   Ecore_Timer     *timer_memory;
+   Ecore_Timer     *timer_disk;
+   Ecore_Timer     *timer_misc;
+
    pid_t           selected_pid;
    pid_t           program_pid;
 
@@ -107,6 +91,7 @@ typedef struct Ui
 
    uint64_t        incoming_max;
    uint64_t        outgoing_max;
+   network_t       network_usage;
 } Ui;
 
 Ui *

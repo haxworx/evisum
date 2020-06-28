@@ -90,6 +90,9 @@ system_cpu_usage_delayed_get(int *ncpu, int usecs);
 void
 system_memory_usage_get(meminfo_t *memory);
 
+sensor_t **
+system_sensors_thermal_get(int *count);
+
 void
 system_power_state_get(power_t *power);
 

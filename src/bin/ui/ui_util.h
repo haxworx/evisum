@@ -10,8 +10,11 @@
 #define TAB_BTN_HEIGHT 32
 #define BTN_WIDTH      80
 #define BTN_HEIGHT     24
-#define MISC_MAX_WIDTH 640
-#define MISC_MIN_WIDTH 480
+
+#define UI_CHILD_WIN_WIDTH  640
+#define UI_CHILD_WIN_HEIGHT 480
+#define MISC_MAX_WIDTH      640
+#define MISC_MIN_WIDTH      480
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
@@ -33,5 +36,7 @@ evisum_ui_textblock_font_size_get(Evas_Object *tb);
 void
 evisum_ui_textblock_font_size_set(Evas_Object *tb, int new_size);
 
+void
+evisum_child_window_show(Evas_Object *parent, Evas_Object *win);
 
 #endif
