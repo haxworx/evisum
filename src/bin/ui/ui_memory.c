@@ -122,7 +122,7 @@ _win_del_cb(void *data, Evas_Object *obj,
 void
 ui_win_memory_add(Ui *ui)
 {
-   Evas_Object *win, *box, *frame, *pb;
+   Evas_Object *win, *frame, *pb;
    Evas_Object *border, *rect, *label, *table;
 
    if (ui->mem_visible) return;
@@ -142,38 +142,33 @@ ui_win_memory_add(Ui *ui)
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
 
-   box = elm_box_add(win);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
-   evas_object_show(box);
-
    table = elm_table_add(win);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
    evas_object_size_hint_align_set(table, FILL, FILL);
    elm_table_padding_set(table, 8, 2);
    evas_object_show(table);
 
-   label = _label_mem(box, _("Used"));
+   label = _label_mem(table, _("Used"));
    widgets->used = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 0, 1, 1);
    elm_table_pack(table, pb, 1, 0, 1, 1);
 
-   label = _label_mem(box, _("Cached"));
+   label = _label_mem(table, _("Cached"));
    widgets->cached = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 1, 1, 1);
    elm_table_pack(table, pb, 1, 1, 1, 1);
 
-   label = _label_mem(box, _("Buffered"));
+   label = _label_mem(table, _("Buffered"));
    widgets->buffered = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 2, 1, 1);
    elm_table_pack(table, pb, 1, 2, 1, 1);
 
-   label = _label_mem(box, _("Shared"));
+   label = _label_mem(table, _("Shared"));
    widgets->shared = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 3, 1, 1);
    elm_table_pack(table, pb, 1, 3, 1, 1);
 
-   label = _label_mem(box, _("Swapped"));
+   label = _label_mem(table, _("Swapped"));
    widgets->swap = pb = _progress_add(frame);
    elm_table_pack(table, label, 0, 4, 1, 1);
    elm_table_pack(table, pb, 1, 4, 1, 1);
