@@ -3,5 +3,5 @@ install_data('go-up.png', 'go-down.png',
              'window.png', 'start.png', 'stop.png',
              'kill.png', 'cancel.png',
              'increase.png', 'decrease.png',
-             'sensor.png', 'mount.png',
+             'sensor.png', 'mount.png', 'ladyhand.png',
              install_dir: join_paths(dir_data, 'evisum/images'))

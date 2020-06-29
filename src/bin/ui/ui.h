@@ -45,6 +45,7 @@ typedef struct Ui
    Eina_Bool       misc_visible;
    Eina_Bool       disk_visible;
    Eina_Bool       mem_visible;
+   Eina_Bool       about_visible;
 
    Evas_Object     *progress_cpu;
    Evas_Object     *progress_mem;

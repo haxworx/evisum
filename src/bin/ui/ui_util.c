@@ -1,4 +1,5 @@
 #include "ui_util.h"
+#include "ui.h"
 #include <Elementary.h>
 #include "config.h"
 
@@ -205,3 +206,81 @@ evisum_child_window_show(Evas_Object *parent, Evas_Object *win)
    evas_object_show(win);
 }
 
+static void
+_win_del_cb(void *data, Evas_Object *obj,
+            void *event_info EINA_UNUSED)
+{
+   Evas_Object *win;
+   Ui *ui;
+
+   win = data;
+
+   ui = evas_object_data_get(win, "ui");
+   if (!ui) return;
+   ui->about_visible = EINA_FALSE;
+   evas_object_del(win);
+}
+
+void
+evisum_about_window_show(void *data)
+{
+   Ui *ui;
+   Evas_Object *win, *bg, *box, *frame, *entry, *btn;
+   const char *authors =
+      "Alastair \"netstar\" Poole &lt;netstar@gmail.com&gt;";
+
+   ui = data;
+
+   if (ui->about_visible) return;
+   ui->about_visible = EINA_TRUE;
+
+   win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
+   elm_win_title_set(win, eina_slstr_printf(_("About Evisum %s"),
+                         PACKAGE_VERSION));
+   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, win);
+   evas_object_data_set(win, "ui", ui);
+
+   bg = elm_bg_add(win);
+   evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bg, FILL, FILL);
+   elm_bg_file_set(bg, evisum_icon_path_get("ladyhand"), NULL);
+   elm_win_resize_object_add(win, bg);
+   evas_object_color_set(bg, 225, 225, 225, 255);
+   evas_object_show(bg);
+   evas_object_size_hint_min_set(bg, 320 * elm_config_scale_get(),
+                   320 * elm_config_scale_get());
+
+   box = elm_box_add(win);
+   evas_object_size_hint_weight_set(box, 0, 0);
+   evas_object_size_hint_align_set(box, FILL, FILL);
+   evas_object_show(box);
+
+   frame = elm_frame_add(win);
+   evas_object_size_hint_weight_set(frame, EXPAND, 0);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_text_set(frame, _("Authors"));
+   evas_object_color_set(frame, 128, 128, 128, 128);
+   evas_object_show(frame);
+
+   entry = elm_entry_add(frame);
+   evas_object_size_hint_align_set(entry, FILL, FILL);
+   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
+   evas_object_show(entry);
+   elm_entry_single_line_set(entry, EINA_TRUE);
+   elm_entry_editable_set(entry, EINA_FALSE);
+   elm_entry_scrollable_set(entry, EINA_TRUE);
+   elm_object_text_set(entry, authors);
+   elm_object_content_set(frame, entry);
+
+   btn = elm_button_add(win);
+   evas_object_size_hint_align_set(btn, 0.5, 1.0);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   elm_object_text_set(btn, _("Close"));
+   evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _win_del_cb, win);
+
+   elm_box_pack_end(box, frame);
+   elm_box_pack_end(box, btn);
+   elm_object_content_set(win, box);
+   evas_object_show(win);
+}

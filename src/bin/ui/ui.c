@@ -1057,7 +1057,8 @@ static void
 _about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                   void *event_info EINA_UNUSED)
 {
-
+   Ui *ui = data;
+   evisum_about_window_show(ui);
 }
 
 static void
