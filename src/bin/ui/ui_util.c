@@ -206,15 +206,16 @@ evisum_child_window_show(Evas_Object *parent, Evas_Object *win)
    evas_object_show(win);
 }
 
-static Ecore_Animator *_about_animator = NULL;
+static Ecore_Animator *_animator = NULL;
 
 typedef struct {
    int pos;
    Evas_Object *label;
+   Evas_Object *version;
    Evas_Object *bg;
-} Animation_Data;
+} Animate_Data;
 
-static Animation_Data about;
+static Animate_Data about_data;
 
 static void
 _win_del_cb(void *data, Evas_Object *obj,
@@ -225,9 +226,9 @@ _win_del_cb(void *data, Evas_Object *obj,
 
    win = data;
 
-   if (_about_animator)
-     ecore_animator_del(_about_animator);
-   _about_animator = NULL;
+   if (_animator)
+     ecore_animator_del(_animator);
+   _animator = NULL;
    ui = evas_object_data_get(win, "ui");
    if (!ui) return;
    ui->about_visible = EINA_FALSE;
@@ -235,17 +236,19 @@ _win_del_cb(void *data, Evas_Object *obj,
 }
 
 static Eina_Bool
-anim(void *data)
+about_anim(void *data)
 {
-   Animation_Data *pd = data;
+   Animate_Data *ad;
    Evas_Coord w, h, ow, oh, x;
 
-   evas_object_geometry_get(pd->bg, NULL, NULL, &w, &h);
-   evas_object_geometry_get(pd->label, &x, NULL, &ow, &oh);
-   evas_object_move(pd->label, x, pd->pos);
+   ad = data;
 
-   pd->pos++;
-   if (pd->pos >= h) pd->pos = -oh;
+   evas_object_geometry_get(ad->bg, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ad->label, &x, NULL, &ow, &oh);
+   evas_object_move(ad->label, x, ad->pos);
+
+   ad->pos--;
+   if (ad->pos <= -oh) ad->pos = h;
 
    return EINA_TRUE;
 }
@@ -254,13 +257,13 @@ void
 evisum_about_window_show(void *data)
 {
    Ui *ui;
-   Evas_Object *win, *bg, *box, *label, *btn;
+   Evas_Object *win, *bg, *box, *version, *label, *btn;
    const char *copyright =
-      "<subtitle>Evisum</subtitle><br>"
-      "<br>"
-      "Copyright (c) 2018-2020 Alastair Roy Poole <netstar@gmail.com> "
-      "<br><br>"
       "<small>"
+      "<b>"
+      "Copyright &copy; 2019-2020 Alastair Poole &lt;netstar@gmail.com&gt;<br>"
+      "<br>"
+      "</b>"
       "Permission to use, copy, modify, and distribute this software <br>"
       "for any purpose with or without fee is hereby granted, provided <br>"
       "that the above copyright notice and this permission notice appear <br>"
@@ -274,7 +277,8 @@ evisum_about_window_show(void *data)
       "FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF <br>"
       "CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT <br>"
       "OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS <br>"
-      "SOFTWARE.<br>";
+      "SOFTWARE.<br>"
+      "</small>";
 
    ui = data;
 
@@ -283,8 +287,7 @@ evisum_about_window_show(void *data)
    ui->about_visible = EINA_TRUE;
 
    win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
-   elm_win_title_set(win, eina_slstr_printf(_("About Evisum %s"),
-                         PACKAGE_VERSION));
+   elm_win_title_set(win, "About Evisum");
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, win);
    evas_object_data_set(win, "ui", ui);
 
@@ -309,18 +312,29 @@ evisum_about_window_show(void *data)
    evas_object_color_set(label, 255, 255, 255, 255);
    elm_object_text_set(label, copyright);
 
+   version = elm_label_add(win);
+   evas_object_show(version);
+   evas_object_color_set(version, 47, 153, 255, 255);
+   elm_object_text_set(version,
+                   eina_slstr_printf("<small>evisum %s</small>",
+                   PACKAGE_VERSION));
+
    btn = elm_button_add(win);
-   evas_object_size_hint_align_set(btn, 0.5, 1.0);
+   evas_object_size_hint_align_set(btn, 0.5, 0.9);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   elm_object_text_set(btn, _("Close"));
+   evas_object_color_set(btn, 128, 128, 128, 196);
+   elm_object_text_set(btn, _("Okay!"));
+
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _win_del_cb, win);
 
-   memset(&about, 0, sizeof(Animation_Data));
-   about.label = label;
-   about.bg = bg;
-   _about_animator = ecore_animator_add(anim, &about);
+   memset(&about_data, 0, sizeof(Animate_Data));
+   about_data.bg = bg;
+   about_data.label = label;
+   about_data.version = version;
+   _animator = ecore_animator_add(about_anim, &about_data);
 
+   elm_box_pack_end(box, version);
    elm_box_pack_end(box, label);
    elm_box_pack_end(box, btn);
    elm_object_content_set(win, box);

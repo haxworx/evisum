@@ -1137,7 +1137,7 @@ static Evas_Object *
 _ui_content_add(Evas_Object *parent, Ui *ui)
 {
    Evas_Object *table, *box, *entry, *hbox, *frame;
-   Evas_Object *border;
+   Evas_Object *border, *ic;
 
    ui->content = table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
@@ -1176,6 +1176,12 @@ _ui_content_add(Evas_Object *parent, Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_TRUE);
    evas_object_show(entry);
+
+   ic = elm_icon_add(parent);
+   elm_icon_standard_set(ic, evisum_icon_path_get("find"));
+   evas_object_size_hint_min_set(ic, 24, 24);
+   evas_object_show(ic);
+   elm_object_part_content_set(entry, "icon", ic);
 
    elm_object_content_set(border, entry);
    elm_box_pack_end(box, border);
@@ -1383,7 +1389,7 @@ _menu_setup(Ui *ui)
 
    menu = elm_win_main_menu_get(ui->win);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("File"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, NULL, _("Quit"), _quit_cb, NULL);
+   elm_menu_item_add(menu, menu_it, "exit", _("Quit"), _quit_cb, NULL);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("View"), NULL, NULL);
    elm_menu_item_add(menu, menu_it, NULL, _("CPU"), _menu_cpu_activity_clicked_cb, ui);
    elm_menu_item_add(menu, menu_it, NULL, _("Memory"),
@@ -1393,7 +1399,7 @@ _menu_setup(Ui *ui)
    elm_menu_item_add(menu, menu_it, NULL, _("Misc"),
                    _menu_misc_activity_clicked_cb, ui);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("Help"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, NULL, _("About"), _about_clicked_cb, ui);
+   elm_menu_item_add(menu, menu_it, "evisum", _("About"), _about_clicked_cb, ui);
 
    evas_object_show(menu);
 }
