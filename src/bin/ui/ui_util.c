@@ -31,7 +31,7 @@ evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    evas_object_size_hint_align_set(label, FILL, FILL);
    evas_object_show(label);
    elm_object_text_set(label,
-                   eina_slstr_printf("<big>%s</big>", text));
+                   eina_slstr_printf("%s", text));
    elm_layout_content_set(button, "elm.swallow.content", label);
 
    elm_table_pack(tbl, rect, 0, 0, 1, 1);
@@ -296,7 +296,7 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_align_set(bg, FILL, FILL);
    elm_bg_file_set(bg, evisum_icon_path_get("ladyhand"), NULL);
    elm_win_resize_object_add(win, bg);
-   evas_object_color_set(bg, 225, 225, 225, 255);
+   evas_object_color_set(bg, 160, 160, 160, 255);
    evas_object_show(bg);
    evas_object_size_hint_min_set(bg, 320 * elm_config_scale_get(),
                    320 * elm_config_scale_get());
@@ -314,17 +314,13 @@ evisum_about_window_show(void *data)
 
    version = elm_label_add(win);
    evas_object_show(version);
-   evas_object_color_set(version, 47, 153, 255, 255);
    elm_object_text_set(version,
-                   eina_slstr_printf("<small>evisum %s</small>",
-                   PACKAGE_VERSION));
+                   eina_slstr_printf("%s", PACKAGE_VERSION));
 
    btn = elm_button_add(win);
    evas_object_size_hint_align_set(btn, 0.5, 0.9);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   evas_object_color_set(btn, 128, 128, 128, 196);
    elm_object_text_set(btn, _("Okay!"));
-
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _win_del_cb, win);
 
