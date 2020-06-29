@@ -206,6 +206,16 @@ evisum_child_window_show(Evas_Object *parent, Evas_Object *win)
    evas_object_show(win);
 }
 
+static Ecore_Animator *_about_animator = NULL;
+
+typedef struct {
+   int pos;
+   Evas_Object *label;
+   Evas_Object *bg;
+} Animation_Data;
+
+static Animation_Data about;
+
 static void
 _win_del_cb(void *data, Evas_Object *obj,
             void *event_info EINA_UNUSED)
@@ -215,23 +225,61 @@ _win_del_cb(void *data, Evas_Object *obj,
 
    win = data;
 
+   if (_about_animator)
+     ecore_animator_del(_about_animator);
+   _about_animator = NULL;
    ui = evas_object_data_get(win, "ui");
    if (!ui) return;
    ui->about_visible = EINA_FALSE;
    evas_object_del(win);
 }
 
+static Eina_Bool
+anim(void *data)
+{
+   Animation_Data *pd = data;
+   Evas_Coord w, h, ow, oh, x;
+
+   evas_object_geometry_get(pd->bg, NULL, NULL, &w, &h);
+   evas_object_geometry_get(pd->label, &x, NULL, &ow, &oh);
+   evas_object_move(pd->label, x, pd->pos);
+
+   pd->pos++;
+   if (pd->pos >= h) pd->pos = -oh;
+
+   return EINA_TRUE;
+}
+
 void
 evisum_about_window_show(void *data)
 {
    Ui *ui;
-   Evas_Object *win, *bg, *box, *frame, *entry, *btn;
-   const char *authors =
-      "Alastair \"netstar\" Poole &lt;netstar@gmail.com&gt;";
+   Evas_Object *win, *bg, *box, *label, *btn;
+   const char *copyright =
+      "<subtitle>Evisum</subtitle><br>"
+      "<br>"
+      "Copyright (c) 2018-2020 Alastair Roy Poole <netstar@gmail.com> "
+      "<br><br>"
+      "<small>"
+      "Permission to use, copy, modify, and distribute this software <br>"
+      "for any purpose with or without fee is hereby granted, provided <br>"
+      "that the above copyright notice and this permission notice appear <br>"
+      "in all copies. <br>"
+      "<br>"
+      "THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL <br>"
+      "WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED <br>"
+      "WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL <br>"
+      "THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR <br>"
+      "CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING <br>"
+      "FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF <br>"
+      "CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT <br>"
+      "OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS <br>"
+      "SOFTWARE.<br>";
 
    ui = data;
 
    if (ui->about_visible) return;
+
    ui->about_visible = EINA_TRUE;
 
    win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
@@ -251,26 +299,15 @@ evisum_about_window_show(void *data)
                    320 * elm_config_scale_get());
 
    box = elm_box_add(win);
-   evas_object_size_hint_weight_set(box, 0, 0);
+   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_size_hint_align_set(box, FILL, FILL);
+   evas_object_color_set(box, 255, 255, 255, 255);
    evas_object_show(box);
 
-   frame = elm_frame_add(win);
-   evas_object_size_hint_weight_set(frame, EXPAND, 0);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("Authors"));
-   evas_object_color_set(frame, 128, 128, 128, 128);
-   evas_object_show(frame);
-
-   entry = elm_entry_add(frame);
-   evas_object_size_hint_align_set(entry, FILL, FILL);
-   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
-   evas_object_show(entry);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_object_text_set(entry, authors);
-   elm_object_content_set(frame, entry);
+   label = elm_label_add(win);
+   evas_object_show(label);
+   evas_object_color_set(label, 255, 255, 255, 255);
+   elm_object_text_set(label, copyright);
 
    btn = elm_button_add(win);
    evas_object_size_hint_align_set(btn, 0.5, 1.0);
@@ -279,7 +316,12 @@ evisum_about_window_show(void *data)
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _win_del_cb, win);
 
-   elm_box_pack_end(box, frame);
+   memset(&about, 0, sizeof(Animation_Data));
+   about.label = label;
+   about.bg = bg;
+   _about_animator = ecore_animator_add(anim, &about);
+
+   elm_box_pack_end(box, label);
    elm_box_pack_end(box, btn);
    elm_object_content_set(win, box);
    evas_object_show(win);
