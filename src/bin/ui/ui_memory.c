@@ -15,7 +15,7 @@ _label_mem(Evas_Object *parent, const char *text)
    Evas_Object *label = elm_label_add(parent);
    evas_object_size_hint_weight_set(label, 0, EXPAND);
    evas_object_size_hint_align_set(label, FILL, FILL);
-   elm_object_text_set(label, eina_slstr_printf("<big>%s</big>",text));
+   elm_object_text_set(label, eina_slstr_printf("%s",text));
    evas_object_show(label);
 
    return label;

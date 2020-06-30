@@ -643,6 +643,7 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
    elm_object_part_content_set(button, "icon", icon);
+   evas_object_color_set(icon, 47, 153, 255, 255);
 
    evas_object_show(icon);
 }
