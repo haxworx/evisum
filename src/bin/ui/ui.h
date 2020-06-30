@@ -87,6 +87,7 @@ typedef struct Ui
    Sort_Type       sort_type;
    Eina_Bool       sort_reverse;
    Eina_Bool       show_self;
+   Eina_Bool       shutdown_now;
 
    Eina_Bool       zfs_mounted;
 

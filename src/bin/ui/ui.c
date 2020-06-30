@@ -747,7 +747,7 @@ _quit_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   evas_object_hide(ui->win);
+   ui->shutdown_now = EINA_TRUE;
    evisum_ui_shutdown(ui);
 }
 
@@ -1282,6 +1282,11 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 evisum_ui_shutdown(Ui *ui)
 {
+   if (ui->shutdown_now)
+     {
+        exit(0);
+     }
+
    if (ui->win_cpu)
      evas_object_smart_callback_call(ui->win_cpu, "delete,request", NULL);
    if (ui->win_mem)
