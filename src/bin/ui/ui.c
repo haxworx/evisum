@@ -603,7 +603,7 @@ _btn_icon_state_update(Evas_Object *button, Eina_Bool reverse)
    Evas_Object *icon = elm_icon_add(button);
 
    if (_selected)
-     evas_object_color_set(_selected, 47, 153, 255, 255);
+     evas_object_color_set(_selected, 128, 128, 128, 255);
 
    if (reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
@@ -628,7 +628,7 @@ _btn_icon_state_init(Evas_Object *button, Eina_Bool reverse, Eina_Bool selected)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
    if (!selected)
-     evas_object_color_set(icon, 47, 153, 255, 255);
+     evas_object_color_set(icon, 128, 128, 128, 255);
    else
      {
         _selected = icon;
@@ -1217,7 +1217,7 @@ _ui_content_add(Evas_Object *parent, Ui *ui)
    elm_icon_standard_set(ic, evisum_icon_path_get("find"));
    evas_object_size_hint_min_set(ic, 24, 24);
    evas_object_show(ic);
-   evas_object_color_set(ic, 96, 96, 96, 255);
+   evas_object_color_set(ic, 64, 64, 64, 255);
    elm_object_part_content_set(entry, "icon", ic);
 
    elm_object_content_set(border, entry);

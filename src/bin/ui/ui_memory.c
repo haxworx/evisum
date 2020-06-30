@@ -197,7 +197,7 @@ ui_win_memory_add(Ui *ui)
    evas_object_data_set(win, "widgets", widgets);
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evisum_child_window_show(ui->win, win);
-   evas_object_resize(win, -1, -1);
+   evas_object_resize(win, UI_CHILD_WIN_WIDTH , UI_CHILD_WIN_HEIGHT / 2);
 
    _memory_update(widgets);
 
