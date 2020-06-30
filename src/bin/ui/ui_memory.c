@@ -130,7 +130,8 @@ ui_win_memory_add(Ui *ui)
    Widgets *widgets = calloc(1, sizeof(Widgets));
    if (!widgets) return;
 
-   ui->win_mem = win = elm_win_util_standard_add("evisum", _("Memory Usage"));
+   ui->win_mem = win = elm_win_util_dialog_add(ui->win, "evisum",
+                   _("Memory Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
 

@@ -173,7 +173,8 @@ ui_win_disk_add(Ui *ui)
 
    if (ui->win_disk) return;
 
-   ui->win_disk = win = elm_win_util_standard_add("evisum", _("Storage"));
+   ui->win_disk = win = elm_win_util_dialog_add(ui->win, "evisum",
+                   _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
 
