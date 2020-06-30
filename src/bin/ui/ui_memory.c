@@ -116,7 +116,7 @@ _win_del_cb(void *data, Evas_Object *obj,
    if (widgets) free(widgets);
 
    evas_object_del(obj);
-   ui->mem_visible = EINA_FALSE;
+   ui->win_mem = NULL;
 }
 
 void
@@ -125,14 +125,12 @@ ui_win_memory_add(Ui *ui)
    Evas_Object *win, *frame, *pb;
    Evas_Object *border, *rect, *label, *table;
 
-   if (ui->mem_visible) return;
-
-   ui->mem_visible = EINA_TRUE;
+   if (ui->win_mem) return;
 
    Widgets *widgets = calloc(1, sizeof(Widgets));
    if (!widgets) return;
 
-   win = elm_win_util_standard_add("evisum", _("Memory Usage"));
+   ui->win_mem = win = elm_win_util_standard_add("evisum", _("Memory Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
 

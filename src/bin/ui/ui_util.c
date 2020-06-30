@@ -231,8 +231,8 @@ _win_del_cb(void *data, Evas_Object *obj,
    _animator = NULL;
    ui = evas_object_data_get(win, "ui");
    if (!ui) return;
-   ui->about_visible = EINA_FALSE;
    evas_object_del(win);
+   ui->win_about = NULL;
 }
 
 static Eina_Bool
@@ -282,11 +282,9 @@ evisum_about_window_show(void *data)
 
    ui = data;
 
-   if (ui->about_visible) return;
+   if (ui->win_about) return;
 
-   ui->about_visible = EINA_TRUE;
-
-   win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
+   ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
    elm_win_title_set(win, "About Evisum");
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, win);
    evas_object_data_set(win, "ui", ui);

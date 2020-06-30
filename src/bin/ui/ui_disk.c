@@ -161,8 +161,8 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
      ecore_timer_del(ui->timer_disk);
    ui->timer_disk = NULL;
 
-   ui->disk_visible = EINA_FALSE;
    evas_object_del(obj);
+   ui->win_disk = NULL;
 }
 
 void
@@ -171,10 +171,9 @@ ui_win_disk_add(Ui *ui)
    Evas_Object *win, *box, *vbox, *scroller;
    Evas_Object *table, *rect;
 
-   if (ui->disk_visible) return;
-   ui->disk_visible = EINA_TRUE;
+   if (ui->win_disk) return;
 
-   win = elm_win_util_standard_add("evisum", _("Storage"));
+   ui->win_disk = win = elm_win_util_standard_add("evisum", _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
 

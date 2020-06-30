@@ -37,15 +37,15 @@ typedef struct Ui
    Evas_Object     *scroller;
    Evas_Object     *content;
 
+   Evas_Object     *win_cpu;
+   Evas_Object     *win_mem;
+   Evas_Object     *win_disk;
+   Evas_Object     *win_misc;
+   Evas_Object     *win_about;
+
    Evas_Object     *disk_activity;
    Evas_Object     *misc_activity;
    Evas_Object     *system_activity;
-
-   Eina_Bool       cpu_visible;
-   Eina_Bool       misc_visible;
-   Eina_Bool       disk_visible;
-   Eina_Bool       mem_visible;
-   Eina_Bool       about_visible;
 
    Evas_Object     *progress_cpu;
    Evas_Object     *progress_mem;
@@ -97,6 +97,9 @@ typedef struct Ui
 
 Ui *
 evisum_ui_add(Evas_Object *win);
+
+void
+evisum_ui_del(Ui *ui);
 
 void
 evisum_ui_shutdown(Ui *ui);

@@ -743,9 +743,12 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _quit_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                void *event_info EINA_UNUSED)
+         void *event_info EINA_UNUSED)
 {
-   exit(0);
+   Ui *ui = data;
+
+   evas_object_hide(ui->win);
+   evisum_ui_shutdown(ui);
 }
 
 static void
@@ -1279,6 +1282,23 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 evisum_ui_shutdown(Ui *ui)
 {
+   if (ui->win_cpu)
+     evas_object_smart_callback_call(ui->win_cpu, "delete,request", NULL);
+   if (ui->win_mem)
+     evas_object_smart_callback_call(ui->win_mem, "delete,request", NULL);
+   if (ui->win_disk)
+     evas_object_smart_callback_call(ui->win_disk, "delete,request", NULL);
+   if (ui->win_misc)
+     evas_object_smart_callback_call(ui->win_misc, "delete,request", NULL);
+   if (ui->win_about)
+     evas_object_smart_callback_call(ui->win_about, "delete,request", NULL);
+
+   ecore_main_loop_quit();
+}
+
+void
+evisum_ui_del(Ui *ui)
+{
    evas_object_del(ui->win);
 
    if (ui->timer_pid)
@@ -1286,9 +1306,6 @@ evisum_ui_shutdown(Ui *ui)
 
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
-
-   if (ui->thread_cpu)
-     ecore_thread_cancel(ui->thread_cpu);
 
    if (ui->thread_process)
      ecore_thread_cancel(ui->thread_process);
@@ -1299,13 +1316,7 @@ evisum_ui_shutdown(Ui *ui)
    if (ui->thread_process)
      ecore_thread_wait(ui->thread_process, 1.0);
 
-   if (ui->thread_cpu)
-     ecore_thread_wait(ui->thread_cpu, 1.0);
-
    _proc_pid_cpu_times_free(ui);
-
-   if (ui->cpu_list)
-     eina_list_free(ui->cpu_list);
 
    if (ui->cache)
      evisum_ui_item_cache_free(ui->cache);
@@ -1426,7 +1437,7 @@ _menu_setup(Ui *ui)
 
    menu = elm_win_main_menu_get(ui->win);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("File"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, "exit", _("Quit"), _quit_cb, NULL);
+   elm_menu_item_add(menu, menu_it, "exit", _("Quit"), _quit_cb, ui);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("View"), NULL, NULL);
    elm_menu_item_add(menu, menu_it, NULL, _("CPU"), _menu_cpu_activity_clicked_cb, ui);
    elm_menu_item_add(menu, menu_it, NULL, _("Memory"),

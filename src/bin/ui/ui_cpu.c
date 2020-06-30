@@ -163,12 +163,6 @@ _core_times_cb(void *data, Ecore_Thread *thread)
 
    for (int i = 0; !ecore_thread_check(thread); i = 0)
      {
-        if (!ui->cpu_visible)
-          {
-             usleep(1000000);
-             continue;
-          }
-
         cores = system_cpu_usage_get(&ncpu);
 
         EINA_LIST_FOREACH(ui->cpu_list, l, progress)
@@ -190,8 +184,8 @@ _win_del_cb(void *data, Evas_Object *obj,
    Progress *progress;
    Ui *ui = data;
 
+   evas_object_hide(obj);
    ecore_thread_cancel(ui->thread_cpu);
-   evas_object_del(obj);
 
    EINA_LIST_FREE(ui->cpu_list, progress)
      {
@@ -201,7 +195,8 @@ _win_del_cb(void *data, Evas_Object *obj,
      }
 
    ecore_thread_wait(ui->thread_cpu, 1.0);
-   ui->cpu_visible = EINA_FALSE;
+   evas_object_del(obj);
+   ui->win_cpu = NULL;
 }
 
 void
@@ -212,11 +207,9 @@ ui_win_cpu_add(Ui *ui)
    Evas_Object *bg, *line, *obj;
    int cpu_count;
 
-   if (ui->cpu_visible) return;
+   if (ui->win_cpu) return;
 
-   ui->cpu_visible = EINA_TRUE;
-
-   win = elm_win_util_standard_add("evisum", _("CPU Usage"));
+   ui->win_cpu = win = elm_win_util_standard_add("evisum", _("CPU Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
 

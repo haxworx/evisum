@@ -335,7 +335,7 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
    ui->timer_misc = NULL;
 
    evas_object_del(obj);
-   ui->misc_visible = EINA_FALSE;
+   ui->win_misc = NULL;
 }
 
 void
@@ -344,10 +344,9 @@ ui_win_misc_add(Ui *ui)
    Evas_Object *win, *box, *hbox, *frame, *scroller;
    Evas_Object *table, *border, *rect;
 
-   if (ui->misc_visible) return;
-   ui->misc_visible = EINA_TRUE;
+   if (ui->win_misc) return;
 
-   win = elm_win_util_standard_add("evisum", _("Stuff"));
+   ui->win_misc = win = elm_win_util_standard_add("evisum", _("Stuff"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
 

@@ -21,7 +21,9 @@ static void
 _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
-   exit(0);
+   Ui *ui = data;
+
+   evisum_ui_shutdown(ui);
 }
 
 static Ui *
@@ -131,7 +133,7 @@ main(int argc, char **argv)
    if (ui)
      {
         ecore_main_loop_begin();
-        evisum_ui_shutdown(ui);
+        evisum_ui_del(ui);
      }
 
    elm_shutdown();
