@@ -326,6 +326,7 @@ evisum_about_window_show(void *data)
    about_data.bg = bg;
    about_data.label = label;
    about_data.version = version;
+   about_data.pos = elm_config_scale_get() * 320;
    _animator = ecore_animator_add(about_anim, &about_data);
 
    elm_box_pack_end(box, version);
