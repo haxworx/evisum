@@ -1,4 +1,26 @@
 ============
+Evisum 0.5.0
+============
+
+  * Introduce a traditional application menu.
+  * Add a CPU core viewer with rudimentary graphs.
+  * Add filesystem querying API.
+  * Support infinite sensors and batteries.
+  * Take into account ZFS usage on FreeBSD systems.
+  * Add documentation viewer in the process view.
+  * Create a process window for proceses (split the UI out).
+  * View per-thread core usage of process.
+  * Support threads on Linux, FreeBSD, OpenBSD and DragonFlyBSD.
+  * Process argument parsing refinements.
+  * Code refactoring of process and thread query API.
+  * Fix memory leaks.
+  * UI alignments and improvements.
+  * Massive rearrangement of the source tree.
+  * Indicate process list sorting.
+  * Fix swap calculation on macOS.
+  * Add an about window.
+
+============
 Evisum 0.4.1
 ============
 
