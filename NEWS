@@ -20,6 +20,7 @@ Evisum 0.5.0
   * Fix swap calculation on macOS.
   * Allow user to attach to a process (no more excuses users!!!).
   * Add an about window.
+  * Bug fixes.
 
 ============
 Evisum 0.4.1

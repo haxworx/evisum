@@ -1201,7 +1201,7 @@ _about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                                void *event_info EINA_UNUSED)
+                                 void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1210,7 +1210,7 @@ _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                              void *event_info EINA_UNUSED)
+                               void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1219,7 +1219,7 @@ _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _menu_misc_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                     void *event_info EINA_UNUSED)
+                               void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
@@ -1228,7 +1228,7 @@ _menu_misc_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                             void *event_info EINA_UNUSED)
+                              void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 

@@ -259,6 +259,7 @@ evisum_about_window_show(void *data)
    Ui *ui;
    Evas_Object *win, *bg, *box, *version, *label, *btn;
    const char *copyright =
+      "<font color=#ffffff>"
       "<small>"
       "<b>"
       "Copyright &copy; 2019-2020 Alastair Poole &lt;netstar@gmail.com&gt;<br>"
@@ -307,13 +308,13 @@ evisum_about_window_show(void *data)
 
    label = elm_label_add(win);
    evas_object_show(label);
-   evas_object_color_set(label, 255, 255, 255, 255);
    elm_object_text_set(label, copyright);
 
    version = elm_label_add(win);
    evas_object_show(version);
    elm_object_text_set(version,
-                   eina_slstr_printf("%s", PACKAGE_VERSION));
+                   eina_slstr_printf("<font color=#ffffff><b>%s</b>",
+                   PACKAGE_VERSION));
 
    btn = elm_button_add(win);
    evas_object_size_hint_align_set(btn, 0.5, 0.9);
