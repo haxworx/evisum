@@ -775,7 +775,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    ui->btn_thread_cpu_usage = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("CPU Usage"));
+   elm_object_text_set(btn, _("CPU %"));
    _btn_icon_state_set(btn, ui->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
@@ -1048,6 +1048,7 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                    _win_resize_cb, ui);
 
+   evas_object_resize(win, 480 * elm_config_scale_get(), -1);
    evas_object_geometry_get(parent_win, &x, &y, &w, &h);
    if (x > 0 && y > 0)
      evas_object_move(win, x + 20, y + 10);

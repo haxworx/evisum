@@ -603,7 +603,7 @@ _btn_icon_state_update(Evas_Object *button, Eina_Bool reverse)
    Evas_Object *icon = elm_icon_add(button);
 
    if (_selected)
-     evas_object_color_set(_selected, 128, 128, 128, 255);
+     evas_object_color_set(_selected, 47, 153, 255, 255);
 
    if (reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
@@ -611,7 +611,7 @@ _btn_icon_state_update(Evas_Object *button, Eina_Bool reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
    _selected = icon;
-   evas_object_color_set(_selected, 192, 192, 192, 255);
+   evas_object_color_set(_selected, 228, 228, 228, 255);
 
    elm_object_part_content_set(button, "icon", icon);
    evas_object_show(icon);
@@ -628,11 +628,11 @@ _btn_icon_state_init(Evas_Object *button, Eina_Bool reverse, Eina_Bool selected)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
    if (!selected)
-     evas_object_color_set(icon, 128, 128, 128, 255);
+     evas_object_color_set(icon, 47, 153, 255, 255);
    else
      {
         _selected = icon;
-        evas_object_color_set(icon, 192, 192, 192, 255);
+        evas_object_color_set(icon, 228, 228, 228, 255);
      }
 
    elm_object_part_content_set(button, "icon", icon);
@@ -829,6 +829,16 @@ _item_menu_priority_decrease_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
+_item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                   void *event_info EINA_UNUSED)
+{
+   int *pid = data;
+   if (!pid) return;
+
+   ecore_exe_run(eina_slstr_printf("terminology -e gdb  attach %d", *pid), NULL);
+}
+
+static void
 _item_menu_priority_add(Evas_Object *menu, Elm_Object_Item *menu_it,
                         Proc_Info *proc)
 {
@@ -844,14 +854,28 @@ _item_menu_priority_add(Evas_Object *menu, Elm_Object_Item *menu_it,
    elm_object_item_disabled_set(it, EINA_TRUE);
 }
 
+static void
+_item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it,
+                       pid_t *pid)
+{
+   if (ecore_file_app_installed("terminology"))
+     elm_menu_item_add(menu, menu_it, evisum_icon_path_get("terminology"),
+                   _("Debug"), _item_menu_debug_cb, pid);
+}
+
 static Evas_Object *
 _item_menu_create(Ui *ui, Proc_Info *proc)
 {
    Elm_Object_Item *menu_it, *menu_it2;
    Evas_Object *menu;
    Eina_Bool stopped;
+   static pid_t pid;
+
    if (!proc) return NULL;
 
+   pid = proc->pid;
+
+   printf("pid is %d\n", pid);
    ui->menu = menu = elm_menu_add(ui->win);
    if (!menu) return NULL;
 
@@ -868,6 +892,13 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    _item_menu_priority_add(menu, menu_it2, proc);
 
    elm_menu_item_separator_add(menu, menu_it);
+
+   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
+                   _("Actions"), NULL, NULL);
+   _item_menu_actions_add(menu, menu_it2, &pid);
+
+   elm_menu_item_separator_add(menu, menu_it);
+
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("start"),
                    _("Start"), _item_menu_start_cb, proc);
 
@@ -930,6 +961,21 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 
    ui->selected_pid = proc->pid;
    ui_process_win_add(ui->win, proc->pid, proc->command);
+}
+
+static void
+_genlist_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Ui *ui;
+   Evas_Coord w, ow;
+
+   ui = data;
+
+   evas_object_geometry_get(ui->genlist_procs, NULL, NULL, &ow, NULL);
+   evas_object_geometry_get(ui->win, NULL, NULL, &w, NULL);
+
+   if (ow > w)
+     elm_genlist_realized_items_update(ui->genlist_procs);
 }
 
 static void
@@ -1061,14 +1107,17 @@ _ui_content_system_add(Ui *ui)
    ui->scroller = ui->genlist_procs = plist = elm_genlist_add(parent);
    elm_scroller_gravity_set(ui->scroller, 0.0, 1.0);
    elm_object_focus_allow_set(plist, EINA_FALSE);
+   elm_scroller_policy_set(ui->scroller, ELM_SCROLLER_POLICY_OFF,
+                   ELM_SCROLLER_POLICY_AUTO);
    elm_genlist_homogeneous_set(plist, EINA_TRUE);
    evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(plist, FILL, FILL);
    evas_object_show(plist);
+   evas_object_event_callback_add(ui->genlist_procs, EVAS_CALLBACK_RESIZE,
+                    _genlist_resize_cb, ui);
 
    elm_box_pack_end(box, table);
    elm_box_pack_end(box, plist);
-   elm_win_resize_object_add(ui->win, box);
 
    evas_object_smart_callback_add(ui->btn_pid, "clicked",
                    _btn_pid_clicked_cb, ui);
@@ -1176,7 +1225,7 @@ static Evas_Object *
 _ui_content_add(Evas_Object *parent, Ui *ui)
 {
    Evas_Object *table, *box, *entry, *hbox, *frame;
-   Evas_Object *border, *ic;
+   Evas_Object *border;
 
    ui->content = table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
@@ -1216,12 +1265,14 @@ _ui_content_add(Evas_Object *parent, Ui *ui)
    elm_entry_editable_set(entry, EINA_TRUE);
    evas_object_show(entry);
 
+   /*
    ic = elm_icon_add(parent);
    elm_icon_standard_set(ic, evisum_icon_path_get("find"));
    evas_object_size_hint_min_set(ic, 24, 24);
    evas_object_show(ic);
    evas_object_color_set(ic, 64, 64, 64, 255);
    elm_object_part_content_set(entry, "icon", ic);
+   */
 
    elm_object_content_set(border, entry);
    elm_box_pack_end(box, border);

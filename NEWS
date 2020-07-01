@@ -18,6 +18,7 @@ Evisum 0.5.0
   * Massive rearrangement of the source tree.
   * Indicate process list sorting.
   * Fix swap calculation on macOS.
+  * Allow user to attach to a process (no more excuses users!!!).
   * Add an about window.
 
 ============
