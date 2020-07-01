@@ -374,6 +374,15 @@ _item_create(Evas_Object *parent)
    return table;
 }
 
+static void
+_item_show_hide(Evas_Object *obj, Eina_Bool show)
+{
+   if (show)
+     evas_object_show(obj);
+   else
+     evas_object_hide(obj);
+}
+
 static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source)
 {
@@ -404,6 +413,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_pid, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
+   _item_show_hide(l, ui->show_genlist);
 
    evas_object_geometry_get(ui->btn_uid, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_uid");
@@ -416,6 +426,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_uid, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
+   _item_show_hide(l, ui->show_genlist);
 
    evas_object_geometry_get(ui->btn_size, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_size");
@@ -424,6 +435,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_size, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
+   _item_show_hide(l, ui->show_genlist);
 
    evas_object_geometry_get(ui->btn_rss, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_rss");
@@ -432,6 +444,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_rss, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
+   _item_show_hide(l, ui->show_genlist);
 
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cmd");
@@ -440,6 +453,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cmd, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
+   _item_show_hide(l, ui->show_genlist);
 
    evas_object_geometry_get(ui->btn_state, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_state");
@@ -448,6 +462,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_state, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
+   _item_show_hide(l, ui->show_genlist);
 
    evas_object_geometry_get(ui->btn_cpu_usage, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cpu_usage");
@@ -456,6 +471,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cpu_usage, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
+   _item_show_hide(l, ui->show_genlist);
 
    return it->obj;
 }
@@ -496,6 +512,16 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
 }
 
 static Eina_Bool
+_show_items(void *data)
+{
+   Ui *ui = data;
+   ui->show_genlist = EINA_TRUE;
+   elm_genlist_realized_items_update(ui->genlist_procs);
+
+   return EINA_FALSE;
+}
+
+static Eina_Bool
 _bring_in(void *data)
 {
    Ui *ui;
@@ -505,6 +531,8 @@ _bring_in(void *data)
    elm_scroller_gravity_set(ui->scroller, 0.0, 0.0);
    elm_scroller_last_page_get(ui->scroller, &h_page, &v_page);
    elm_scroller_page_bring_in(ui->scroller, h_page, v_page);
+
+   ecore_timer_add(0.5, _show_items, ui);
 
    return EINA_FALSE;
 }
