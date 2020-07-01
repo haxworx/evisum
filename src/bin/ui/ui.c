@@ -832,10 +832,16 @@ static void
 _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
-   int *pid = data;
+   int *pid;
+   const char *terminal = "xterm";
+
+   pid = data;
    if (!pid) return;
 
-   ecore_exe_run(eina_slstr_printf("terminology -e gdb  attach %d", *pid), NULL);
+   if (ecore_file_app_installed("terminology"))
+     terminal = "terminology";
+
+    ecore_exe_run(eina_slstr_printf("%s -e gdb  attach %d", terminal, *pid), NULL);
 }
 
 static void
@@ -858,8 +864,7 @@ static void
 _item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it,
                        pid_t *pid)
 {
-   if (ecore_file_app_installed("terminology"))
-     elm_menu_item_add(menu, menu_it, evisum_icon_path_get("terminology"),
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("terminology"),
                    _("Debug"), _item_menu_debug_cb, pid);
 }
 
@@ -875,7 +880,6 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
 
    pid = proc->pid;
 
-   printf("pid is %d\n", pid);
    ui->menu = menu = elm_menu_add(ui->win);
    if (!menu) return NULL;
 
