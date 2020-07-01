@@ -868,17 +868,33 @@ _item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it,
                    _("Debug"), _item_menu_debug_cb, pid);
 }
 
+static void
+_item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                         void *event_info EINA_UNUSED)
+{
+   Ui *ui;
+   Proc_Info *proc = data;
+
+   ui = _ui;
+   if (!ui) return;
+
+   ui_process_win_add(ui->win, proc->pid, proc->command);
+}
+
 static Evas_Object *
-_item_menu_create(Ui *ui, Proc_Info *proc)
+_item_menu_create(Ui *ui, Proc_Info *proc_info)
 {
    Elm_Object_Item *menu_it, *menu_it2;
    Evas_Object *menu;
    Eina_Bool stopped;
-   static pid_t pid;
+   static Proc_Info proc;
+   static char command[256];
 
-   if (!proc) return NULL;
+   if (!proc_info) return NULL;
 
-   pid = proc->pid;
+   memcpy(&proc, proc_info, sizeof(Proc_Info));
+   snprintf(command, sizeof(command), "%s", proc_info->command);
+   proc.command = command;
 
    ui->menu = menu = elm_menu_add(ui->win);
    if (!menu) return NULL;
@@ -886,33 +902,35 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    evas_object_smart_callback_add(menu, "dismissed",
                    _item_menu_dismissed_cb, ui);
 
-   stopped = !(!strcmp(proc->state, "stop"));
+   stopped = !(!strcmp(proc.state, "stop"));
 
    menu_it = elm_menu_item_add(menu, NULL, evisum_icon_path_get("window"),
-                   proc->command, NULL, NULL);
-
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
-                   _("Priority"), NULL, NULL);
-   _item_menu_priority_add(menu, menu_it2, proc);
-
-   elm_menu_item_separator_add(menu, menu_it);
+                   proc.command, NULL, NULL);
 
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
                    _("Actions"), NULL, NULL);
-   _item_menu_actions_add(menu, menu_it2, &pid);
+   _item_menu_actions_add(menu, menu_it2, &proc.pid);
+   elm_menu_item_separator_add(menu, menu_it);
 
+   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
+                   _("Priority"), NULL, NULL);
+   _item_menu_priority_add(menu, menu_it2, &proc);
    elm_menu_item_separator_add(menu, menu_it);
 
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("start"),
-                   _("Start"), _item_menu_start_cb, proc);
+                   _("Start"), _item_menu_start_cb, &proc);
 
    elm_object_item_disabled_set(menu_it2, stopped);
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("stop"),
-                   _("Stop"), _item_menu_stop_cb, proc);
+                   _("Stop"), _item_menu_stop_cb, &proc);
 
    elm_object_item_disabled_set(menu_it2, !stopped);
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("kill"), "Kill",
-                   _item_menu_kill_cb, proc);
+                   _item_menu_kill_cb, &proc);
+
+   elm_menu_item_separator_add(menu, menu_it);
+   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
+                   _("Properties"), _item_menu_properties_cb, &proc);
 
    elm_menu_item_separator_add(menu, menu_it);
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("cancel"),
