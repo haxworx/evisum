@@ -23,5 +23,3 @@ INSTALL:
 
 $ ninja -C build install
 
-# Note to self
-xgettext --keyword=_ --language=C --add-comments --sort-output --from-code=UTF-8 -o po/evisum.pot src/bin/ui.c src/bin/main.c

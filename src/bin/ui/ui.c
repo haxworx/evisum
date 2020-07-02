@@ -892,7 +892,7 @@ static void
 _item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it,
                        pid_t *pid)
 {
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("terminology"),
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("bug"),
                    _("Debug"), _item_menu_debug_cb, pid);
 }
 
