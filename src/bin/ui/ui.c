@@ -968,7 +968,7 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    elm_menu_item_separator_add(menu, menu_it);
 
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("start"),
-                   _("Start"), _item_menu_start_cb, &proc);
+                   _("Start"), _item_menu_start_cb, ui);
 
    elm_object_item_disabled_set(menu_it2, stopped);
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("stop"),
