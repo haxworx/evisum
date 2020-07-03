@@ -206,32 +206,31 @@ evisum_child_window_show(Evas_Object *parent, Evas_Object *win)
    evas_object_show(win);
 }
 
-static Ecore_Animator *_animator = NULL;
-
 typedef struct {
-   int pos;
-   Evas_Object *label;
-   Evas_Object *version;
-   Evas_Object *bg;
+   Ui             *ui;
+   Evas_Object    *label;
+   Evas_Object    *version;
+   Evas_Object    *bg;
+   Ecore_Animator *animator;
+   int             pos;
 } Animate_Data;
-
-static Animate_Data about_data;
 
 static void
 _win_del_cb(void *data, Evas_Object *obj,
             void *event_info EINA_UNUSED)
 {
-   Evas_Object *win;
+   Animate_Data *ad;
    Ui *ui;
 
-   win = data;
+   ad = data;
+   ui = ad->ui;
 
-   if (_animator)
-     ecore_animator_del(_animator);
-   _animator = NULL;
-   ui = evas_object_data_get(win, "ui");
-   if (!ui) return;
-   evas_object_del(win);
+   if (ad->animator)
+     ecore_animator_del(ad->animator);
+
+   free(ad);
+
+   evas_object_del(ui->win_about);
    ui->win_about = NULL;
 }
 
@@ -257,6 +256,7 @@ void
 evisum_about_window_show(void *data)
 {
    Ui *ui;
+   Animate_Data *about;
    Evas_Object *win, *bg, *box, *version, *label, *btn;
    const char *copyright =
       "<font color=#ffffff>"
@@ -287,8 +287,6 @@ evisum_about_window_show(void *data)
 
    ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
    elm_win_title_set(win, "About Evisum");
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, win);
-   evas_object_data_set(win, "ui", ui);
 
    bg = elm_bg_add(win);
    evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
@@ -316,23 +314,27 @@ evisum_about_window_show(void *data)
                    eina_slstr_printf("<font color=#ffffff><b>%s</b>",
                    PACKAGE_VERSION));
 
+   about = malloc(sizeof(Animate_Data));
+   about->bg = bg;
+   about->label = label;
+   about->version = version;
+   about->pos = elm_config_scale_get() * 320;
+   about->ui = ui;
+   about->animator = ecore_animator_add(about_anim, about);
+
    btn = elm_button_add(win);
    evas_object_size_hint_align_set(btn, 0.5, 0.9);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    elm_object_text_set(btn, _("Okay!"));
    evas_object_show(btn);
-   evas_object_smart_callback_add(btn, "clicked", _win_del_cb, win);
 
-   memset(&about_data, 0, sizeof(Animate_Data));
-   about_data.bg = bg;
-   about_data.label = label;
-   about_data.version = version;
-   about_data.pos = elm_config_scale_get() * 320;
-   _animator = ecore_animator_add(about_anim, &about_data);
+   evas_object_smart_callback_add(btn, "clicked", _win_del_cb, about);
+   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, about);
 
    elm_box_pack_end(box, version);
    elm_box_pack_end(box, label);
    elm_box_pack_end(box, btn);
    elm_object_content_set(win, box);
+
    evas_object_show(win);
 }
