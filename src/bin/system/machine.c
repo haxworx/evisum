@@ -69,6 +69,15 @@
 # define CPU_STATES      5
 #endif
 
+#define U64(n) (uint64_t) n
+#define I64(n) (int64_t)  n
+#define U32(n) (uint32_t) n
+#define I32(n) (int32_t)  n
+#define U16(n) (uint16_t) n
+#define I16(n) (int16_t)  n
+#define U8(n)  (uint8_t)  n
+#define I8(n)  (int8_t)   n
+
 #if defined(__linux__)
 static char *
 file_contents(const char *path)
@@ -572,11 +581,10 @@ system_memory_usage_get(meminfo_t *memory)
 swap_out:
    if (swdev)
      free(swdev);
-
-   memory->cached = (uint64_t)(uvmexp.pagesize * bcstats.numbufpages);
-   memory->used = (uint64_t)(uvmexp.active * uvmexp.pagesize);
-   memory->buffered = (uint64_t)(uvmexp.pagesize * (uint64_t)(uvmexp.npages - uvmexp.free));
-   memory->shared = (uint64_t)(uvmexp.pagesize * uvmexp.wired);
+   memory->cached = U64(uvmexp.pagesize) * U64(bcstats.numbufpages);
+   memory->used = U64(uvmexp.pagesize) * U64(uvmexp.active);
+   memory->buffered = U64(uvmexp.pagesize) * (U64(uvmexp.npages) - U64(uvmexp.free));
+   memory->shared = U64(uvmexp.pagesize) * U64(uvmexp.wired);
 #elif defined(__MacOS__)
    int mib[2] = { CTL_HW, HW_MEMSIZE };
    size_t total;
