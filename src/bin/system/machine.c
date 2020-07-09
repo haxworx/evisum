@@ -62,21 +62,13 @@
 #endif
 
 #include "machine.h"
+#include "macros.h"
 
 #if defined(__OpenBSD__)
 # define CPU_STATES      6
 #else
 # define CPU_STATES      5
 #endif
-
-#define U64(n) (uint64_t) n
-#define I64(n) (int64_t)  n
-#define U32(n) (uint32_t) n
-#define I32(n) (int32_t)  n
-#define U16(n) (uint16_t) n
-#define I16(n) (int16_t)  n
-#define U8(n)  (uint8_t)  n
-#define I8(n)  (int8_t)   n
 
 #if defined(__linux__)
 static char *
