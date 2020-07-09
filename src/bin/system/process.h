@@ -35,10 +35,10 @@ typedef struct _Proc_Info
    long        cpu_time;
    double      cpu_usage;
 
-   int64_t     mem_size;
-   int64_t     mem_virt;
-   int64_t     mem_rss;
-   int64_t     mem_shared;
+   uint64_t    mem_size;
+   uint64_t    mem_virt;
+   uint64_t    mem_rss;
+   uint64_t    mem_shared;
 
    char       *command;
    char       *arguments;

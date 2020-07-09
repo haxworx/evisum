@@ -164,10 +164,10 @@ _mem_size(Proc_Info *proc)
                    &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_rss = U64(resident) * U64(pagesize);
-             proc->mem_shared = U64(shared) * U64(pagesize);
+             proc->mem_rss = MEMSZ(resident) * MEMSZ(pagesize);
+             proc->mem_shared = MEMSZ(shared) * MEMSZ(pagesize);
              proc->mem_size = proc->mem_rss - proc->mem_shared;
-             proc->mem_virt = U64(size) * U64(pagesize);
+             proc->mem_virt = MEMSZ(size) * MEMSZ(pagesize);
           }
      }
 
@@ -403,10 +403,9 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    p->cpu_id = kp->p_cpuid;
    p->state = _process_state_name(kp->p_stat);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-   p->mem_virt = p->mem_size = (kp->p_vm_tsize * pagesize) +
-      (kp->p_vm_dsize * pagesize) + (kp->p_vm_ssize * pagesize);
-   p->mem_rss = kp->p_vm_rssize * pagesize;
-   p->mem_shared = kp->p_uru_ixrss;
+   p->mem_virt = p->mem_size = (MEMSZ(kp->p_vm_tsize) * MEMSZ(pagesize)) +
+      (MEMSZ(kp->p_vm_dsize) * MEMSZ(pagesize)) + (MEMSZ(kp->p_vm_ssize) * MEMSZ(pagesize));
+   p->mem_rss = MEMSZ(kp->p_vm_rssize) * MEMSZ(pagesize);
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
    p->tid = kp->p_tid;
@@ -664,7 +663,6 @@ _proc_pidinfo(size_t pid)
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
-   p->mem_shared = 0;
    p->priority = taskinfo.ptinfo.pti_priority;
    p->nice = taskinfo.pbsd.pbi_nice;
    p->numthreads = taskinfo.ptinfo.pti_threadnum;
@@ -750,7 +748,6 @@ proc_info_by_pid(int pid)
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
-   p->mem_shared = 0;
    p->priority = taskinfo.ptinfo.pti_priority;
    p->nice = taskinfo.pbsd.pbi_nice;
    p->numthreads = taskinfo.ptinfo.pti_threadnum;
@@ -860,7 +857,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->cpu_time /= 10000;
    p->state = _process_state_name(kp->ki_stat);
    p->mem_virt = kp->ki_size;
-   p->mem_rss = kp->ki_rssize * pagesize;
+   p->mem_rss = MEMSZ(kp->ki_rssize) * MEMSZ(pagesize);
    p->mem_size = p->mem_virt;
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;

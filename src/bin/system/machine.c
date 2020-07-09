@@ -573,10 +573,10 @@ system_memory_usage_get(meminfo_t *memory)
 swap_out:
    if (swdev)
      free(swdev);
-   memory->cached = U64(uvmexp.pagesize) * U64(bcstats.numbufpages);
-   memory->used = U64(uvmexp.pagesize) * U64(uvmexp.active);
-   memory->buffered = U64(uvmexp.pagesize) * (U64(uvmexp.npages) - U64(uvmexp.free));
-   memory->shared = U64(uvmexp.pagesize) * U64(uvmexp.wired);
+   memory->cached = MEMSZ(uvmexp.pagesize) * MEMSZ(bcstats.numbufpages);
+   memory->used = MEMSZ(uvmexp.pagesize) * MEMSZ(uvmexp.active);
+   memory->buffered = MEMSZ(uvmexp.pagesize) * (MEMSZ(uvmexp.npages) - MEMSZ(uvmexp.free));
+   memory->shared = MEMSZ(uvmexp.pagesize) * MEMSZ(uvmexp.wired);
 #elif defined(__MacOS__)
    int mib[2] = { CTL_HW, HW_MEMSIZE };
    size_t total;
