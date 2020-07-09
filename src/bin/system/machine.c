@@ -598,7 +598,7 @@ swap_out:
        host_statistics64(mach_port, HOST_VM_INFO,
                  (host_info64_t)&vm_stats, &count) == KERN_SUCCESS)
      {
-        memory->used = memory->total - (vm_stats.inactive_count * page_size);
+        memory->used = (vm_stats.active_count + vm_stats.wire_count) * page_size;
         memory->cached = vm_stats.active_count * page_size;
         memory->shared = vm_stats.wire_count * page_size;
         memory->buffered = vm_stats.inactive_count * page_size;
