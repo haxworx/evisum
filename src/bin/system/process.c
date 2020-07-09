@@ -42,6 +42,8 @@
 # define PF_KTHREAD 0x00200000
 #endif
 
+#include "macros.h"
+
 static const char *
 _process_state_name(char state)
 {
@@ -149,6 +151,9 @@ _mem_size(Proc_Info *proc)
    FILE *f;
    char buf[1024];
    unsigned int dummy, size, shared, resident, data, text;
+   static int pagesize = 0;
+
+   if (!pagesize) pagesize = getpagesize();
 
    f = fopen(eina_slstr_printf("/proc/%d/statm", proc->pid), "r");
    if (!f) return;
@@ -159,10 +164,10 @@ _mem_size(Proc_Info *proc)
                    &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_rss = resident * getpagesize();
-             proc->mem_shared = shared * getpagesize();
+             proc->mem_rss = U64(resident) * U64(pagesize);
+             proc->mem_shared = U64(shared) * U64(pagesize);
              proc->mem_size = proc->mem_rss - proc->mem_shared;
-             proc->mem_virt = size * getpagesize();
+             proc->mem_virt = U64(size) * U64(pagesize);
           }
      }
 
