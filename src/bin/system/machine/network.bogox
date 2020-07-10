@@ -1,0 +1,129 @@
+
+#if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
+static void
+_freebsd_generic_network_status(unsigned long int *in,
+                                unsigned long int *out)
+{
+   struct ifmibdata *ifmd;
+   size_t len;
+   int i, count;
+   len = sizeof(count);
+
+   if (sysctlbyname
+         ("net.link.generic.system.ifcount", &count, &len, NULL, 0) < 0)
+     return;
+
+   ifmd = malloc(sizeof(struct ifmibdata));
+   if (!ifmd)
+     return;
+
+   for (i = 1; i <= count; i++) {
+        int mib[] = {
+           CTL_NET, PF_LINK, NETLINK_GENERIC, IFMIB_IFDATA, i, IFDATA_GENERAL
+        };
+        len = sizeof(*ifmd);
+        if (sysctl(mib, 6, ifmd, &len, NULL, 0) < 0) continue;
+        if (!strcmp(ifmd->ifmd_name, "lo0"))
+          continue;
+        *in += ifmd->ifmd_data.ifi_ibytes;
+        *out += ifmd->ifmd_data.ifi_obytes;
+     }
+   free(ifmd);
+}
+
+#endif
+
+#if defined(__OpenBSD__)
+static void
+_openbsd_generic_network_status(unsigned long int *in,
+                                unsigned long int *out)
+{
+   struct ifaddrs *interfaces, *ifa;
+
+   if (getifaddrs(&interfaces) < 0)
+     return;
+
+   int sock = socket(AF_INET, SOCK_STREAM, 0);
+   if (sock < 0)
+     return;
+
+   for (ifa = interfaces; ifa; ifa = ifa->ifa_next) {
+        struct ifreq ifreq;
+        struct if_data if_data;
+
+        ifreq.ifr_data = (void *)&if_data;
+        strncpy(ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ - 1);
+        if (ioctl(sock, SIOCGIFDATA, &ifreq) < 0)
+          return;
+
+        struct if_data *const ifi = &if_data;
+        if (ifi->ifi_type == IFT_ETHER ||
+            ifi->ifi_type == IFT_FASTETHER ||
+            ifi->ifi_type == IFT_GIGABITETHERNET ||
+            ifi->ifi_type == IFT_IEEE80211)
+          {
+             if (ifi->ifi_ibytes)
+               *in += ifi->ifi_ibytes;
+
+             if (ifi->ifi_obytes)
+               *out += ifi->ifi_obytes;
+          }
+     }
+   close(sock);
+}
+
+#endif
+
+
+#if defined(__linux__)
+static void
+_linux_generic_network_status(unsigned long int *in,
+                              unsigned long int *out)
+{
+   FILE *f;
+   char buf[4096], dummy_s[256];
+   unsigned long int tmp_in, tmp_out, dummy;
+
+   f = fopen("/proc/net/dev", "r");
+   if (!f) return;
+
+   while (fgets(buf, sizeof(buf), f))
+     {
+        if (17 == sscanf(buf, "%s %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu "
+                         "%lu %lu %lu %lu %lu\n", dummy_s, &tmp_in, &dummy,
+                         &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
+                         &tmp_out, &dummy, &dummy, &dummy, &dummy, &dummy,
+                         &dummy, &dummy))
+          {
+             *in += tmp_in;
+             *out += tmp_out;
+          }
+     }
+
+   fclose(f);
+}
+
+#endif
+
+void
+system_network_transfer_get(network_t *usage)
+{
+   unsigned long first_in = 0, first_out = 0;
+   unsigned long last_in = 0, last_out = 0;
+#if defined(__linux__)
+   _linux_generic_network_status(&first_in, &first_out);
+   usleep(1000000);
+   _linux_generic_network_status(&last_in, &last_out);
+#elif defined(__OpenBSD__)
+   _openbsd_generic_network_status(&first_in, &first_out);
+   usleep(1000000);
+   _openbsd_generic_network_status(&last_in, &last_out);
+#elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
+   _freebsd_generic_network_status(&first_in, &first_out);
+   usleep(1000000);
+   _freebsd_generic_network_status(&last_in, &last_out);
+#endif
+   usage->incoming = last_in - first_in;
+   usage->outgoing = last_out - first_out;
+}
+

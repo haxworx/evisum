@@ -1,0 +1,450 @@
+/*
+ * Copyright (c) 2018 Alastair Roy Poole <netstar@gmail.com>
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ */
+
+sensor_t **
+system_sensors_thermal_get(int *sensor_count)
+{
+   sensor_t **sensors = NULL;
+#if defined(__OpenBSD__)
+   sensor_t *sensor;
+   int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
+   int devn, n;
+   struct sensor snsr;
+   size_t slen = sizeof(struct sensor);
+   struct sensordev snsrdev;
+   size_t sdlen = sizeof(struct sensordev);
+
+   for (devn = 0;; devn++)
+     {
+        mibs[2] = devn;
+
+        if (sysctl(mibs, 3, &snsrdev, &sdlen, NULL, 0) == -1)
+          {
+             if (errno == ENOENT) break;
+             continue;
+          }
+
+        for (n = 0; n < snsrdev.maxnumt[SENSOR_TEMP]; n++)
+          {
+             mibs[4] = n;
+
+             if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
+               continue;
+
+             if (slen > 0 && (snsr.flags & SENSOR_FINVALID) == 0)
+               break;
+          }
+
+        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
+          continue;
+        if (snsr.type != SENSOR_TEMP)
+          continue;
+
+        sensors = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
+        sensor->name = strdup(snsrdev.xname);
+        sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
+     }
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   sensor_t *sensor;
+   int value;
+   size_t len = sizeof(value);
+
+   if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
+     {
+        sensors = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
+        sensor->name = strdup("hw.acpi.thermal.tz0");
+        sensor->value = (float) (value -  2732) / 10;
+     }
+#elif defined(__linux__)
+   sensor_t *sensor;
+   char *type, *value;
+   char path[PATH_MAX];
+   struct dirent **names;
+   int i, n;
+
+   n = scandir("/sys/class/thermal", &names, 0, alphasort);
+   if (n < 0) return NULL;
+
+   for (i = 0; i < n; i++)
+     {
+        if (strncmp(names[i]->d_name, "thermal_zone", 12))
+          {
+             free(names[i]);
+             continue;
+          }
+        snprintf(path, sizeof(path), "/sys/class/thermal/%s/type",
+                 names[i]->d_name);
+
+        type = file_contents(path);
+        if (type)
+          {
+             sensors =
+                realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
+             sensors[(*sensor_count)++] =
+                 sensor = calloc(1, sizeof(sensor_t));
+
+             sensor->name = strdup(type);
+             snprintf(path, sizeof(path), "/sys/class/thermal/%s/temp",
+                      names[i]->d_name);
+
+             value = file_contents(path);
+             if (!value)
+               sensor->invalid = true;
+             else
+               {
+                  sensor->value = (float)atoi(value) / 1000.0;
+                  free(value);
+               }
+             free(type);
+          }
+
+        free(names[i]);
+     }
+
+   free(names);
+#elif defined(__MacOS__)
+#endif
+   return sensors;
+}
+
+static int
+_power_battery_count_get(power_t *power)
+{
+#if defined(__OpenBSD__)
+   struct sensordev snsrdev;
+   size_t sdlen = sizeof(struct sensordev);
+   int mib[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
+   int i, devn, id;
+   for (devn = 0;; devn++) {
+        mib[2] = devn;
+        if (sysctl(mib, 3, &snsrdev, &sdlen, NULL, 0) == -1)
+          {
+             if (errno == ENXIO)
+               continue;
+             if (errno == ENOENT)
+               break;
+          }
+
+        for (i = 0; i < 10; i++) {
+             char buf[64];
+             snprintf(buf, sizeof(buf), "acpibat%d", i);
+             if (!strcmp(buf, snsrdev.xname))
+               {
+                  id = power->battery_count;
+                  power->batteries = realloc(power->batteries, 1 +
+                                     power->battery_count * sizeof(bat_t **));
+                  power->batteries[id] = calloc(1, sizeof(bat_t));
+                  power->batteries[id]->name = strdup(buf);
+                  power->batteries[id]->present = true;
+                  power->batteries[id]->mibs = malloc(sizeof(int) * 5);
+                  int *tmp = power->batteries[id]->mibs;
+                  tmp[0] = mib[0];
+                  tmp[1] = mib[1];
+                  tmp[2] = mib[2];
+                  power->battery_count++;
+               }
+          }
+
+        if (!strcmp("acpiac0", snsrdev.xname))
+          {
+             power->ac_mibs[0] = mib[0];
+             power->ac_mibs[1] = mib[1];
+             power->ac_mibs[2] = mib[2];
+          }
+     }
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   size_t len;
+
+   if ((sysctlbyname("hw.acpi.battery.units", &power->battery_count, &len, NULL, 0))  < 0)
+     {
+        power->battery_count = 0;
+     }
+
+   if ((sysctlbyname("hw.acpi.acline", NULL, &len, NULL, 0)) != -1)
+     {
+        sysctlnametomib("hw.acpi.acline", power->ac_mibs, &len);
+     }
+
+   power->batteries = malloc(power->battery_count * sizeof(bat_t **));
+   for (int i = 0; i < power->battery_count; i++)
+     {
+        power->batteries[i] = calloc(1, sizeof(bat_t));
+        power->batteries[i]->present = true;
+     }
+#elif defined(__linux__)
+   char *type;
+   char path[PATH_MAX];
+   struct dirent **names;
+   int i, n, id;
+
+   n = scandir("/sys/class/power_supply", &names, 0, alphasort);
+   if (n < 0) return power->battery_count;
+
+   for (i = 0; i < n; i++)
+     {
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type",
+                 names[i]->d_name);
+
+        type = file_contents(path);
+        if (type)
+          {
+             if (!strncmp(type, "Battery", 7))
+               {
+                  id = power->battery_count;
+                  power->batteries = realloc(power->batteries, (1 +
+                                     power->battery_count) * sizeof(bat_t **));
+                  power->batteries[id] = calloc(1, sizeof(bat_t));
+                  power->batteries[id]->name = strdup(names[i]->d_name);
+                  power->batteries[id]->present = true;
+                  power->battery_count++;
+               }
+             free(type);
+          }
+
+        free(names[i]);
+     }
+
+   free(names);
+#endif
+
+   return power->battery_count;
+}
+
+static void
+_battery_state_get(power_t *power)
+{
+#if defined(__OpenBSD__)
+   int *mib;
+   double charge_full, charge_current;
+   size_t slen = sizeof(struct sensor);
+   struct sensor snsr;
+
+   for (int i = 0; i < power->battery_count; i++)
+     {
+        charge_full = charge_current = 0;
+
+        mib = power->batteries[i]->mibs;
+        mib[3] = SENSOR_WATTHOUR;
+        mib[4] = 0;
+
+        if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
+          charge_full = (double)snsr.value;
+
+        mib[3] = SENSOR_WATTHOUR;
+        mib[4] = 3;
+
+        if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
+          charge_current = (double)snsr.value;
+
+        if (charge_current == 0 || charge_full == 0)
+          {
+             mib[3] = SENSOR_AMPHOUR;
+             mib[4] = 0;
+
+             if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
+               charge_full = (double)snsr.value;
+
+             mib[3] = SENSOR_AMPHOUR;
+             mib[4] = 3;
+
+             if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
+               charge_current = (double)snsr.value;
+          }
+
+        power->batteries[i]->charge_full = charge_full;
+        power->batteries[i]->charge_current = charge_current;
+     }
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   int fd, i;
+   union acpi_battery_ioctl_arg battio;
+   char name[256];
+
+   if ((fd = open("/dev/acpi", O_RDONLY)) == -1) return;
+
+   for (i = 0; i < power->battery_count; i++)
+     {
+        battio.unit = i;
+        if (ioctl(fd, ACPIIO_BATT_GET_BIF, &battio) != -1)
+          {
+             if (battio.bif.lfcap == 0)
+               power->batteries[i]->charge_full = battio.bif.dcap;
+             else
+               power->batteries[i]->charge_full = battio.bif.lfcap;
+          }
+        snprintf(name, sizeof(name), "%s %s", battio.bif.oeminfo, battio.bif.model);
+        power->batteries[i]->name = strdup(name);
+        battio.unit = i;
+        if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
+          {
+             power->batteries[i]->charge_current = battio.bst.cap;
+          }
+        if (battio.bst.state == ACPI_BATT_STAT_NOT_PRESENT)
+          {
+             power->batteries[i]->present = false;
+          }
+     }
+   close(fd);
+
+#elif defined(__linux__)
+   char path[PATH_MAX];
+   struct dirent *dh;
+   struct stat st;
+   DIR *dir;
+   char *model, *vendor;
+   char *buf, *naming = NULL;
+   int i = 0;
+   unsigned long charge_full = 0;
+   unsigned long charge_current = 0;
+
+   for (i = 0; i < power->battery_count; i++)
+     {
+        naming = NULL;
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s",
+                 power->batteries[i]->name);
+
+        if (stat(path, &st) < 0) continue;
+        if (S_ISLNK(st.st_mode)) continue;
+        if (!S_ISDIR(st.st_mode)) continue;
+
+        dir = opendir(path);
+        if (!dir) return;
+        while ((dh = readdir(dir)) != NULL)
+          {
+             char *e;
+             if (dh->d_name[0] == '.') continue;
+
+             if ((e = strstr(dh->d_name, "_full\0")))
+              {
+                 naming = strndup(dh->d_name, e - dh->d_name);
+                 break;
+              }
+          }
+        closedir(dir);
+
+        if (!naming)
+          continue;
+
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_full",
+                 power->batteries[i]->name, naming);
+        buf = file_contents(path);
+        if (buf)
+          {
+             charge_full = atol(buf);
+             free(buf);
+          }
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/%s_now",
+                 power->batteries[i]->name, naming);
+        buf = file_contents(path);
+        if (buf)
+          {
+             charge_current = atol(buf);
+             free(buf);
+          }
+
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer",
+                 power->batteries[i]->name);
+        vendor = file_contents(path);
+
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name",
+                 power->batteries[i]->name);
+        model = file_contents(path);
+
+        if (vendor && vendor[0] && model && model[0])
+          {
+             char name[256];
+             int len;
+
+             len = strlen(vendor);
+             if (vendor[len - 1] == '\n' || vendor[len - 1] == '\r')
+               {
+                  vendor[len - 1] = '\0';
+               }
+
+             len = strlen(model);
+             if (model[len - 1] == '\n' || model[len - 1] == '\r')
+               {
+                  model[len - 1] = '\0';
+               }
+
+             free(power->batteries[i]->name);;
+             snprintf(name, sizeof(name), "%s %s", vendor, model);
+             power->batteries[i]->name = strdup(name);
+          }
+
+        power->batteries[i]->charge_full = charge_full;
+        power->batteries[i]->charge_current = charge_current;
+
+        if (model)
+          free(model);
+        if (vendor)
+          free(vendor);
+        free(naming);
+     }
+#endif
+}
+
+void
+system_power_state_get(power_t *power)
+{
+   int i;
+#if defined(__OpenBSD__)
+   struct sensor snsr;
+   size_t slen = sizeof(struct sensor);
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   unsigned int value;
+   size_t len;
+#elif defined(__linux__)
+   char *buf;
+#endif
+
+   if (!_power_battery_count_get(power))
+     return;
+
+#if defined(__OpenBSD__)
+   power->ac_mibs[3] = 9;
+   power->ac_mibs[4] = 0;
+
+   if (sysctl(power->ac_mibs, 5, &snsr, &slen, NULL, 0) != -1)
+     power->have_ac = (int)snsr.value;
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   len = sizeof(value);
+   if ((sysctl(power->ac_mibs, 3, &value, &len, NULL, 0)) == -1)
+     {
+        return;
+     }
+   power->have_ac = value;
+#elif defined(__linux__)
+   buf = file_contents("/sys/class/power_supply/AC/online");
+   if (buf)
+     {
+        power->have_ac = atoi(buf);
+        free(buf);
+     }
+#endif
+
+  _battery_state_get(power);
+
+   for (i = 0; i < power->battery_count; i++)
+     {
+        double percent = 100 *
+           (power->batteries[i]->charge_current /
+                                    power->batteries[i]->charge_full);
+        power->batteries[i]->percent = percent;
+     }
+}
+
