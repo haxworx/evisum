@@ -876,10 +876,7 @@ _process_list_freebsd_fallback_get(void)
    struct kinfo_proc kp;
    int mib[4];
    size_t len;
-   static int pid_max, pagesize = 0;
-
-   if (!pagesize)
-     pagesize = getpagesize();
+   static int pid_max;
 
    pid_max = _pid_max();
 
@@ -915,9 +912,6 @@ _process_list_freebsd_get(void)
    struct kinfo_proc *kps, *kp;
    char errbuf[_POSIX2_LINE_MAX];
    int pid_count;
-   static int pagesize = 0;
-
-   if (!pagesize) pagesize = getpagesize();
 
    kern = kvm_openfiles(NULL, NULL, NULL, O_RDONLY, errbuf);
    if (!kern)
@@ -953,9 +947,6 @@ _proc_info_by_pid_fallback(int pid)
    struct kinfo_proc kp;
    int mib[4];
    size_t len;
-   static int pagesize = 0;
-
-   if (!pagesize) pagesize = getpagesize();
 
    len = sizeof(int);
    if (sysctlnametomib("kern.proc.pid", mib, &len) == -1)
