@@ -135,8 +135,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
    if (!ncpu)
      return;
 
-   for (i = 0; i < ncpu; i++)
-     {
+   for (i = 0; i < ncpu; i++) {
         core = cores[i];
         size = sizeof(struct cpustats);
         cpu_time_mib[2] = i;

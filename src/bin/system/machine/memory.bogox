@@ -117,44 +117,44 @@ system_memory_usage_get(meminfo_t *memory)
    len = sizeof(memory->total);
    if (sysctl(mib, 2, &memory->total, &len, NULL, 0) == -1)
      return;
-   if ((active =
-        _sysctlfromname("vm.stats.vm.v_active_count", mib, 4, &len)) < 0)
+
+   if ((active = _sysctlfromname("vm.stats.vm.v_active_count", mib, 4, &len)) == -1)
      return;
-   if ((inactive =
-        _sysctlfromname("vm.stats.vm.v_inactive_count", mib, 4, &len)) < 0)
+
+   if ((inactive = _sysctlfromname("vm.stats.vm.v_inactive_count", mib, 4, &len)) == -1)
      return;
-   if ((wired =
-        _sysctlfromname("vm.stats.vm.v_wire_count", mib, 4, &len)) < 0)
+
+   if ((wired = _sysctlfromname("vm.stats.vm.v_wire_count", mib, 4, &len)) == -1)
      return;
-   if ((cached =
-        _sysctlfromname("vm.stats.vm.v_cache_count", mib, 4, &len)) < 0)
+
+   if ((cached = _sysctlfromname("vm.stats.vm.v_cache_count", mib, 4, &len)) == -1)
      return;
-   if ((free = _sysctlfromname("vm.stats.vm.v_free_count", mib, 4, &len)) < 0)
+
+   if ((free = _sysctlfromname("vm.stats.vm.v_free_count", mib, 4, &len)) == -1)
      return;
-   if ((buffered = _sysctlfromname("vfs.bufspace", mib, 2, &len)) < 0)
+
+   if ((buffered = _sysctlfromname("vfs.bufspace", mib, 2, &len)) == -1)
      return;
+
+   if ((zfs_arc = _sysctlfromname("kstat.zfs.misc.arcstats.c", mib, 5, &len)) != -1)
+     memory->zfs_arc_used = zfs_arc;
 
    memory->used = ((active + wired + cached) * page_size);
    memory->buffered = buffered;
    memory->cached = (cached * page_size);
 
    result = _sysctlfromname("vm.swap_total", mib, 2, &len);
-   if (result < 0)
+   if (result == -1)
      return;
+
    memory->swap_total = result;
 
    miblen = 3;
    if (sysctlnametomib("vm.swap_info", mib, &miblen) == -1) return;
 
-   if ((zfs_arc = _sysctlfromname("kstat.zfs.misc.arcstats.c", mib, 5, &len)) != -1)
-     {
-        memory->zfs_arc_used = zfs_arc;
-     }
-
    struct xswdev xsw;
 
-   for (i = 0; ; i++)
-     {
+   for (i = 0; ; i++) {
         mib[miblen] = i;
         len = sizeof(xsw);
         if (sysctl(mib, miblen + 1, &xsw, &len, NULL, 0) == -1)

@@ -27,8 +27,7 @@ system_sensors_thermal_get(int *sensor_count)
    struct sensordev snsrdev;
    size_t sdlen = sizeof(struct sensordev);
 
-   for (devn = 0;; devn++)
-     {
+   for (devn = 0;; devn++) {
         mibs[2] = devn;
 
         if (sysctl(mibs, 3, &snsrdev, &sdlen, NULL, 0) == -1)
@@ -37,8 +36,7 @@ system_sensors_thermal_get(int *sensor_count)
              continue;
           }
 
-        for (n = 0; n < snsrdev.maxnumt[SENSOR_TEMP]; n++)
-          {
+        for (n = 0; n < snsrdev.maxnumt[SENSOR_TEMP]; n++) {
              mibs[4] = n;
 
              if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
@@ -80,8 +78,7 @@ system_sensors_thermal_get(int *sensor_count)
    n = scandir("/sys/class/thermal", &names, 0, alphasort);
    if (n < 0) return NULL;
 
-   for (i = 0; i < n; i++)
-     {
+   for (i = 0; i < n; i++) {
         if (strncmp(names[i]->d_name, "thermal_zone", 12))
           {
              free(names[i]);
@@ -171,18 +168,13 @@ _power_battery_count_get(power_t *power)
    size_t len;
 
    if ((sysctlbyname("hw.acpi.battery.units", &power->battery_count, &len, NULL, 0))  < 0)
-     {
-        power->battery_count = 0;
-     }
+     power->battery_count = 0;
 
    if ((sysctlbyname("hw.acpi.acline", NULL, &len, NULL, 0)) != -1)
-     {
-        sysctlnametomib("hw.acpi.acline", power->ac_mibs, &len);
-     }
+     sysctlnametomib("hw.acpi.acline", power->ac_mibs, &len);
 
    power->batteries = malloc(power->battery_count * sizeof(bat_t **));
-   for (int i = 0; i < power->battery_count; i++)
-     {
+   for (int i = 0; i < power->battery_count; i++) {
         power->batteries[i] = calloc(1, sizeof(bat_t));
         power->batteries[i]->present = true;
      }
@@ -195,8 +187,7 @@ _power_battery_count_get(power_t *power)
    n = scandir("/sys/class/power_supply", &names, 0, alphasort);
    if (n < 0) return power->battery_count;
 
-   for (i = 0; i < n; i++)
-     {
+   for (i = 0; i < n; i++) {
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type",
                  names[i]->d_name);
 
@@ -234,8 +225,7 @@ _battery_state_get(power_t *power)
    size_t slen = sizeof(struct sensor);
    struct sensor snsr;
 
-   for (int i = 0; i < power->battery_count; i++)
-     {
+   for (int i = 0; i < power->battery_count; i++) {
         charge_full = charge_current = 0;
 
         mib = power->batteries[i]->mibs;
@@ -276,8 +266,7 @@ _battery_state_get(power_t *power)
 
    if ((fd = open("/dev/acpi", O_RDONLY)) == -1) return;
 
-   for (i = 0; i < power->battery_count; i++)
-     {
+   for (i = 0; i < power->battery_count; i++) {
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BIF, &battio) != -1)
           {
@@ -290,13 +279,10 @@ _battery_state_get(power_t *power)
         power->batteries[i]->name = strdup(name);
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
-          {
-             power->batteries[i]->charge_current = battio.bst.cap;
-          }
+          power->batteries[i]->charge_current = battio.bst.cap;
+
         if (battio.bst.state == ACPI_BATT_STAT_NOT_PRESENT)
-          {
-             power->batteries[i]->present = false;
-          }
+          power->batteries[i]->present = false;
      }
    close(fd);
 
@@ -311,8 +297,7 @@ _battery_state_get(power_t *power)
    unsigned long charge_full = 0;
    unsigned long charge_current = 0;
 
-   for (i = 0; i < power->battery_count; i++)
-     {
+   for (i = 0; i < power->battery_count; i++) {
         naming = NULL;
         snprintf(path, sizeof(path), "/sys/class/power_supply/%s",
                  power->batteries[i]->name);
@@ -369,17 +354,13 @@ _battery_state_get(power_t *power)
              char name[256];
              int len;
 
-             len = strlen(vendor);
-             if (vendor[len - 1] == '\n' || vendor[len - 1] == '\r')
-               {
-                  vendor[len - 1] = '\0';
-               }
+             len = strlen(vendor) - 1;
+             if (vendor[len] == '\n' || vendor[len] == '\r')
+               vendor[len] = '\0';
 
-             len = strlen(model);
-             if (model[len - 1] == '\n' || model[len - 1] == '\r')
-               {
-                  model[len - 1] = '\0';
-               }
+             len = strlen(model) - 1;
+             if (model[len] == '\n' || model[len] == '\r')
+               model[len] = '\0';
 
              free(power->batteries[i]->name);;
              snprintf(name, sizeof(name), "%s %s", vendor, model);
@@ -424,9 +405,8 @@ system_power_state_get(power_t *power)
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    len = sizeof(value);
    if ((sysctl(power->ac_mibs, 3, &value, &len, NULL, 0)) == -1)
-     {
-        return;
-     }
+     return;
+
    power->have_ac = value;
 #elif defined(__linux__)
    buf = file_contents("/sys/class/power_supply/AC/online");
@@ -439,8 +419,7 @@ system_power_state_get(power_t *power)
 
   _battery_state_get(power);
 
-   for (i = 0; i < power->battery_count; i++)
-     {
+   for (i = 0; i < power->battery_count; i++) {
         double percent = 100 *
            (power->batteries[i]->charge_current /
                                     power->batteries[i]->charge_full);

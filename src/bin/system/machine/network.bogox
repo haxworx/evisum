@@ -24,8 +24,7 @@ _freebsd_generic_network_status(uint64_t *in,
    int i, count;
    len = sizeof(count);
 
-   if (sysctlbyname
-         ("net.link.generic.system.ifcount", &count, &len, NULL, 0) < 0)
+   if (sysctlbyname("net.link.generic.system.ifcount", &count, &len, NULL, 0) == -1)
      return;
 
    ifmd = malloc(sizeof(struct ifmibdata));
