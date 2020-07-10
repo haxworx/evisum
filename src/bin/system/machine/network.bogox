@@ -16,8 +16,8 @@
 
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
 static void
-_freebsd_generic_network_status(unsigned long int *in,
-                                unsigned long int *out)
+_freebsd_generic_network_status(uint64_t *in,
+                                uint64_t *out)
 {
    struct ifmibdata *ifmd;
    size_t len;
@@ -50,8 +50,8 @@ _freebsd_generic_network_status(unsigned long int *in,
 
 #if defined(__OpenBSD__)
 static void
-_openbsd_generic_network_status(unsigned long int *in,
-                                unsigned long int *out)
+_openbsd_generic_network_status(uint64_t *in,
+                                uint64_t *out)
 {
    struct ifaddrs *interfaces, *ifa;
 
@@ -66,12 +66,21 @@ _openbsd_generic_network_status(unsigned long int *in,
         struct ifreq ifreq;
         struct if_data if_data;
 
+        // TBC: Interfaces can have multiple addresses.
+        // Using this netmask check we should be obtaining
+        // the overall interface data across addresses.
+
+        if (ifa->ifa_netmask != 0) continue;
+
         ifreq.ifr_data = (void *)&if_data;
         strncpy(ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ - 1);
         if (ioctl(sock, SIOCGIFDATA, &ifreq) < 0)
           return;
 
-        struct if_data *const ifi = &if_data;
+        const struct if_data *ifi = &if_data;
+        if (!LINK_STATE_IS_UP(ifi->ifi_link_state))
+          continue;
+
         if (ifi->ifi_type == IFT_ETHER ||
             ifi->ifi_type == IFT_FASTETHER ||
             ifi->ifi_type == IFT_GIGABITETHERNET ||
@@ -92,8 +101,8 @@ _openbsd_generic_network_status(unsigned long int *in,
 
 #if defined(__linux__)
 static void
-_linux_generic_network_status(unsigned long int *in,
-                              unsigned long int *out)
+_linux_generic_network_status(uint64_t *in,
+                              uint64_t *out)
 {
    FILE *f;
    char buf[4096], dummy_s[256];
@@ -123,8 +132,8 @@ _linux_generic_network_status(unsigned long int *in,
 void
 system_network_transfer_get(network_t *usage)
 {
-   unsigned long first_in = 0, first_out = 0;
-   unsigned long last_in = 0, last_out = 0;
+   uint64_t first_in = 0, first_out = 0;
+   uint64_t last_in = 0, last_out = 0;
 #if defined(__linux__)
    _linux_generic_network_status(&first_in, &first_out);
    usleep(1000000);

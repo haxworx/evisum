@@ -54,8 +54,8 @@ typedef struct
 
 typedef struct
 {
-   unsigned long incoming;
-   unsigned long outgoing;
+   uint64_t incoming;
+   uint64_t outgoing;
 } network_t;
 
 typedef struct Sys_Info Sys_Info;
