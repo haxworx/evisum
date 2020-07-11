@@ -277,7 +277,6 @@ _battery_state_get(power_t *power)
    struct dirent *dh;
    struct stat st;
    DIR *dir;
-   char *model, *vendor;
    char *buf, *naming = NULL;
 
    for (int i = 0; i < power->battery_count; i++) {
@@ -290,6 +289,7 @@ _battery_state_get(power_t *power)
 
         dir = opendir(path);
         if (!dir) return;
+
         while ((dh = readdir(dir)) != NULL)
           {
              char *e;
@@ -306,45 +306,18 @@ _battery_state_get(power_t *power)
         if (!naming)
           continue;
 
-        buf = file_contents(strsli_printf("/sys/class/power_supply/%s/%s_full",
-                            power->batteries[i]->name, naming));
+        buf = file_contents(strsli_printf("/sys/class/power_supply/%s/%s_full", power->batteries[i]->name, naming));
         if (buf)
           {
              power->batteries[i]->charge_full = atol(buf);
              free(buf);
           }
-        buf = file_contents(strsli_printf("/sys/class/power_supply/%s/%s_now",
-                            power->batteries[i]->name, naming));
+        buf = file_contents(strsli_printf("/sys/class/power_supply/%s/%s_now", power->batteries[i]->name, naming));
         if (buf)
           {
              power->batteries[i]->charge_current = atol(buf);
              free(buf);
           }
-
-        vendor = file_contents(strsli_printf("/sys/class/power_supply/%s/manufacturer",
-                               power->batteries[i]->name));
-        model = file_contents(strsli_printf("/sys/class/power_supply/%s/model_name",
-                              power->batteries[i]->name));
-
-        if (vendor && vendor[0] && model && model[0])
-          {
-             int len;
-
-             len = strlen(vendor) - 1;
-             if (vendor[len] == '\n' || vendor[len] == '\r')
-               vendor[len] = '\0';
-
-             len = strlen(model) - 1;
-             if (model[len] == '\n' || model[len] == '\r')
-               model[len] = '\0';
-
-             free(power->batteries[i]->name);;
-             power->batteries[i]->name = strdup(strsli_printf("%s %s", vendor, model));
-          }
-        if (model)
-          free(model);
-        if (vendor)
-          free(vendor);
         free(naming);
      }
 #endif
