@@ -1,4 +1,16 @@
 ============
+Evisum 0.5.1
+============
+
+  * OpenBSD improvements.
+  * Fix some 64-bit memory calculation issues.
+  * Split out the machine querying code.
+  * macOS improvements.
+  * Under-the-hood cosmetic changes.
+  * Credit photograph appropriately (about).
+  * Bug fixes.
+
+============
 Evisum 0.5.0
 ============
 
