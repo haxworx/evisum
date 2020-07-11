@@ -13,6 +13,7 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
 #define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,7 +77,7 @@ _network_transfer_get_thread_cb(void *arg)
 
    system_network_transfer_get(usage);
 
-   return (void *)0;
+   return NULL;
 }
 
 void
@@ -86,13 +87,10 @@ system_info_all_free(Sys_Info *info)
    int i;
 
    for (i = 0; i < info->cpu_count; i++)
-     {
-        free(info->cores[i]);
-     }
+     free(info->cores[i]);
    free(info->cores);
 
-   for (i = 0; i < info->sensor_count; i++)
-     {
+   for (i = 0; i < info->sensor_count; i++) {
         snsr = info->sensors[i];
         if (snsr->name)
           free(snsr->name);
@@ -101,8 +99,7 @@ system_info_all_free(Sys_Info *info)
    if (info->sensors)
      free(info->sensors);
 
-   for (i = 0; i < info->power.battery_count; i++)
-     {
+   for (i = 0; i < info->power.battery_count; i++) {
         if (info->power.batteries[i]->name)
           free(info->power.batteries[i]->name);
 #if defined(__OpenBSD__)

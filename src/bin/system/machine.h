@@ -1,6 +1,12 @@
 #ifndef __MACHINE_H__
 #define __MACHINE_H__
 
+/* All functions and data types implementing these APIs have no additional
+ * system dependencies deliberately.
+ *
+ * See machine.c and the files includes in machine/ sub directory.
+ */
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -13,15 +19,15 @@ typedef struct
 
 typedef struct
 {
-   unsigned long long total;
-   unsigned long long used;
-   unsigned long long cached;
-   unsigned long long buffered;
-   unsigned long long shared;
-   unsigned long long swap_total;
-   unsigned long long swap_used;
+   uint64_t total;
+   uint64_t used;
+   uint64_t cached;
+   uint64_t buffered;
+   uint64_t shared;
+   uint64_t swap_total;
+   uint64_t swap_used;
 
-   unsigned long long zfs_arc_used;
+   uint64_t zfs_arc_used;
 } meminfo_t;
 
 typedef struct
@@ -63,11 +69,12 @@ struct Sys_Info
 {
    int           cpu_count;
    cpu_core_t  **cores;
+
    meminfo_t     memory;
    power_t       power;
 
    int           sensor_count;
-   sensor_t     **sensors;
+   sensor_t    **sensors;
 
    network_t     network_usage;
 };
