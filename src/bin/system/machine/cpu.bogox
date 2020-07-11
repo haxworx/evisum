@@ -94,11 +94,10 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
    double ratio, percent;
    unsigned long total, idle, used;
    cpu_core_t *core;
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__DragonFly__)
    size_t size;
    int i, j;
-#endif
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+
    if (!ncpu)
      return;
    size = sizeof(unsigned long) * (CPU_STATES * ncpu);
@@ -136,6 +135,8 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 #elif defined(__OpenBSD__)
    static struct cpustats cpu_times[CPU_STATES];
    static int cpu_time_mib[] = { CTL_KERN, KERN_CPUSTATS, 0 };
+   size_t size;
+   int i, j;
 
    memset(&cpu_times, 0, CPU_STATES * sizeof(struct cpustats));
    if (!ncpu)
