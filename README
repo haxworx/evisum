@@ -23,3 +23,9 @@ INSTALL:
 
 $ ninja -C build install
 
+CONTRIBUTIONS:
+
+Patches with bug fixes are more than welcome. If you do wish to
+add a substantial querying feature PLEASE ensure that it works reliaibly
+on OpenBSD, Linux and FreeBSD (ideally macOS also). UI changes
+should be platform independent.
