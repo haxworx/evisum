@@ -333,8 +333,6 @@ system_power_state_get(power_t *power)
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int value;
    size_t len;
-#elif defined(__linux__)
-   char *buf;
 #endif
 
    if (!_power_battery_count_get(power))
@@ -353,7 +351,7 @@ system_power_state_get(power_t *power)
 
    power->have_ac = value;
 #elif defined(__linux__)
-   buf = file_contents("/sys/class/power_supply/AC/online");
+   char *buf = file_contents("/sys/class/power_supply/AC/online");
    if (buf)
      {
         power->have_ac = atoi(buf);
