@@ -1,7 +1,7 @@
 /*
  * Copyright 2018-2019. Alastair Roy Poole <netstar@gmail.com>
  *
- * See LICENSE file for details.
+ * See COPYING file for details.
  */
 
 #define DEVELOPMENT 1
