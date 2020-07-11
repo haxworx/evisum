@@ -33,10 +33,6 @@ _meminfo_parse_line(const char *line)
 void
 system_memory_usage_get(meminfo_t *memory)
 {
-#if defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-   size_t len = 0, miblen;
-   int i = 0;
-#endif
    memset(memory, 0, sizeof(meminfo_t));
 #if defined(__linux__)
    FILE *f;
@@ -113,6 +109,7 @@ system_memory_usage_get(meminfo_t *memory)
    long int result = 0;
    int page_size = getpagesize();
    int mib[5] = { CTL_HW, HW_PHYSMEM, 0, 0, 0 };
+   size_t miblen, len = 0;
 
    len = sizeof(memory->total);
    if (sysctl(mib, 2, &memory->total, &len, NULL, 0) == -1)
@@ -154,7 +151,7 @@ system_memory_usage_get(meminfo_t *memory)
 
    struct xswdev xsw;
 
-   for (i = 0; ; i++) {
+   for (int i = 0; ; i++) {
         mib[miblen] = i;
         len = sizeof(xsw);
         if (sysctl(mib, miblen + 1, &xsw, &len, NULL, 0) == -1)
@@ -170,7 +167,7 @@ system_memory_usage_get(meminfo_t *memory)
    struct uvmexp uvmexp;
    int nswap, rnswap;
    struct swapent *swdev = NULL;
-   (void) miblen;
+   size_t len;
 
    len = sizeof(memory->total);
    if (sysctl(mib, 2, &memory->total, &len, NULL, 0) == -1)
@@ -196,7 +193,7 @@ system_memory_usage_get(meminfo_t *memory)
    if (rnswap == -1)
      goto swap_out;
 
-   for (i = 0; i < nswap; i++) {
+   for (int i = 0; i < nswap; i++) {
         if (swdev[i].se_flags & SWF_ENABLE)
           {
              memory->swap_used += (swdev[i].se_inuse / (1024 / DEV_BSIZE));
