@@ -61,6 +61,12 @@ cpu_count(void)
 }
 
 int
+system_cpu_count_get(void)
+{
+   return cpu_count();
+}
+
+int
 system_cpu_online_count_get(void)
 {
 #if defined(__OpenBSD__)

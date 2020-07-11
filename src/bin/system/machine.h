@@ -86,7 +86,10 @@ void
 system_info_all_free(Sys_Info *);
 
 int
-system_cpu_online_count_get();
+system_cpu_online_count_get(void);
+
+int
+system_cpu_count_get(void);
 
 cpu_core_t **
 system_cpu_usage_get(int *ncpu);

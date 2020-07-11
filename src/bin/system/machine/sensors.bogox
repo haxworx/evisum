@@ -118,12 +118,15 @@ _power_battery_count_get(power_t *power)
 {
 #if defined(__OpenBSD__)
    struct sensordev snsrdev;
+   struct sensor snsr;
+   size_t slen = sizeof(struct sensor);
    size_t sdlen = sizeof(struct sensordev);
-   int mib[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
-   int i, devn, id;
+   int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
+   int i, devn;
+
    for (devn = 0;; devn++) {
-        mib[2] = devn;
-        if (sysctl(mib, 3, &snsrdev, &sdlen, NULL, 0) == -1)
+        mibs[2] = devn;
+        if (sysctl(mibs, 3, &snsrdev, &sdlen, NULL, 0) == -1)
           {
              if (errno == ENXIO)
                continue;
@@ -131,31 +134,40 @@ _power_battery_count_get(power_t *power)
                break;
           }
 
-        for (i = 0; i < 10; i++) {
-             char buf[64];
-             snprintf(buf, sizeof(buf), "acpibat%d", i);
-             if (!strcmp(buf, snsrdev.xname))
-               {
-                  id = power->battery_count;
-                  power->batteries = realloc(power->batteries, 1 +
-                                     power->battery_count * sizeof(bat_t **));
-                  power->batteries[id] = calloc(1, sizeof(bat_t));
-                  power->batteries[id]->name = strdup(buf);
-                  power->batteries[id]->present = true;
-                  power->batteries[id]->mibs = malloc(sizeof(int) * 5);
-                  int *tmp = power->batteries[id]->mibs;
-                  tmp[0] = mib[0];
-                  tmp[1] = mib[1];
-                  tmp[2] = mib[2];
-                  power->battery_count++;
-               }
+        for (int n = 0; n < snsrdev.maxnumt[SENSOR_WATTHOUR]; n++) {
+             mibs[4] = n;
+
+             if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
+               continue;
+
+             if (slen > 0 && (snsr.flags & SENSOR_FINVALID) == 0)
+               break;
+          }
+
+        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
+          continue;
+
+        if ((snsr.type == SENSOR_AMPHOUR) || (snsr.type == SENSOR_WATTHOUR))
+          {
+             i = power->battery_count;
+             power->batteries = realloc(power->batteries, 1 +
+                                power->battery_count++ * sizeof(bat_t **));
+             power->batteries[i] = calloc(1, sizeof(bat_t));
+             power->batteries[i]->name = strdup(snsrdev.xname);
+             power->batteries[i]->present = true;
+             power->batteries[i]->mibs = malloc(sizeof(int) * 5);
+
+             int *tmp = power->batteries[i]->mibs;
+             tmp[0] = mibs[0];
+             tmp[1] = mibs[1];
+             tmp[2] = mibs[2];
           }
 
         if (!strcmp("acpiac0", snsrdev.xname))
           {
-             power->ac_mibs[0] = mib[0];
-             power->ac_mibs[1] = mib[1];
-             power->ac_mibs[2] = mib[2];
+             power->ac_mibs[0] = mibs[0];
+             power->ac_mibs[1] = mibs[1];
+             power->ac_mibs[2] = mibs[2];
           }
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
