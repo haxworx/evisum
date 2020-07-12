@@ -97,7 +97,6 @@ _openbsd_generic_network_status(uint64_t *in,
 
 #endif
 
-
 #if defined(__linux__)
 static void
 _linux_generic_network_status(uint64_t *in,

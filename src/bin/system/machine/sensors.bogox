@@ -23,8 +23,8 @@ system_sensors_thermal_get(int *sensor_count)
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
    int devn, n;
    struct sensor snsr;
-   size_t slen = sizeof(struct sensor);
    struct sensordev snsrdev;
+   size_t slen = sizeof(struct sensor);
    size_t sdlen = sizeof(struct sensordev);
 
    for (devn = 0;; devn++) {

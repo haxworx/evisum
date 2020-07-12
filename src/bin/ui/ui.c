@@ -885,7 +885,7 @@ _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ecore_file_app_installed("terminology"))
      terminal = "terminology";
 
-   ecore_exe_run(eina_slstr_printf("%s -e gdb  attach %d", terminal, proc->pid), NULL);
+   ecore_exe_run(eina_slstr_printf("%s -e gdb attach %d", terminal, proc->pid), NULL);
 
    proc_info_free(proc);
 }
