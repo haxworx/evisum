@@ -1298,7 +1298,7 @@ static Evas_Object *
 _ui_content_add(Evas_Object *parent, Ui *ui)
 {
    Evas_Object *table, *box, *entry, *hbox, *frame;
-   Evas_Object *border;
+   Evas_Object *ic;
 
    ui->content = table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
@@ -1309,7 +1309,7 @@ _ui_content_add(Evas_Object *parent, Ui *ui)
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, 0);
    evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_style_set(frame, "pad_small");
+   elm_object_style_set(frame, "pad_medium");
    evas_object_show(frame);
 
    hbox = elm_box_add(parent);
@@ -1324,12 +1324,6 @@ _ui_content_add(Evas_Object *parent, Ui *ui)
    elm_box_horizontal_set(box, EINA_TRUE);
    evas_object_show(box);
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(border, FILL, FILL);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
-
    ui->entry_search = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, FILL, FILL);
@@ -1338,17 +1332,14 @@ _ui_content_add(Evas_Object *parent, Ui *ui)
    elm_entry_editable_set(entry, EINA_TRUE);
    evas_object_show(entry);
 
-   /*
    ic = elm_icon_add(parent);
    elm_icon_standard_set(ic, evisum_icon_path_get("find"));
    evas_object_size_hint_min_set(ic, 24, 24);
    evas_object_show(ic);
    evas_object_color_set(ic, 64, 64, 64, 255);
    elm_object_part_content_set(entry, "icon", ic);
-   */
 
-   elm_object_content_set(border, entry);
-   elm_box_pack_end(box, border);
+   elm_box_pack_end(box, entry);
 
    elm_object_content_set(frame, box);
    elm_box_pack_end(hbox, frame);
