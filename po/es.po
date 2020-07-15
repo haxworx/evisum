@@ -1,39 +1,37 @@
-# French translation for Evisum.
-# Copyright (C) 2020 Alastair "netstar" Poole
+# Spanish translation for Evisum.
 # This file is distributed under the same license as the evisum package.
-# Alastair Poole <netstar@gmail.com>, 2020.
-# similar <similar@orange.fr>, 2020.
+# Roy W. Reese <waterbearer54@gmx.com>, 2020.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: evisum\n"
-"Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
+"Project-Id-Version: Evisum\n"
+"Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-07-01 14:13+0100\n"
-"PO-Revision-Date: 2020-07-13 08:38+0200\n"
-"Last-Translator: Philippe Jean Guillaumie <similar@orange.fr>\n"
-"Language-Team: French\n"
-"Language: fr\n"
+"PO-Revision-Date: 2020-07-15 22:07+0200\n"
+"Last-Translator: RWR\n"
+"Language-Team: General\n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"X-Generator: Poedit 2.3\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.3.1\n"
 
 #: src/bin/ui/ui_process_view.c:544
 msgid " Memory :"
-msgstr " Mémoire :"
+msgstr " Memoria :"
 
 #: src/bin/ui/ui_process_view.c:554
 msgid " Resident memory:"
-msgstr " Mémoire résidente :"
+msgstr " Memoria residente:"
 
 #: src/bin/ui/ui_process_view.c:549
 msgid " Shared memory:"
-msgstr " Mémoire partagée :"
+msgstr " Memoria compartida:"
 
 #: src/bin/ui/ui_process_view.c:559
 msgid " Virtual memory:"
-msgstr " Mémoire virtuelle :"
+msgstr " Memoria virtual:"
 
 #: src/bin/ui/ui_misc.c:35
 #, c-format
@@ -43,24 +41,24 @@ msgstr "%s"
 #: src/bin/ui/ui_process_view.c:360
 #, c-format
 msgid "%s (%d) - Not running"
-msgstr "%s (%d) - Pas en exécution"
+msgstr "%s (%d) - No ejecutándose"
 
 #: src/bin/ui/ui_misc.c:33
 #, c-format
 msgid "%s (plugged in)"
-msgstr "%s (sur secteur)"
+msgstr "%s (enchufada)"
 
 #: src/bin/ui/ui.c:1556
 msgid "About"
-msgstr "À propos"
+msgstr "Sobre"
 
 #: src/bin/ui/ui.c:939
 msgid "Actions"
-msgstr "Actions"
+msgstr "Acciones"
 
 #: src/bin/ui/ui_memory.c:160
 msgid "Buffered"
-msgstr "Tamponnée"
+msgstr "En búfer"
 
 #: src/bin/ui/ui.c:1548
 msgid "CPU"
@@ -68,7 +66,7 @@ msgstr "CPU"
 
 #: src/bin/ui/ui_process_view.c:533
 msgid "CPU #:"
-msgstr "CPU n° :"
+msgstr "CPU #:"
 
 #: src/bin/ui/ui.c:1153 src/bin/ui/ui_process_view.c:778
 msgid "CPU %"
@@ -76,63 +74,63 @@ msgstr "CPU %"
 
 #: src/bin/ui/ui_process_view.c:579
 msgid "CPU %:"
-msgstr "CPU % :"
+msgstr "CPU %:"
 
 #: src/bin/ui/ui_process_view.c:769
 msgid "CPU ID"
-msgstr "CPU ID"
+msgstr "ID CPU"
 
 #: src/bin/ui/ui_cpu.c:213
 msgid "CPU Usage"
-msgstr "Utilisation du CPU"
+msgstr "Uso CPU"
 
 #: src/bin/ui/ui_memory.c:155
 msgid "Cached"
-msgstr "Cachée"
+msgstr "Caché"
 
 #: src/bin/ui/ui.c:965
 msgid "Cancel"
-msgstr "Annuler"
+msgstr "Cancelar"
 
 #: src/bin/ui/ui.c:1133
 msgid "Command"
-msgstr "Commande"
+msgstr "Comando"
 
 #: src/bin/ui/ui_process_view.c:510
 msgid "Command line:"
-msgstr "Ligne de commande :"
+msgstr "Linea de comando:"
 
 #: src/bin/ui/ui_process_view.c:505
 msgid "Command:"
-msgstr "Commande :"
+msgstr "Comando:"
 
 #: src/bin/ui/ui.c:896
 msgid "Debug"
-msgstr "Déboguer"
+msgstr "Depurar"
 
 #: src/bin/ui/ui.c:887
 msgid "Decrease"
-msgstr "Diminuer"
+msgstr "Reducir"
 
 #: src/bin/ui/ui_process_view.c:810
 msgid "Documentation"
-msgstr "Documentation"
+msgstr "Documentación"
 
 #: src/bin/main.c:42
 msgid "EFL System Monitor"
-msgstr "Moniteur système EFL"
+msgstr "Monitor de sistema EFL"
 
 #: src/bin/ui/ui.c:1545
 msgid "File"
-msgstr "Fichier"
+msgstr "Archivo"
 
 #: src/bin/ui/ui_process_view.c:494
 msgid "General"
-msgstr "Général"
+msgstr "General"
 
 #: src/bin/ui/ui.c:1555
 msgid "Help"
-msgstr "Aide"
+msgstr "Ayuda"
 
 #: src/bin/ui/ui_process_view.c:742
 msgid "ID"
@@ -140,52 +138,52 @@ msgstr "ID"
 
 #: src/bin/ui/ui.c:885
 msgid "Increase"
-msgstr "Augmenter"
+msgstr "Aumentar"
 
 #: src/bin/ui/ui_process_view.c:626
 msgid "Kill"
-msgstr "Tuer"
+msgstr "Matar"
 
 #: src/bin/ui/ui_process_view.c:959
 msgid "Manual"
-msgstr "Manuel"
+msgstr "Manual"
 
 #: src/bin/ui/ui.c:1549
 msgid "Memory"
-msgstr "Mémoire"
+msgstr "Memoria"
 
 #: src/bin/ui/ui_memory.c:134
 msgid "Memory Usage"
-msgstr "Utilisation de la mémoire"
+msgstr "Uso memoria"
 
 #: src/bin/ui/ui.c:1553
 msgid "Misc"
-msgstr "Divers"
+msgstr "Misc"
 
 #: src/bin/ui/ui_process_view.c:751
 msgid "Name"
-msgstr "Nom"
+msgstr "Nombre"
 
 #: src/bin/ui/ui_misc.c:174
 msgid "Network Incoming"
-msgstr "Réseau entrant"
+msgstr "Red: Entrante"
 
 #: src/bin/ui/ui_misc.c:176
 msgid "Network Outgoing"
-msgstr "Réseau sortant"
+msgstr "Red: Saliente"
 
 #: src/bin/ui/ui_process_view.c:564
 msgid "Nice:"
-msgstr "Nice :"
+msgstr "Nice:"
 
 #: src/bin/ui/ui_process_view.c:905
 #, c-format
 msgid "No documentation found for %s."
-msgstr "Pas de documentation disponible pour %s."
+msgstr "No encontró documentación para %s."
 
 #: src/bin/ui/ui_util.c:322
 msgid "Okay!"
-msgstr "Okay !"
+msgstr "¡OK!"
 
 #: src/bin/ui/ui.c:1093
 msgid "PID"
@@ -193,104 +191,104 @@ msgstr "PID"
 
 #: src/bin/ui/ui_process_view.c:515
 msgid "PID:"
-msgstr "PID :"
+msgstr "PID:"
 
 #: src/bin/ui/ui.c:944
 msgid "Priority"
-msgstr "Priorité"
+msgstr "Prioridad"
 
 #: src/bin/ui/ui_process_view.c:569
 msgid "Priority:"
-msgstr "Priorité :"
+msgstr "Prioridad:"
 
 #: src/bin/ui/ui_process_view.c:936
 msgid "Process"
-msgstr "Processus"
+msgstr "Proceso"
 
 #: src/bin/ui/ui.c:961
 msgid "Properties"
-msgstr "Propriétés"
+msgstr "Propiedades"
 
 #: src/bin/ui/ui.c:1546
 msgid "Quit"
-msgstr "Quitter"
+msgstr "Salir"
 
 #: src/bin/ui/ui.c:1123
 msgid "Res"
-msgstr "Rés."
+msgstr "Residente"
 
 #: src/bin/ui/ui_memory.c:165
 msgid "Shared"
-msgstr "Partagée"
+msgstr "Compartida"
 
 #: src/bin/ui/ui.c:1113
 msgid "Size"
-msgstr "Taille"
+msgstr "Tamaño"
 
 #: src/bin/ui/ui.c:949 src/bin/ui/ui_process_view.c:614
 msgid "Start"
-msgstr "Démarrer"
+msgstr "Iniciar"
 
 #: src/bin/ui/ui.c:1143 src/bin/ui/ui_process_view.c:760
 msgid "State"
-msgstr "État"
+msgstr "Estado"
 
 #: src/bin/ui/ui_process_view.c:574
 msgid "State:"
-msgstr "État :"
+msgstr "Estado:"
 
 #: src/bin/ui/ui.c:953 src/bin/ui/ui_process_view.c:603
 msgid "Stop"
-msgstr "Arrêter"
+msgstr "Detener"
 
 #: src/bin/ui/ui.c:1551 src/bin/ui/ui_disk.c:177
 msgid "Storage"
-msgstr "Stockage"
+msgstr "Almacenamiento"
 
 #: src/bin/ui/ui_misc.c:349
 msgid "Stuff"
-msgstr "Autres choses"
+msgstr "Diversas cosas"
 
 #: src/bin/ui/ui_memory.c:170
 msgid "Swapped"
-msgstr "Échangée"
+msgstr "Swap"
 
 #: src/bin/ui/ui.c:1056
 msgid "System CPU"
-msgstr "CPU du système"
+msgstr "CPU de sistema"
 
 #: src/bin/ui/ui.c:1071
 msgid "System Memory"
-msgstr "Mémoire du système"
+msgstr "Memoria de sistema"
 
 #: src/bin/ui/ui_process_view.c:724 src/bin/ui/ui_process_view.c:948
 msgid "Threads"
-msgstr "Fils d'exécution"
+msgstr "Hilos"
 
 #: src/bin/ui/ui_process_view.c:539
 msgid "Threads:"
-msgstr "Fils d'exécution :"
+msgstr "Hilos:"
 
 #: src/bin/ui/ui_process_view.c:525
 msgid "UID:"
-msgstr "UID :"
+msgstr "UID:"
 
 #: src/bin/ui/ui_memory.c:150
 msgid "Used"
-msgstr "Utilisée"
+msgstr "Utilisada"
 
 #: src/bin/ui/ui.c:1103
 msgid "User"
-msgstr "Utilisateur"
+msgstr "Usuario"
 
 #: src/bin/ui/ui_process_view.c:520
 msgid "Username:"
-msgstr "Nom d'utilisateur :"
+msgstr "Nombre usuario:"
 
 #: src/bin/ui/ui.c:1547
 msgid "View"
-msgstr "Vue"
+msgstr "Vista"
 
 #: src/bin/ui/ui_process_view.c:531
 msgid "WQ #:"
-msgstr "WQ n° :"
+msgstr "WQ #:"
