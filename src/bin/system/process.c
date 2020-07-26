@@ -546,7 +546,9 @@ _cmd_get(Proc_Info *p, int pid)
    args = malloc(argmax);
    if (!args) return;
 
-   /*
+   /* See libtop.c (top) for the origin of this comment, which is necessary as
+    * there is little other documentation...thanks Apple.
+    *
     * Make a sysctl() call to get the raw argument space of the process.
     * The layout is documented in start.s, which is part of the Csu
     * project.  In summary, it looks like:
