@@ -623,7 +623,7 @@ _process_list(void *data, Ecore_Thread *thread)
      }
 }
 
-static Evas_Object *_selected = NULL;
+Evas_Object *_selected;
 
 static void
 _btn_icon_state_update(Evas_Object *button, Eina_Bool reverse)
@@ -1592,6 +1592,7 @@ _ui_init(Evas_Object *parent)
 
    _ui = NULL;
    _evisum_config = NULL;
+   _selected = NULL;
 
    _config_load(ui);
 
