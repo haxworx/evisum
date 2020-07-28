@@ -245,6 +245,7 @@ about_anim(void *data)
    evas_object_geometry_get(ad->bg, NULL, NULL, &w, &h);
    evas_object_geometry_get(ad->label, &x, NULL, &ow, &oh);
    evas_object_move(ad->label, x, ad->pos);
+   evas_object_show(ad->label);
 
    ad->pos--;
    if (ad->pos <= -oh) ad->pos = h;
@@ -305,7 +306,6 @@ evisum_about_window_show(void *data)
    evas_object_show(box);
 
    label = elm_label_add(win);
-   evas_object_show(label);
    elm_object_text_set(label, copyright);
 
    version = elm_label_add(win);
