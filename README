@@ -2,7 +2,7 @@
 
 System Monitor (EFL)
 
-This is a process monitor and system monitor for Linux, OpenBSD
+This is a process monitor and system monitor for Linux, OpenBSD,
 FreeBSD, DragonFlyBSD and macOS.
 
 REQUIREMENTS:
