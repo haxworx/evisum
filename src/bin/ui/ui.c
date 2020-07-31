@@ -1381,6 +1381,9 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (ev->keyname[0] == 'e' || ev->keyname[0] == 'E')
      ui->show_self = !ui->show_self;
 
+   if (ev->keyname[0] == 'k' || ev->keyname[0] == 'K')
+     proc_info_kthreads_show_set(!proc_info_kthreads_show_get());
+
    _config_save(ui);
 }
 

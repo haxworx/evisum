@@ -44,6 +44,20 @@
 
 #include "macros.h"
 
+static Eina_Bool _show_kthreads = EINA_FALSE;
+
+void
+proc_info_kthreads_show_set(Eina_Bool enabled)
+{
+   _show_kthreads = enabled;
+}
+
+Eina_Bool
+proc_info_kthreads_show_get(void)
+{
+   return _show_kthreads;
+}
+
 static const char *
 _process_state_name(char state)
 {
@@ -305,7 +319,8 @@ _process_list_linux_get(void)
         if (!_stat(eina_slstr_printf("/proc/%d/stat", pid), &st))
           continue;
 
-        if (st.flags & PF_KTHREAD) continue;
+        if (st.flags & PF_KTHREAD && !proc_info_kthreads_show_get())
+          continue;
 
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
@@ -895,7 +910,7 @@ _process_list_freebsd_fallback_get(void)
         if (sysctl(mib, 4, &kp, &len, NULL, 0) == -1)
           continue;
 
-        if (kp.ki_flag & P_KPROC)
+        if (kp.ki_flag & P_KPROC && !proc_info_kthreads_show_get())
           continue;
 
         Proc_Info *p = _proc_thread_info(&kp, EINA_FALSE);
@@ -928,7 +943,7 @@ _process_list_freebsd_get(void)
 
    for (int i = 0; i < pid_count; i++)
      {
-        if (kps[i].ki_flag & P_KPROC)
+        if (kps[i].ki_flag & P_KPROC && !proc_info_kthreads_show_get())
           continue;
 
         kp = &kps[i];
@@ -988,7 +1003,7 @@ proc_info_by_pid(int pid)
 
    for (int i = 0; i < pid_count; i++)
      {
-        if (kps[i].ki_flag & P_KPROC)
+        if (kps[i].ki_flag & P_KPROC && !proc_info_kthreads_show_get())
           continue;
         if (kps[i].ki_pid != pid)
           continue;

@@ -76,6 +76,13 @@ proc_info_by_pid(int pid);
 void
 proc_info_free(Proc_Info *proc);
 
+
+void
+proc_info_kthreads_show_set(Eina_Bool enabled);
+
+Eina_Bool
+proc_info_kthreads_show_get(void);
+
 /**
  * @}
  */
