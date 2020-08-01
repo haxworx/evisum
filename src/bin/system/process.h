@@ -77,9 +77,19 @@ void
 proc_info_free(Proc_Info *proc);
 
 
+/**
+ * Enable or disable the listing of kernel threads.
+ *
+ * @param enabled Boolean true or false (show/hide).
+ */
 void
 proc_info_kthreads_show_set(Eina_Bool enabled);
 
+/**
+ * Return the current policy for listing kernel threads.
+ *
+ * @return True or false (enabled/disabled).
+ */
 Eina_Bool
 proc_info_kthreads_show_get(void);
 
