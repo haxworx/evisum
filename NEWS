@@ -3,6 +3,7 @@ Evisum 0.5.3
 ============
 
   * Option to show kernel threads.
+  * Show PPID in process view.
 
 ============
 Evisum 0.5.2

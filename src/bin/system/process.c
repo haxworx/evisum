@@ -255,7 +255,7 @@ _uid(int pid)
 }
 
 typedef struct {
-   int pid, utime, stime, cutime, cstime;
+   int pid, ppid, utime, stime, cutime, cstime;
    int psr, pri, nice, numthreads;
    char state;
    unsigned int mem_rss, flags;
@@ -285,7 +285,7 @@ _stat(const char *path, Stat *st)
         res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
               " %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u"
               " %d %d %d %d %d %d %d %d %d",
-              &st->state, &dummy, &dummy, &dummy, &dummy, &dummy, &st->flags,
+              &st->state, &st->ppid, &dummy, &dummy, &dummy, &dummy, &st->flags,
               &dummy, &dummy, &dummy, &dummy, &st->utime, &st->stime, &st->cutime,
               &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &dummy,
               &st->mem_virt, &st->mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy,
@@ -326,6 +326,7 @@ _process_list_linux_get(void)
         if (!p) return NULL;
 
         p->pid = pid;
+        p->ppid = st.ppid;
         p->uid = _uid(pid);
         p->cpu_id = st.psr;
         p->state = _process_state_name(st.state);
@@ -387,6 +388,7 @@ proc_info_by_pid(int pid)
    if (!p) return NULL;
 
    p->pid = pid;
+   p->ppid = st.ppid;
    p->uid = _uid(pid);
    p->cpu_id = st.psr;
    p->state = _process_state_name(st.state);
@@ -862,7 +864,6 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->pid = kp->ki_pid;
    p->ppid = kp->ki_ppid;
    p->uid = kp->ki_uid;
-
 
    if (!is_thread)
      _cmd_get(p, kp);
