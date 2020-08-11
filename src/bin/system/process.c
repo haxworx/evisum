@@ -673,6 +673,7 @@ _proc_pidinfo(size_t pid)
    if (!p) return NULL;
 
    p->pid = pid;
+   p->ppid = taskinfo.pbsd.pbi_ppid;
    p->uid = taskinfo.pbsd.pbi_uid;
    p->cpu_id = -1;
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
