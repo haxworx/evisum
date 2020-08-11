@@ -414,6 +414,7 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    if (!pagesize) pagesize = getpagesize();
 
    p->pid = kp->p_pid;
+   p->ppid = kp->p_ppid;
    p->uid = kp->p_uid;
    p->cpu_id = kp->p_cpuid;
    p->state = _process_state_name(kp->p_stat);
