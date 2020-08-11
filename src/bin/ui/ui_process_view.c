@@ -391,6 +391,7 @@ _proc_info_update(void *data)
    elm_object_text_set(ui->entry_pid_uid, eina_slstr_printf("%d", proc->uid));
    elm_object_text_set(ui->entry_pid_cpu,
                    eina_slstr_printf("%d", proc->cpu_id));
+   elm_object_text_set(ui->entry_pid_ppid, eina_slstr_printf("%d", proc->ppid));
    elm_object_text_set(ui->entry_pid_threads,
                    eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(ui->entry_pid_virt, evisum_size_format(proc->mem_virt));
@@ -525,6 +526,11 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    label = _label_add(parent, _("UID:"));
    elm_table_pack(table, label, 0, i, 1, 1);
    ui->entry_pid_uid = entry = _entry_add(parent);
+   elm_table_pack(table, entry, 1, i++, 1, 1);
+
+   label = _label_add(parent, _("PPID:"));
+   elm_table_pack(table, label, 0, i, 1, 1);
+   ui->entry_pid_ppid = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
 #if defined(__MacOS__)

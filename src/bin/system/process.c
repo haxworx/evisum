@@ -858,7 +858,9 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    if (!p) return NULL;
 
    p->pid = kp->ki_pid;
+   p->ppid = kp->ki_ppid;
    p->uid = kp->ki_uid;
+
 
    if (!is_thread)
      _cmd_get(p, kp);

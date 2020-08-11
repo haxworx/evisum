@@ -25,6 +25,7 @@ typedef struct _Ui_Process {
    Evas_Object  *entry_pid_cmd_args;
    Evas_Object  *entry_pid_user;
    Evas_Object  *entry_pid_pid;
+   Evas_Object  *entry_pid_ppid;
    Evas_Object  *entry_pid_uid;
    Evas_Object  *entry_pid_cpu;
    Evas_Object  *entry_pid_threads;
