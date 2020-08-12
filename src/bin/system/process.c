@@ -762,6 +762,7 @@ proc_info_by_pid(int pid)
 
    p->pid = pid;
    p->uid = taskinfo.pbsd.pbi_uid;
+   p->ppid = taskinfo.pbsd.pbi_ppid;
    p->cpu_id = workqueue.pwq_nthreads;
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
       taskinfo.ptinfo.pti_total_system;
