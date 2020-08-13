@@ -33,7 +33,7 @@ typedef struct _Proc_Info
    int8_t      priority;
    int         cpu_id;
    int32_t     numthreads;
-   long        cpu_time;
+   int64_t     cpu_time;
    double      cpu_usage;
 
    uint64_t    mem_size;

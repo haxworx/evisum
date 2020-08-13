@@ -877,6 +877,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
 
    p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec +
        (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
+   // XXX: See kern.sched.idlespins
    p->cpu_time /= 10000;
    p->state = _process_state_name(kp->ki_stat);
    p->mem_virt = kp->ki_size;
