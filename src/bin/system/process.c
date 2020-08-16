@@ -714,6 +714,7 @@ _proc_pidinfo(size_t pid)
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
+   p->start = taskinfo.pbsd.pbi_start_tvsec;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
@@ -800,6 +801,7 @@ proc_info_by_pid(int pid)
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
+   p->start = taskinfo.pbsd.pbi_start_tvsec;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
