@@ -419,6 +419,7 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    p->ppid = kp->p_ppid;
    p->uid = kp->p_uid;
    p->cpu_id = kp->p_cpuid;
+   p->start = kp->p_ustart_sec;
    p->state = _process_state_name(kp->p_stat);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
    p->mem_virt = p->mem_size = (MEMSZ(kp->p_vm_tsize) * MEMSZ(pagesize)) +
