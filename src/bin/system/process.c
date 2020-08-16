@@ -254,9 +254,33 @@ _uid(int pid)
    return uid;
 }
 
+static int64_t
+_boot_time(void)
+{
+   FILE *f;
+   int64_t boot_time;
+   char buf[4096];
+   double uptime = 0.0;
+
+   f = fopen("/proc/uptime", "r");
+   if (!f) return 0;
+
+   if (fgets(buf, sizeof(buf), f))
+     sscanf(buf, "%lf", &uptime);
+   else boot_time = 0;
+
+   fclose(f);
+
+   if (uptime > 0.0)
+     boot_time = time(NULL) - (time_t) uptime;
+
+   return boot_time;
+}
+
 typedef struct {
    int pid, ppid, utime, stime, cutime, cstime;
    int psr, pri, nice, numthreads;
+   long long int start_time;
    char state;
    unsigned int mem_rss, flags;
    unsigned long mem_virt;
@@ -269,6 +293,9 @@ _stat(const char *path, Stat *st)
    FILE *f;
    char line[4096];
    int dummy, res = 0;
+   static int64_t boot_time = 0;
+
+   if (!boot_time) boot_time = _boot_time();
 
    memset(st, 0, sizeof(Stat));
 
@@ -283,11 +310,11 @@ _stat(const char *path, Stat *st)
         strncpy(st->name, start, end - start);
         st->name[end - start] = '\0';
         res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
-              " %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u"
+              " %d %d %d %u %u %lld %lu %u %u %u %u %u %u %u %d %d %d %d %u"
               " %d %d %d %d %d %d %d %d %d",
               &st->state, &st->ppid, &dummy, &dummy, &dummy, &dummy, &st->flags,
               &dummy, &dummy, &dummy, &dummy, &st->utime, &st->stime, &st->cutime,
-              &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &dummy,
+              &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &st->start_time,
               &st->mem_virt, &st->mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy,
               &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
               &dummy, &dummy, &st->psr, &dummy, &dummy, &dummy, &dummy, &dummy);
@@ -295,6 +322,9 @@ _stat(const char *path, Stat *st)
    fclose(f);
 
    if (res != 42) return EINA_FALSE;
+
+   st->start_time /= sysconf(_SC_CLK_TCK);
+   st->start_time += boot_time;
 
    return EINA_TRUE;
 }
@@ -329,6 +359,7 @@ _process_list_linux_get(void)
         p->ppid = st.ppid;
         p->uid = _uid(pid);
         p->cpu_id = st.psr;
+        p->start = st.start_time;
         p->state = _process_state_name(st.state);
         p->cpu_time = st.utime + st.stime;
         p->nice = st.nice;
@@ -391,6 +422,7 @@ proc_info_by_pid(int pid)
    p->ppid = st.ppid;
    p->uid = _uid(pid);
    p->cpu_id = st.psr;
+   p->start = st.start_time;
    p->state = _process_state_name(st.state);
    p->cpu_time = st.utime + st.stime;
    p->priority = st.pri;
