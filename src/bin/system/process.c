@@ -882,6 +882,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->state = _process_state_name(kp->ki_stat);
    p->mem_virt = kp->ki_size;
    p->mem_rss = MEMSZ(kp->ki_rssize) * MEMSZ(pagesize);
+   p->start = kp->ki_start.tv_sec;
    p->mem_size = p->mem_virt;
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;

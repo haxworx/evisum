@@ -33,6 +33,7 @@ typedef struct _Ui_Process {
    Evas_Object  *entry_pid_rss;
    Evas_Object  *entry_pid_shared;
    Evas_Object  *entry_pid_size;
+   Evas_Object  *entry_pid_started;
    Evas_Object  *entry_pid_nice;
    Evas_Object  *entry_pid_pri;
    Evas_Object  *entry_pid_state;

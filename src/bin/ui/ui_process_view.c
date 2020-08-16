@@ -337,6 +337,20 @@ _win_title_set(Evas_Object *win, const char *fmt, const char *cmd, int pid)
     elm_win_title_set(win, eina_slstr_printf(fmt, cmd, pid));
 }
 
+static char *
+_time_string(int64_t epoch)
+{
+   struct tm *info;
+   time_t rawtime;
+   char buf[256];
+
+   rawtime = (time_t) epoch;
+   info = localtime(&rawtime);
+   strftime(buf, sizeof(buf), "%F %T", info);
+
+   return strdup(buf);
+}
+
 static Eina_Bool
 _proc_info_update(void *data)
 {
@@ -403,6 +417,13 @@ _proc_info_update(void *data)
                    evisum_size_format(proc->mem_shared));
 #endif
    elm_object_text_set(ui->entry_pid_size, evisum_size_format(proc->mem_size));
+
+   char *t = _time_string(proc->start);
+   if (t)
+     {
+        elm_object_text_set(ui->entry_pid_started, t);
+        free(t);
+     }
    elm_object_text_set(ui->entry_pid_nice, eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(ui->entry_pid_pri,
                    eina_slstr_printf("%d", proc->priority));
@@ -565,6 +586,11 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    label = _label_add(parent, _(" Virtual memory:"));
    elm_table_pack(table, label, 0, i, 1, 1);
    ui->entry_pid_virt = entry = _entry_add(parent);
+   elm_table_pack(table, entry, 1, i++, 1, 1);
+
+   label = _label_add(parent, _(" Start time:"));
+   elm_table_pack(table, label, 0, i, 1, 1);
+   ui->entry_pid_started = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = _label_add(parent, _("Nice:"));
