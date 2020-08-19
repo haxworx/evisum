@@ -633,7 +633,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(border);
 
    button = evisum_ui_button_add(parent, &ui->btn_stop, _("Stop"),
-                   _btn_stop_clicked_cb, ui);
+                   "stop",_btn_stop_clicked_cb, ui);
    ui->btn_stop = button;
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
@@ -644,7 +644,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(border);
 
    button = evisum_ui_button_add(parent, &ui->btn_start, _("Start"),
-                   _btn_start_clicked_cb, ui);
+                   "start", _btn_start_clicked_cb, ui);
    ui->btn_start = button;
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
@@ -656,7 +656,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_show(border);
 
    button = evisum_ui_button_add(parent, &ui->btn_kill, _("Kill"),
-                   _btn_kill_clicked_cb, ui);
+                   "kill", _btn_kill_clicked_cb, ui);
    ui->btn_kill = button;
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);

@@ -20,11 +20,11 @@
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
-                Evas_Smart_Cb clicked_cb, void *data);
+                  Evas_Smart_Cb clicked_cb, void *data);
 
 Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
-                Evas_Smart_Cb clicked_cb, void *data);
+                     const char *icon, Evas_Smart_Cb clicked_cb, void *data);
 
 const char *
 evisum_size_format(unsigned long long bytes);

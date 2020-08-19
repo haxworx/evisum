@@ -45,9 +45,9 @@ evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
 
 Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
-                Evas_Smart_Cb clicked_cb, void *data)
+                     const char *icon, Evas_Smart_Cb clicked_cb, void *data)
 {
-   Evas_Object *tbl, *rect, *button, *label;
+   Evas_Object *tbl, *rect, *button, *label, *hbx, *ic;
 
    tbl = elm_table_add(parent);
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
@@ -66,13 +66,29 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    evas_object_show(button);
    evas_object_smart_callback_add(button, "clicked", clicked_cb, data);
 
+   hbx = elm_box_add(parent);
+   elm_box_horizontal_set(hbx, EINA_TRUE);
+   evas_object_size_hint_weight_set(hbx, 0.0, EXPAND);
+   evas_object_size_hint_align_set(hbx, FILL, FILL);
+   evas_object_show(hbx);
+
+   ic = elm_icon_add(parent);
+   elm_icon_standard_set(ic, evisum_icon_path_get(icon));
+   evas_object_size_hint_weight_set(ic, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(ic, FILL, FILL);
+   evas_object_show(ic);
+
+   elm_box_pack_end(hbx, ic);
+
    label = elm_label_add(parent);
-   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(label, 1.0, EXPAND);
    evas_object_size_hint_align_set(label, FILL, FILL);
    evas_object_show(label);
    elm_object_text_set(label,
                    eina_slstr_printf("%s", text));
-   elm_layout_content_set(button, "elm.swallow.content", label);
+
+   elm_box_pack_end(hbx, label);
+   elm_layout_content_set(button, "elm.swallow.content", hbx);
 
    elm_table_pack(tbl, rect, 0, 0, 1, 1);
    elm_table_pack(tbl, button, 0, 0, 1, 1);

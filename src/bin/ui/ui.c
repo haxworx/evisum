@@ -1560,7 +1560,7 @@ _menu_setup(Ui *ui)
 
    menu = elm_win_main_menu_get(ui->win);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("File"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, "exit", _("Quit"), _quit_cb, ui);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("exit"), _("Quit"), _quit_cb, ui);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("View"), NULL, NULL);
    elm_menu_item_add(menu, menu_it, NULL, _("CPU"), _menu_cpu_activity_clicked_cb, ui);
    elm_menu_item_add(menu, menu_it, NULL, _("Memory"),
