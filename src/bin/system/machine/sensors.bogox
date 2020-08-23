@@ -282,7 +282,7 @@ _battery_state_get(power_t *power)
    for (int i = 0; i < power->battery_count; i++) {
         naming = NULL;
 
-        path = strsli_printf("/sys/class/power_suppy/%s", power->batteries[i]->name);
+        path = strsli_printf("/sys/class/power_supply/%s", power->batteries[i]->name);
 
         if (((stat(path, &st) < 0)) || (S_ISLNK(st.st_mode)) || (!S_ISDIR(st.st_mode)))
           continue;
