@@ -1562,12 +1562,13 @@ _menu_setup(Ui *ui)
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("File"), NULL, NULL);
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("exit"), _("Quit"), _quit_cb, ui);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("View"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, NULL, _("CPU"), _menu_cpu_activity_clicked_cb, ui);
-   elm_menu_item_add(menu, menu_it, NULL, _("Memory"),
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("cpu"), _("CPU"),
+                   _menu_cpu_activity_clicked_cb, ui);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("memory"), _("Memory"),
                    _menu_memory_activity_clicked_cb, ui);
-   elm_menu_item_add(menu, menu_it, NULL, _("Storage"),
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("storage"), _("Storage"),
                    _menu_disk_activity_clicked_cb, ui);
-   elm_menu_item_add(menu, menu_it, NULL, _("Misc"),
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("misc"), _("Misc"),
                    _menu_misc_activity_clicked_cb, ui);
    menu_it = elm_menu_item_add(menu, NULL, NULL, _("Help"), NULL, NULL);
    elm_menu_item_add(menu, menu_it, "evisum", _("About"), _about_clicked_cb, ui);
