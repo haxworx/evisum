@@ -349,6 +349,7 @@ ui_win_misc_add(Ui *ui)
    ui->win_misc = win = elm_win_util_dialog_add(ui->win, "evisum", _("Stuff"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);

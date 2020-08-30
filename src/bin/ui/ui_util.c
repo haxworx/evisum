@@ -3,6 +3,10 @@
 #include <Elementary.h>
 #include "config.h"
 
+#define ARRAY_SIZE(n) sizeof(n) / sizeof(n[0])
+
+static Eina_Bool _effects_enabled = EINA_FALSE;
+
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                 Evas_Smart_Cb clicked_cb, void *data)
@@ -353,4 +357,74 @@ evisum_about_window_show(void *data)
    elm_object_content_set(win, box);
 
    evas_object_show(win);
+}
+
+const char *
+evisum_image_path_get(const char *name)
+{
+   char *path;
+   const char *icon_path = NULL, *directory = PACKAGE_DATA_DIR "/images";
+
+   path = _path_append(directory, eina_slstr_printf("%s.jpg", name));
+   if (path)
+     {
+        if (ecore_file_exists(path))
+          icon_path = eina_slstr_printf("%s", path);
+
+        free(path);
+     }
+
+   return icon_path;
+}
+
+Evas_Object *
+evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled)
+{
+   Evas_Object *bg;
+   int i;
+   char *images[] = { "sky_01", "sky_02", "sky_03", "sky_04", "sky_05"  };
+
+   if (!enabled) return NULL;
+
+   srand(time(NULL));
+
+   i = rand() % ARRAY_SIZE(images);
+
+   bg = elm_bg_add(win);
+   elm_bg_file_set(bg, evisum_image_path_get(images[i]), NULL);
+   evas_object_size_hint_align_set(bg, FILL, FILL);
+   evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+   elm_win_resize_object_add(win, bg);
+   evas_object_show(bg);
+
+   return bg;
+}
+
+Evas_Object *
+evisum_ui_background_add(Evas_Object *win, Eina_Bool enabled)
+{
+   Evas_Object *bg;
+
+   if (!enabled) return NULL;
+
+   bg = elm_bg_add(win);
+   elm_bg_file_set(bg, evisum_image_path_get("sky_01"), NULL);
+   evas_object_size_hint_align_set(bg, FILL, FILL);
+   evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+   elm_win_resize_object_add(win, bg);
+   evas_object_show(bg);
+
+   return bg;
+}
+
+Eina_Bool
+evisum_ui_effects_enabled_get(void)
+{
+   return _effects_enabled;
+}
+
+void
+evisum_ui_effects_enabled_set(Eina_Bool enabled)
+{
+   _effects_enabled = enabled;
 }

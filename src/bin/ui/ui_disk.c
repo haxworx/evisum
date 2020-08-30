@@ -177,6 +177,7 @@ ui_win_disk_add(Ui *ui)
                    _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -187,6 +188,7 @@ ui_win_disk_add(Ui *ui)
    evas_object_size_hint_weight_set(vbox, EXPAND, 0.0);
    evas_object_size_hint_align_set(vbox, FILL, 0.5);
    evas_object_show(vbox);
+   elm_win_resize_object_add(win, vbox);
 
    scroller = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);

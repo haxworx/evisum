@@ -164,7 +164,6 @@ _core_times_cb(void *data, Ecore_Thread *thread)
    for (int i = 0; !ecore_thread_check(thread); i = 0)
      {
         cores = system_cpu_usage_get(&ncpu);
-
         EINA_LIST_FOREACH(ui->cpu_list, l, progress)
           {
              *progress->value = cores[i]->percent;
@@ -193,7 +192,7 @@ _win_del_cb(void *data, Evas_Object *obj,
         free(progress);
      }
 
-   ecore_thread_wait(ui->thread_cpu, 1.0);
+   ecore_thread_wait(ui->thread_cpu, 0.1);
    evas_object_del(obj);
    ui->win_cpu = NULL;
 }
@@ -212,6 +211,8 @@ ui_win_cpu_add(Ui *ui)
                    _("CPU Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
+
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    hbox = elm_box_add(win);
    evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
@@ -258,7 +259,7 @@ ui_win_cpu_add(Ui *ui)
 
         pb = elm_progressbar_add(frame);
         evas_object_size_hint_align_set(pb, FILL, FILL);
-        evas_object_size_hint_weight_set(pb, 0.1, EXPAND);
+        evas_object_size_hint_weight_set(pb, 0.2, EXPAND);
         elm_progressbar_span_size_set(pb, 1.0);
         elm_progressbar_unit_format_set(pb, "%1.2f%%");
         evas_object_show(pb);
@@ -275,7 +276,7 @@ ui_win_cpu_add(Ui *ui)
         evas_object_size_hint_align_set(bg, FILL, FILL);
         evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
         evas_object_show(bg);
-        evas_object_size_hint_min_set(bg, 1, 80);
+        evas_object_size_hint_min_set(bg, 1, 60);
 
         line = evas_object_rectangle_add(evas_object_evas_get(bg));
         evas_object_size_hint_align_set(line, FILL, FILL);

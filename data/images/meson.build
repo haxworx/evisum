@@ -6,4 +6,6 @@ install_data('go-up.png', 'go-down.png',
              'sensor.png', 'mount.png', 'ladyhand.png',
              'find.png', 'bug.png', 'exit.png', 'cpu.png',
              'memory.png', 'storage.png', 'misc.png',
+             'sky_01.jpg', 'sky_02.jpg', 'sky_03.jpg',
+             'sky_04.jpg', 'sky_05.jpg', 'effects.png',
              install_dir: join_paths(dir_data, 'evisum/images'))

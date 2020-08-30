@@ -511,12 +511,19 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    Evas_Object *frame, *hbox, *table;
    Evas_Object *label, *entry, *button, *border;
    int i = 0;
+   int r, g, b , a;
 
    frame = elm_frame_add(parent);
    elm_object_text_set(frame, _("General"));
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_show(frame);
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
+     }
 
    table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
@@ -632,8 +639,8 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = evisum_ui_button_add(parent, &ui->btn_stop, _("Stop"),
-                   "stop",_btn_stop_clicked_cb, ui);
+   button = evisum_ui_tab_add(parent, &ui->btn_stop, _("Stop"),
+                   _btn_stop_clicked_cb, ui);
    ui->btn_stop = button;
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
@@ -643,8 +650,8 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = evisum_ui_button_add(parent, &ui->btn_start, _("Start"),
-                   "start", _btn_start_clicked_cb, ui);
+   button = evisum_ui_tab_add(parent, &ui->btn_start, _("Start"),
+                   _btn_start_clicked_cb, ui);
    ui->btn_start = button;
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
@@ -655,8 +662,8 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = evisum_ui_button_add(parent, &ui->btn_kill, _("Kill"),
-                   "kill", _btn_kill_clicked_cb, ui);
+   button = evisum_ui_tab_add(parent, &ui->btn_kill, _("Kill"),
+                   _btn_kill_clicked_cb, ui);
    ui->btn_kill = button;
    elm_object_content_set(border, button);
    elm_box_pack_end(hbox, border);
@@ -675,7 +682,7 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
    elm_object_part_content_set(button, "icon", icon);
-   evas_object_color_set(icon, 47, 153, 255, 255);
+   evas_object_color_set(icon, 255, 255, 255, 255);
 
    evas_object_show(icon);
 }
@@ -749,11 +756,18 @@ static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *frame, *box, *hbox, *btn, *genlist;
+   int r, g, b, a;
 
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("Threads"));
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
+     }
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -835,11 +849,18 @@ static Evas_Object *
 _info_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *frame, *box, *entry;
+   int r, g, b, a;
 
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("Documentation"));
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
+     }
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -1054,6 +1075,8 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
    elm_icon_standard_set(ic, "evisum");
    elm_win_icon_object_set(win, ic);
    tabs = _tabs_add(win, ui);
+
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);

@@ -134,6 +134,7 @@ ui_win_memory_add(Ui *ui)
                    _("Memory Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    frame = elm_frame_add(win);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
