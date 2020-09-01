@@ -431,7 +431,7 @@ evisum_ui_effects_enabled_set(Eina_Bool enabled)
 
 typedef struct
 {
-   Ui           *ui;
+   Ui          *ui;
    int          pos;
    int          bg_pos;
    Evas_Object *im;

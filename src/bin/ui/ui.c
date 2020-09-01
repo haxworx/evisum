@@ -1543,9 +1543,7 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
      goto out;
 
    for (int i = 0; i < info->cpu_count; i++)
-     {
-        cpu_usage += info->cores[i]->percent;
-     }
+     cpu_usage += info->cores[i]->percent;
 
    cpu_usage = cpu_usage / system_cpu_online_count_get();
 
@@ -1575,12 +1573,10 @@ _ui_launch(Ui *ui)
    _process_list_update(ui);
 
    ui->thread_system =
-      ecore_thread_feedback_run(_system_info_all_poll,
-                   _system_info_all_poll_feedback_cb, _thread_end_cb,
+      ecore_thread_feedback_run(_system_info_all_poll, _system_info_all_poll_feedback_cb, _thread_end_cb,
                    _thread_error_cb, ui, EINA_FALSE);
 
-   ui->thread_process =
-      ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
+   ui->thread_process = ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
                    _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
@@ -1589,6 +1585,9 @@ _ui_launch(Ui *ui)
                    _evisum_key_down_cb, ui);
    evas_object_event_callback_add(ui->entry_search, EVAS_CALLBACK_KEY_DOWN,
                    _evisum_search_keypress_cb, ui);
+
+   elm_object_focus_set(ui->entry_search, EINA_TRUE);
+   ecore_timer_add(2.0, _bring_in, ui);
 }
 
 static void
@@ -1667,10 +1666,6 @@ evisum_ui_add(Evas_Object *parent)
    if (!ui) return NULL;
 
    _ui_launch(ui);
-
-   elm_object_focus_set(ui->entry_search, EINA_TRUE);
-
-   ecore_timer_add(2.0, _bring_in, ui);
 
    return ui;
 }
