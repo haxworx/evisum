@@ -431,10 +431,11 @@ evisum_ui_effects_enabled_set(Eina_Bool enabled)
 
 typedef struct
 {
-   Ui *ui;
-
-   int pos;
+   Ui           *ui;
+   int          pos;
+   int          bg_pos;
    Evas_Object *im;
+   Evas_Object *bg;
    Evas_Object *bolt;
 } Animation;
 
@@ -456,18 +457,19 @@ _anim_clouds(void *data)
 
    if (ww > iw) iw = ww;
 
+   cpu = (ui->cpu_usage / 10) > 0 ? ui->cpu_usage / 10  :  1;
+
    evas_object_resize(anim->im, iw, wh);
    evas_object_image_fill_set(anim->im, anim->pos, 0, iw, wh);
-
-   cpu = (ui->cpu_usage / 10) > 0 ? ui->cpu_usage / 10  :  1;
    anim->pos += cpu;
 
-   if (cpu >= 6 && !bcount)
+   evas_object_resize(anim->bg, iw, wh);
+   evas_object_image_fill_set(anim->bg, anim->bg_pos, 0, iw, wh);
+   anim->bg_pos++;
+
+   if (cpu >= 8 && !bcount)
      {
-        if (cpu == 6 && (!(anim->pos % 2048))) bcount++;
-        else if (cpu == 7 && !(anim->pos % 1024)) bcount++;
-        else if (cpu == 8 && !(anim->pos % 512)) bcount++;
-        else if (cpu == 9 && !(anim->pos % 256)) bcount++;
+        if (cpu == 9 && !(anim->pos % 512)) bcount++;
         else if (cpu == 10 && !(anim->pos % 128)) bcount++;
      }
 
@@ -477,22 +479,24 @@ _anim_clouds(void *data)
         t = time(NULL);
         srand(t);
         evas_object_move(anim->bolt, rand() % ww, -(rand() % (wh / 2)));
-	if (!(t % 4)) evas_object_color_set(anim->bolt, 164, 192, 228, 255);
-	else if (!(t % 2)) evas_object_color_set(anim->bolt, 255, 255, 255, 255);
-	else evas_object_color_set(anim->bolt, 255, 255, 158, 255);
+        if (!(t % 4)) evas_object_color_set(anim->bolt, 164, 192, 228, 255);
+        else if (!(t % 2)) evas_object_color_set(anim->bolt, 255, 255, 255, 255);
+        else evas_object_color_set(anim->bolt, 255, 255, 158, 255);
         evas_object_show(anim->bolt);
      }
 
-   if (bcount % 2) evas_object_hide(anim->bolt);
+   if (bcount && bcount % 2) evas_object_hide(anim->bolt);
 
    if (bcount > 30)
      {
         evas_object_hide(anim->bolt);
-	bcount = 0;
+        bcount = 0;
      }
 
    if (anim->pos >= iw)
      anim->pos = -iw;
+   if (anim->bg_pos >= iw)
+     anim->bg_pos = 0;
 
    return ECORE_CALLBACK_RENEW;
 }
@@ -502,7 +506,7 @@ evisum_ui_animate(void *data)
 {
    Animation *anim;
    Ui *ui;
-   Evas_Object *im;
+   Evas_Object *bg, *im;
    Evas_Coord iw, ih, ww, wh;
 
    ui = data;
@@ -511,6 +515,16 @@ evisum_ui_animate(void *data)
 
    anim = calloc(1, sizeof(Animation));
    anim->ui = ui;
+
+   anim->bg = bg = evas_object_image_add(evas_object_evas_get(ui->win));
+   evas_object_image_file_set(bg, evisum_icon_path_get("clo"), NULL);
+   evas_object_image_size_get(bg, &iw, &ih);
+   evas_object_image_fill_set(bg, ww / 2, 0, iw, wh);
+   evas_object_resize(bg, iw, wh);
+   evas_object_move(bg, 0, 0);
+   evas_object_color_set(bg, 192, 192, 192, 128);
+   evas_object_pass_events_set(bg, 1);
+   evas_object_show(bg);
 
    anim->bolt = im = evas_object_image_filled_add(evas_object_evas_get(ui->win));
    evas_object_pass_events_set(im, 1);
@@ -526,7 +540,7 @@ evisum_ui_animate(void *data)
    evas_object_image_fill_set(im, ww / 2, 0, iw, wh);
    evas_object_resize(im, iw, wh);
    evas_object_move(im, 0, 0);
-   evas_object_color_set(im, 192, 192, 192, 255);
+   evas_object_color_set(im, 255, 255, 255, 152);
    evas_object_pass_events_set(im, 1);
    evas_object_show(im);
 
