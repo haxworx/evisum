@@ -511,7 +511,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    Evas_Object *frame, *hbox, *table;
    Evas_Object *label, *entry, *button, *border;
    int i = 0;
-   int r, g, b , a;
+   int r, g, b, a;
 
    frame = elm_frame_add(parent);
    elm_object_text_set(frame, _("General"));

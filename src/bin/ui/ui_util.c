@@ -428,3 +428,108 @@ evisum_ui_effects_enabled_set(Eina_Bool enabled)
 {
    _effects_enabled = enabled;
 }
+
+typedef struct
+{
+   Ui *ui;
+
+   int pos;
+   Evas_Object *im;
+   Evas_Object *bolt;
+} Animation;
+
+static Eina_Bool
+_anim_clouds(void *data)
+{
+   Ui *ui;
+   Animation *anim;
+   Evas_Coord ww, wh, h, iw, ih;
+   time_t t;
+   int cpu;
+   static int bcount = 0;
+
+   anim = data;
+   ui = anim->ui;
+
+   evas_object_geometry_get(ui->win, NULL, NULL, &ww, &wh);
+   evas_object_image_size_get(anim->im, &iw, &ih);
+
+   if (ww > iw) iw = ww;
+
+   evas_object_resize(anim->im, iw, wh);
+   evas_object_image_fill_set(anim->im, anim->pos, 0, iw, wh);
+
+   cpu = (ui->cpu_usage / 10) > 0 ? ui->cpu_usage / 10  :  1;
+   anim->pos += cpu;
+
+   if (cpu >= 6 && !bcount)
+     {
+        if (cpu == 6 && (!(anim->pos % 2048))) bcount++;
+        else if (cpu == 7 && !(anim->pos % 1024)) bcount++;
+        else if (cpu == 8 && !(anim->pos % 512)) bcount++;
+        else if (cpu == 9 && !(anim->pos % 256)) bcount++;
+        else if (cpu == 10 && !(anim->pos % 128)) bcount++;
+     }
+
+   if (bcount)
+     {
+        ++bcount;
+        t = time(NULL);
+        srand(t);
+        evas_object_move(anim->bolt, rand() % ww, -(rand() % (wh / 2)));
+	if (!(t % 4)) evas_object_color_set(anim->bolt, 164, 192, 228, 255);
+	else if (!(t % 2)) evas_object_color_set(anim->bolt, 255, 255, 255, 255);
+	else evas_object_color_set(anim->bolt, 255, 255, 158, 255);
+        evas_object_show(anim->bolt);
+     }
+
+   if (bcount % 2) evas_object_hide(anim->bolt);
+
+   if (bcount > 30)
+     {
+        evas_object_hide(anim->bolt);
+	bcount = 0;
+     }
+
+   if (anim->pos >= iw)
+     anim->pos = -iw;
+
+   return ECORE_CALLBACK_RENEW;
+}
+
+void
+evisum_ui_animate(void *data)
+{
+   Animation *anim;
+   Ui *ui;
+   Evas_Object *im;
+   Evas_Coord iw, ih, ww, wh;
+
+   ui = data;
+
+   evas_object_geometry_get(ui->win, NULL, NULL, &ww, &wh);
+
+   anim = calloc(1, sizeof(Animation));
+   anim->ui = ui;
+
+   anim->bolt = im = evas_object_image_filled_add(evas_object_evas_get(ui->win));
+   evas_object_pass_events_set(im, 1);
+   evas_object_image_file_set(im, evisum_icon_path_get("bolt"), NULL);
+   evas_object_image_size_get(im, &iw, &ih);
+   iw /=2; ih /=2;
+   evas_object_size_hint_min_set(im, iw, ih);
+   evas_object_resize(im, iw, ih);
+
+   anim->im = im = evas_object_image_add(evas_object_evas_get(ui->win));
+   evas_object_image_file_set(im, evisum_icon_path_get("clo"), NULL);
+   evas_object_image_size_get(im, &iw, &ih);
+   evas_object_image_fill_set(im, ww / 2, 0, iw, wh);
+   evas_object_resize(im, iw, wh);
+   evas_object_move(im, 0, 0);
+   evas_object_color_set(im, 192, 192, 192, 128);
+   evas_object_pass_events_set(im, 1);
+   evas_object_show(im);
+
+   ui->animator = ecore_animator_add(_anim_clouds, anim);
+}
+

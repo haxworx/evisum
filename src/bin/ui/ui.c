@@ -1053,6 +1053,7 @@ _ui_content_system_add(Ui *ui)
 {
    Evas_Object *parent, *box, *box2, *hbox, *frame, *table;
    Evas_Object *entry, *pb, *button, *plist;
+   int r, g, b, a;
    int i = 0;
 
    parent = ui->content;
@@ -1077,6 +1078,12 @@ _ui_content_system_add(Ui *ui)
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
 
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(ui->content, &r, &g, &b, &a);
+        evas_object_color_set(ui->content, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
+     }
+
    ui->progress_cpu = pb = elm_progressbar_add(parent);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
@@ -1092,6 +1099,12 @@ _ui_content_system_add(Ui *ui)
    elm_object_text_set(frame, _("System Memory"));
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
+     }
 
    ui->progress_mem = pb = elm_progressbar_add(parent);
    evas_object_size_hint_align_set(pb, FILL, FILL);
@@ -1191,6 +1204,12 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, "Processes");
    evas_object_show(frame);
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
+     }
 
    box2 = elm_box_add(parent);
    evas_object_size_hint_weight_set(box2, EXPAND, EXPAND);
@@ -1388,14 +1407,31 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    _config_save(ui);
 }
 
+static Eina_Bool
+_evisum_resize_timer_cb(void *data)
+{
+   Ui *ui = data;
+
+   ecore_timer_del(ui->timer_resize);
+   ui->timer_resize = NULL;
+
+   ui->ready = EINA_TRUE;
+   _process_list_update(ui);
+
+   return ECORE_CALLBACK_CANCEL;
+}
+
 static void
 _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
 
+   ui->ready = EINA_FALSE;
    elm_genlist_clear(ui->genlist_procs);
-
-   _process_list_update(ui);
+   if (ui->timer_resize)
+     ecore_timer_reset(ui->timer_resize);
+   else
+     ui->timer_resize = ecore_timer_add(0.2, _evisum_resize_timer_cb, ui);
 
    _config_save(ui);
 }
@@ -1404,9 +1440,7 @@ void
 evisum_ui_shutdown(Ui *ui)
 {
    if (ui->shutdown_now)
-     {
-        exit(0);
-     }
+     exit(0);
 
    if (ui->win_cpu)
      evas_object_smart_callback_call(ui->win_cpu, "delete,request", NULL);
@@ -1517,6 +1551,8 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
 
+   ui->cpu_usage = cpu_usage;
+
    if (ui->zfs_mounted)
      info->memory.used += info->memory.zfs_arc_used;
 
@@ -1606,9 +1642,15 @@ _ui_init(Evas_Object *parent)
 
    _config_load(ui);
 
+   if (evisum_ui_effects_enabled_get())
+     evisum_ui_background_add(ui->win, evisum_ui_effects_enabled_get());
+
    _ui_content_add(parent, ui);
 
    _menu_setup(ui);
+
+   if (evisum_ui_effects_enabled_get())
+     evisum_ui_animate(ui);
 
    ui->cache = evisum_ui_item_cache_new(ui->genlist_procs, _item_create, 50);
 

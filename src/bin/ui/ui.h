@@ -33,6 +33,7 @@ typedef enum
 typedef struct Ui
 {
    Evas_Object     *win;
+   Evas_Object     *bg;
    Evas_Object     *menu;
    Evas_Object     *scroller;
    Evas_Object     *content;
@@ -90,12 +91,16 @@ typedef struct Ui
    Eina_Bool       show_self;
    Eina_Bool       shutdown_now;
    Eina_Bool       restart;
+   Ecore_Timer    *timer_resize;
 
+   Ecore_Animator *animator;
    Eina_Bool       zfs_mounted;
 
    uint64_t        incoming_max;
    uint64_t        outgoing_max;
    network_t       network_usage;
+
+   uint8_t         cpu_usage;
 } Ui;
 
 Ui *
