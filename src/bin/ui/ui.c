@@ -1642,8 +1642,9 @@ _ui_init(Evas_Object *parent)
 
    _config_load(ui);
 
+   // **** it!!! full steam ahead
    if (evisum_ui_effects_enabled_get())
-     evisum_ui_background_add(ui->win, evisum_ui_effects_enabled_get());
+     ui->poll_delay = 1;
 
    _ui_content_add(parent, ui);
 
