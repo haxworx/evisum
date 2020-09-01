@@ -408,7 +408,7 @@ evisum_ui_background_add(Evas_Object *win, Eina_Bool enabled)
    if (!enabled) return NULL;
 
    bg = elm_bg_add(win);
-   elm_bg_file_set(bg, evisum_image_path_get("sky_01"), NULL);
+   elm_bg_file_set(bg, evisum_image_path_get("sky_03"), NULL);
    evas_object_size_hint_align_set(bg, FILL, FILL);
    evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
    elm_win_resize_object_add(win, bg);
@@ -443,7 +443,7 @@ _anim_clouds(void *data)
 {
    Ui *ui;
    Animation *anim;
-   Evas_Coord ww, wh, h, iw, ih;
+   Evas_Coord ww, wh, iw, ih;
    time_t t;
    int cpu;
    static int bcount = 0;

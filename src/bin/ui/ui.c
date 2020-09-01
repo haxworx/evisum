@@ -1078,7 +1078,7 @@ _ui_content_system_add(Ui *ui)
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
 
-   if (evisum_ui_effects_enabled_get())
+   if ( 0 && evisum_ui_effects_enabled_get())
      {
         evas_object_color_get(ui->content, &r, &g, &b, &a);
         evas_object_color_set(ui->content, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
@@ -1100,7 +1100,7 @@ _ui_content_system_add(Ui *ui)
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
 
-   if (evisum_ui_effects_enabled_get())
+   if (0 && evisum_ui_effects_enabled_get())
      {
         evas_object_color_get(frame, &r, &g, &b, &a);
         evas_object_color_set(frame, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
@@ -1205,7 +1205,7 @@ _ui_content_system_add(Ui *ui)
    elm_object_text_set(frame, "Processes");
    evas_object_show(frame);
 
-   if (evisum_ui_effects_enabled_get())
+   if (0 && evisum_ui_effects_enabled_get())
      {
         evas_object_color_get(frame, &r, &g, &b, &a);
         evas_object_color_set(frame, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
