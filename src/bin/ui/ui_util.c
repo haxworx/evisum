@@ -447,7 +447,7 @@ _anim_clouds(void *data)
    Evas_Coord ww, wh, iw, ih;
    time_t t;
    int cpu;
-   static int bcount = 0;
+   static int bolt = 0;
 
    anim = data;
    ui = anim->ui;
@@ -467,34 +467,34 @@ _anim_clouds(void *data)
    evas_object_image_fill_set(anim->bg, anim->bg_pos, 0, iw, wh);
    anim->bg_pos++;
 
-   if (cpu >= 8 && !bcount)
+   t = time(NULL);
+
+   if (cpu >= 6 && !bolt)
      {
-        if (cpu == 9 && !(anim->pos % 512)) bcount++;
-        else if (cpu == 10 && !(anim->pos % 128)) bcount++;
+        if (cpu == 6 && !(t % 16)) bolt++;
+        else if (cpu == 7 && !(t % 8)) bolt++;
+        else if (cpu == 8 && !(t % 4)) bolt++;
+        else if (cpu == 9 && !(t % 2)) bolt++;
+        else if (cpu == 10) bolt++;
      }
 
-   if (bcount)
+   if (bolt)
      {
-        ++bcount;
-        t = time(NULL);
+        ++bolt;
         srand(t);
         evas_object_move(anim->bolt, rand() % ww, -(rand() % (wh / 2)));
-        if (!(t % 4)) evas_object_color_set(anim->bolt, 164, 192, 228, 255);
-        else if (!(t % 2)) evas_object_color_set(anim->bolt, 255, 255, 255, 255);
-        else evas_object_color_set(anim->bolt, 255, 255, 158, 255);
         evas_object_show(anim->bolt);
      }
 
-   if (bcount && bcount % 2) evas_object_hide(anim->bolt);
-
-   if (bcount > 30)
+   if (bolt && bolt % 2) evas_object_hide(anim->bolt);
+   if (bolt > 30)
      {
         evas_object_hide(anim->bolt);
-        bcount = 0;
+        bolt = 0;
      }
 
    if (anim->pos >= iw)
-     anim->pos = -iw;
+     anim->pos = 0;
    if (anim->bg_pos >= iw)
      anim->bg_pos = 0;
 
@@ -511,15 +511,17 @@ evisum_ui_animate(void *data)
 
    ui = data;
 
-   evas_object_geometry_get(ui->win, NULL, NULL, &ww, &wh);
-
    anim = calloc(1, sizeof(Animation));
+   if (!anim) return;
+
    anim->ui = ui;
+
+   evas_object_geometry_get(ui->win, NULL, NULL, &ww, &wh);
 
    anim->bg = bg = evas_object_image_add(evas_object_evas_get(ui->win));
    evas_object_image_file_set(bg, evisum_icon_path_get("clo"), NULL);
    evas_object_image_size_get(bg, &iw, &ih);
-   evas_object_image_fill_set(bg, ww / 2, 0, iw, wh);
+   evas_object_image_fill_set(bg, ww / 3, 0, iw, wh);
    evas_object_resize(bg, iw, wh);
    evas_object_move(bg, 0, 0);
    evas_object_color_set(bg, 192, 192, 192, 128);
@@ -530,7 +532,6 @@ evisum_ui_animate(void *data)
    evas_object_pass_events_set(im, 1);
    evas_object_image_file_set(im, evisum_icon_path_get("bolt"), NULL);
    evas_object_image_size_get(im, &iw, &ih);
-   iw /=2; ih /=2;
    evas_object_size_hint_min_set(im, iw, ih);
    evas_object_resize(im, iw, ih);
 
@@ -540,7 +541,7 @@ evisum_ui_animate(void *data)
    evas_object_image_fill_set(im, ww / 2, 0, iw, wh);
    evas_object_resize(im, iw, wh);
    evas_object_move(im, 0, 0);
-   evas_object_color_set(im, 255, 255, 255, 152);
+   evas_object_color_set(im, 255, 255, 255, 128);
    evas_object_pass_events_set(im, 1);
    evas_object_show(im);
 
