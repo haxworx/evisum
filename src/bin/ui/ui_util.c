@@ -382,7 +382,7 @@ evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled)
 {
    Evas_Object *bg;
    int i;
-   char *images[] = { "sky_01", "sky_02", "sky_03", "sky_04", "sky_05"  };
+   char *images[] = { "sky_01", "sky_02", "sky_03", "sky_04"  };
 
    if (!enabled) return NULL;
 
