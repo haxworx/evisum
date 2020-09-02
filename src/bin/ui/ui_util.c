@@ -524,7 +524,7 @@ evisum_ui_animate(void *data)
    evas_object_image_fill_set(bg, ww / 3, 0, iw, wh);
    evas_object_resize(bg, iw, wh);
    evas_object_move(bg, 0, 0);
-   evas_object_color_set(bg, 192, 192, 192, 128);
+   evas_object_color_set(bg, 255, 255, 255, 128);
    evas_object_pass_events_set(bg, 1);
    evas_object_show(bg);
 

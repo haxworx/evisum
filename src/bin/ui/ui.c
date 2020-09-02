@@ -1353,6 +1353,9 @@ _ui_content_system_add(Ui *ui)
    evas_object_show(hbox);
    elm_box_pack_end(box2, hbox);
 
+   btn = _btn_create(hbox, "menu", _("Menu"), _btn_menu_clicked_cb, ui);
+   elm_box_pack_end(hbox, btn);
+
    ui->entry_search = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, FILL, FILL);
@@ -1360,11 +1363,7 @@ _ui_content_system_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_TRUE);
    evas_object_show(entry);
-
    elm_box_pack_end(hbox, entry);
-
-   btn = _btn_create(hbox, "menu", _("Menu"), _btn_menu_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
 
    elm_box_pack_end(ui->system_activity, frame);
 
