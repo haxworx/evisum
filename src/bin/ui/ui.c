@@ -1582,9 +1582,7 @@ _system_info_all_poll(void *data, Ecore_Thread *thread)
              ecore_main_loop_quit();
              return;
           }
-
         ecore_thread_feedback(thread, info);
-
         for (int i = 0; i < 4; i++)
           {
              if (ecore_thread_check(thread)) return;
@@ -1638,27 +1636,34 @@ out:
    system_info_all_free(info);
 }
 
+static Eina_Bool
+_elm_config_change_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   elm_genlist_clear(ui->genlist_procs);
+   _process_list_update(ui);
+
+   return EINA_TRUE;
+}
+
 static void
 _ui_launch(Ui *ui)
 {
    _process_list_update(ui);
 
-   ui->thread_system =
-      ecore_thread_feedback_run(_system_info_all_poll, _system_info_all_poll_feedback_cb, _thread_end_cb,
-                   _thread_error_cb, ui, EINA_FALSE);
-
-   ui->thread_process = ecore_thread_feedback_run(_process_list, _process_list_feedback_cb,
-                   _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
-
-   evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
-                    _evisum_resize_cb, ui);
-   evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN,
-                   _evisum_key_down_cb, ui);
-   evas_object_event_callback_add(ui->entry_search, EVAS_CALLBACK_KEY_DOWN,
-                   _evisum_search_keypress_cb, ui);
-
-   elm_object_focus_set(ui->entry_search, EINA_TRUE);
    ecore_timer_add(2.0, _bring_in, ui);
+   elm_object_focus_set(ui->entry_search, EINA_TRUE);
+
+   ui->thread_system =
+      ecore_thread_feedback_run(_system_info_all_poll, _system_info_all_poll_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+   ui->thread_process =
+      ecore_thread_feedback_run(_process_list, _process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+
+   evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,  _evisum_resize_cb, ui);
+   evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN, _evisum_key_down_cb, ui);
+   evas_object_event_callback_add(ui->entry_search, EVAS_CALLBACK_KEY_DOWN, _evisum_search_keypress_cb, ui);
+   ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED, _elm_config_change_cb, ui);
 }
 
 static Ui *
@@ -1676,7 +1681,6 @@ _ui_init(Evas_Object *parent)
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
 
-   // Only take account of the ZFS ARC if there is an active mount.
    ui->zfs_mounted = file_system_in_use("ZFS");
 
    _ui = NULL;
