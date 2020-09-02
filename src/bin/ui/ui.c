@@ -1049,20 +1049,161 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 }
 
 static void
+_about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                  void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   evisum_about_window_show(ui);
+}
+
+static void
+_menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                                 void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui_win_memory_add(ui);
+}
+
+static void
+_menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                               void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui_win_disk_add(ui);
+}
+
+static void
+_menu_misc_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                               void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui_win_misc_add(ui);
+}
+
+static void
+_menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                              void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui_win_cpu_add(ui);
+}
+
+static void
+_menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                         void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   evisum_ui_effects_enabled_set(!evisum_ui_effects_enabled_get());
+
+   _config_save(ui);
+   ui->restart = EINA_TRUE;
+   ecore_main_loop_quit();
+}
+
+static void
+_main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                        void *ev EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   elm_menu_close(ui->main_menu);
+   evas_object_del(ui->main_menu);
+
+   ui->main_menu = NULL;
+}
+
+static void
+_main_menu_create(Ui *ui)
+{
+   Evas_Object *menu;
+   Elm_Object_Item *menu_it;
+
+   menu = elm_menu_add(ui->win);
+   menu_it = elm_menu_item_add(menu, NULL, NULL, _("File"), NULL, NULL);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("exit"), _("Quit"), _quit_cb, ui);
+   menu_it = elm_menu_item_add(menu, NULL, NULL, _("View"), NULL, NULL);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("cpu"), _("CPU"),
+                   _menu_cpu_activity_clicked_cb, ui);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("memory"), _("Memory"),
+                   _menu_memory_activity_clicked_cb, ui);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("storage"), _("Storage"),
+                   _menu_disk_activity_clicked_cb, ui);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("misc"), _("Misc"),
+                   _menu_misc_activity_clicked_cb, ui);
+   elm_menu_item_separator_add(menu, menu_it);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("effects"), _("Effects"),
+                   _menu_effects_clicked_cb, ui);
+   menu_it = elm_menu_item_add(menu, NULL, NULL, _("Help"), NULL, NULL);
+   elm_menu_item_add(menu, menu_it, "evisum", _("About"), _about_clicked_cb, ui);
+   evas_object_show(menu);
+
+   ui->main_menu = menu;
+
+   evas_object_smart_callback_add(menu, "dismissed", _main_menu_dismissed_cb, ui);
+}
+
+static void
+_btn_menu_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+         void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   if (!ui->main_menu)
+     _main_menu_create(ui);
+   else
+     _main_menu_dismissed_cb(ui, NULL, NULL);
+}
+
+static Evas_Object *
+_btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb, void *data)
+{
+   Evas_Object *btn, *ic;
+
+   btn = elm_button_add(parent);
+   evas_object_size_hint_weight_set(btn, 0, EXPAND);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, 24 * elm_config_scale_get(), 24 * elm_config_scale_get());
+   evas_object_show(btn);
+
+   ic = elm_icon_add(btn);
+   elm_icon_standard_set(ic, evisum_icon_path_get(icon));
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
+
+   elm_object_tooltip_text_set(btn, text);
+   evas_object_smart_callback_add(btn, "clicked", cb, data);
+
+   return btn;
+}
+
+static void
 _ui_content_system_add(Ui *ui)
 {
    Evas_Object *parent, *box, *box2, *hbox, *frame, *table;
-   Evas_Object *entry, *pb, *button, *plist;
-   int r, g, b, a;
+   Evas_Object *entry, *pb, *button, *plist, *btn;
    int i = 0;
 
    parent = ui->content;
+
+   frame = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_text_set(frame, _("System Overview"));
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
 
    ui->system_activity = box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_show(box);
-   elm_table_pack(ui->content, ui->system_activity, 0, 1, 1, 1);
+   elm_object_content_set(frame, box);
+   elm_table_pack(ui->content, frame, 0, 1, 1, 1);
 
    hbox = elm_box_add(box);
    evas_object_size_hint_weight_set(hbox, EXPAND, 0);
@@ -1075,14 +1216,9 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("System CPU"));
+   elm_object_style_set(frame, "pad_large");
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
-
-   if ( 0 && evisum_ui_effects_enabled_get())
-     {
-        evas_object_color_get(ui->content, &r, &g, &b, &a);
-        evas_object_color_set(ui->content, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
-     }
 
    ui->progress_cpu = pb = elm_progressbar_add(parent);
    evas_object_size_hint_align_set(pb, FILL, FILL);
@@ -1097,14 +1233,9 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("System Memory"));
+   elm_object_style_set(frame, "pad_large");
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
-
-   if (0 && evisum_ui_effects_enabled_get())
-     {
-        evas_object_color_get(frame, &r, &g, &b, &a);
-        evas_object_color_set(frame, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
-     }
 
    ui->progress_mem = pb = elm_progressbar_add(parent);
    evas_object_size_hint_align_set(pb, FILL, FILL);
@@ -1203,13 +1334,8 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, "Processes");
+   elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
-
-   if (0 && evisum_ui_effects_enabled_get())
-     {
-        evas_object_color_get(frame, &r, &g, &b, &a);
-        evas_object_color_set(frame, r * 0.85, g * 0.85, b * 0.85, a * 0.85);
-     }
 
    box2 = elm_box_add(parent);
    evas_object_size_hint_weight_set(box2, EXPAND, EXPAND);
@@ -1228,7 +1354,7 @@ _ui_content_system_add(Ui *ui)
    elm_box_pack_end(box2, hbox);
 
    ui->entry_search = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EXPAND, 0); //EXPAND);
+   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, FILL, FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
    elm_entry_scrollable_set(entry, EINA_TRUE);
@@ -1236,6 +1362,10 @@ _ui_content_system_add(Ui *ui)
    evas_object_show(entry);
 
    elm_box_pack_end(hbox, entry);
+
+   btn = _btn_create(hbox, "menu", _("Menu"), _btn_menu_clicked_cb, ui);
+   elm_box_pack_end(hbox, btn);
+
    elm_box_pack_end(ui->system_activity, frame);
 
    evas_object_smart_callback_add(ui->btn_pid, "clicked",
@@ -1258,64 +1388,6 @@ _ui_content_system_add(Ui *ui)
                    _item_pid_secondary_clicked_cb, ui);
    evas_object_smart_callback_add(ui->genlist_procs, "unrealized",
                    _item_unrealized_cb, ui);
-}
-
-static void
-_about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                  void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   evisum_about_window_show(ui);
-}
-
-static void
-_menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                                 void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   ui_win_memory_add(ui);
-}
-
-static void
-_menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                               void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   ui_win_disk_add(ui);
-}
-
-static void
-_menu_misc_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                               void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   ui_win_misc_add(ui);
-}
-
-static void
-_menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                              void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   ui_win_cpu_add(ui);
-}
-
-static void
-_menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                         void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   evisum_ui_effects_enabled_set(!evisum_ui_effects_enabled_get());
-
-   _config_save(ui);
-   ui->restart = EINA_TRUE;
-   ecore_main_loop_quit();
 }
 
 static void
@@ -1590,33 +1662,6 @@ _ui_launch(Ui *ui)
    ecore_timer_add(2.0, _bring_in, ui);
 }
 
-static void
-_menu_setup(Ui *ui)
-{
-   Evas_Object *menu;
-   Elm_Object_Item *menu_it;
-
-   menu = elm_win_main_menu_get(ui->win);
-   menu_it = elm_menu_item_add(menu, NULL, NULL, _("File"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("exit"), _("Quit"), _quit_cb, ui);
-   menu_it = elm_menu_item_add(menu, NULL, NULL, _("View"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("cpu"), _("CPU"),
-                   _menu_cpu_activity_clicked_cb, ui);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("memory"), _("Memory"),
-                   _menu_memory_activity_clicked_cb, ui);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("storage"), _("Storage"),
-                   _menu_disk_activity_clicked_cb, ui);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("misc"), _("Misc"),
-                   _menu_misc_activity_clicked_cb, ui);
-   elm_menu_item_separator_add(menu, menu_it);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("effects"), _("Effects"),
-                   _menu_effects_clicked_cb, ui);
-   menu_it = elm_menu_item_add(menu, NULL, NULL, _("Help"), NULL, NULL);
-   elm_menu_item_add(menu, menu_it, "evisum", _("About"), _about_clicked_cb, ui);
-
-   evas_object_show(menu);
-}
-
 static Ui *
 _ui_init(Evas_Object *parent)
 {
@@ -1643,11 +1688,12 @@ _ui_init(Evas_Object *parent)
 
    // **** it!!! full steam ahead
    if (evisum_ui_effects_enabled_get())
-     ui->poll_delay = 1;
+     {
+        evisum_ui_background_random_add(ui->win, 1);
+        ui->poll_delay = 1;
+     }
 
    _ui_content_add(parent, ui);
-
-   _menu_setup(ui);
 
    if (evisum_ui_effects_enabled_get())
      evisum_ui_animate(ui);
