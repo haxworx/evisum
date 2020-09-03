@@ -63,7 +63,6 @@ typedef struct Ui
    Evisum_Ui_Cache *cache;
    Evas_Object     *genlist_procs;
    Evas_Object     *entry_search;
-   Eina_Bool        show_genlist;
 
    Ecore_Thread    *thread_system;
    Ecore_Thread    *thread_process;

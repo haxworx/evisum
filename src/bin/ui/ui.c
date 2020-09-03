@@ -305,6 +305,29 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
 }
 
 static void
+_item_hide(Evas_Object *obj)
+{
+   Evas_Object *e;
+
+   e = evas_object_data_get(obj, "proc_pid");
+   evas_object_hide(e);
+   e = evas_object_data_get(obj, "proc_uid");
+   evas_object_hide(e);
+   e = evas_object_data_get(obj, "proc_size");
+   evas_object_hide(e);
+   e = evas_object_data_get(obj, "proc_rss");
+   evas_object_hide(e);
+   e = evas_object_data_get(obj, "proc_state");
+   evas_object_hide(e);
+   e = evas_object_data_get(obj, "proc_cmd");
+   evas_object_hide(e);
+   e = evas_object_data_get(obj, "proc_cpu_usage");
+   evas_object_hide(e);
+
+   evas_object_hide(obj);
+}
+
+static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
@@ -318,6 +341,7 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    EINA_LIST_FREE(contents, o)
      {
+        _item_hide(o);
         evisum_ui_item_cache_item_release(ui->cache, o);
      }
 }
@@ -325,9 +349,13 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
+   Ui *ui = _ui;
+
    Proc_Info *proc = data;
    proc_info_free(proc);
    proc = NULL;
+
+   evisum_ui_item_cache_item_release(ui->cache, obj);
 }
 
 static Evas_Object *
@@ -360,7 +388,6 @@ _item_create(Evas_Object *parent)
    table = elm_table_add(obj);
    evas_object_size_hint_align_set(table, EXPAND, EXPAND);
    evas_object_size_hint_weight_set(table, FILL, FILL);
-   evas_object_show(table);
 
    label = _item_column_add(table, "proc_pid", 0);
    evas_object_size_hint_align_set(label, 1.0, EXPAND);
@@ -376,15 +403,6 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(label, 0.5, EXPAND);
 
    return table;
-}
-
-static void
-_item_show_hide(Evas_Object *obj, Eina_Bool show)
-{
-   if (show)
-     evas_object_show(obj);
-   else
-     evas_object_hide(obj);
 }
 
 static Evas_Object *
@@ -417,7 +435,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_pid, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-   _item_show_hide(l, ui->show_genlist);
+   evas_object_show(l);
 
    evas_object_geometry_get(ui->btn_uid, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_uid");
@@ -430,7 +448,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_uid, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-   _item_show_hide(l, ui->show_genlist);
+   evas_object_show(l);
 
    evas_object_geometry_get(ui->btn_size, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_size");
@@ -439,7 +457,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_size, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-   _item_show_hide(l, ui->show_genlist);
+   evas_object_show(l);
 
    evas_object_geometry_get(ui->btn_rss, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_rss");
@@ -448,7 +466,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_rss, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-   _item_show_hide(l, ui->show_genlist);
+   evas_object_show(l);
 
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cmd");
@@ -457,7 +475,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cmd, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-   _item_show_hide(l, ui->show_genlist);
+   evas_object_show(l);
 
    evas_object_geometry_get(ui->btn_state, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_state");
@@ -466,7 +484,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_state, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-   _item_show_hide(l, ui->show_genlist);
+   evas_object_show(l);
 
    evas_object_geometry_get(ui->btn_cpu_usage, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cpu_usage");
@@ -475,7 +493,9 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cpu_usage, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
-   _item_show_hide(l, ui->show_genlist);
+   evas_object_show(l);
+
+   evas_object_show(it->obj);
 
    return it->obj;
 }
@@ -519,7 +539,6 @@ static Eina_Bool
 _show_items(void *data)
 {
    Ui *ui = data;
-   ui->show_genlist = EINA_TRUE;
    elm_genlist_realized_items_update(ui->genlist_procs);
 
    return EINA_FALSE;
