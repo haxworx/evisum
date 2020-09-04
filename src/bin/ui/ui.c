@@ -616,12 +616,11 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                proc_info_free(prev);
 
              elm_object_item_data_set(it, proc);
+	     elm_genlist_item_update(it);
 
              it = elm_genlist_item_next_get(it);
           }
      }
-
-   elm_genlist_realized_items_update(ui->genlist_procs);
 
    eina_lock_release(&_lock);
 }
