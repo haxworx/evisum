@@ -307,29 +307,6 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
 }
 
 static void
-_item_hide(Evas_Object *obj)
-{
-   Evas_Object *e;
-
-   e = evas_object_data_get(obj, "proc_pid");
-   evas_object_hide(e);
-   e = evas_object_data_get(obj, "proc_uid");
-   evas_object_hide(e);
-   e = evas_object_data_get(obj, "proc_size");
-   evas_object_hide(e);
-   e = evas_object_data_get(obj, "proc_rss");
-   evas_object_hide(e);
-   e = evas_object_data_get(obj, "proc_state");
-   evas_object_hide(e);
-   e = evas_object_data_get(obj, "proc_cmd");
-   evas_object_hide(e);
-   e = evas_object_data_get(obj, "proc_cpu_usage");
-   evas_object_hide(e);
-
-   evas_object_hide(obj);
-}
-
-static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
@@ -343,7 +320,6 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    EINA_LIST_FREE(contents, o)
      {
-        _item_hide(o);
         evisum_ui_item_cache_item_release(ui->cache, o);
      }
 }
