@@ -41,6 +41,7 @@ config_load(void)
      {
         cfg = calloc(1, sizeof(Evisum_Config));
         cfg->version = CONFIG_VERSION;
+        cfg->poll_delay = 3;
         f = eet_open(path, EET_FILE_MODE_WRITE);
         eet_write(f, "Config", cfg, sizeof(Evisum_Config), 0);
         eet_close(f);
@@ -50,6 +51,12 @@ config_load(void)
         f = eet_open(path, EET_FILE_MODE_READ);
         if (!f) exit(127);
         cfg = eet_read(f, "Config", &size);
+        // Correct a bogus poll delay.
+        if (cfg->poll_delay <= 0)
+          {
+             fprintf(stderr, "WARNING: correcting a bad configuration (sorry!).\n");
+             cfg->poll_delay = 3;
+          }
         eet_close(f);
      }
 

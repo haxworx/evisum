@@ -327,8 +327,6 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
-   Ui *ui = _ui;
-
    Proc_Info *proc = data;
    proc_info_free(proc);
    proc = NULL;
@@ -350,6 +348,7 @@ _item_column_add(Evas_Object *table, const char *text, int col)
 
    elm_table_pack(table, rect, col, 0, 1, 1);
    elm_table_pack(table, label, col, 0, 1, 1);
+
 
    return label;
 }
@@ -590,11 +589,12 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                proc_info_free(prev);
 
              elm_object_item_data_set(it, proc);
-	     elm_genlist_item_update(it);
 
              it = elm_genlist_item_next_get(it);
           }
      }
+
+   elm_genlist_realized_items_update(ui->genlist_procs);
 
    eina_lock_release(&_lock);
 }
@@ -1235,7 +1235,7 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    elm_object_content_set(o, fr);
 
    elm_ctxpopup_direction_priority_set(o, ELM_CTXPOPUP_DIRECTION_UP, ELM_CTXPOPUP_DIRECTION_DOWN,
-		                       ELM_CTXPOPUP_DIRECTION_LEFT, ELM_CTXPOPUP_DIRECTION_RIGHT);
+                                       ELM_CTXPOPUP_DIRECTION_LEFT, ELM_CTXPOPUP_DIRECTION_RIGHT);
    evas_object_move(o, ox + (ow / 2), oy);
    evas_object_show(o);
    ui->main_menu = o;
@@ -1400,6 +1400,7 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(plist, FILL, FILL);
    evas_object_show(plist);
+   elm_win_resize_object_add(ui->win, plist);
 
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
@@ -1554,7 +1555,11 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
 
-   elm_genlist_realized_items_update(ui->genlist_procs);
+   if (eina_lock_take_try(&_lock))
+     {
+        elm_genlist_realized_items_update(ui->genlist_procs);
+        eina_lock_release(&_lock);
+     }
 
    if (ui->main_menu)
      _main_menu_dismissed_cb(ui, NULL, NULL);
