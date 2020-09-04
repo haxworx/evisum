@@ -496,7 +496,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(l);
 
    evas_object_show(it->obj);
-   elm_table_align_set(it->obj, 0, 0);
+   elm_table_align_set(it->obj, 0, 0.5);
 
    return it->obj;
 }
@@ -614,7 +614,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                proc_info_free(prev);
 
              elm_object_item_data_set(it, proc);
-             //elm_genlist_item_update(it);
 
              it = elm_genlist_item_next_get(it);
           }
