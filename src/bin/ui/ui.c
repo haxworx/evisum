@@ -779,16 +779,6 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_quit_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-         void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   ui->shutdown_now = EINA_TRUE;
-   evisum_ui_shutdown(ui);
-}
-
-static void
 _item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                         void *ev EINA_UNUSED)
 {
@@ -1209,8 +1199,6 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    elm_box_pack_end(hbox, sep);
 
    btn = _btn_create(hbox, "evisum", _("About"), _about_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
-   btn = _btn_create(hbox, "exit", _("Quit"), _quit_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    sli = elm_slider_add(o);
