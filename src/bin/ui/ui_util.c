@@ -277,7 +277,7 @@ about_anim(void *data)
    ad->pos--;
    if (ad->pos <= -oh) ad->pos = h;
 
-   if (!(t % 30)) begin = 1;
+   if (!(t % 20)) begin = 1;
 
    if (!begin) return EINA_TRUE;
 
@@ -380,8 +380,6 @@ evisum_about_window_show(void *data)
    evas_object_resize(im, iw, ih);
    evas_object_move(im, iw / 3, h + ih + ih);
    evas_object_pass_events_set(im, 1);
-
-   evas_object_show(im);
 
    about = malloc(sizeof(Animate_Data));
    about->win = win;
