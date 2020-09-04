@@ -332,8 +332,6 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
    Proc_Info *proc = data;
    proc_info_free(proc);
    proc = NULL;
-
-   evisum_ui_item_cache_item_release(ui->cache, obj);
 }
 
 static Evas_Object *
