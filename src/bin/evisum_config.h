@@ -3,7 +3,7 @@
 
 #include "ui/ui.h"
 
-#define CONFIG_VERSION 0x0003
+#define CONFIG_VERSION 0x0004
 
 typedef struct _Evisum_Config
 {
@@ -12,6 +12,7 @@ typedef struct _Evisum_Config
    Eina_Bool sort_reverse;
    int       width;
    int       height;
+   int       poll_delay;
    Eina_Bool effects;
 } Evisum_Config;
 

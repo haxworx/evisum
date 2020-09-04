@@ -229,8 +229,10 @@ evisum_child_window_show(Evas_Object *parent, Evas_Object *win)
 typedef struct {
    Ui             *ui;
    Evas_Object    *label;
+   Evas_Object    *win;
    Evas_Object    *version;
    Evas_Object    *bg;
+   Evas_Object    *im;
    Ecore_Animator *animator;
    int             pos;
 } Animate_Data;
@@ -262,7 +264,7 @@ about_anim(void *data)
 
    ad = data;
 
-   evas_object_geometry_get(ad->bg, NULL, NULL, &w, &h);
+   evas_object_geometry_get(ad->bg, NULL, NULL,  &w, &h);
    evas_object_geometry_get(ad->label, &x, NULL, &ow, &oh);
    evas_object_move(ad->label, x, ad->pos);
    evas_object_show(ad->label);
@@ -278,7 +280,9 @@ evisum_about_window_show(void *data)
 {
    Ui *ui;
    Animate_Data *about;
-   Evas_Object *win, *bg, *box, *version, *label, *btn;
+   Evas_Object *win, *bg, *box, *version, *label, *btn, *im;
+   Evas_Coord x, y, w, h;
+   Evas_Coord iw, ih;
    const char *copyright =
       "<font color=#ffffff>"
       "<small>"
@@ -306,7 +310,7 @@ evisum_about_window_show(void *data)
 
    if (ui->win_about) return;
 
-   ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
+   ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_BASIC);
    elm_win_title_set(win, "About Evisum");
 
    bg = elm_bg_add(win);
@@ -334,18 +338,31 @@ evisum_about_window_show(void *data)
                    eina_slstr_printf("<font color=#ffffff><b>%s</b>",
                    PACKAGE_VERSION));
 
+   evas_object_geometry_get(win, &x, &y, &w, &h);
+
+   im = evas_object_image_filled_add(evas_object_evas_get(bg));
+   evas_object_image_file_set(im, evisum_icon_path_get("lovethisdogharvey"), NULL);
+   evas_object_image_size_get(im, &iw, &ih);
+   evas_object_size_hint_min_set(im, iw, ih);
+   evas_object_resize(im, iw, ih);
+   evas_object_pass_events_set(im, 1);
+   evas_object_move(im, x + (iw), y + (ih / 2));
+   evas_object_show(im);
+
    about = malloc(sizeof(Animate_Data));
+   about->win = win;
    about->bg = bg;
    about->label = label;
    about->version = version;
    about->pos = elm_config_scale_get() * 320;
    about->ui = ui;
+   about->im = im;
    about->animator = ecore_animator_add(about_anim, about);
 
    btn = elm_button_add(win);
    evas_object_size_hint_align_set(btn, 0.5, 0.9);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   elm_object_text_set(btn, _("Okay!"));
+   elm_object_text_set(btn, _("Close"));
    evas_object_show(btn);
 
    evas_object_smart_callback_add(btn, "clicked", _win_del_cb, about);
