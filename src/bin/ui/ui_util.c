@@ -235,6 +235,8 @@ typedef struct {
    Evas_Object    *im;
    Ecore_Animator *animator;
    int             pos;
+   int             pos2;
+   Eina_Bool       im_upwards;
 } Animate_Data;
 
 static void
@@ -261,6 +263,9 @@ about_anim(void *data)
 {
    Animate_Data *ad;
    Evas_Coord w, h, ow, oh, x;
+   Evas_Coord ix, iy, iw, ih;
+   static Eina_Bool begin = 0;
+   time_t t = time(NULL);
 
    ad = data;
 
@@ -271,6 +276,34 @@ about_anim(void *data)
 
    ad->pos--;
    if (ad->pos <= -oh) ad->pos = h;
+
+   if (!(t % 30)) begin = 1;
+
+   if (!begin) return EINA_TRUE;
+
+   evas_object_geometry_get(ad->im, &ix, &iy, &iw, &ih);
+
+   if (ad->im_upwards)
+     ad->pos2 -= 1;
+   else
+     ad->pos2 += 5;
+
+   evas_object_move(ad->im, ix, ad->pos2);
+   evas_object_show(ad->im);
+
+   if (ad->pos2 < ih)
+     {
+        ad->im_upwards = 0;
+     }
+   else if (ad->pos2 > h + ih)
+     {
+        ad->pos2 = (h + ih);
+        ad->im_upwards = 1;
+        srand(t);
+        evas_object_move(ad->im, rand() % w, ad->pos2);
+        evas_object_hide(ad->im);
+        begin = 0;
+     }
 
    return EINA_TRUE;
 }
@@ -345,8 +378,9 @@ evisum_about_window_show(void *data)
    evas_object_image_size_get(im, &iw, &ih);
    evas_object_size_hint_min_set(im, iw, ih);
    evas_object_resize(im, iw, ih);
+   evas_object_move(im, iw / 3, h + ih + ih);
    evas_object_pass_events_set(im, 1);
-   evas_object_move(im, x + (iw), y + (ih / 2));
+
    evas_object_show(im);
 
    about = malloc(sizeof(Animate_Data));
@@ -357,6 +391,8 @@ evisum_about_window_show(void *data)
    about->pos = elm_config_scale_get() * 320;
    about->ui = ui;
    about->im = im;
+   about->pos2 = h + ih + ih;
+   about->im_upwards = 1;
    about->animator = ecore_animator_add(about_anim, about);
 
    btn = elm_button_add(win);
