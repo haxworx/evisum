@@ -91,7 +91,6 @@ typedef struct Ui
    Eina_Bool       show_self;
    Eina_Bool       shutdown_now;
    Eina_Bool       restart;
-   Ecore_Timer    *timer_resize;
 
    Ecore_Animator *animator;
    Eina_Bool       zfs_mounted;

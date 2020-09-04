@@ -496,6 +496,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(l);
 
    evas_object_show(it->obj);
+   elm_table_align_set(it->obj, 0, 0);
 
    return it->obj;
 }
@@ -572,7 +573,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 
    ui = data;
 
-   eina_lock_take(&_lock);
+   if (!eina_lock_take_try(&_lock))
+     return;
 
    list = proc_info_all_get();
 
@@ -612,12 +614,13 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                proc_info_free(prev);
 
              elm_object_item_data_set(it, proc);
-             elm_genlist_item_update(it);
+             //elm_genlist_item_update(it);
 
              it = elm_genlist_item_next_get(it);
           }
      }
 
+   elm_genlist_realized_items_update(ui->genlist_procs);
    eina_lock_release(&_lock);
 }
 
@@ -1497,31 +1500,16 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    _config_save(ui);
 }
 
-static Eina_Bool
-_evisum_resize_timer_cb(void *data)
-{
-   Ui *ui = data;
-
-   ecore_timer_del(ui->timer_resize);
-   ui->timer_resize = NULL;
-
-   ui->ready = EINA_TRUE;
-   _process_list_update(ui);
-
-   return ECORE_CALLBACK_CANCEL;
-}
-
 static void
 _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
 
-   ui->ready = EINA_FALSE;
-   elm_genlist_clear(ui->genlist_procs);
-   if (ui->timer_resize)
-     ecore_timer_reset(ui->timer_resize);
-   else
-     ui->timer_resize = ecore_timer_add(0.2, _evisum_resize_timer_cb, ui);
+   if (eina_lock_take_try(&_lock))
+     {
+        elm_genlist_realized_items_update(ui->genlist_procs);
+        eina_lock_release(&_lock);
+     }
 
    _config_save(ui);
 }
