@@ -622,6 +622,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
      }
 
    elm_genlist_realized_items_update(ui->genlist_procs);
+
    eina_lock_release(&_lock);
 }
 
@@ -1580,14 +1581,10 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
 
-   if (eina_lock_take_try(&_lock))
-     {
-        elm_genlist_realized_items_update(ui->genlist_procs);
-        eina_lock_release(&_lock);
-     }
+   elm_genlist_realized_items_update(ui->genlist_procs);
 
-    if (ui->main_menu)
-      _main_menu_dismissed_cb(ui, NULL, NULL);
+   if (ui->main_menu)
+     _main_menu_dismissed_cb(ui, NULL, NULL);
 
    _config_save(ui);
 }
