@@ -138,15 +138,13 @@ main(int argc, char **argv)
         ecore_main_loop_begin();
         restart = ui->restart;
         evisum_ui_del(ui);
+        if (restart) ecore_exe_run("evisum", NULL);
      }
 
    elm_shutdown();
    config_shutdown();
    ecore_shutdown();
    eina_shutdown();
-
-   if (restart)
-     system("evisum");
 
    return 0;
 }
