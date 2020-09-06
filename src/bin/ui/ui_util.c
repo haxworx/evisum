@@ -258,6 +258,15 @@ _win_del_cb(void *data, Evas_Object *obj,
    ui->win_about = NULL;
 }
 
+static void
+_about_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                 void *event_info EINA_UNUSED)
+{
+   Animate_Data *ad = data;
+
+   evas_object_hide(ad->label);
+}
+
 static Eina_Bool
 about_anim(void *data)
 {
@@ -352,7 +361,6 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_align_set(bg, FILL, FILL);
    elm_bg_file_set(bg, evisum_icon_path_get("ladyhand"), NULL);
    elm_win_resize_object_add(win, bg);
-   evas_object_color_set(bg, 160, 160, 160, 255);
    evas_object_show(bg);
    evas_object_size_hint_min_set(bg, 320 * elm_config_scale_get(),
                    320 * elm_config_scale_get());
@@ -360,7 +368,6 @@ evisum_about_window_show(void *data)
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_color_set(box, 255, 255, 255, 255);
    evas_object_show(box);
 
    label = elm_label_add(win);
@@ -402,6 +409,7 @@ evisum_about_window_show(void *data)
 
    evas_object_smart_callback_add(btn, "clicked", _win_del_cb, about);
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, about);
+   evas_object_smart_callback_add(win, "resize", _about_resize_cb, about);
 
    elm_box_pack_end(box, version);
    elm_box_pack_end(box, label);
