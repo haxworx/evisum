@@ -479,6 +479,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(l);
 
    evas_object_show(it->obj);
+   // Let the genlist resize but align the text.
    elm_table_align_set(it->obj, 0, 0.5);
 
    return it->obj;
@@ -1390,6 +1391,7 @@ _ui_content_system_add(Ui *ui)
    ui->scroller = ui->genlist_procs = plist = elm_genlist_add(parent);
    elm_scroller_gravity_set(ui->scroller, 0.0, 1.0);
    elm_object_focus_allow_set(plist, EINA_FALSE);
+   elm_scroller_movement_block_set(ui->scroller, ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
    elm_scroller_policy_set(ui->scroller, ELM_SCROLLER_POLICY_OFF,
                    ELM_SCROLLER_POLICY_AUTO);
    elm_genlist_homogeneous_set(plist, EINA_TRUE);
