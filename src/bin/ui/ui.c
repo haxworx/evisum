@@ -938,7 +938,7 @@ _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
    proc = proc_info_by_pid(ui->selected_pid);
    if (!proc) return;
 
-   ui_process_win_add(ui->win, proc->pid, proc->command);
+   ui_process_win_add(ui->win, proc->pid, proc->command, ui->poll_delay);
 
    proc_info_free(proc);
 }
@@ -1040,7 +1040,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    ui->selected_pid = proc->pid;
-   ui_process_win_add(ui->win, proc->pid, proc->command);
+   ui_process_win_add(ui->win, proc->pid, proc->command, ui->poll_delay);
 }
 
 static void

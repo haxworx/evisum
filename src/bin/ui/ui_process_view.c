@@ -1056,7 +1056,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
+ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_delay)
 {
    Evas_Object *win, *ic, *box, *tabs;
    Evas_Coord x, y, w, h;
@@ -1064,7 +1064,7 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
    Ui_Process *ui = calloc(1, sizeof(Ui_Process));
    ui->selected_pid = pid;
    ui->selected_cmd = strdup(cmd);
-   ui->poll_delay = 3;
+   ui->poll_delay = poll_delay;
    ui->cache = NULL;
    ui->sort_reverse = EINA_TRUE;
    ui->sort_cb = _sort_by_cpu_usage;
