@@ -294,7 +294,39 @@ system_cpu_frequency_get(void)
    if (sysctl(mib, sizeof(mib), &freq, &len, NULL, 0) != -1)
      freq *= 1000;
 #elif defined(__linux__)
+   FILE *f;
+   char buf[4096];
+   int tmp;
 
+   f = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "r");
+   if (f)
+     {
+        if (fgets(buf, sizeof(buf), f))
+          {
+             tmp = strtol(buf, NULL, 10);
+             if (!((tmp == LONG_MIN || tmp == LONG_MAX) && errno == ERANGE))
+               freq = tmp;
+          }
+        fclose(f);
+        if (freq != -1) return freq;
+     }
+
+   f = fopen("/proc/cpuinfo", "r");
+   if (!f) return freq;
+
+   while (fgets(buf, sizeof(buf), f))
+     {
+        if (!strncasecmp(buf, "cpu MHz", 7))
+          {
+             char *s = strchr(buf, ':') + 1;
+             tmp = strtol(s, NULL, 10);
+             if (!((tmp == LONG_MIN || tmp == LONG_MAX) && errno == ERANGE))
+               tmp *= 1000;
+             break;
+          }
+     }
+
+   fclose(f);
 #else
 
 #endif
