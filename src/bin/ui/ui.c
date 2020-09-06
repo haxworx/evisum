@@ -1275,7 +1275,7 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("System CPU"));
-   elm_object_style_set(frame, "pad_large");
+   elm_object_style_set(frame, "pad_medium");
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
 
@@ -1291,7 +1291,7 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("System Memory"));
-   elm_object_style_set(frame, "pad_large");
+   elm_object_style_set(frame, "pad_medium");
    evas_object_show(frame);
    elm_box_pack_end(hbox, frame);
 
