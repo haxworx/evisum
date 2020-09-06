@@ -270,6 +270,7 @@ about_anim(void *data)
    ad = data;
 
    evas_object_geometry_get(ad->bg, NULL, NULL,  &w, &h);
+   if (w <= 0 || h <= 0) return EINA_TRUE;
    evas_object_geometry_get(ad->label, &x, NULL, &ow, &oh);
    evas_object_move(ad->label, x, ad->pos);
    evas_object_show(ad->label);
@@ -504,6 +505,7 @@ _anim_clouds(void *data)
    ui = anim->ui;
 
    evas_object_geometry_get(ui->win, NULL, NULL, &ww, &wh);
+   if (ww <= 0 || wh <= 0) return EINA_TRUE;
    evas_object_image_size_get(anim->im, &iw, &ih);
 
    if (ww > iw) iw = ww;
@@ -537,8 +539,8 @@ _anim_clouds(void *data)
         evas_object_show(anim->bolt);
      }
 
-   if (bolt && bolt % 2) evas_object_hide(anim->bolt);
-   if (bolt > 30)
+   if (bolt && (bolt % 2)) evas_object_hide(anim->bolt);
+   if (bolt > 20)
      {
         evas_object_hide(anim->bolt);
         bolt = 0;

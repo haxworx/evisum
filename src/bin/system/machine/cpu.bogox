@@ -279,3 +279,24 @@ system_cpu_usage_get(int *ncpu)
    return system_cpu_usage_delayed_get(ncpu, 1000000);
 }
 
+int
+system_cpu_frequency_get(void)
+{
+   int freq = -1;
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+   size_t len = sizeof(freq);
+   if (sysctlbyname("dev.cpu.0.freq", &freq, &len, NULL, 0) != -1)
+     freq *= 1000;
+#elif defined(__OpenBSD__)
+   int mib[2] = { CTL_HW, HW_CPUSPEED };
+   size_t len = sizeof(freq);
+   if (sysctl(mib, sizeof(mib), &freq, &len, NULL, 0) != -1)
+     freq *= 1000;
+#elif defined(__linux__)
+
+#else
+
+#endif
+   return freq;
+}

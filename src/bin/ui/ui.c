@@ -1671,6 +1671,7 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    if (ui->zfs_mounted)
      info->memory.used += info->memory.zfs_arc_used;
 
+   printf("it is %d\n", system_cpu_frequency_get());
    pb = ui->progress_mem;
    ratio = info->memory.total / 100.0;
    value = info->memory.used / ratio;
