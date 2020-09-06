@@ -349,7 +349,6 @@ _item_column_add(Evas_Object *table, const char *text, int col)
    elm_table_pack(table, rect, col, 0, 1, 1);
    elm_table_pack(table, label, col, 0, 1, 1);
 
-
    return label;
 }
 
@@ -1388,13 +1387,6 @@ _ui_content_system_add(Ui *ui)
    evas_object_show(plist);
    elm_win_resize_object_add(ui->win, plist);
 
-   frame = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, "Processes");
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-
    box2 = elm_box_add(parent);
    evas_object_size_hint_weight_set(box2, EXPAND, EXPAND);
    evas_object_size_hint_align_set(box2, FILL, FILL);
@@ -1402,7 +1394,6 @@ _ui_content_system_add(Ui *ui)
 
    elm_box_pack_end(box2, table);
    elm_box_pack_end(box2, plist);
-   elm_object_content_set(frame, box2);
 
    hbox = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbox, EXPAND, 0);
@@ -1423,7 +1414,7 @@ _ui_content_system_add(Ui *ui)
    evas_object_show(entry);
    elm_box_pack_end(hbox, entry);
 
-   elm_box_pack_end(ui->system_activity, frame);
+   elm_box_pack_end(ui->system_activity, box2);
 
    evas_object_smart_callback_add(ui->btn_pid, "clicked",
                    _btn_pid_clicked_cb, ui);
