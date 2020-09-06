@@ -259,6 +259,15 @@ _proc_pid_cpu_times_free(Ui *ui)
 }
 
 static void
+_proc_pid_cpu_times_reset(Ui *ui)
+{
+   Eina_List *l;
+   pid_cpu_time_t *tmp;
+   EINA_LIST_FOREACH(ui->cpu_times, l, tmp)
+     tmp->cpu_time_prev = 0;
+}
+
+static void
 _proc_pid_cpu_time_save(Ui *ui, Proc_Info *proc)
 {
    Eina_List *l;
@@ -1134,6 +1143,8 @@ _main_menu_slider_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *eve
    ui->poll_delay = elm_slider_value_get(obj) + 0.5;
 
    _config_save(ui);
+
+   _proc_pid_cpu_times_reset(ui);
 }
 
 static void
