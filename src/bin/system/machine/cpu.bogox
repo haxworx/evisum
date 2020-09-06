@@ -321,7 +321,7 @@ system_cpu_frequency_get(void)
              char *s = strchr(buf, ':') + 1;
              tmp = strtol(s, NULL, 10);
              if (!((tmp == LONG_MIN || tmp == LONG_MAX) && errno == ERANGE))
-               tmp *= 1000;
+               freq = tmp * 1000;
              break;
           }
      }

@@ -1670,9 +1670,9 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    if (Hz != -1)
      {
         if (Hz > 1000000)
-          elm_object_tooltip_text_set(ui->progress_cpu, eina_slstr_printf("%1.1fGHz", (double) Hz / 1000000.0));
+          elm_object_tooltip_text_set(ui->progress_cpu, eina_slstr_printf("%1.1f GHz", (double) Hz / 1000000.0));
         else
-          elm_object_tooltip_text_set(ui->progress_cpu, eina_slstr_printf("%dMHz",  Hz / 1000));
+          elm_object_tooltip_text_set(ui->progress_cpu, eina_slstr_printf("%d MHz",  Hz / 1000));
      }
 
    ui->cpu_usage = cpu_usage;
