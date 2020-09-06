@@ -1285,7 +1285,6 @@ _ui_content_system_add(Ui *ui)
    elm_progressbar_span_size_set(pb, 1.0);
    elm_progressbar_unit_format_set(pb, "%1.2f%%");
    elm_object_content_set(frame, pb);
-   elm_object_tooltip_text_set(pb, _("CPU average usage. For a more detailed view, <br>use the CPU option from the menu."));
    evas_object_show(pb);
 
    frame = elm_frame_add(hbox);
@@ -1300,7 +1299,6 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    elm_progressbar_span_size_set(pb, 1.0);
-   elm_object_tooltip_text_set(pb, _("System memory. There is a more detailed view<br>in the application menu."));
    evas_object_show(pb);
    elm_object_content_set(frame, pb);
 
@@ -1652,6 +1650,7 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    Evas_Object *pb;
    Sys_Info *info;
    double ratio, value, cpu_usage = 0.0;
+   int Hz;
 
    ui = data;
    info = msg;
@@ -1665,13 +1664,20 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    cpu_usage = cpu_usage / system_cpu_online_count_get();
 
    elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
+   Hz = system_cpu_frequency_get();
+   if (Hz != -1)
+     {
+        if (Hz > 1000000)
+          elm_object_tooltip_text_set(ui->progress_cpu, eina_slstr_printf("%1.1fGHz", (double) Hz / 1000000.0));
+        else
+          elm_object_tooltip_text_set(ui->progress_cpu, eina_slstr_printf("%dMHz",  Hz / 1000));
+     }
 
    ui->cpu_usage = cpu_usage;
 
    if (ui->zfs_mounted)
      info->memory.used += info->memory.zfs_arc_used;
 
-   printf("it is %d\n", system_cpu_frequency_get());
    pb = ui->progress_mem;
    ratio = info->memory.total / 100.0;
    value = info->memory.used / ratio;
