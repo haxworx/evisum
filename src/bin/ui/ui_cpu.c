@@ -15,6 +15,10 @@ typedef struct {
    Eina_Bool    enabled;
    Eina_Bool    redraw;
 
+   int          freq;
+   int          freq_min;
+   int          freq_max;
+
    int          pos;
    double       value;
    double       step;
@@ -25,8 +29,7 @@ typedef struct {
    Animate_Data   *anim_data;
    double         *value;
    Evas_Object    *pb;
-
-   int             freq;
+   Evas_Object    *lbl;
 } Progress;
 
 static void
@@ -53,6 +56,34 @@ _bg_fill(Animate_Data *ad)
      }
    ad->redraw = EINA_FALSE;
    return EINA_TRUE;
+}
+
+static int
+_color_rng(int fr, int fr_min, int fr_max)
+{
+   int rng, n;
+
+   rng = fr_max - fr_min;
+   n = fr - fr_min;
+   n = (n * 10) / rng;
+
+   if (n > 8) return 0xff26f226;
+   if (n > 6) return 0xfff2f226;
+   if (n > 4) return 0xffe21212;
+   if (n > 2) return 0xff471292;
+
+   return COLOR_FG;
+}
+
+static int
+_color(Animate_Data *ad)
+{
+   if (ad->freq != -1 && ad->freq_min && ad->freq_max)
+     {
+        return _color_rng(ad->freq, ad->freq_min, ad->freq_max);
+     }
+
+   return COLOR_FG;
 }
 
 static Eina_Bool
@@ -100,7 +131,7 @@ animate(void *data)
              if ((x == (w - ad->pos)) && (y >= fill_y))
                {
                   if (y % 2)
-                    *(pixels) = COLOR_FG;
+                    *(pixels) = _color(ad);
                }
              pixels++;
           }
@@ -159,24 +190,33 @@ _core_times_cb(void *data, Ecore_Thread *thread)
    cpu_core_t **cores;
    Eina_List *l;
    Ui *ui;
-   int ncpu;
+   int ncpu, min = 0, max = 0;
 
    ui = data;
 
-   int min, max;
+   system_cpu_frequency_min_max_get(&min, &max);
 
-   if (!system_cpu_frequency_min_max_get(&min, &max))
-     {
-        printf("min %d and max %d\n", min, max);
-     }
    for (int i = 0; !ecore_thread_check(thread); i = 0)
      {
         cores = system_cpu_usage_get(&ncpu);
         EINA_LIST_FOREACH(ui->cpu_list, l, progress)
           {
              *progress->value = cores[i]->percent;
-             progress->freq = system_cpu_n_frequency_get(progress->anim_data->cpu_id);
              ecore_thread_main_loop_begin();
+             if (min && max)
+               {
+                  int freq = system_cpu_n_frequency_get(progress->anim_data->cpu_id);
+
+                  if (freq > 1000000)
+                    elm_object_text_set(progress->lbl, eina_slstr_printf("%1.1f GHz", (double) freq / 1000000.0));
+                  else
+                    elm_object_text_set(progress->lbl, eina_slstr_printf("%d MHz",  freq / 1000));
+
+                  progress->anim_data->freq = freq;
+                  progress->anim_data->freq_min = min;
+                  progress->anim_data->freq_max = max;
+               }
+
              elm_progressbar_value_set(progress->pb, cores[i]->percent / 100);
              ecore_thread_main_loop_end();
              free(cores[i++]);
@@ -210,7 +250,7 @@ void
 ui_win_cpu_add(Ui *ui)
 {
    Evas_Object *win, *box, *hbox, *scroller, *frame;
-   Evas_Object *pb, *tbl, *lbox, *btn, *rect;
+   Evas_Object *pb, *tbl, *cbox, *sbox, *lbl, *lbox, *btn, *rect;
    Evas_Object *bg, *line, *obj;
    int cpu_count;
 
@@ -246,9 +286,20 @@ ui_win_cpu_add(Ui *ui)
      {
         lbox = elm_box_add(box);
         evas_object_size_hint_align_set(lbox, FILL, FILL);
-        evas_object_size_hint_weight_set(lbox, 0.1, EXPAND);
+        evas_object_size_hint_weight_set(lbox, EXPAND, EXPAND);
         evas_object_show(lbox);
         elm_box_horizontal_set(lbox, EINA_TRUE);
+
+        cbox = elm_box_add(box);
+        evas_object_size_hint_align_set(cbox, FILL, FILL);
+        evas_object_size_hint_weight_set(cbox, 0.1, EXPAND);
+        evas_object_show(cbox);
+
+        sbox = elm_box_add(box);
+        evas_object_size_hint_align_set(sbox, FILL, FILL);
+        evas_object_size_hint_weight_set(sbox, EXPAND, EXPAND);
+        elm_box_horizontal_set(sbox, EINA_TRUE);
+        evas_object_show(sbox);
 
         btn = elm_button_add(box);
         evas_object_show(btn);
@@ -273,8 +324,16 @@ ui_win_cpu_add(Ui *ui)
         elm_progressbar_unit_format_set(pb, "%1.2f%%");
         evas_object_show(pb);
 
-        elm_box_pack_end(lbox, btn);
-        elm_box_pack_end(lbox, pb);
+        lbl = elm_label_add(box);
+        evas_object_size_hint_align_set(lbl, 0.5, 0.0);
+        evas_object_size_hint_weight_set(lbl, EXPAND, EXPAND);
+        evas_object_show(lbl);
+
+        elm_box_pack_end(sbox, btn);
+        elm_box_pack_end(sbox, pb);
+        elm_box_pack_end(cbox, sbox);
+        elm_box_pack_end(cbox, lbl);
+        elm_box_pack_end(lbox, cbox);
 
         tbl = elm_table_add(box);
         evas_object_size_hint_align_set(tbl, FILL, FILL);
@@ -329,6 +388,7 @@ ui_win_cpu_add(Ui *ui)
         if (progress)
           {
              progress->pb = pb;
+             progress->lbl = lbl;
              progress->value = &ad->value;
              progress->animator = ecore_animator_add(animate, ad);
              progress->anim_data = ad;
