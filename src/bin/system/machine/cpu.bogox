@@ -280,6 +280,75 @@ system_cpu_usage_get(int *ncpu)
 }
 
 int
+system_cpu_n_frequency_get(int n)
+{
+   int freq = -1;
+   FILE *f;
+   char buf[4096];
+   int tmp;
+
+   snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", n);
+   f = fopen(buf, "r");
+   if (f)
+     {
+        if (fgets(buf, sizeof(buf), f))
+          {
+             tmp = strtol(buf, NULL, 10);
+             if (!((tmp == LONG_MIN || tmp == LONG_MAX) && errno == ERANGE))
+               freq = tmp;
+          }
+        fclose(f);
+        if (freq != -1) return freq;
+     }
+
+   return freq;
+}
+
+int
+system_cpu_frequency_min_max_get(int *min, int *max)
+{
+   char *s;
+   int freq_min = 0x7fffffff, freq_max = 0;
+
+   s = file_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq");
+   if (s)
+     {
+        freq_min = atoi(s);
+        free(s);
+        s = file_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq");
+        if (s)
+          {
+             freq_max = atoi(s);
+             free(s);
+             *min = freq_min;
+             *max = freq_max;
+             return 0;
+          }
+     }
+
+   s = file_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
+   if (!s) return -1;
+
+   char *t = strtok(s, " ");
+   while (t)
+     {
+        int freq = atoi(t);
+        if (freq > freq_max) freq_max = freq;
+        if (freq < freq_min) freq_min = freq;
+        t = strtok(NULL, " ");
+     }
+
+   free(s);
+
+   if (freq_min == 0x7fffffff || freq_max == 0) return -1;
+
+   *min = freq_min;
+   *max = freq_max;
+
+   return 0;
+}
+
+int
 system_cpu_frequency_get(void)
 {
    int freq = -1;

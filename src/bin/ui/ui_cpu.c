@@ -25,6 +25,8 @@ typedef struct {
    Animate_Data   *anim_data;
    double         *value;
    Evas_Object    *pb;
+
+   int             freq;
 } Progress;
 
 static void
@@ -161,12 +163,19 @@ _core_times_cb(void *data, Ecore_Thread *thread)
 
    ui = data;
 
+   int min, max;
+
+   if (!system_cpu_frequency_min_max_get(&min, &max))
+     {
+        printf("min %d and max %d\n", min, max);
+     }
    for (int i = 0; !ecore_thread_check(thread); i = 0)
      {
         cores = system_cpu_usage_get(&ncpu);
         EINA_LIST_FOREACH(ui->cpu_list, l, progress)
           {
              *progress->value = cores[i]->percent;
+             progress->freq = system_cpu_n_frequency_get(progress->anim_data->cpu_id);
              ecore_thread_main_loop_begin();
              elm_progressbar_value_set(progress->pb, cores[i]->percent / 100);
              ecore_thread_main_loop_end();
