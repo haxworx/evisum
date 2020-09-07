@@ -3,6 +3,13 @@
 #define COLOR_FG 0xff2f99ff
 #define COLOR_BG 0xff202020
 
+
+#define COLOR_HIGH     0xff26f226
+#define COLOR_MID_HIGH 0xfff2f226
+#define COLOR_MID      0xffe21212
+#define COLOR_MID_LOW  0xff471292
+#define COLOR_LOW      0xff2f99ff
+
 typedef struct {
    Ui          *ui;
    int          cpu_id;
@@ -67,12 +74,12 @@ _color_rng(int fr, int fr_min, int fr_max)
    n = fr - fr_min;
    n = (n * 10) / rng;
 
-   if (n > 8) return 0xff26f226;
-   if (n > 6) return 0xfff2f226;
-   if (n > 4) return 0xffe21212;
-   if (n > 2) return 0xff471292;
+   if (n > 8) return COLOR_HIGH;
+   if (n > 6) return COLOR_MID_HIGH;
+   if (n > 4) return COLOR_MID;
+   if (n > 2) return COLOR_MID_LOW;
 
-   return COLOR_FG;
+   return COLOR_LOW;
 }
 
 static int
