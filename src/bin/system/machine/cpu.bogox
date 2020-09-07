@@ -383,6 +383,7 @@ system_cpu_frequency_min_max_get(int *min, int *max)
 #elif defined(__OpenBSD__)
 
 #endif
+   (void) freq_min; (void) freq_max;
    return -1;
 }
 
