@@ -247,41 +247,13 @@ _win_del_cb(void *data, Evas_Object *obj,
 }
 
 void
-ui_win_cpu_add(Ui *ui)
+_simple(Ui *ui, Evas_Object *parent)
 {
-   Evas_Object *win, *box, *hbox, *scroller, *frame;
-   Evas_Object *pb, *tbl, *cbox, *sbox, *lbl, *lbox, *btn, *rect;
-   Evas_Object *bg, *line, *obj;
-   int cpu_count;
+   Evas_Object *frame, *bg, *line, *pb, *tbl, *cbox, *sbox, *lbl, *lbox, *btn, *rect;
+   Evas_Object *obj;
+   Evas_Object *box = parent;
 
-   if (ui->win_cpu) return;
-
-   ui->win_cpu = win = elm_win_util_dialog_add(ui->win, "evisum",
-                   _("CPU Usage"));
-   evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(win, FILL, FILL);
-
-   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
-
-   hbox = elm_box_add(win);
-   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(hbox, FILL, FILL);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
-
-   scroller = elm_scroller_add(win);
-   evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(scroller, FILL, FILL);
-   elm_scroller_policy_set(scroller,
-                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
-   evas_object_show(scroller);
-
-   box = elm_box_add(hbox);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_size_hint_weight_set(box, 0.1, EXPAND);
-   evas_object_show(box);
-
-   cpu_count = system_cpu_online_count_get();
+   int cpu_count = system_cpu_online_count_get();
    for (int i = 0; i < cpu_count; i++)
      {
         lbox = elm_box_add(box);
@@ -398,9 +370,39 @@ ui_win_cpu_add(Ui *ui)
      }
 
    ui->thread_cpu = ecore_thread_run(_core_times_cb, NULL, NULL, ui);
+}
 
-   elm_box_pack_end(hbox, box);
-   elm_object_content_set(scroller, hbox);
+void
+ui_win_cpu_add(Ui *ui)
+{
+   Evas_Object *win, *box, *scroller;
+   int cpu_count;
+
+   if (ui->win_cpu) return;
+
+   ui->win_cpu = win = elm_win_util_dialog_add(ui->win, "evisum",
+                   _("CPU Usage"));
+   evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(win, FILL, FILL);
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
+
+   scroller = elm_scroller_add(win);
+   evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(scroller, FILL, FILL);
+   elm_scroller_policy_set(scroller,
+                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
+   evas_object_show(scroller);
+
+   box = elm_box_add(win);
+   evas_object_size_hint_align_set(box, FILL, FILL);
+   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
+   evas_object_show(box);
+
+   cpu_count = system_cpu_online_count_get();
+   if (cpu_count)
+     _simple(ui, box);
+
+   elm_object_content_set(scroller, box);
 
    elm_object_content_set(win, scroller);
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
