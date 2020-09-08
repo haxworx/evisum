@@ -397,6 +397,11 @@ typedef struct {
    int             cpu_count;
    Eina_List      *cores;
 
+   // Have cpu scaling
+   Eina_Bool       cpu_freq;
+   int             freq_min;
+   int             freq_max;
+
    int             pos;
    double          step;
 } Animate;
@@ -411,31 +416,29 @@ typedef struct
 static void
 _core_times_complex_cb(void *data, Ecore_Thread *thread)
 {
-   cpu_core_t **cores;
    Animate *ad;
-   int ncpu, min = 0, max = 0;
-   Eina_Bool cpu_freq = EINA_FALSE;
+   int ncpu;
 
    ad = data;
 
-   if (!system_cpu_frequency_min_max_get(&min, &max))
-     cpu_freq = EINA_TRUE;
+   if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
+     ad->cpu_freq = EINA_TRUE;
 
    while (!ecore_thread_check(thread))
      {
-        cores = system_cpu_usage_get(&ncpu);
+        cpu_core_t **cores = system_cpu_usage_get(&ncpu);
         for (int n = 0; n < ncpu; n++)
           {
+             // Copy our core state data to the animator.
              Core *core = eina_list_nth(ad->cores, n);
-             core->percent = cores[n]->percent;
-             if (cpu_freq)
+             if (core)
                {
-                  core->freq = system_cpu_n_frequency_get(n);
-                  printf("%d => %d\n", (int) core->percent, core->freq);
+                  core->percent = cores[n]->percent;
+                  if (ad->cpu_freq)
+                    core->freq = system_cpu_n_frequency_get(n);
                }
              free(cores[n]);
           }
-        printf("\n\n");
         free(cores);
      }
 }
@@ -523,6 +526,15 @@ _animate_complex(void *data)
 
    fill_y = h - (int) ((double)(h / 100.0) * value);
 
+   Eina_List *l;
+   Core *core = NULL;
+
+   if (ad->cpu_freq)
+     printf("min %d and max %d\n", ad->freq_min, ad->freq_max);
+   EINA_LIST_FOREACH(ad->cores, l, core)
+     printf("%d %d => %d\n", core->id, (int) core->percent, core->freq);
+
+   printf("\n");
    for (y = 0; ad->enabled && y < h; y++)
      {
         for (x = 0; x < w; x++)
