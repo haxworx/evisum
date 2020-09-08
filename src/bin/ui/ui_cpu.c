@@ -1,9 +1,11 @@
 #include "ui_cpu.h"
 
-#define COLOR_FG 0xff2f99ff
-#define COLOR_BG 0xff202020
+#define RGB_VALID(x) ((x) < 0) ? 0 : (((x) > 255) ? 255 : (x))
 
 typedef enum {
+    COLOR_FG  =  0xff2f99ff,
+    COLOR_BG  =  0xff202020,
+
     COLOR_0   =  0xff57bb8a,
     COLOR_5   =  0xff63b682,
     COLOR_10  =  0xff73b87e,
@@ -55,22 +57,21 @@ _core_color(int percent)
 }
 
 typedef struct {
-   Ecore_Animator *animator;
    Ui             *ui;
+   Ecore_Animator *animator;
 
    Evas_Object    *bg;
    Evas_Object    *line;
    Evas_Object    *obj;
 
    Evas_Object    *colors;
-   Eina_Bool       cpufreq_enabled;
 
-   Eina_Bool       enabled;
    Eina_Bool       redraw;
 
    int             cpu_count;
    Eina_List      *cores;
 
+   Eina_Bool       show_cpufreq;
    // Have cpu scaling
    Eina_Bool       cpu_freq;
    int             freq_min;
@@ -90,19 +91,15 @@ typedef struct
 static int
 _core_alpha(int percent, int fr, int fr_max, int fr_min)
 {
-   double fade;
    int r, g, b, a;
-   int rng, n;
    int color;
 
    if (fr)
      {
-        rng = fr_max - fr_min;
-        n = fr - fr_min;
-        fade = (100.0 - ((n * 100) / rng)) / 100.0;
      }
 
    color = _core_color(percent);
+
    r = (color >> 16) & 0xff;
    g = (color >> 8) & 0xff;
    b = (color & 0xff);
@@ -110,10 +107,15 @@ _core_alpha(int percent, int fr, int fr_max, int fr_min)
 
    if (fr)
      {
+        int rng, n;
+        rng = fr_max - fr_min;
+        n = fr - fr_min;
+        double fade = (100.0 - ((n * 100) / rng)) / 100.0;
+
         r += (percent / 100.0) * 0xff;
-        if (r >= 255) r = 255;
         b += fade * 0xff;
-        if (b >= 255) b = 255;
+        RGB_VALID(r);
+        RGB_VALID(b);
      }
 
    color = (a << 24) + (r << 16) + (g << 8) + b;
@@ -225,11 +227,7 @@ _animate(void *data)
      evas_object_resize(line, 1, h - rem);
    else
      evas_object_resize(line, 1, h);
-
-   if (ad->enabled)
-     evas_object_show(line);
-   else
-     evas_object_hide(line);
+   evas_object_show(line);
 
    if (ad->redraw)
      {
@@ -240,19 +238,17 @@ _animate(void *data)
    pixels = evas_object_image_data_get(obj, EINA_TRUE);
    if (!pixels) return EINA_TRUE;
 
-   Core *core = NULL;
-
    int block = h / ad->cpu_count;
 
-   for (y = 0; ad->enabled && y < h; y++)
+   for (y = 0; y < h; y++)
      {
         for (x = 0; x < w; x++)
           {
              int n = y / block;
-             core = eina_list_nth(ad->cores, n);
+             Core *core = eina_list_nth(ad->cores, n);
              if (core && x == (w - ad->pos))
                {
-                 if (ad->cpufreq_enabled && ad->cpu_freq)
+                 if (ad->show_cpufreq && ad->cpu_freq)
                    *(pixels) = _core_alpha(core->percent, core->freq, ad->freq_min, ad->freq_max);
                  else
                    *(pixels) = _core_color(core->percent);
@@ -282,6 +278,7 @@ _anim_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
    _reset(ad);
    evas_object_hide(ad->line);
 
+   // Update our color guide.
    h = 15;
    evas_object_size_hint_min_set(ad->colors, -1, h);
    evas_object_geometry_get(ad->bg, NULL, NULL, &w, NULL);
@@ -325,7 +322,7 @@ _check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 {
     Animate *ad = data;
 
-    ad->cpufreq_enabled = elm_check_state_get(obj);
+    ad->show_cpufreq = elm_check_state_get(obj);
 }
 
 static void
@@ -431,7 +428,6 @@ _graph(Ui *ui, Evas_Object *parent)
    ad->bg = bg;
    ad->obj = obj;
    ad->line = line;
-   ad->enabled = EINA_TRUE;
    ad->ui = ui;
    ad->redraw = EINA_TRUE;
    ad->cpu_count = system_cpu_online_count_get();
