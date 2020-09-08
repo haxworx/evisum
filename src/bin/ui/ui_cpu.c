@@ -116,8 +116,8 @@ _core_alpha(int percent, int fr, int fr_max, int fr_min)
 
         r = (percent / 100.0) * 0xff;
         b = fade * 0xff;
-        RGB_VALID(r);
-        RGB_VALID(b);
+        r = RGB_VALID(r);
+        b = RGB_VALID(b);
      }
 
    color = (a << 24) + (r << 16) + (g << 8) + b;
