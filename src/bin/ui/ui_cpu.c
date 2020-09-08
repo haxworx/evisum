@@ -472,13 +472,15 @@ _core_alpha(int percent, int fr, int fr_max, int fr_min)
    fade = (100.0 - ((n * 100) / rng)) / 100.0;
 
    color = _core_color(percent);
-   //r = (color >> 16) & 0xff;
+   r = (color >> 16) & 0xff;
    g = (color >> 8) & 0xff;
-  // b = (color & 0xff);
+   b = (color & 0xff);
    a = 0xff;
 
-   r = (percent / 100.0) * 0xff;
-   b = fade * 0xff;
+   r += (percent / 100.0) * 0xff;
+   if (r >= 255) r = 255;
+   b += fade * 0xff;
+   if (b >= 255) b = 255;
 
    color = (a << 24) + (r << 16) + (g << 8) + b;
 
@@ -549,6 +551,8 @@ _bg_complex_fill(Animate *ad)
    uint32_t *pixels;
    Evas_Coord x, y, w, h;
 
+   if (ecore_thread_check(ad->ui->thread_cpu)) return EINA_FALSE;
+
    evas_object_geometry_get(ad->bg, NULL, NULL, &w, &h);
    pixels = evas_object_image_data_get(ad->obj, EINA_TRUE);
    if (!pixels) return EINA_FALSE;
@@ -570,6 +574,8 @@ _animate_complex(void *data)
    Evas_Object *line, *obj, *bg;
    Evas_Coord x, y, w, h;
    Animate *ad = data;
+
+   if (ecore_thread_check(ad->ui->thread_cpu)) return EINA_FALSE;
 
    bg = ad->bg; line = ad->line; obj = ad->obj;
 
