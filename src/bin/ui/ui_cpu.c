@@ -2,6 +2,8 @@
 
 #define RGB_VALID(x) ((x) < 0) ? 0 : (((x) > 255) ? 255 : (x))
 
+#define BAR_HEIGHT 15
+
 typedef enum {
     COLOR_FG  =  0xff2f99ff,
     COLOR_BG  =  0xff202020,
@@ -279,7 +281,7 @@ _anim_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
    evas_object_hide(ad->line);
 
    // Update our color guide.
-   h = 15;
+   h = BAR_HEIGHT * elm_config_scale_get();
    evas_object_size_hint_min_set(ad->colors, -1, h);
    evas_object_geometry_get(ad->bg, NULL, NULL, &w, NULL);
    evas_object_image_size_set(ad->colors, w, h);
@@ -445,7 +447,7 @@ _graph(Ui *ui, Evas_Object *parent)
      }
 
    // Enough space for our CPUs cores.
-   evas_object_size_hint_min_set(bg, 1, 2 * ad->cpu_count);
+   evas_object_size_hint_min_set(bg, 1, (BAR_HEIGHT * ad->cpu_count) * elm_config_scale_get());
 
    evas_object_smart_callback_add(check, "changed", _check_changed_cb, ad);
    evas_object_smart_callback_add(tbl, "resize", _anim_resize_cb, ad);
