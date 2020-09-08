@@ -62,8 +62,8 @@ typedef struct {
    Evas_Object    *line;
    Evas_Object    *obj;
 
-   Evas_Object    *guide;
    Evas_Object    *colors;
+   Eina_Bool       cpufreq_enabled;
 
    Eina_Bool       enabled;
    Eina_Bool       redraw;
@@ -159,8 +159,11 @@ _win_del_cb(void *data, Evas_Object *obj,
    Ui *ui = ad->ui;
    Core *core;
 
+   ecore_animator_del(ad->animator);
+
    ecore_thread_cancel(ui->thread_cpu);
-   ecore_thread_wait(ui->thread_cpu, 0.1);
+
+   ecore_thread_wait(ui->thread_cpu, 0.2);
 
    EINA_LIST_FREE(ad->cores, core)
      {
@@ -245,7 +248,7 @@ _animate(void *data)
              if (!core) core = eina_list_nth(ad->cores, n - 1);
              if (core && x == (w - ad->pos))
                {
-                 if (ad->cpu_freq)
+                 if (ad->cpufreq_enabled && ad->cpu_freq)
                    *(pixels) = _core_alpha(core->percent, core->freq, ad->freq_min, ad->freq_max);
                  else
                    *(pixels) = _core_color(core->percent);
@@ -304,18 +307,42 @@ _anim_move_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
+_options_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                   void *event_info EINA_UNUSED)
+{
+   Evas_Object *fr = obj;
+
+   elm_frame_collapse_go(fr, !elm_frame_collapse_get(fr));
+}
+
+static void
+_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                  void *event_info EINA_UNUSED)
+{
+    Animate *ad = data;
+
+    ad->cpufreq_enabled = elm_check_state_get(obj);
+}
+
+static void
 _graph(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *frame, *tbl, *box, *bg, *obj, *line;
-   Evas_Object *fr, *hbx, *bx, *guide, *colors;
+   Evas_Object *fr, *hbx, *bx, *colors, *check;
+   int n;
 
    box = parent;
+
+   n = system_cpu_online_count_get();
 
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_show(frame);
-   elm_object_text_set(frame, _("CPU % / Freq"));
+   if (n > 1)
+     elm_object_text_set(frame, eina_slstr_printf(_("%d CPU Cores Available"), n));
+   else
+     elm_object_text_set(frame, _("ONE CPU CORE...MAKE IT COUNT!!!"));
 
    tbl = elm_table_add(box);
    evas_object_size_hint_align_set(tbl, FILL, FILL);
@@ -351,6 +378,10 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(bx);
    elm_box_pack_end(bx, tbl);
 
+   // Set the main content.
+   elm_object_content_set(frame, bx);
+   elm_box_pack_end(box, frame);
+
    hbx = elm_box_add(box);
    evas_object_size_hint_align_set(hbx, FILL, FILL);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
@@ -372,10 +403,23 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(colors);
    elm_box_pack_end(hbx, colors);
 
-   elm_object_content_set(frame, bx);
-
-   elm_box_pack_end(box, frame);
    elm_box_pack_end(box, fr);
+
+   fr = elm_frame_add(box);
+   evas_object_size_hint_align_set(fr, FILL, FILL);
+   evas_object_size_hint_weight_set(fr, EXPAND, 0);
+   evas_object_show(fr);
+   elm_object_text_set(fr, _("Options"));
+   elm_frame_collapse_set(fr, 0);
+   evas_object_smart_callback_add(fr, "clicked", _options_clicked_cb, NULL);
+   elm_box_pack_end(box, fr);
+
+   check = elm_check_add(fr);
+   evas_object_size_hint_align_set(check, FILL, FILL);
+   evas_object_size_hint_weight_set(check, EXPAND, 0);
+   elm_object_text_set(check, _("Overlay CPU frequency?"));
+   evas_object_show(check);
+   elm_object_content_set(fr, check);
 
    Animate *ad = calloc(1, sizeof(Animate));
    if (!ad) return;
@@ -400,8 +444,10 @@ _graph(Ui *ui, Evas_Object *parent)
           }
      }
 
+   // Enough space for our CPUs cores.
    evas_object_size_hint_min_set(bg, 1, 2 * ad->cpu_count);
 
+   evas_object_smart_callback_add(check, "changed", _check_changed_cb, ad);
    evas_object_smart_callback_add(tbl, "resize", _anim_resize_cb, ad);
    evas_object_smart_callback_add(tbl, "move", _anim_move_cb, ad);
    evas_object_smart_callback_add(ui->win_cpu, "delete,request", _win_del_cb, ad);
