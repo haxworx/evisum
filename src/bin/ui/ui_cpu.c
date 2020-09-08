@@ -219,8 +219,13 @@ _animate(void *data)
    evas_object_geometry_get(bg, &x, &y, &w, &h);
    evas_object_image_size_set(obj, w, h);
 
+   int rem = h % ad->cpu_count;
    evas_object_move(line, x + w - ad->pos, y);
-   evas_object_resize(line, 1, h);
+   if (rem)
+     evas_object_resize(line, 1, h - rem);
+   else
+     evas_object_resize(line, 1, h);
+
    if (ad->enabled)
      evas_object_show(line);
    else
@@ -245,7 +250,6 @@ _animate(void *data)
           {
              int n = y / block;
              core = eina_list_nth(ad->cores, n);
-             if (!core) core = eina_list_nth(ad->cores, n - 1);
              if (core && x == (w - ad->pos))
                {
                  if (ad->cpufreq_enabled && ad->cpu_freq)
