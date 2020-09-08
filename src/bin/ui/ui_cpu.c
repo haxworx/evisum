@@ -10,6 +10,30 @@
 #define COLOR_MID_LOW  0xff471292
 #define COLOR_LOW      0xff2f99ff
 
+typedef enum {
+    COLOR_0   =  0xff57bb8a,
+    COLOR_5   =  0xff63b682,
+    COLOR_10  =  0xff73b87e,
+    COLOR_15  =  0xff84bb7b,
+    COLOR_20  =  0xff94bd77,
+    COLOR_25  =  0xffa4c073,
+    COLOR_30  =  0xffb0be6e,
+    COLOR_35  =  0xffc4c56d,
+    COLOR_40  =  0xffd4c86a,
+    COLOR_45  =  0xffe2c965,
+    COLOR_50  =  0xfff5ce62,
+    COLOR_55  =  0xfff3c563,
+    COLOR_60  =  0xffe9b861,
+    COLOR_65  =  0xffe6ad61,
+    COLOR_70  =  0xffecac67,
+    COLOR_75  =  0xffe9a268,
+    COLOR_80  =  0xffe79a69,
+    COLOR_85  =  0xffe5926b,
+    COLOR_90  =  0xffe2886c,
+    COLOR_95  =  0xffe0816d,
+    COLOR_100 =  0xffdd776e,
+} Colors;
+
 typedef struct {
    Ui          *ui;
    int          cpu_id;
@@ -45,6 +69,33 @@ loop_reset(Animate_Data *ad)
    ad->pos = ad->step = 0;
 }
 
+static int
+_core_color(int percent)
+{
+   if (percent >= 100) return COLOR_100;
+   if (percent >= 95) return COLOR_95;
+   if (percent >= 90) return COLOR_90;
+   if (percent >= 85) return COLOR_85;
+   if (percent >= 80) return COLOR_80;
+   if (percent >= 75) return COLOR_75;
+   if (percent >= 70) return COLOR_70;
+   if (percent >= 65) return COLOR_65;
+   if (percent >= 60) return COLOR_60;
+   if (percent >= 55) return COLOR_55;
+   if (percent >= 50) return COLOR_50;
+   if (percent >= 45) return COLOR_45;
+   if (percent >= 40) return COLOR_40;
+   if (percent >= 35) return COLOR_35;
+   if (percent >= 30) return COLOR_30;
+   if (percent >= 25) return COLOR_25;
+   if (percent >= 20) return COLOR_20;
+   if (percent >= 15) return COLOR_15;
+   if (percent >= 10) return COLOR_10;
+   if (percent >= 5) return COLOR_5;
+
+   return COLOR_0;
+}
+
 static Eina_Bool
 _bg_fill(Animate_Data *ad)
 {
@@ -72,14 +123,9 @@ _color_rng(int fr, int fr_min, int fr_max)
 
    rng = fr_max - fr_min;
    n = fr - fr_min;
-   n = (n * 10) / rng;
+   n = (n * 100) / rng;
 
-   if (n > 8) return COLOR_HIGH;
-   if (n > 6) return COLOR_MID_HIGH;
-   if (n > 4) return COLOR_MID;
-   if (n > 2) return COLOR_MID_LOW;
-
-   return COLOR_LOW;
+   return _core_color(n);
 }
 
 static int
@@ -256,7 +302,7 @@ _win_del_cb(void *data, Evas_Object *obj,
 }
 
 void
-_simple(Ui *ui, Evas_Object *parent)
+_graphs(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *frame, *bg, *line, *pb, *tbl, *cbox, *sbox, *lbl, *lbox, *btn, *rect;
    Evas_Object *obj;
@@ -383,32 +429,6 @@ _simple(Ui *ui, Evas_Object *parent)
    ui->thread_cpu = ecore_thread_run(_core_times_cb, NULL, NULL, ui);
 }
 
-
-typedef enum {
-    COLOR_0   =  0xff57bb8a,
-    COLOR_5   =  0xff63b682,
-    COLOR_10  =  0xff73b87e,
-    COLOR_15  =  0xff84bb7b,
-    COLOR_20  =  0xff94bd77,
-    COLOR_25  =  0xffa4c073,
-    COLOR_30  =  0xffb0be6e,
-    COLOR_35  =  0xffc4c56d,
-    COLOR_40  =  0xffd4c86a,
-    COLOR_45  =  0xffe2c965,
-    COLOR_50  =  0xfff5ce62,
-    COLOR_55  =  0xfff3c563,
-    COLOR_60  =  0xffe9b861,
-    COLOR_65  =  0xffe6ad61,
-    COLOR_70  =  0xffecac67,
-    COLOR_75  =  0xffe9a268,
-    COLOR_80  =  0xffe79a69,
-    COLOR_85  =  0xffe5926b,
-    COLOR_90  =  0xffe2886c,
-    COLOR_95  =  0xffe0816d,
-    COLOR_100 =  0xffdd776e,
-} Colors;
-
-
 typedef struct {
    Ecore_Animator *animator;
    Ui             *ui;
@@ -440,38 +460,19 @@ typedef struct
 } Core;
 
 static int
-_core_color(Core *core)
+_core_alpha(int percent, int fr, int fr_max, int fr_min)
 {
-   int percent = core->percent;
+   int r, g, b, a;
+   int color = _core_color(percent);
 
-   if (percent >= 100) return COLOR_100;
-   if (percent >= 95) return COLOR_95;
-   if (percent >= 90) return COLOR_90;
-   if (percent >= 85) return COLOR_85;
-   if (percent >= 80) return COLOR_80;
-   if (percent >= 75) return COLOR_75;
-   if (percent >= 70) return COLOR_70;
-   if (percent >= 65) return COLOR_65;
-   if (percent >= 60) return COLOR_60;
-   if (percent >= 55) return COLOR_55;
-   if (percent >= 50) return COLOR_50;
-   if (percent >= 45) return COLOR_45;
-   if (percent >= 40) return COLOR_40;
-   if (percent >= 35) return COLOR_35;
-   if (percent >= 30) return COLOR_30;
-   if (percent >= 25) return COLOR_25;
-   if (percent >= 20) return COLOR_20;
-   if (percent >= 15) return COLOR_15;
-   if (percent >= 10) return COLOR_10;
-   if (percent >= 5) return COLOR_5;
+   r = (color >> 16) & 0xff;
+   g = (color >> 8) & 0xff;
+   b = (color & 0xff);
 
-   return COLOR_0;
-}
+   a = 1.0 * 0xff;
 
-static int
-_core_alpha(Core *core, int fr_max, int fr_min)
-{
-   int color = _core_color(core);
+   color = (a << 24) + (r << 16) + (g << 8) + b;
+
    return color;
 }
 
@@ -597,9 +598,9 @@ _animate_complex(void *data)
              if (core && x == (w - ad->pos))
                {
                  if (ad->cpu_freq)
-                   *(pixels) = _core_alpha(core, ad->freq_min, ad->freq_max);
+                   *(pixels) = _core_alpha(core->percent, core->freq, ad->freq_min, ad->freq_max);
                  else
-                   *(pixels) = _core_color(core);
+                   *(pixels) = _core_color(core->percent);
                }
              pixels++;
           }
@@ -700,6 +701,8 @@ _complex(Ui *ui, Evas_Object *parent)
           }
      }
 
+   evas_object_size_hint_min_set(bg, 1, 2 * ad->cpu_count);
+
    evas_object_smart_callback_add(tbl, "resize", _anim_complex_resize_cb, ad);
    evas_object_smart_callback_add(tbl, "move", _anim_complex_move_cb, ad);
    evas_object_smart_callback_add(ui->win_cpu, "delete,request", _win_complex_del_cb, ad);
@@ -736,9 +739,10 @@ ui_win_cpu_add(Ui *ui)
    evas_object_show(box);
 
    cpu_count = system_cpu_online_count_get();
-   if (cpu_count)
-    // _simple(ui, box);
-    _complex(ui, box);
+   if (cpu_count > 4)
+     _complex(ui, box);
+   else
+     _graphs(ui, box);
 
    elm_object_content_set(scroller, box);
    elm_object_content_set(win, scroller);
