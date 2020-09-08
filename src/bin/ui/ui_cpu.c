@@ -378,7 +378,7 @@ _simple(Ui *ui, Evas_Object *parent)
           }
      }
 
-   evas_object_smart_callback_add(ui->win, "delete,request", _win_del_cb, ui);
+   evas_object_smart_callback_add(ui->win_cpu, "delete,request", _win_del_cb, ui);
 
    ui->thread_cpu = ecore_thread_run(_core_times_cb, NULL, NULL, ui);
 }
@@ -637,7 +637,7 @@ _complex(Ui *ui, Evas_Object *parent)
 
    evas_object_smart_callback_add(tbl, "resize", _anim_complex_resize_cb, ad);
    evas_object_smart_callback_add(tbl, "move", _anim_complex_move_cb, ad);
-   evas_object_smart_callback_add(ui->win, "delete,request", _win_complex_del_cb, ad);
+   evas_object_smart_callback_add(ui->win_cpu, "delete,request", _win_complex_del_cb, ad);
 
    ad->animator = ecore_animator_add(_animate_complex, ad);
 
