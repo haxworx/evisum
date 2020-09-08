@@ -253,7 +253,7 @@ _core_times_cb(void *data, Ecore_Thread *thread)
 
    for (int i = 0; !ecore_thread_check(thread); i = 0)
      {
-        cores = system_cpu_usage_delayed_get(&ncpu, 100000);
+        cores = system_cpu_usage_get(&ncpu);
         EINA_LIST_FOREACH(ui->cpu_list, l, progress)
           {
              *progress->value = cores[i]->percent;
@@ -462,14 +462,23 @@ typedef struct
 static int
 _core_alpha(int percent, int fr, int fr_max, int fr_min)
 {
+   double fade;
    int r, g, b, a;
-   int color = _core_color(percent);
+   int rng, n;
+   int color;
 
-   r = (color >> 16) & 0xff;
+   rng = fr_max - fr_min;
+   n = fr - fr_min;
+   fade = (100.0 - ((n * 100) / rng)) / 100.0;
+
+   color = _core_color(percent);
+   //r = (color >> 16) & 0xff;
    g = (color >> 8) & 0xff;
-   b = (color & 0xff);
+  // b = (color & 0xff);
+   a = 0xff;
 
-   a = 1.0 * 0xff;
+   r = (percent / 100.0) * 0xff;
+   b = fade * 0xff;
 
    color = (a << 24) + (r << 16) + (g << 8) + b;
 
@@ -489,7 +498,7 @@ _core_times_complex_cb(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
-        cpu_core_t **cores = system_cpu_usage_get(&ncpu);
+        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 100000);
         for (int n = 0; n < ncpu; n++)
           {
              // Copy our core state data to the animator.
@@ -515,16 +524,15 @@ _win_complex_del_cb(void *data, Evas_Object *obj,
    Core *core;
 
    ecore_thread_cancel(ui->thread_cpu);
+   ecore_thread_wait(ui->thread_cpu, 0.1);
 
    EINA_LIST_FREE(ad->cores, core)
      {
         free(core);
      }
 
-   ecore_animator_del(ad->animator);
    free(ad);
 
-   ecore_thread_wait(ui->thread_cpu, 0.1);
    evas_object_del(obj);
    ui->win_cpu = NULL;
 }
@@ -739,7 +747,7 @@ ui_win_cpu_add(Ui *ui)
    evas_object_show(box);
 
    cpu_count = system_cpu_online_count_get();
-   if (cpu_count > 4)
+   if (1 || cpu_count > 4)
      _complex(ui, box);
    else
      _graphs(ui, box);
