@@ -753,7 +753,7 @@ ui_win_cpu_add(Ui *ui)
    evas_object_show(box);
 
    cpu_count = system_cpu_online_count_get();
-   if (1 || cpu_count > 4)
+   if (cpu_count > 4)
      _complex(ui, box);
    else
      _graphs(ui, box);
