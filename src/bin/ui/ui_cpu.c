@@ -33,7 +33,7 @@ typedef struct {
 
 typedef struct {
    Ecore_Animator *animator;
-   Animate_Data   *anim_data;
+   Animate_Data   *ad;
    double         *value;
    Evas_Object    *pb;
    Evas_Object    *lbl;
@@ -198,10 +198,12 @@ _core_times_cb(void *data, Ecore_Thread *thread)
    Eina_List *l;
    Ui *ui;
    int ncpu, min = 0, max = 0;
+   Eina_Bool cpu_freq = EINA_FALSE;
 
    ui = data;
 
-   system_cpu_frequency_min_max_get(&min, &max);
+   if (!system_cpu_frequency_min_max_get(&min, &max))
+     cpu_freq = EINA_TRUE;
 
    for (int i = 0; !ecore_thread_check(thread); i = 0)
      {
@@ -210,20 +212,20 @@ _core_times_cb(void *data, Ecore_Thread *thread)
           {
              *progress->value = cores[i]->percent;
              ecore_thread_main_loop_begin();
-             if (min && max)
+
+             if (cpu_freq)
                {
-                  int freq = system_cpu_n_frequency_get(progress->anim_data->cpu_id);
+                  int freq = system_cpu_n_frequency_get(progress->ad->cpu_id);
 
                   if (freq > 1000000)
                     elm_object_text_set(progress->lbl, eina_slstr_printf("%1.1f GHz", (double) freq / 1000000.0));
                   else
                     elm_object_text_set(progress->lbl, eina_slstr_printf("%d MHz",  freq / 1000));
 
-                  progress->anim_data->freq = freq;
-                  progress->anim_data->freq_min = min;
-                  progress->anim_data->freq_max = max;
+                  progress->ad->freq = freq;
+                  progress->ad->freq_min = min;
+                  progress->ad->freq_max = max;
                }
-
              elm_progressbar_value_set(progress->pb, cores[i]->percent / 100);
              ecore_thread_main_loop_end();
              free(cores[i++]);
@@ -244,7 +246,7 @@ _win_del_cb(void *data, Evas_Object *obj,
    EINA_LIST_FREE(ui->cpu_list, progress)
      {
         ecore_animator_del(progress->animator);
-        free(progress->anim_data);
+        free(progress->ad);
         free(progress);
      }
 
@@ -370,13 +372,276 @@ _simple(Ui *ui, Evas_Object *parent)
              progress->lbl = lbl;
              progress->value = &ad->value;
              progress->animator = ecore_animator_add(animate, ad);
-             progress->anim_data = ad;
+             progress->ad = ad;
 
              ui->cpu_list = eina_list_append(ui->cpu_list, progress);
           }
      }
 
+   evas_object_smart_callback_add(ui->win, "delete,request", _win_del_cb, ui);
+
    ui->thread_cpu = ecore_thread_run(_core_times_cb, NULL, NULL, ui);
+}
+
+typedef struct {
+   Ecore_Animator *animator;
+   Ui             *ui;
+
+   Evas_Object    *bg;
+   Evas_Object    *line;
+   Evas_Object    *obj;
+
+   Eina_Bool       enabled;
+   Eina_Bool       redraw;
+
+   int             cpu_count;
+   Eina_List      *cores;
+
+   int             pos;
+   double          step;
+} Animate;
+
+typedef struct
+{
+   int id;
+   int freq;
+   int percent;
+} Core;
+
+static void
+_core_times_complex_cb(void *data, Ecore_Thread *thread)
+{
+   cpu_core_t **cores;
+   Animate *ad;
+   int ncpu, min = 0, max = 0;
+   Eina_Bool cpu_freq = EINA_FALSE;
+
+   ad = data;
+
+   if (!system_cpu_frequency_min_max_get(&min, &max))
+     cpu_freq = EINA_TRUE;
+
+   while (!ecore_thread_check(thread))
+     {
+        cores = system_cpu_usage_get(&ncpu);
+        for (int n = 0; n < ncpu; n++)
+          {
+             Core *core = eina_list_nth(ad->cores, n);
+             core->percent = cores[n]->percent;
+             if (cpu_freq)
+               {
+                  core->freq = system_cpu_n_frequency_get(n);
+                  printf("%d => %d\n", (int) core->percent, core->freq);
+               }
+             free(cores[n]);
+          }
+        printf("\n\n");
+        free(cores);
+     }
+}
+
+static void
+_win_complex_del_cb(void *data, Evas_Object *obj,
+                    void *event_info EINA_UNUSED)
+{
+   Animate *ad = data;
+   Ui *ui = ad->ui;
+   Core *core;
+
+   ecore_thread_cancel(ui->thread_cpu);
+
+   EINA_LIST_FREE(ad->cores, core)
+     {
+        free(core);
+     }
+
+   ecore_animator_del(ad->animator);
+   free(ad);
+
+   ecore_thread_wait(ui->thread_cpu, 0.1);
+   evas_object_del(obj);
+   ui->win_cpu = NULL;
+}
+
+static void
+_complex_reset(Animate *ad)
+{
+   ad->pos = ad->step = 0;
+}
+
+static Eina_Bool
+_bg_complex_fill(Animate *ad)
+{
+   uint32_t *pixels;
+   Evas_Coord x, y, w, h;
+
+   evas_object_geometry_get(ad->bg, NULL, NULL, &w, &h);
+   pixels = evas_object_image_data_get(ad->obj, EINA_TRUE);
+   if (!pixels) return EINA_FALSE;
+   for (y = 0; y < h; y++)
+     {
+        for (x = 0; x < w; x++)
+          {
+             *(pixels++) = COLOR_BG;
+          }
+     }
+   ad->redraw = EINA_FALSE;
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_animate_complex(void *data)
+{
+   uint32_t *pixels;
+   Evas_Object *line, *obj, *bg;
+   Evas_Coord x, y, w, h, fill_y;
+   double value;
+   Animate *ad = data;
+
+   bg = ad->bg; line = ad->line; obj = ad->obj;
+
+   evas_object_geometry_get(bg, &x, &y, &w, &h);
+   evas_object_image_size_set(obj, w, h);
+
+   evas_object_move(line, x + w - ad->pos, y);
+   evas_object_resize(line, 1, h);
+   if (ad->enabled)
+     evas_object_show(line);
+   else
+     evas_object_hide(line);
+
+   if (ad->redraw)
+     {
+        _bg_complex_fill(ad);
+        return EINA_TRUE;
+     }
+
+   pixels = evas_object_image_data_get(obj, EINA_TRUE);
+   if (!pixels) return EINA_TRUE;
+
+   value = 20 ; //ad->value > 0 ? ad->value : 1.0;
+
+   fill_y = h - (int) ((double)(h / 100.0) * value);
+
+   for (y = 0; ad->enabled && y < h; y++)
+     {
+        for (x = 0; x < w; x++)
+          {
+             if (x == (w - ad->pos))
+               {
+                   *(pixels) = COLOR_BG;
+               }
+             if ((x == (w - ad->pos)) && (y >= fill_y))
+               {
+                  if (y % 2)
+                    *(pixels) = COLOR_FG;
+               }
+             pixels++;
+          }
+     }
+
+   ad->step += (double) (w * ecore_animator_frametime_get()) / 60.0;
+   ad->pos = ad->step;
+
+   if (ad->pos >= w)
+     _complex_reset(ad);
+
+   return EINA_TRUE;
+}
+
+static void
+_anim_complex_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                void *event_info EINA_UNUSED)
+{
+   Animate *ad = data;
+
+   ad->redraw = EINA_TRUE;
+   _complex_reset(ad);
+
+   evas_object_hide(ad->line);
+}
+
+static void
+_anim_complex_move_cb(void *data, Evas_Object *obj EINA_UNUSED,
+              void *event_info EINA_UNUSED)
+{
+   Animate *ad = data;
+
+   evas_object_hide(ad->line);
+}
+
+static void
+_complex(Ui *ui, Evas_Object *parent)
+{
+   Evas_Object *frame, *tbl, *box, *bg, *obj, *line;
+
+   box = parent;
+
+   frame = elm_frame_add(box);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_show(frame);
+   elm_object_style_set(frame, "pad_small");
+
+   tbl = elm_table_add(box);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
+   evas_object_show(tbl);
+
+   bg = evas_object_rectangle_add(evas_object_evas_get(box));
+   evas_object_size_hint_align_set(bg, FILL, FILL);
+   evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+   evas_object_show(bg);
+
+   line = evas_object_rectangle_add(evas_object_evas_get(bg));
+   evas_object_size_hint_align_set(line, FILL, FILL);
+   evas_object_size_hint_weight_set(line, EXPAND, EXPAND);
+   evas_object_color_set(line, 255, 47, 153, 255);
+   evas_object_size_hint_max_set(line, 1, -1);
+   evas_object_show(line);
+
+   obj = evas_object_image_add(evas_object_evas_get(bg));
+   evas_object_size_hint_align_set(obj, FILL, FILL);
+   evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
+   evas_object_image_filled_set(obj, EINA_TRUE);
+   evas_object_image_colorspace_set(obj, EVAS_COLORSPACE_ARGB8888);
+   evas_object_show(obj);
+
+   elm_table_pack(tbl, bg, 0, 1, 1, 1);
+   elm_table_pack(tbl, obj, 0, 1, 1, 1);
+   elm_table_pack(tbl, line, 0, 1, 1, 1);
+   elm_object_content_set(frame, tbl);
+
+   elm_box_pack_end(box, frame);
+
+   Animate *ad = calloc(1, sizeof(Animate));
+   if (!ad) return;
+
+   ad->bg = bg;
+   ad->obj = obj;
+   ad->line = line;
+   ad->enabled = EINA_TRUE;
+   ad->ui = ui;
+   ad->redraw = EINA_TRUE;
+   ad->cpu_count = system_cpu_online_count_get();
+
+   for (int i = 0; i < ad->cpu_count; i++)
+     {
+        Core *core = calloc(1, sizeof(Core));
+        if (core)
+          {
+             core->id = i;
+             ad->cores = eina_list_append(ad->cores, core);
+          }
+     }
+
+   evas_object_smart_callback_add(tbl, "resize", _anim_complex_resize_cb, ad);
+   evas_object_smart_callback_add(tbl, "move", _anim_complex_move_cb, ad);
+   evas_object_smart_callback_add(ui->win, "delete,request", _win_complex_del_cb, ad);
+
+   ad->animator = ecore_animator_add(_animate_complex, ad);
+
+   ui->thread_cpu = ecore_thread_run(_core_times_complex_cb, NULL, NULL, ad);
 }
 
 void
@@ -408,11 +673,11 @@ ui_win_cpu_add(Ui *ui)
    cpu_count = system_cpu_online_count_get();
    if (cpu_count)
      _simple(ui, box);
+    //_complex(ui, box);
 
    elm_object_content_set(scroller, box);
-
    elm_object_content_set(win, scroller);
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+
    evisum_child_window_show(ui->win, win);
 }
 
