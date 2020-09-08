@@ -112,8 +112,8 @@ _core_alpha(int percent, int fr, int fr_max, int fr_min)
         n = fr - fr_min;
         double fade = (100.0 - ((n * 100) / rng)) / 100.0;
 
-        r += (percent / 100.0) * 0xff;
-        b += fade * 0xff;
+        r = (percent / 100.0) * 0xff;
+        b = fade * 0xff;
         RGB_VALID(r);
         RGB_VALID(b);
      }
