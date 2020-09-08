@@ -383,6 +383,32 @@ _simple(Ui *ui, Evas_Object *parent)
    ui->thread_cpu = ecore_thread_run(_core_times_cb, NULL, NULL, ui);
 }
 
+
+typedef enum {
+    COLOR_0   =  0xff57bb8a,
+    COLOR_5   =  0xff63b682,
+    COLOR_10  =  0xff73b87e,
+    COLOR_15  =  0xff84bb7b,
+    COLOR_20  =  0xff94bd77,
+    COLOR_25  =  0xffa4c073,
+    COLOR_30  =  0xffb0be6e,
+    COLOR_35  =  0xffc4c56d,
+    COLOR_40  =  0xffd4c86a,
+    COLOR_45  =  0xffe2c965,
+    COLOR_50  =  0xfff5ce62,
+    COLOR_55  =  0xfff3c563,
+    COLOR_60  =  0xffe9b861,
+    COLOR_65  =  0xffe6ad61,
+    COLOR_70  =  0xffecac67,
+    COLOR_75  =  0xffe9a268,
+    COLOR_80  =  0xffe79a69,
+    COLOR_85  =  0xffe5926b,
+    COLOR_90  =  0xffe2886c,
+    COLOR_95  =  0xffe0816d,
+    COLOR_100 =  0xffdd776e,
+} Colors;
+
+
 typedef struct {
    Ecore_Animator *animator;
    Ui             *ui;
@@ -412,6 +438,42 @@ typedef struct
    int freq;
    int percent;
 } Core;
+
+static int
+_core_color(Core *core)
+{
+   int percent = core->percent;
+
+   if (percent >= 100) return COLOR_100;
+   if (percent >= 95) return COLOR_95;
+   if (percent >= 90) return COLOR_90;
+   if (percent >= 85) return COLOR_85;
+   if (percent >= 80) return COLOR_80;
+   if (percent >= 75) return COLOR_75;
+   if (percent >= 70) return COLOR_70;
+   if (percent >= 65) return COLOR_65;
+   if (percent >= 60) return COLOR_60;
+   if (percent >= 55) return COLOR_55;
+   if (percent >= 50) return COLOR_50;
+   if (percent >= 45) return COLOR_45;
+   if (percent >= 40) return COLOR_40;
+   if (percent >= 35) return COLOR_35;
+   if (percent >= 30) return COLOR_30;
+   if (percent >= 25) return COLOR_25;
+   if (percent >= 20) return COLOR_20;
+   if (percent >= 15) return COLOR_15;
+   if (percent >= 10) return COLOR_10;
+   if (percent >= 5) return COLOR_5;
+
+   return COLOR_0;
+}
+
+static int
+_core_alpha(Core *core, int fr_max, int fr_min)
+{
+   int color = _core_color(core);
+   return color;
+}
 
 static void
 _core_times_complex_cb(void *data, Ecore_Thread *thread)
@@ -497,8 +559,7 @@ _animate_complex(void *data)
 {
    uint32_t *pixels;
    Evas_Object *line, *obj, *bg;
-   Evas_Coord x, y, w, h, fill_y;
-   double value;
+   Evas_Coord x, y, w, h;
    Animate *ad = data;
 
    bg = ad->bg; line = ad->line; obj = ad->obj;
@@ -522,31 +583,23 @@ _animate_complex(void *data)
    pixels = evas_object_image_data_get(obj, EINA_TRUE);
    if (!pixels) return EINA_TRUE;
 
-   value = 20 ; //ad->value > 0 ? ad->value : 1.0;
-
-   fill_y = h - (int) ((double)(h / 100.0) * value);
-
-   Eina_List *l;
    Core *core = NULL;
 
-   if (ad->cpu_freq)
-     printf("min %d and max %d\n", ad->freq_min, ad->freq_max);
-   EINA_LIST_FOREACH(ad->cores, l, core)
-     printf("%d %d => %d\n", core->id, (int) core->percent, core->freq);
+   int block = h / ad->cpu_count;
 
-   printf("\n");
    for (y = 0; ad->enabled && y < h; y++)
      {
         for (x = 0; x < w; x++)
           {
-             if (x == (w - ad->pos))
+             int n = y / block;
+             core = eina_list_nth(ad->cores, n);
+             if (!core) core = eina_list_nth(ad->cores, n - 1);
+             if (core && x == (w - ad->pos))
                {
-                   *(pixels) = COLOR_BG;
-               }
-             if ((x == (w - ad->pos)) && (y >= fill_y))
-               {
-                  if (y % 2)
-                    *(pixels) = COLOR_FG;
+                 if (ad->cpu_freq)
+                   *(pixels) = _core_alpha(core, ad->freq_min, ad->freq_max);
+                 else
+                   *(pixels) = _core_color(core);
                }
              pixels++;
           }
@@ -684,8 +737,8 @@ ui_win_cpu_add(Ui *ui)
 
    cpu_count = system_cpu_online_count_get();
    if (cpu_count)
-     _simple(ui, box);
-    //_complex(ui, box);
+    // _simple(ui, box);
+    _complex(ui, box);
 
    elm_object_content_set(scroller, box);
    elm_object_content_set(win, scroller);
