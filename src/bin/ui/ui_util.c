@@ -521,11 +521,11 @@ _anim_clouds(void *data)
    cpu = (ui->cpu_usage / 10) > 0 ? ui->cpu_usage / 10  :  1;
 
    evas_object_resize(anim->im, iw, wh);
-   evas_object_image_fill_set(anim->im, anim->pos, 0, iw, wh);
+   evas_object_image_fill_set(anim->im, anim->pos, 0, iw, ih);
    anim->pos += cpu;
 
    evas_object_resize(anim->bg, iw, wh);
-   evas_object_image_fill_set(anim->bg, anim->bg_pos, 0, iw, wh);
+   evas_object_image_fill_set(anim->bg, anim->bg_pos, 0, iw, ih);
    anim->bg_pos++;
 
    t = time(NULL);
