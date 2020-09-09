@@ -44,7 +44,7 @@
 
 #include "macros.h"
 
-static Eina_Bool _show_kthreads = EINA_FALSE;
+static Eina_Bool _show_kthreads = EINA_TRUE;
 
 void
 proc_info_kthreads_show_set(Eina_Bool enabled)
