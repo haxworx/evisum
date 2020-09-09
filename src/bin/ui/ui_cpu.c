@@ -222,11 +222,13 @@ _animate(void *data)
    h -= rem;
 
    evas_object_image_size_set(obj, w, h);
+   evas_object_resize(bg, w, h);
+   evas_object_image_data_update_add(obj, 0, 0, w, h);
+
+   evas_object_geometry_get(obj, NULL, NULL, NULL, &h);
    evas_object_move(line, x + w - ad->pos, y);
    evas_object_resize(line, 1, h);
    evas_object_show(line);
-   evas_object_resize(bg, w, h);
-   evas_object_image_data_update_add(obj, 0, 0, w, h);
 
    if (ad->redraw)
      {
