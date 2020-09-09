@@ -96,10 +96,6 @@ _core_alpha(int percent, int fr, int fr_max, int fr_min)
    int r, g, b, a;
    int color;
 
-   if (fr)
-     {
-     }
-
    color = _core_color(percent);
 
    r = (color >> 16) & 0xff;
