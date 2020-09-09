@@ -201,5 +201,5 @@ ui_win_memory_add(Ui *ui)
 
    _memory_update(widgets);
 
-   ui->timer_memory = ecore_timer_add(3.0, _memory_update, widgets);
+   ui->timer_memory = ecore_timer_add(ui->poll_delay, _memory_update, widgets);
 }
