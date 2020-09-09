@@ -217,15 +217,16 @@ _animate(void *data)
    bg = ad->bg; line = ad->line; obj = ad->obj;
 
    evas_object_geometry_get(bg, &x, &y, &w, &h);
-   evas_object_image_size_set(obj, w, h);
 
    int rem = h % ad->cpu_count;
+   h -= rem;
+
+   evas_object_image_size_set(obj, w, h);
    evas_object_move(line, x + w - ad->pos, y);
-   if (rem)
-     evas_object_resize(line, 1, h - rem);
-   else
-     evas_object_resize(line, 1, h);
+   evas_object_resize(line, 1, h);
    evas_object_show(line);
+   evas_object_resize(bg, w, h);
+   evas_object_image_data_update_add(obj, 0, 0, w, h);
 
    if (ad->redraw)
      {
