@@ -505,8 +505,8 @@ _anim_clouds(void *data)
    Ui *ui;
    Animation *anim;
    Evas_Coord ww, wh, iw, ih;
-   time_t t;
    int cpu;
+   time_t t;
    static int bolt = 0;
 
    anim = data;
@@ -541,17 +541,24 @@ _anim_clouds(void *data)
 
    if (bolt)
      {
-        ++bolt;
-        srand(t);
-        evas_object_move(anim->bolt, rand() % ww, -(rand() % (wh / 2)));
-        evas_object_show(anim->bolt);
-     }
+        struct timespec ts;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        srand(ts.tv_nsec);
+        if (bolt++ == 1)
+          {
+             evas_object_image_size_get(anim->bolt, &iw, &ih);
+             evas_object_move(anim->bolt, -(rand() % iw), -(rand() % (ih / 4)));
+          }
 
-   if (bolt && (bolt % 2)) evas_object_hide(anim->bolt);
-   if (bolt > 20)
-     {
-        evas_object_hide(anim->bolt);
-        bolt = 0;
+        if (bolt > 20)
+          {
+             evas_object_hide(anim->bolt);
+             bolt = 0;
+          }
+        else if (!(bolt % 2))
+          evas_object_show(anim->bolt);
+        else
+          evas_object_hide(anim->bolt);
      }
 
    if (anim->pos >= iw)
