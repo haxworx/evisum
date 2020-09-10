@@ -471,7 +471,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(ui->btn_cpu_usage, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cpu_usage");
-   elm_object_text_set(l, eina_slstr_printf("%.1f%%", proc->cpu_usage));
+   elm_object_text_set(l, eina_slstr_printf("%.1f %%", proc->cpu_usage));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cpu_usage, w, 1);
    r = evas_object_data_get(l, "rect");
@@ -1153,15 +1153,12 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
 {
    Evas_Object *o, *bx, *hbox, *sep, *fr, *sli;
    Evas_Coord ox, oy, ow, oh;
-   int r, g, b, a;
 
    evas_object_geometry_get(btn, &ox, &oy, &ow, &oh);
    o = elm_ctxpopup_add(ui->win);
    evas_object_size_hint_weight_set(o, EXPAND, EXPAND);
    evas_object_size_hint_align_set(o, FILL, FILL);
    elm_object_style_set(o, "noblock");
-   evas_object_color_get(o, &r, &g, &b, &a);
-   evas_object_color_set(o, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
 
    bx = elm_box_add(o);
    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
@@ -1294,7 +1291,7 @@ _ui_content_system_add(Ui *ui)
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    elm_progressbar_span_size_set(pb, 1.0);
-   elm_progressbar_unit_format_set(pb, "%1.2f%%");
+   elm_progressbar_unit_format_set(pb, "%1.2f %%");
    elm_object_content_set(frame, pb);
    evas_object_show(pb);
 
