@@ -29,18 +29,22 @@ typedef struct _Color_Point {
 } Color_Point;
 
 // config for colors/sizing
+#define COLOR_CPU_NUM 5
 static const Color_Point cpu_colormap_in[] = {
    {   0, 0xff202020 }, // 0
-   {  33, 0xff2030a0 }, // 1
-   {  66, 0xffa040a0 }, // 2
-   { 100, 0xffff9040 }, // 3
-   { 256, 0xffff9040 }  // overflow to avoid if's
+   {  25, 0xff2030a0 }, // 1
+   {  50, 0xffa040a0 }, // 2
+   {  75, 0xffff9040 }, // 3
+   { 100, 0xffffffff }, // 4
+   { 256, 0xffffffff }  // overflow to avoid if's
 };
+#define COLOR_FREQ_NUM 4
 static const Color_Point freq_colormap_in[] = {
-   {   0, 0x00000000 }, // 0
-   {  50, 0x00105020 }, // 1
-   { 100, 0x002060c0 }, // 2
-   { 256, 0x002060c0 }  // overflow to avoid if's
+   {   0, 0xff202020 }, // 0
+   {  33, 0xff285020 }, // 1
+   {  67, 0xff30a060 }, // 2
+   { 100, 0xffa0ff80 }, // 3
+   { 256, 0xffa0ff80 }  // overflow to avoid if's
 };
 #define BAR_HEIGHT 2
 #define COLORS_HEIGHT 20
@@ -153,7 +157,7 @@ _update(Animate *ad, Core *cores)
    // new size and mark it for clearing when we fill
    if (iw != w)
      {
-        evas_object_image_size_set(obj, w, ad->cpu_count);
+        evas_object_image_size_set(obj, w, ad->cpu_count * 2);
         clear = EINA_TRUE;
      }
 
@@ -168,32 +172,31 @@ _update(Animate *ad, Core *cores)
      {
         Core *core = &(cores[y]);
         unsigned int c1, c2;
-        unsigned int a, r, g, b;
-        unsigned int a2, r2, g2, b2;
 
         // our pix ptr is the pixel row and y is both y pixel coord and core
-        pix = &(pixels[y * (stride / 4)]);
         if (clear)
           {
              // clear/fill with 0 value from colormap
+             pix = &(pixels[(y * 2) * (stride / 4)]);
              for (x = 0; x < (w - 1); x++) pix[x] = cpu_colormap[0];
+             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             for (x = 0; x < (w - 1); x++) pix[x] = freq_colormap[0];
           }
         else
           {
              // scroll pixels 1 to the left
+             pix = &(pixels[(y * 2) * (stride / 4)]);
+             for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
+             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
              for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
           }
         // final pixel on end of each row... set it to a new value
-        // get color from cpu colormap and decompose to rgb
+        // get color from cpu colormap
+        // last pixel == resulting pixel color
         c1 = cpu_colormap[core->percent & 0xff];
-        a = AVAL(c1);
-        r = RVAL(c1);
-        g = GVAL(c1);
-        b = BVAL(c1);
-        // if we overlay freq, then we will do argb addition of freq color
-        // and cpu percent usage color. designed to affect mostly different
-        // rgb channels so you can see when freq goes up but not cpu % or
-        // vice-versa
+        pix = &(pixels[(y * 2) * (stride / 4)]);
+        pix[x] = c1;
+        // 2nd row of pixles for freq
         if ((ad->show_cpufreq) && (ad->cpu_freq))
           {
              int v = core->freq - ad->freq_min;
@@ -208,30 +211,23 @@ _update(Animate *ad, Core *cores)
                   // v now is 0->100 as a percentage of possible frequency
                   // the cpu can do
                   c2 = freq_colormap[v & 0xff];
-                  a2 = AVAL(c2);
-                  r2 = RVAL(c2);
-                  g2 = GVAL(c2);
-                  b2 = BVAL(c2);
-                  // do argb add and then limit arb to max of 0xff since
-                  // the add can overflow 0xff
-                  a += a2;
-                  r += r2;
-                  g += g2;
-                  b += b2;
-                  if (a > 0xff) a = 0xff;
-                  if (r > 0xff) r = 0xff;
-                  if (g > 0xff) g = 0xff;
-                  if (b > 0xff) b = 0xff;
                }
+             else c2 = freq_colormap[0];
+             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix[x] = c2;
           }
-        // last pixel == resulting pixel color
-        pix[x] = ARGB(a, r, g, b);
+        else
+          {
+             // no freq show - then just repeat cpu usage color
+             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix[x] = c1;
+          }
      }
    // hand back pixel data ptr so evas knows we are done with it
    evas_object_image_data_set(obj, pixels);
    // now add update region for all pixels in the image at the end as we
    // changed everything
-   evas_object_image_data_update_add(obj, 0, 0, w, ad->cpu_count);
+   evas_object_image_data_update_add(obj, 0, 0, w, ad->cpu_count * 2);
 }
 
 static void
@@ -304,8 +300,8 @@ _graph(Ui *ui, Evas_Object *parent)
    system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max);
 
    // init colormaps from a small # of points
-   _color_init(cpu_colormap_in, 4, cpu_colormap);
-   _color_init(freq_colormap_in, 3, freq_colormap);
+   _color_init(cpu_colormap_in, COLOR_CPU_NUM, cpu_colormap);
+   _color_init(freq_colormap_in, COLOR_FREQ_NUM, freq_colormap);
 
    box = parent;
 
@@ -337,7 +333,7 @@ _graph(Ui *ui, Evas_Object *parent)
      {
         rec = evas_object_rectangle_add(evas_object_evas_get(parent));
         evas_object_color_set(rec, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
         evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
         elm_table_pack(tbl, rec, 0, i, 1, 1);
 
@@ -356,12 +352,12 @@ _graph(Ui *ui, Evas_Object *parent)
 
         rec = evas_object_rectangle_add(evas_object_evas_get(parent));
         evas_object_color_set(rec, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
         evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
         elm_table_pack(tbl, rec, 2, i, 1, 1);
 
         lb = elm_label_add(parent);
-        snprintf(buf, sizeof(buf), "<b>%i</>", i);
+        snprintf(buf, sizeof(buf), "<b><color=#fff>%i</></>", i);
         elm_object_text_set(lb, buf);
         evas_object_size_hint_align_set(lb, 1.0, 0.5);
         evas_object_size_hint_weight_set(lb, 0.0, EXPAND);
@@ -404,7 +400,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(colors);
 
    lb = elm_label_add(parent);
-   elm_object_text_set(lb, "<b>0%</>");
+   elm_object_text_set(lb, "<b><color=#fff>0%</></>");
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 0, 0, 1, 1);
@@ -413,9 +409,9 @@ _graph(Ui *ui, Evas_Object *parent)
    lb = elm_label_add(parent);
    f = (ad->freq_min + 500) / 1000;
    if (f < 1000)
-     snprintf(buf, sizeof(buf), "<b>%iMHz</>", f);
+     snprintf(buf, sizeof(buf), "<b><color=#fff>%iMHz</></>", f);
    else
-     snprintf(buf, sizeof(buf), "<b>%1.1fGHz</>", ((double)f + 0.05) / 1000.0);
+     snprintf(buf, sizeof(buf), "<b><color=#fff>%1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
@@ -423,7 +419,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(lb);
 
    lb = elm_label_add(parent);
-   elm_object_text_set(lb, "<b>100%</>");
+   elm_object_text_set(lb, "<b><color=#fff>100%</></>");
    evas_object_size_hint_align_set(lb, 1.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 1, 0, 1, 1);
@@ -432,9 +428,9 @@ _graph(Ui *ui, Evas_Object *parent)
    lb = elm_label_add(parent);
    f = (ad->freq_max + 500) / 1000;
    if (f < 1000)
-     snprintf(buf, sizeof(buf), "<b>%iMHz</>", f);
+     snprintf(buf, sizeof(buf), "<b><color=#fff>%iMHz</></>", f);
    else
-     snprintf(buf, sizeof(buf), "<b>%1.1fGHz</>", ((double)f + 0.05) / 1000.0);
+     snprintf(buf, sizeof(buf), "<b><color=#fff>%1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 1.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
