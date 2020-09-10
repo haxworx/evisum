@@ -292,9 +292,16 @@ _colors_fill(Evas_Object *colors)
 static void
 _graph(Ui *ui, Evas_Object *parent)
 {
-   Evas_Object *frame, *tbl, *box, *obj;
-   Evas_Object *fr, *hbx, *bx, *colors, *check;
-   int n;
+   Evas_Object *frame, *tbl, *box, *obj, *ic, *lb, *rec;
+   Evas_Object *fr, *bx, *colors, *check;
+   int i;
+   char buf[128];
+
+   Animate *ad = calloc(1, sizeof(Animate));
+   if (!ad) return;
+
+   ad->cpu_count = system_cpu_online_count_get();
+   system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max);
 
    // init colormaps from a small # of points
    _color_init(cpu_colormap_in, 4, cpu_colormap);
@@ -302,14 +309,12 @@ _graph(Ui *ui, Evas_Object *parent)
 
    box = parent;
 
-   n = system_cpu_online_count_get();
-
    frame = elm_frame_add(box);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_show(frame);
-   if (n > 1)
-     elm_object_text_set(frame, eina_slstr_printf(_("%d CPU Cores Available"), n));
+   if (ad->cpu_count > 1)
+     elm_object_text_set(frame, eina_slstr_printf(_("%d CPU Cores"), ad->cpu_count));
    else
      elm_object_text_set(frame, _("ONE CPU CORE...MAKE IT COUNT!!!"));
 
@@ -326,7 +331,43 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_image_alpha_set(obj, EINA_FALSE);
    evas_object_show(obj);
 
-   elm_table_pack(tbl, obj, 0, 0, 1, 1);
+   elm_table_pack(tbl, obj, 0, 0, 5, ad->cpu_count);
+
+   for (i = 0; i < ad->cpu_count; i++)
+     {
+        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
+        elm_table_pack(tbl, rec, 0, i, 1, 1);
+
+        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
+        elm_table_pack(tbl, rec, 1, i, 1, 1);
+
+        ic = elm_icon_add(parent);
+        elm_icon_standard_set(ic, evisum_icon_path_get("cpu"));
+        evas_object_size_hint_align_set(ic, FILL, FILL);
+        evas_object_size_hint_weight_set(ic, 0.0, EXPAND);
+        elm_table_pack(tbl, ic, 1, i, 1, 1);
+        evas_object_show(ic);
+
+        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
+        elm_table_pack(tbl, rec, 2, i, 1, 1);
+
+        lb = elm_label_add(parent);
+        snprintf(buf, sizeof(buf), "<b>%i</>", i);
+        elm_object_text_set(lb, buf);
+        evas_object_size_hint_align_set(lb, 1.0, 0.5);
+        evas_object_size_hint_weight_set(lb, 0.0, EXPAND);
+        elm_table_pack(tbl, lb, 3, i, 1, 1);
+        evas_object_show(lb);
+     }
 
    bx = elm_box_add(box);
    evas_object_size_hint_align_set(bx, FILL, FILL);
@@ -338,18 +379,17 @@ _graph(Ui *ui, Evas_Object *parent)
    elm_object_content_set(frame, bx);
    elm_box_pack_end(box, frame);
 
-   hbx = elm_box_add(box);
-   evas_object_size_hint_align_set(hbx, FILL, FILL);
-   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
-   elm_box_horizontal_set(hbx, 1);
-   evas_object_show(hbx);
+   tbl = elm_table_add(box);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   evas_object_size_hint_weight_set(tbl, EXPAND, 0);
+   evas_object_show(tbl);
 
    fr = elm_frame_add(box);
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_size_hint_weight_set(fr, EXPAND, 0);
    evas_object_show(fr);
-   elm_object_text_set(fr, _("Increasing %"));
-   elm_object_content_set(fr, hbx);
+   elm_object_text_set(fr, _("Legend"));
+   elm_object_content_set(fr, tbl);
 
    colors = evas_object_image_add(evas_object_evas_get(fr));
    evas_object_size_hint_min_set
@@ -360,8 +400,38 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_image_filled_set(colors, EINA_TRUE);
    evas_object_image_alpha_set(colors, EINA_FALSE);
    _colors_fill(colors);
+   elm_table_pack(tbl, colors, 0, 0, 2, 2);
    evas_object_show(colors);
-   elm_box_pack_end(hbx, colors);
+
+   lb = elm_label_add(parent);
+   elm_object_text_set(lb, "<b>0%</>");
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   elm_table_pack(tbl, lb, 0, 0, 1, 1);
+   evas_object_show(lb);
+
+   lb = elm_label_add(parent);
+   snprintf(buf, sizeof(buf), "<b>%iMhz</>", ad->freq_min / 1000);
+   elm_object_text_set(lb, buf);
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   elm_table_pack(tbl, lb, 0, 1, 1, 1);
+   evas_object_show(lb);
+
+   lb = elm_label_add(parent);
+   elm_object_text_set(lb, "<b>100%</>");
+   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   elm_table_pack(tbl, lb, 1, 0, 1, 1);
+   evas_object_show(lb);
+
+   lb = elm_label_add(parent);
+   snprintf(buf, sizeof(buf), "<b>%iMhz</>", ad->freq_max / 1000);
+   elm_object_text_set(lb, buf);
+   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   elm_table_pack(tbl, lb, 1, 1, 1, 1);
+   evas_object_show(lb);
 
    elm_box_pack_end(box, fr);
 
@@ -380,13 +450,8 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(check);
    elm_object_content_set(fr, check);
 
-   Animate *ad = calloc(1, sizeof(Animate));
-   if (!ad) return;
-
    ad->obj = obj;
    ad->ui = ui;
-   ad->cpu_count = system_cpu_online_count_get();
-
    ad->colors = colors;
 
    // min size ofr cpu color graph to show all cores.
