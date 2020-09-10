@@ -294,7 +294,7 @@ _graph(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *frame, *tbl, *box, *obj, *ic, *lb, *rec;
    Evas_Object *fr, *bx, *colors, *check;
-   int i;
+   int i, f;
    char buf[128];
 
    Animate *ad = calloc(1, sizeof(Animate));
@@ -411,7 +411,11 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(lb);
 
    lb = elm_label_add(parent);
-   snprintf(buf, sizeof(buf), "<b>%iMhz</>", ad->freq_min / 1000);
+   f = (ad->freq_min + 500) / 1000;
+   if (f < 1000)
+     snprintf(buf, sizeof(buf), "<b>%iMHz</>", f);
+   else
+     snprintf(buf, sizeof(buf), "<b>%1.1fGHz</>", ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
@@ -426,7 +430,11 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(lb);
 
    lb = elm_label_add(parent);
-   snprintf(buf, sizeof(buf), "<b>%iMhz</>", ad->freq_max / 1000);
+   f = (ad->freq_max + 500) / 1000;
+   if (f < 1000)
+     snprintf(buf, sizeof(buf), "<b>%iMHz</>", f);
+   else
+     snprintf(buf, sizeof(buf), "<b>%1.1fGHz</>", ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 1.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
