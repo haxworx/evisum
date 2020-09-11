@@ -832,6 +832,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_data_set(genlist, "ui", ui);
    elm_object_focus_allow_set(genlist, EINA_FALSE);
    elm_genlist_homogeneous_set(genlist, EINA_TRUE);
+   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_show(genlist);

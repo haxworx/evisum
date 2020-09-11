@@ -1392,6 +1392,7 @@ _ui_content_system_add(Ui *ui)
    elm_scroller_policy_set(ui->scroller, ELM_SCROLLER_POLICY_OFF,
                    ELM_SCROLLER_POLICY_AUTO);
    elm_genlist_homogeneous_set(plist, EINA_TRUE);
+   elm_genlist_multi_select_set(plist, EINA_FALSE);
    evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(plist, FILL, FILL);
    evas_object_show(plist);
