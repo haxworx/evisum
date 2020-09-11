@@ -297,7 +297,8 @@ _graph(Ui *ui, Evas_Object *parent)
    if (!ad) return;
 
    ad->cpu_count = system_cpu_online_count_get();
-   system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max);
+   if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
+     ad->cpu_freq = EINA_TRUE;
 
    // init colormaps from a small # of points
    _color_init(cpu_colormap_in, COLOR_CPU_NUM, cpu_colormap);
@@ -451,6 +452,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_align_set(check, FILL, FILL);
    evas_object_size_hint_weight_set(check, EXPAND, 0);
    elm_object_text_set(check, _("Overlay CPU frequency?"));
+   if (!ad->cpu_freq) elm_object_disabled_set(check, 1);
    evas_object_show(check);
    elm_object_content_set(fr, check);
 
