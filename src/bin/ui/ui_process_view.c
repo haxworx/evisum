@@ -923,9 +923,7 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
-   char *line;
-   Eina_Strbuf *buf;
-   int n;
+   char *cmd, *t;
 
    ui = data;
 
@@ -934,11 +932,21 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->info_init) return;
 
+   cmd = t = strdup(ui->selected_cmd);
+   while (!isspace(*t)) t++;
+   if (isspace(*t)) *t = '\0';
+
    Eina_List *lines =
-          _exe_response(eina_slstr_printf("man %s | col -b", ui->selected_cmd));
+          _exe_response(eina_slstr_printf("man %s | col -b", cmd));
+
+   free(cmd);
+
    if (lines)
      {
-        buf = eina_strbuf_new();
+        char *line;
+        int n = 1;
+        Eina_Strbuf *buf = eina_strbuf_new();
+
         eina_strbuf_append(buf, "<code>");
 
         n = 1;

@@ -519,7 +519,7 @@ _anim_clouds(void *data)
    cpu = (ui->cpu_usage / 10) > 0 ? ui->cpu_usage / 10  :  1;
 
    evas_object_resize(anim->im, iw, wh);
-   evas_object_image_fill_set(anim->im, anim->pos, 0, iw, ih);
+   evas_object_image_fill_set(anim->im, anim->pos, -50, iw, ih);
    anim->pos += cpu;
 
    t = time(NULL);
@@ -589,7 +589,7 @@ evisum_ui_animate(void *data)
    anim->im = im = evas_object_image_add(evas_object_evas_get(ui->win));
    evas_object_image_file_set(im, evisum_icon_path_get("clo"), NULL);
    evas_object_image_size_get(im, &iw, &ih);
-   evas_object_image_fill_set(im, ww / 2, 0, iw, wh);
+   evas_object_image_fill_set(im, 0, -50, iw, wh);
    evas_object_resize(im, iw, wh);
    evas_object_move(im, 0, 0);
    evas_object_pass_events_set(im, 1);
