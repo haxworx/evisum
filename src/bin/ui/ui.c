@@ -1098,7 +1098,7 @@ _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    evisum_ui_effects_enabled_set(!evisum_ui_effects_enabled_get());
 
    _config_save(ui);
-   ui->restart = EINA_TRUE;
+   ecore_app_restart();
    ecore_main_loop_quit();
 }
 

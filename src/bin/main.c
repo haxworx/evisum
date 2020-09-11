@@ -99,7 +99,6 @@ int
 main(int argc, char **argv)
 {
    Ui *ui;
-   Eina_Bool restart = EINA_FALSE;
    int i;
 
    for (i = 0; i < argc; i++)
@@ -136,9 +135,7 @@ main(int argc, char **argv)
    if (ui)
      {
         ecore_main_loop_begin();
-        restart = ui->restart;
         evisum_ui_del(ui);
-        if (restart) ecore_exe_run("evisum", NULL);
      }
 
    elm_shutdown();

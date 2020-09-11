@@ -79,8 +79,6 @@ config_load(void)
         if (!f) _config_fail("read");
         cfg = eet_read(f, "Config", &size);
 
-        _config_check(cfg);
-
         if (cfg->version < CONFIG_VERSION)
           {
              free(cfg);
@@ -88,6 +86,8 @@ config_load(void)
 
              cfg = _config_init();
           }
+        _config_check(cfg);
+
         eet_close(f);
      }
 
