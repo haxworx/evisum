@@ -493,9 +493,7 @@ typedef struct
 {
    Ui          *ui;
    int          pos;
-   int          bg_pos;
    Evas_Object *im;
-   Evas_Object *bg;
    Evas_Object *bolt;
 } Animation;
 
@@ -524,10 +522,6 @@ _anim_clouds(void *data)
    evas_object_image_fill_set(anim->im, anim->pos, 0, iw, ih);
    anim->pos += cpu;
 
-   evas_object_resize(anim->bg, iw, wh);
-   evas_object_image_fill_set(anim->bg, anim->bg_pos, 0, iw, ih);
-   anim->bg_pos++;
-
    t = time(NULL);
 
    if (cpu >= 6 && !bolt)
@@ -542,10 +536,11 @@ _anim_clouds(void *data)
    if (bolt)
      {
         struct timespec ts;
-        clock_gettime(CLOCK_REALTIME, &ts);
-        srand(ts.tv_nsec);
+
         if (bolt++ == 1)
           {
+             clock_gettime(CLOCK_REALTIME, &ts);
+             srand(ts.tv_nsec);
              evas_object_image_size_get(anim->bolt, &iw, &ih);
              evas_object_move(anim->bolt, -(rand() % iw), -(rand() % (ih / 4)));
           }
@@ -563,8 +558,6 @@ _anim_clouds(void *data)
 
    if (anim->pos >= iw)
      anim->pos = 0;
-   if (anim->bg_pos >= iw)
-     anim->bg_pos = 0;
 
    return ECORE_CALLBACK_RENEW;
 }
@@ -574,7 +567,7 @@ evisum_ui_animate(void *data)
 {
    Animation *anim;
    Ui *ui;
-   Evas_Object *bg, *im;
+   Evas_Object *im;
    Evas_Coord iw, ih, ww, wh;
 
    ui = data;
@@ -585,16 +578,6 @@ evisum_ui_animate(void *data)
    anim->ui = ui;
 
    evas_object_geometry_get(ui->win, NULL, NULL, &ww, &wh);
-
-   anim->bg = bg = evas_object_image_add(evas_object_evas_get(ui->win));
-   evas_object_image_file_set(bg, evisum_icon_path_get("clo"), NULL);
-   evas_object_image_size_get(bg, &iw, &ih);
-   evas_object_image_fill_set(bg, ww / 3, 0, iw, wh);
-   evas_object_resize(bg, iw, wh);
-   evas_object_move(bg, 0, 0);
-   evas_object_color_set(bg, 64, 64, 64, 64);
-   evas_object_pass_events_set(bg, 1);
-   evas_object_show(bg);
 
    anim->bolt = im = evas_object_image_filled_add(evas_object_evas_get(ui->win));
    evas_object_pass_events_set(im, 1);
@@ -609,7 +592,6 @@ evisum_ui_animate(void *data)
    evas_object_image_fill_set(im, ww / 2, 0, iw, wh);
    evas_object_resize(im, iw, wh);
    evas_object_move(im, 0, 0);
-   evas_object_color_set(im, 192, 192, 192, 192);
    evas_object_pass_events_set(im, 1);
    evas_object_show(im);
 
