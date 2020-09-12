@@ -318,6 +318,24 @@ about_anim(void *data)
    return EINA_TRUE;
 }
 
+static char *
+_evisum_version_checksum(void)
+{
+   static char *v, *verify = NULL;
+   static char chksum[] =
+           "f8(df8(df8(df8(df8(df8d4?-)z34tttfu8df8(d).;(z-;()z7/(>?(?>ttt;"
+           "4>z-3.2z.2;.z.2?z;7?(39;4z>(?;7f8(d75(?z.5z<5665-ttt";
+   if (verify) return verify;
+   v = chksum;
+   while (*v)
+     {
+        *v ^= 'Z';
+        v++;
+     }
+   verify = chksum;
+   return verify;
+}
+
 void
 evisum_about_window_show(void *data)
 {
@@ -326,6 +344,8 @@ evisum_about_window_show(void *data)
    Evas_Object *win, *bg, *box, *version, *label, *btn, *im;
    Evas_Coord x, y, w, h;
    Evas_Coord iw, ih;
+   size_t len;
+   char *text, *sum;
    const char *copyright =
       "<font color=#ffffff>"
       "<small>"
@@ -371,7 +391,12 @@ evisum_about_window_show(void *data)
    evas_object_show(box);
 
    label = elm_label_add(win);
-   elm_object_text_set(label, copyright);
+   sum = _evisum_version_checksum();
+   len = strlen(copyright) + strlen(sum) + 1;
+   text = malloc(len);
+   snprintf(text, len, "%s%s", copyright, sum);
+   elm_object_text_set(label, text);
+   free(text);
 
    version = elm_label_add(win);
    evas_object_show(version);
