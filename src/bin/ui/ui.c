@@ -11,6 +11,8 @@
 #include <sys/resource.h>
 #include <pwd.h>
 
+// These should be static. Please do not change.
+// OpenBSD has issues which are undetermined yet.
 Ui *_ui;
 Evisum_Config *_evisum_config;
 static Eina_Lock _lock;
