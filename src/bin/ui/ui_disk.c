@@ -171,7 +171,11 @@ ui_win_disk_add(Ui *ui)
    Evas_Object *win, *box, *vbox, *scroller;
    Evas_Object *table, *rect;
 
-   if (ui->win_disk) return;
+   if (ui->win_disk)
+     {
+        elm_win_raise(ui->win_disk);
+        return;
+     }
 
    ui->win_disk = win = elm_win_util_standard_add("evisum",
                    _("Storage"));

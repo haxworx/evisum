@@ -125,7 +125,11 @@ ui_win_memory_add(Ui *ui)
    Evas_Object *win, *frame, *pb;
    Evas_Object *border, *rect, *label, *table;
 
-   if (ui->win_mem) return;
+   if (ui->win_mem)
+     {
+        elm_win_raise(ui->win_mem);
+        return;
+     }
 
    Widgets *widgets = calloc(1, sizeof(Widgets));
    if (!widgets) return;

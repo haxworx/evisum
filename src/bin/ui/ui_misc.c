@@ -344,7 +344,11 @@ ui_win_misc_add(Ui *ui)
    Evas_Object *win, *box, *hbox, *frame, *scroller;
    Evas_Object *table, *border, *rect;
 
-   if (ui->win_misc) return;
+   if (ui->win_misc)
+     {
+        elm_win_raise(ui->win_misc);
+        return;
+     }
 
    ui->win_misc = win = elm_win_util_standard_add("evisum", _("Misc"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);

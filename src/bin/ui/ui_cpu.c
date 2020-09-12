@@ -482,7 +482,11 @@ ui_win_cpu_add(Ui *ui)
 {
    Evas_Object *win, *box, *scroller;
 
-   if (ui->win_cpu) return;
+   if (ui->win_cpu)
+     {
+        elm_win_raise(ui->win_cpu);
+        return;
+     }
 
    ui->win_cpu = win = elm_win_util_standard_add("evisum",
                    _("CPU Usage"));
