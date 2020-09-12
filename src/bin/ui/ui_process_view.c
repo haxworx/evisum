@@ -326,12 +326,17 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
 
    EINA_LIST_FREE(threads, t)
      {
-        Thread_Info *prev = elm_object_item_data_get(it);
-        if (prev)
-          _item_del(prev, NULL);
-        elm_object_item_data_set(it, t);
-        elm_genlist_item_update(it);
-        it = elm_genlist_item_next_get(it);
+	if (!it)
+          _item_del(t, NULL);
+	else
+          {
+             Thread_Info *prev = elm_object_item_data_get(it);
+             if (prev)
+              _item_del(prev, NULL);
+             elm_object_item_data_set(it, t);
+             elm_genlist_item_update(it);
+             it = elm_genlist_item_next_get(it);
+          }
      }
    eina_lock_release(&_lock);
 }
@@ -929,7 +934,7 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
-   char *cmd, *t;
+   Eina_List *lines = NULL;
 
    ui = data;
 
@@ -938,16 +943,16 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->info_init) return;
 
-   cmd = t = strdup(ui->selected_cmd);
-   while (!isspace(*t)) t++;
-   if (isspace(*t)) *t = '\0';
+   if (ui->selected_cmd && ui->selected_cmd[0] && !strchr(ui->selected_cmd, ' '))
+     lines =_exe_response(eina_slstr_printf("man %s | col -b", ui->selected_cmd));
 
-   Eina_List *lines =
-          _exe_response(eina_slstr_printf("man %s | col -b", cmd));
-
-   free(cmd);
-
-   if (lines)
+   if (!lines)
+     {
+        elm_object_text_set(ui->entry_info,
+                        eina_slstr_printf(_("No documentation found for %s."),
+                        ui->selected_cmd));
+     }
+   else
      {
         char *line;
         int n = 1;
@@ -965,12 +970,6 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
         eina_strbuf_append(buf, "</code>");
         elm_object_text_set(ui->entry_info, eina_strbuf_string_get(buf));
         eina_strbuf_free(buf);
-     }
-   else
-     {
-        elm_object_text_set(ui->entry_info,
-                        eina_slstr_printf(_("No documentation found for %s."),
-                        ui->selected_cmd));
      }
 
    ui->info_init = EINA_TRUE;
