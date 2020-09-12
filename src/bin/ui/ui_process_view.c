@@ -948,9 +948,15 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (!lines)
      {
-        elm_object_text_set(ui->entry_info,
-                        eina_slstr_printf(_("No documentation found for %s."),
-                        ui->selected_cmd));
+        // LAZY!!!
+        if (!strcmp(ui->selected_cmd, "evisum"))
+          elm_object_text_set(ui->entry_info, _evisum_docs());
+        else
+          {
+             elm_object_text_set(ui->entry_info,
+                                 eina_slstr_printf(_("No documentation found for %s."),
+                                 ui->selected_cmd));
+	  }
      }
    else
      {

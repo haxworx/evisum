@@ -1,4 +1,6 @@
 
+// Process Window includes this junk.
+
 static char *
 _man2entry(const char *text)
 {
@@ -49,4 +51,15 @@ _man2entry(const char *text)
    str[i] = '\0';
 
    return str;
+}
+
+static const char *
+_evisum_docs(void)
+{
+   const char *txt =
+         "<b>Congratulations you found the documentation!</b><br><br>"
+         "Control + K - Toggle kernel threads. <br>"
+         "Control + E - Show Self. <br>";
+
+   return txt;
 }
