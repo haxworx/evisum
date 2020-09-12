@@ -1143,6 +1143,11 @@ _main_menu_slider_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *eve
 
    ui->poll_delay = elm_slider_value_get(obj) + 0.5;
 
+   if (ui->poll_delay > 1)
+     elm_slider_unit_format_set(obj, _("%1.0f secs"));
+   else
+     elm_slider_unit_format_set(obj, _("%1.0f sec"));
+
    _config_save(ui);
 
    _proc_pid_cpu_times_reset(ui);
@@ -1220,8 +1225,9 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    evas_object_size_hint_align_set(sli, FILL, FILL);
    elm_object_tooltip_text_set(sli, _("Poll delay (seconds)"));
    evas_object_smart_callback_add(sli, "slider,drag,stop", _main_menu_slider_changed_cb, ui);
-   evas_object_smart_callback_add(sli, "delay,changed", _main_menu_slider_changed_cb, ui);
+   evas_object_smart_callback_add(sli, "changed", _main_menu_slider_changed_cb, ui);
    evas_object_show(sli);
+   _main_menu_slider_changed_cb(ui, sli, NULL);
 
    elm_box_pack_end(bx, hbox);
    elm_box_pack_end(bx, sli);
