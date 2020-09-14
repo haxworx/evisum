@@ -1121,12 +1121,18 @@ _main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static Evas_Object *
 _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb, void *data)
 {
-   Evas_Object *btn, *ic;
+   Evas_Object *ot, *or, *btn, *ic;
+
+   ot = elm_table_add(parent);
+   evas_object_show(ot);
+
+   or = evas_object_rectangle_add(evas_object_evas_get(parent));
+   evas_object_size_hint_min_set(or, 24 * elm_config_scale_get(), 24 * elm_config_scale_get());
+   elm_table_pack(ot, or, 0, 0, 1, 1);
 
    btn = elm_button_add(parent);
-   evas_object_size_hint_weight_set(btn, 0, EXPAND);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, 24 * elm_config_scale_get(), 24 * elm_config_scale_get());
    evas_object_show(btn);
 
    ic = elm_icon_add(btn);
@@ -1137,7 +1143,9 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb, v
    elm_object_tooltip_text_set(btn, text);
    evas_object_smart_callback_add(btn, "clicked", cb, data);
 
-   return btn;
+   elm_table_pack(ot, btn, 0, 0, 1, 1);
+
+   return ot;
 }
 
 static void
