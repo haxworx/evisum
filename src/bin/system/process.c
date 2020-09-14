@@ -44,6 +44,20 @@
 
 #include "macros.h"
 
+static Eina_Bool _show_kthreads = EINA_TRUE;
+
+void
+proc_info_kthreads_show_set(Eina_Bool enabled)
+{
+   _show_kthreads = enabled;
+}
+
+Eina_Bool
+proc_info_kthreads_show_get(void)
+{
+   return _show_kthreads;
+}
+
 static const char *
 _process_state_name(char state)
 {
@@ -240,9 +254,33 @@ _uid(int pid)
    return uid;
 }
 
+static int64_t
+_boot_time(void)
+{
+   FILE *f;
+   int64_t boot_time;
+   char buf[4096];
+   double uptime = 0.0;
+
+   f = fopen("/proc/uptime", "r");
+   if (!f) return 0;
+
+   if (fgets(buf, sizeof(buf), f))
+     sscanf(buf, "%lf", &uptime);
+   else boot_time = 0;
+
+   fclose(f);
+
+   if (uptime > 0.0)
+     boot_time = time(NULL) - (time_t) uptime;
+
+   return boot_time;
+}
+
 typedef struct {
-   int pid, utime, stime, cutime, cstime;
+   int pid, ppid, utime, stime, cutime, cstime;
    int psr, pri, nice, numthreads;
+   long long int start_time;
    char state;
    unsigned int mem_rss, flags;
    unsigned long mem_virt;
@@ -255,6 +293,9 @@ _stat(const char *path, Stat *st)
    FILE *f;
    char line[4096];
    int dummy, res = 0;
+   static int64_t boot_time = 0;
+
+   if (!boot_time) boot_time = _boot_time();
 
    memset(st, 0, sizeof(Stat));
 
@@ -269,11 +310,11 @@ _stat(const char *path, Stat *st)
         strncpy(st->name, start, end - start);
         st->name[end - start] = '\0';
         res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
-              " %d %d %d %u %u %d %lu %u %u %u %u %u %u %u %d %d %d %d %u"
+              " %d %d %d %u %u %lld %lu %u %u %u %u %u %u %u %d %d %d %d %u"
               " %d %d %d %d %d %d %d %d %d",
-              &st->state, &dummy, &dummy, &dummy, &dummy, &dummy, &st->flags,
+              &st->state, &st->ppid, &dummy, &dummy, &dummy, &dummy, &st->flags,
               &dummy, &dummy, &dummy, &dummy, &st->utime, &st->stime, &st->cutime,
-              &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &dummy,
+              &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &st->start_time,
               &st->mem_virt, &st->mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy,
               &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
               &dummy, &dummy, &st->psr, &dummy, &dummy, &dummy, &dummy, &dummy);
@@ -281,6 +322,9 @@ _stat(const char *path, Stat *st)
    fclose(f);
 
    if (res != 42) return EINA_FALSE;
+
+   st->start_time /= sysconf(_SC_CLK_TCK);
+   st->start_time += boot_time;
 
    return EINA_TRUE;
 }
@@ -305,14 +349,17 @@ _process_list_linux_get(void)
         if (!_stat(eina_slstr_printf("/proc/%d/stat", pid), &st))
           continue;
 
-        if (st.flags & PF_KTHREAD) continue;
+        if (st.flags & PF_KTHREAD && !proc_info_kthreads_show_get())
+          continue;
 
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
         if (!p) return NULL;
 
         p->pid = pid;
+        p->ppid = st.ppid;
         p->uid = _uid(pid);
         p->cpu_id = st.psr;
+        p->start = st.start_time;
         p->state = _process_state_name(st.state);
         p->cpu_time = st.utime + st.stime;
         p->nice = st.nice;
@@ -372,8 +419,10 @@ proc_info_by_pid(int pid)
    if (!p) return NULL;
 
    p->pid = pid;
+   p->ppid = st.ppid;
    p->uid = _uid(pid);
    p->cpu_id = st.psr;
+   p->start = st.start_time;
    p->state = _process_state_name(st.state);
    p->cpu_time = st.utime + st.stime;
    p->priority = st.pri;
@@ -399,8 +448,10 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    if (!pagesize) pagesize = getpagesize();
 
    p->pid = kp->p_pid;
+   p->ppid = kp->p_ppid;
    p->uid = kp->p_uid;
    p->cpu_id = kp->p_cpuid;
+   p->start = kp->p_ustart_sec;
    p->state = _process_state_name(kp->p_stat);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
    p->mem_virt = p->mem_size = (MEMSZ(kp->p_vm_tsize) * MEMSZ(pagesize)) +
@@ -657,11 +708,13 @@ _proc_pidinfo(size_t pid)
    if (!p) return NULL;
 
    p->pid = pid;
+   p->ppid = taskinfo.pbsd.pbi_ppid;
    p->uid = taskinfo.pbsd.pbi_uid;
    p->cpu_id = -1;
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
+   p->start = taskinfo.pbsd.pbi_start_tvsec;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
@@ -743,10 +796,12 @@ proc_info_by_pid(int pid)
 
    p->pid = pid;
    p->uid = taskinfo.pbsd.pbi_uid;
+   p->ppid = taskinfo.pbsd.pbi_ppid;
    p->cpu_id = workqueue.pwq_nthreads;
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
+   p->start = taskinfo.pbsd.pbi_start_tvsec;
    p->state = _process_state_name(taskinfo.pbsd.pbi_status);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
@@ -843,6 +898,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    if (!p) return NULL;
 
    p->pid = kp->ki_pid;
+   p->ppid = kp->ki_ppid;
    p->uid = kp->ki_uid;
 
    if (!is_thread)
@@ -856,10 +912,12 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
 
    p->cpu_time = (usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec +
        (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec;
+   // XXX: See kern.sched.idlespins
    p->cpu_time /= 10000;
    p->state = _process_state_name(kp->ki_stat);
    p->mem_virt = kp->ki_size;
    p->mem_rss = MEMSZ(kp->ki_rssize) * MEMSZ(pagesize);
+   p->start = kp->ki_start.tv_sec;
    p->mem_size = p->mem_virt;
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;
@@ -895,7 +953,7 @@ _process_list_freebsd_fallback_get(void)
         if (sysctl(mib, 4, &kp, &len, NULL, 0) == -1)
           continue;
 
-        if (kp.ki_flag & P_KPROC)
+        if (kp.ki_flag & P_KPROC && !proc_info_kthreads_show_get())
           continue;
 
         Proc_Info *p = _proc_thread_info(&kp, EINA_FALSE);
@@ -928,7 +986,7 @@ _process_list_freebsd_get(void)
 
    for (int i = 0; i < pid_count; i++)
      {
-        if (kps[i].ki_flag & P_KPROC)
+        if (kps[i].ki_flag & P_KPROC && !proc_info_kthreads_show_get())
           continue;
 
         kp = &kps[i];
@@ -988,7 +1046,7 @@ proc_info_by_pid(int pid)
 
    for (int i = 0; i < pid_count; i++)
      {
-        if (kps[i].ki_flag & P_KPROC)
+        if (kps[i].ki_flag & P_KPROC && !proc_info_kthreads_show_get())
           continue;
         if (kps[i].ki_pid != pid)
           continue;

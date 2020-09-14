@@ -6,8 +6,8 @@
 #define FILL EVAS_HINT_FILL
 #define EXPAND EVAS_HINT_EXPAND
 
-#define TAB_BTN_WIDTH  96
-#define TAB_BTN_HEIGHT 32
+#define TAB_BTN_WIDTH  84
+#define TAB_BTN_HEIGHT 28
 #define BTN_WIDTH      80
 #define BTN_HEIGHT     24
 
@@ -20,17 +20,35 @@
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
-                Evas_Smart_Cb clicked_cb, void *data);
+                  Evas_Smart_Cb clicked_cb, void *data);
 
 Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
-                Evas_Smart_Cb clicked_cb, void *data);
+                     const char *icon, Evas_Smart_Cb clicked_cb, void *data);
 
 const char *
 evisum_size_format(unsigned long long bytes);
 
 const char *
 evisum_icon_path_get(const char *name);
+
+const char *
+evisum_image_path_get(const char *name);
+
+Evas_Object *
+evisum_ui_background_add(Evas_Object *win, Eina_Bool enabled);
+
+Evas_Object *
+evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled);
+
+void
+evisum_ui_effects_enabled_set(Eina_Bool enabled);
+
+Eina_Bool
+evisum_ui_effects_enabled_get(void);
+
+void
+evisum_ui_animate(void *data);
 
 int
 evisum_ui_textblock_font_size_get(Evas_Object *tb);

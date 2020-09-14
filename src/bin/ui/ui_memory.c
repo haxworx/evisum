@@ -125,15 +125,20 @@ ui_win_memory_add(Ui *ui)
    Evas_Object *win, *frame, *pb;
    Evas_Object *border, *rect, *label, *table;
 
-   if (ui->win_mem) return;
+   if (ui->win_mem)
+     {
+        elm_win_raise(ui->win_mem);
+        return;
+     }
 
    Widgets *widgets = calloc(1, sizeof(Widgets));
    if (!widgets) return;
 
-   ui->win_mem = win = elm_win_util_dialog_add(ui->win, "evisum",
+   ui->win_mem = win = elm_win_util_standard_add("evisum",
                    _("Memory Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    frame = elm_frame_add(win);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
@@ -200,5 +205,5 @@ ui_win_memory_add(Ui *ui)
 
    _memory_update(widgets);
 
-   ui->timer_memory = ecore_timer_add(3.0, _memory_update, widgets);
+   ui->timer_memory = ecore_timer_add(ui->poll_delay, _memory_update, widgets);
 }

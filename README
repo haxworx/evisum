@@ -3,7 +3,7 @@
 System Monitor (EFL)
 
 This is a process monitor and system monitor for Linux, OpenBSD,
-FreeBSD, DragonFlyBSD and macOS.
+FreeBSD and DragonFlyBSD.
 
 REQUIREMENTS:
 
@@ -27,5 +27,9 @@ CONTRIBUTIONS:
 
 Patches with bug fixes are more than welcome. If you do wish to
 add a substantial querying feature PLEASE ensure that it works reliaibly
-on OpenBSD, Linux and FreeBSD (ideally macOS also). UI changes
-should be platform independent.
+on OpenBSD, Linux and FreeBSD.
+
+NOTES:
+
+Ctrl + k or Ctrl + K to show/hide kernel threads.
+Ctrl + e or Ctrl + E to show/hide evisum in the process list.

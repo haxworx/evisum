@@ -33,6 +33,8 @@ typedef enum
 typedef struct Ui
 {
    Evas_Object     *win;
+   Evas_Object     *bg;
+   Evas_Object     *main_menu;
    Evas_Object     *menu;
    Evas_Object     *scroller;
    Evas_Object     *content;
@@ -61,7 +63,6 @@ typedef struct Ui
    Evisum_Ui_Cache *cache;
    Evas_Object     *genlist_procs;
    Evas_Object     *entry_search;
-   Eina_Bool        show_genlist;
 
    Ecore_Thread    *thread_system;
    Ecore_Thread    *thread_process;
@@ -90,11 +91,14 @@ typedef struct Ui
    Eina_Bool       show_self;
    Eina_Bool       shutdown_now;
 
+   Ecore_Animator *animator;
    Eina_Bool       zfs_mounted;
 
    uint64_t        incoming_max;
    uint64_t        outgoing_max;
    network_t       network_usage;
+
+   uint8_t         cpu_usage;
 } Ui;
 
 Ui *

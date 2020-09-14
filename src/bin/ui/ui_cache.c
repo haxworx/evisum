@@ -62,11 +62,11 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj)
         if (it->obj == obj)
           {
              it->used = 0;
+             evas_object_hide(it->obj);
              released = EINA_TRUE;
              break;
           }
      }
-
    return released;
 }
 

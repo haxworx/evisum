@@ -25,6 +25,7 @@ typedef struct _Ui_Process {
    Evas_Object  *entry_pid_cmd_args;
    Evas_Object  *entry_pid_user;
    Evas_Object  *entry_pid_pid;
+   Evas_Object  *entry_pid_ppid;
    Evas_Object  *entry_pid_uid;
    Evas_Object  *entry_pid_cpu;
    Evas_Object  *entry_pid_threads;
@@ -32,6 +33,7 @@ typedef struct _Ui_Process {
    Evas_Object  *entry_pid_rss;
    Evas_Object  *entry_pid_shared;
    Evas_Object  *entry_pid_size;
+   Evas_Object  *entry_pid_started;
    Evas_Object  *entry_pid_nice;
    Evas_Object  *entry_pid_pri;
    Evas_Object  *entry_pid_state;
@@ -62,6 +64,6 @@ typedef struct _Ui_Process {
 } Ui_Process;
 
 void
-ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd);
+ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_delay);
 
 #endif

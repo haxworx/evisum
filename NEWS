@@ -1,4 +1,43 @@
 ============
+Evisum 0.5.5
+============
+
+  * Added CPU frequency scaling support.
+  * Show kernel threads by default.
+  * Add configurable poll time (see new menu).
+  * CPU / Mem view respect polling settings.
+  * Improve genlist behaviours.
+  * Replaced the elm_menu with a better menu.
+  * New per-core CPU window (thanks raster).
+  * Some icons from bling (thanks raster).
+  * Some photographs of skies (thanks raster).
+  * Some animation, images and icons.
+  * Add a mascot (Harvey my Australian dog).
+  * Fix rare crash.
+  * UI changes...
+  * Other small fixes undocumented.
+  * No more macOS features or changes as they are locking
+    down their eco-system...things change all the time with
+    zero documentation and to access various OS sub-systems
+    you are required signing certicates and your name in blood...
+
+    Not really a fan of Darwinisms, more into string theory...
+
+============
+Evisum 0.5.4
+============
+
+  * Fix typo (Linux battery).
+
+============
+Evisum 0.5.3
+============
+
+  * Option to show kernel threads.
+  * Show PPID in process view.
+  * Show process start time.
+
+============
 Evisum 0.5.2
 ============
 

@@ -97,6 +97,15 @@ system_cpu_usage_get(int *ncpu);
 cpu_core_t **
 system_cpu_usage_delayed_get(int *ncpu, int usecs);
 
+int
+system_cpu_frequency_get(void);
+
+int
+system_cpu_n_frequency_get(int n);
+
+int
+system_cpu_frequency_min_max_get(int *min, int *max);
+
 void
 system_memory_usage_get(meminfo_t *memory);
 

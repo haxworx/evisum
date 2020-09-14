@@ -171,12 +171,17 @@ ui_win_disk_add(Ui *ui)
    Evas_Object *win, *box, *vbox, *scroller;
    Evas_Object *table, *rect;
 
-   if (ui->win_disk) return;
+   if (ui->win_disk)
+     {
+        elm_win_raise(ui->win_disk);
+        return;
+     }
 
-   ui->win_disk = win = elm_win_util_dialog_add(ui->win, "evisum",
+   ui->win_disk = win = elm_win_util_standard_add("evisum",
                    _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);

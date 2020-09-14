@@ -279,3 +279,164 @@ system_cpu_usage_get(int *ncpu)
    return system_cpu_usage_delayed_get(ncpu, 1000000);
 }
 
+int
+system_cpu_n_frequency_get(int n)
+{
+#if defined(__linux__)
+   int freq = -1;
+   FILE *f;
+   char buf[4096];
+   int tmp;
+
+   snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", n);
+   f = fopen(buf, "r");
+   if (f)
+     {
+        if (fgets(buf, sizeof(buf), f))
+          {
+             tmp = strtol(buf, NULL, 10);
+             if (!((tmp == LONG_MIN || tmp == LONG_MAX) && errno == ERANGE))
+               freq = tmp;
+          }
+        fclose(f);
+        if (freq != -1) return freq;
+     }
+
+   return freq;
+#elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
+   return system_cpu_frequency_get();
+#endif
+
+   return -1;
+}
+
+int
+system_cpu_frequency_min_max_get(int *min, int *max)
+{
+   int freq_min = 0x7fffffff, freq_max = 0;
+#if defined(__linux__)
+   char *s;
+
+   s = file_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq");
+   if (s)
+     {
+        freq_min = atoi(s);
+        free(s);
+        s = file_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq");
+        if (s)
+          {
+             freq_max = atoi(s);
+             free(s);
+             *min = freq_min;
+             *max = freq_max;
+             return 0;
+          }
+     }
+
+   s = file_contents("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies");
+   if (!s) return -1;
+
+   char *t = strtok(s, " ");
+   while (t)
+     {
+        int freq = atoi(t);
+        if (freq > freq_max) freq_max = freq;
+        if (freq < freq_min) freq_min = freq;
+        t = strtok(NULL, " ");
+     }
+
+   free(s);
+
+   if (freq_min == 0x7fffffff || freq_max == 0) return -1;
+
+   *min = freq_min;
+   *max = freq_max;
+
+   return 0;
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   char buf[4096];
+   size_t len = sizeof(buf);
+   char *t, *s;
+
+   if (sysctlbyname("dev.cpu.0.freq_levels", buf, &len, NULL, 0) != -1)
+     {
+        s = buf;
+        while (s)
+          {
+             t = strchr(s, '/');
+             if (!t) break;
+             *t = '\0';
+             int freq = atoi(s) * 1000;
+             if (freq > freq_max) freq_max = freq;
+             if (freq < freq_min) freq_min = freq;
+
+             s = strchr(t + 1, ' ');
+          }
+        if (freq_min == 0x7fffffff || freq_max == 0) return -1;
+
+        *min = freq_min;
+        *max = freq_max;
+
+        return 0;
+     }
+
+#elif defined(__OpenBSD__)
+
+#endif
+   (void) freq_min; (void) freq_max;
+   return -1;
+}
+
+int
+system_cpu_frequency_get(void)
+{
+   int freq = -1;
+
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+   size_t len = sizeof(freq);
+   if (sysctlbyname("dev.cpu.0.freq", &freq, &len, NULL, 0) != -1)
+     freq *= 1000;
+#elif defined(__OpenBSD__)
+   int mib[2] = { CTL_HW, HW_CPUSPEED };
+   size_t len = sizeof(freq);
+   if (sysctl(mib, sizeof(mib), &freq, &len, NULL, 0) != -1)
+     freq *= 1000;
+#elif defined(__linux__)
+   FILE *f;
+   char buf[4096];
+   int tmp;
+
+   f = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "r");
+   if (f)
+     {
+        if (fgets(buf, sizeof(buf), f))
+          {
+             tmp = strtol(buf, NULL, 10);
+             if (!((tmp == LONG_MIN || tmp == LONG_MAX) && errno == ERANGE))
+               freq = tmp;
+          }
+        fclose(f);
+        if (freq != -1) return freq;
+     }
+
+   f = fopen("/proc/cpuinfo", "r");
+   if (!f) return freq;
+
+   while (fgets(buf, sizeof(buf), f))
+     {
+        if (!strncasecmp(buf, "cpu MHz", 7))
+          {
+             char *s = strchr(buf, ':') + 1;
+             tmp = strtol(s, NULL, 10);
+             if (!((tmp == LONG_MIN || tmp == LONG_MAX) && errno == ERANGE))
+               freq = tmp * 1000;
+             break;
+          }
+     }
+
+   fclose(f);
+#else
+
+#endif
+   return freq;
+}

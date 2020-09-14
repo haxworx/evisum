@@ -2,6 +2,8 @@
 #include "../system/process.h"
 #include "util.c"
 
+static Eina_Lock _lock;
+
 typedef struct {
    int     tid;
    char   *name;
@@ -284,6 +286,8 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
    Elm_Object_Item *it;
    Eina_List *l, *threads = NULL;
 
+   eina_lock_take(&_lock);
+
    if (!ui->hash_cpu_times)
      ui->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
 
@@ -322,19 +326,39 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
 
    EINA_LIST_FREE(threads, t)
      {
-        Thread_Info *prev = elm_object_item_data_get(it);
-        if (prev)
-          _item_del(prev, NULL);
-        elm_object_item_data_set(it, t);
-        elm_genlist_item_update(it);
-        it = elm_genlist_item_next_get(it);
+	if (!it)
+          _item_del(t, NULL);
+	else
+          {
+             Thread_Info *prev = elm_object_item_data_get(it);
+             if (prev)
+              _item_del(prev, NULL);
+             elm_object_item_data_set(it, t);
+             elm_genlist_item_update(it);
+             it = elm_genlist_item_next_get(it);
+          }
      }
+   eina_lock_release(&_lock);
 }
 
 static void
 _win_title_set(Evas_Object *win, const char *fmt, const char *cmd, int pid)
 {
     elm_win_title_set(win, eina_slstr_printf(fmt, cmd, pid));
+}
+
+static char *
+_time_string(int64_t epoch)
+{
+   struct tm *info;
+   time_t rawtime;
+   char buf[256];
+
+   rawtime = (time_t) epoch;
+   info = localtime(&rawtime);
+   strftime(buf, sizeof(buf), "%F %T", info);
+
+   return strdup(buf);
 }
 
 static Eina_Bool
@@ -391,6 +415,7 @@ _proc_info_update(void *data)
    elm_object_text_set(ui->entry_pid_uid, eina_slstr_printf("%d", proc->uid));
    elm_object_text_set(ui->entry_pid_cpu,
                    eina_slstr_printf("%d", proc->cpu_id));
+   elm_object_text_set(ui->entry_pid_ppid, eina_slstr_printf("%d", proc->ppid));
    elm_object_text_set(ui->entry_pid_threads,
                    eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(ui->entry_pid_virt, evisum_size_format(proc->mem_virt));
@@ -402,6 +427,13 @@ _proc_info_update(void *data)
                    evisum_size_format(proc->mem_shared));
 #endif
    elm_object_text_set(ui->entry_pid_size, evisum_size_format(proc->mem_size));
+
+   char *t = _time_string(proc->start);
+   if (t)
+     {
+        elm_object_text_set(ui->entry_pid_started, t);
+        free(t);
+     }
    elm_object_text_set(ui->entry_pid_nice, eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(ui->entry_pid_pri,
                    eina_slstr_printf("%d", proc->priority));
@@ -489,12 +521,19 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    Evas_Object *frame, *hbox, *table;
    Evas_Object *label, *entry, *button, *border;
    int i = 0;
+   int r, g, b, a;
 
    frame = elm_frame_add(parent);
    elm_object_text_set(frame, _("General"));
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_show(frame);
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
+     }
 
    table = elm_table_add(parent);
    evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
@@ -525,6 +564,11 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    label = _label_add(parent, _("UID:"));
    elm_table_pack(table, label, 0, i, 1, 1);
    ui->entry_pid_uid = entry = _entry_add(parent);
+   elm_table_pack(table, entry, 1, i++, 1, 1);
+
+   label = _label_add(parent, _("PPID:"));
+   elm_table_pack(table, label, 0, i, 1, 1);
+   ui->entry_pid_ppid = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
 #if defined(__MacOS__)
@@ -559,6 +603,11 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    label = _label_add(parent, _(" Virtual memory:"));
    elm_table_pack(table, label, 0, i, 1, 1);
    ui->entry_pid_virt = entry = _entry_add(parent);
+   elm_table_pack(table, entry, 1, i++, 1, 1);
+
+   label = _label_add(parent, _(" Start time:"));
+   elm_table_pack(table, label, 0, i, 1, 1);
+   ui->entry_pid_started = entry = _entry_add(parent);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = _label_add(parent, _("Nice:"));
@@ -600,7 +649,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = evisum_ui_button_add(parent, &ui->btn_stop, _("Stop"),
+   button = evisum_ui_tab_add(parent, &ui->btn_stop, _("Stop"),
                    _btn_stop_clicked_cb, ui);
    ui->btn_stop = button;
    elm_object_content_set(border, button);
@@ -611,7 +660,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = evisum_ui_button_add(parent, &ui->btn_start, _("Start"),
+   button = evisum_ui_tab_add(parent, &ui->btn_start, _("Start"),
                    _btn_start_clicked_cb, ui);
    ui->btn_start = button;
    elm_object_content_set(border, button);
@@ -623,7 +672,7 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
 
-   button = evisum_ui_button_add(parent, &ui->btn_kill, _("Kill"),
+   button = evisum_ui_tab_add(parent, &ui->btn_kill, _("Kill"),
                    _btn_kill_clicked_cb, ui);
    ui->btn_kill = button;
    elm_object_content_set(border, button);
@@ -643,7 +692,7 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
    elm_object_part_content_set(button, "icon", icon);
-   evas_object_color_set(icon, 47, 153, 255, 255);
+   evas_object_color_set(icon, 255, 255, 255, 255);
 
    evas_object_show(icon);
 }
@@ -717,11 +766,18 @@ static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *frame, *box, *hbox, *btn, *genlist;
+   int r, g, b, a;
 
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("Threads"));
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
+     }
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -786,6 +842,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_data_set(genlist, "ui", ui);
    elm_object_focus_allow_set(genlist, EINA_FALSE);
    elm_genlist_homogeneous_set(genlist, EINA_TRUE);
+   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_show(genlist);
@@ -803,11 +860,18 @@ static Evas_Object *
 _info_tab_add(Evas_Object *parent, Ui_Process *ui)
 {
    Evas_Object *frame, *box, *entry;
+   int r, g, b, a;
 
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_text_set(frame, _("Documentation"));
+
+   if (evisum_ui_effects_enabled_get())
+     {
+        evas_object_color_get(frame, &r, &g, &b, &a);
+        evas_object_color_set(frame, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
+     }
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -870,9 +934,7 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
    Ui_Process *ui;
-   char *line;
-   Eina_Strbuf *buf;
-   int n;
+   Eina_List *lines = NULL;
 
    ui = data;
 
@@ -881,11 +943,27 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (ui->info_init) return;
 
-   Eina_List *lines =
-          _exe_response(eina_slstr_printf("man %s | col -b", ui->selected_cmd));
-   if (lines)
+   if (ui->selected_cmd && ui->selected_cmd[0] && !strchr(ui->selected_cmd, ' '))
+     lines =_exe_response(eina_slstr_printf("man %s | col -b", ui->selected_cmd));
+
+   if (!lines)
      {
-        buf = eina_strbuf_new();
+        // LAZY!!!
+        if (!strcmp(ui->selected_cmd, "evisum"))
+          elm_object_text_set(ui->entry_info, _evisum_docs());
+        else
+          {
+             elm_object_text_set(ui->entry_info,
+                                 eina_slstr_printf(_("No documentation found for %s."),
+                                 ui->selected_cmd));
+	  }
+     }
+   else
+     {
+        char *line;
+        int n = 1;
+        Eina_Strbuf *buf = eina_strbuf_new();
+
         eina_strbuf_append(buf, "<code>");
 
         n = 1;
@@ -898,12 +976,6 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
         eina_strbuf_append(buf, "</code>");
         elm_object_text_set(ui->entry_info, eina_strbuf_string_get(buf));
         eina_strbuf_free(buf);
-     }
-   else
-     {
-        elm_object_text_set(ui->entry_info,
-                        eina_slstr_printf(_("No documentation found for %s."),
-                        ui->selected_cmd));
      }
 
    ui->info_init = EINA_TRUE;
@@ -981,6 +1053,7 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
    ui  = data;
    win = obj;
 
+
    if (ui->hash_cpu_times)
      eina_hash_free(ui->hash_cpu_times);
    if (ui->timer_pid)
@@ -989,6 +1062,8 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
      free(ui->selected_cmd);
    if (ui->cache)
      evisum_ui_item_cache_free(ui->cache);
+
+   eina_lock_free(&_lock);
 
    evas_object_del(win);
 
@@ -1003,7 +1078,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
+ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_delay)
 {
    Evas_Object *win, *ic, *box, *tabs;
    Evas_Coord x, y, w, h;
@@ -1011,7 +1086,7 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
    Ui_Process *ui = calloc(1, sizeof(Ui_Process));
    ui->selected_pid = pid;
    ui->selected_cmd = strdup(cmd);
-   ui->poll_delay = 3;
+   ui->poll_delay = poll_delay;
    ui->cache = NULL;
    ui->sort_reverse = EINA_TRUE;
    ui->sort_cb = _sort_by_cpu_usage;
@@ -1022,6 +1097,8 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
    elm_icon_standard_set(ic, "evisum");
    elm_win_icon_object_set(win, ic);
    tabs = _tabs_add(win, ui);
+
+   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -1058,6 +1135,8 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd)
    evas_object_show(win);
 
    ui->cache = evisum_ui_item_cache_new(ui->genlist_threads, _item_create, 10);
+
+   eina_lock_new(&_lock);
 
    _proc_info_update(ui);
 }
