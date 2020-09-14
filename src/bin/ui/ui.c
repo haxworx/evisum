@@ -1413,7 +1413,6 @@ _ui_content_system_add(Ui *ui)
    elm_genlist_multi_select_set(plist, EINA_FALSE);
    evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(plist, FILL, FILL);
-   elm_win_resize_object_add(ui->win, plist);
 
    box2 = elm_box_add(parent);
    evas_object_size_hint_weight_set(box2, EXPAND, EXPAND);
