@@ -192,7 +192,6 @@ ui_win_disk_add(Ui *ui)
    evas_object_size_hint_weight_set(vbox, EXPAND, 0.0);
    evas_object_size_hint_align_set(vbox, FILL, 0.5);
    evas_object_show(vbox);
-   elm_win_resize_object_add(win, vbox);
 
    scroller = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
