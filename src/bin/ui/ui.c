@@ -1594,6 +1594,23 @@ evisum_ui_shutdown(Ui *ui)
 void
 evisum_ui_del(Ui *ui)
 {
+   evas_object_del(ui->win);
+
+   if (ui->timer_pid)
+     ecore_timer_del(ui->timer_pid);
+
+   if (ui->thread_system)
+     ecore_thread_cancel(ui->thread_system);
+
+   if (ui->thread_process)
+     ecore_thread_cancel(ui->thread_process);
+
+   if (ui->thread_system)
+     ecore_thread_wait(ui->thread_system, 1.0);
+
+   if (ui->thread_process)
+     ecore_thread_wait(ui->thread_process, 1.0);
+
    _proc_pid_cpu_times_free(ui);
 
    if (ui->cache)
