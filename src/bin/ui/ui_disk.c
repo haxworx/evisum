@@ -1,6 +1,17 @@
 #include "ui_disk.h"
 #include "../system/disks.h"
 
+static Eina_Hash *_mounted = NULL;
+
+typedef struct _Item_Disk
+{
+   Evas_Object *parent;
+   Evas_Object *pb;
+   Evas_Object *lbl;
+
+   const char *path;
+} Item_Disk;
+
 static char *
 _file_system_usage_format(File_System *inf)
 {
@@ -31,13 +42,34 @@ _separator_add(Evas_Object *box)
 }
 
 static void
+_disk_item_update(Item_Disk *item, File_System *inf)
+{
+   char *usage;
+   double ratio, value;
+   Evas_Object *pb = item->pb;
+
+   usage = _file_system_usage_format(inf);
+   if (usage)
+     {
+        elm_progressbar_unit_format_set(pb, usage);
+        free(usage);
+     }
+
+   ratio = inf->usage.total / 100.0;
+   value = inf->usage.used / ratio;
+
+   if (inf->usage.used != inf->usage.total)
+     elm_progressbar_value_set(pb, value / 100.0);
+   else
+     elm_progressbar_value_set(pb, 1.0);
+}
+
+static Item_Disk *
 _ui_disk_add(Ui *ui, File_System *inf)
 {
    Evas_Object *frame, *vbox, *hbox, *pb, *ic, *label;
    Evas_Object *parent;
    const char *type;
-   char *usage;
-   double ratio, value;
 
    type = inf->type_name;
    if (!type)
@@ -79,27 +111,11 @@ _ui_disk_add(Ui *ui, File_System *inf)
    evas_object_show(ic);
    elm_box_pack_end(hbox, ic);
 
-
    pb = elm_progressbar_add(frame);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    elm_progressbar_span_size_set(pb, 1.0);
    evas_object_show(pb);
-
-   usage = _file_system_usage_format(inf);
-   if (usage)
-     {
-        elm_progressbar_unit_format_set(pb, usage);
-        free(usage);
-     }
-
-   ratio = inf->usage.total / 100.0;
-   value = inf->usage.used / ratio;
-
-   if (inf->usage.used == 0 && inf->usage.total == 0)
-     elm_progressbar_value_set(pb, 1.0);
-   else
-     elm_progressbar_value_set(pb, value / 100.0);
 
    label = elm_label_add(parent);
    evas_object_size_hint_align_set(label, 1.0, FILL);
@@ -116,7 +132,22 @@ _ui_disk_add(Ui *ui, File_System *inf)
    _separator_add(vbox);
 
    elm_object_content_set(frame, vbox);
-   elm_box_pack_end(ui->disk_activity, frame);
+
+   Item_Disk *it = malloc(sizeof(Item_Disk));
+   it->parent = frame;
+   it->pb = pb;
+   it->lbl = label;
+   it->path = strdup(inf->path);
+   _disk_item_update(it, inf);
+
+   return it;
+}
+
+static void
+_hash_free_cb(void *data)
+{
+   Item_Disk *it = data;
+   free(it);
 }
 
 static Eina_Bool
@@ -125,28 +156,48 @@ _disk_update(void *data)
    Ui *ui;
    Eina_List *disks;
    char *path;
-   Eina_Bool zfs_mounted = EINA_FALSE;
+   Item_Disk *item;
+   File_System *fs;
 
    ui = data;
-
-   elm_box_clear(ui->disk_activity);
 
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
-        File_System *fs = file_system_info_get(path);
+        fs = file_system_info_get(path);
         if (fs)
           {
-             if (fs->type == file_system_id_by_name("ZFS"))
-               zfs_mounted = EINA_TRUE;
-
-             _ui_disk_add(ui, fs);
+             if ((item = eina_hash_find(_mounted, eina_slstr_printf("%s:%s", fs->path, fs->mount))))
+               _disk_item_update(item, fs);
+             else
+               {
+                  item = _ui_disk_add(ui, fs);
+                  eina_hash_add(_mounted, eina_slstr_printf("%s:%s", fs->path, fs->mount), item);
+                  elm_box_pack_end(ui->disk_activity, item->parent);
+               }
              file_system_info_free(fs);
           }
         free(path);
      }
 
-   ui->zfs_mounted = zfs_mounted;
+   void *d;
+   Eina_Iterator *it = eina_hash_iterator_data_new(_mounted);
+
+   while (eina_iterator_next(it, &d))
+     {
+        item = d;
+        fs = file_system_info_get(item->path);
+        if (fs)
+          file_system_info_free(fs);
+        else
+          {
+             elm_box_unpack(ui->disk_activity, item->parent);
+             evas_object_del(item->parent);
+             eina_hash_del(_mounted, NULL, item);
+          }
+     }
+   eina_iterator_free(it);
+   elm_box_recalculate(ui->disk_activity);
 
    return EINA_TRUE;
 }
@@ -160,6 +211,9 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->timer_disk)
      ecore_timer_del(ui->timer_disk);
    ui->timer_disk = NULL;
+
+   eina_hash_free(_mounted);
+   _mounted = NULL;
 
    evas_object_del(obj);
    ui->win_disk = NULL;
@@ -176,6 +230,8 @@ ui_win_disk_add(Ui *ui)
         elm_win_raise(ui->win_disk);
         return;
      }
+
+   _mounted = eina_hash_string_superfast_new(_hash_free_cb);
 
    ui->win_disk = win = elm_win_util_standard_add("evisum",
                    _("Storage"));
