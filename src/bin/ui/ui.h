@@ -47,7 +47,6 @@ typedef struct Ui
 
    Evas_Object     *disk_activity;
    Evas_Object     *misc_activity;
-   Evas_Object     *system_activity;
 
    Evas_Object     *progress_cpu;
    Evas_Object     *progress_mem;

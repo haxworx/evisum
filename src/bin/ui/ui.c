@@ -1283,7 +1283,7 @@ _ui_content_system_add(Ui *ui)
    elm_object_style_set(frame, "pad_small");
    evas_object_show(frame);
 
-   ui->system_activity = box = elm_box_add(parent);
+   box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_show(box);
@@ -1439,9 +1439,9 @@ _ui_content_system_add(Ui *ui)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    elm_entry_editable_set(entry, EINA_TRUE);
    evas_object_show(entry);
-   elm_box_pack_end(hbox, entry);
 
-   elm_box_pack_end(ui->system_activity, box2);
+   elm_box_pack_end(hbox, entry);
+   elm_box_pack_end(box, box2);
 
    evas_object_smart_callback_add(ui->btn_pid, "clicked",
                    _btn_pid_clicked_cb, ui);
@@ -1577,23 +1577,6 @@ evisum_ui_shutdown(Ui *ui)
    if (ui->shutdown_now)
      exit(0);
 
-   if (ui->win_cpu)
-     evas_object_smart_callback_call(ui->win_cpu, "delete,request", NULL);
-   if (ui->win_mem)
-     evas_object_smart_callback_call(ui->win_mem, "delete,request", NULL);
-   if (ui->win_disk)
-     evas_object_smart_callback_call(ui->win_disk, "delete,request", NULL);
-   if (ui->win_misc)
-     evas_object_smart_callback_call(ui->win_misc, "delete,request", NULL);
-   if (ui->win_about)
-     evas_object_smart_callback_call(ui->win_about, "delete,request", NULL);
-
-   ecore_main_loop_quit();
-}
-
-void
-evisum_ui_del(Ui *ui)
-{
    evas_object_del(ui->win);
 
    if (ui->timer_pid)
@@ -1611,6 +1594,23 @@ evisum_ui_del(Ui *ui)
    if (ui->thread_process)
      ecore_thread_wait(ui->thread_process, 1.0);
 
+   if (ui->win_cpu)
+     evas_object_smart_callback_call(ui->win_cpu, "delete,request", NULL);
+   if (ui->win_mem)
+     evas_object_smart_callback_call(ui->win_mem, "delete,request", NULL);
+   if (ui->win_disk)
+     evas_object_smart_callback_call(ui->win_disk, "delete,request", NULL);
+   if (ui->win_misc)
+     evas_object_smart_callback_call(ui->win_misc, "delete,request", NULL);
+   if (ui->win_about)
+     evas_object_smart_callback_call(ui->win_about, "delete,request", NULL);
+
+   ecore_main_loop_quit();
+}
+
+void
+evisum_ui_del(Ui *ui)
+{
    _proc_pid_cpu_times_free(ui);
 
    if (ui->cache)
@@ -1619,18 +1619,6 @@ evisum_ui_del(Ui *ui)
    eina_lock_free(&_lock);
 
    free(ui);
-}
-
-static void
-_thread_end_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
-{
-   thread = NULL;
-}
-
-static void
-_thread_error_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
-{
-   thread = NULL;
 }
 
 static void
@@ -1729,13 +1717,18 @@ _ui_launch(Ui *ui)
    elm_object_focus_set(ui->entry_search, EINA_TRUE);
 
    ui->thread_system =
-      ecore_thread_feedback_run(_system_info_all_poll, _system_info_all_poll_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+      ecore_thread_feedback_run(_system_info_all_poll,
+                                _system_info_all_poll_feedback_cb,
+                                NULL, NULL, ui, EINA_FALSE);
    ui->thread_process =
-      ecore_thread_feedback_run(_process_list, _process_list_feedback_cb, _thread_end_cb, _thread_error_cb, ui, EINA_FALSE);
+      ecore_thread_feedback_run(_process_list,
+                                _process_list_feedback_cb,
+                                NULL, NULL, ui, EINA_FALSE);
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,  _evisum_resize_cb, ui);
    evas_object_event_callback_add(ui->content, EVAS_CALLBACK_KEY_DOWN, _evisum_key_down_cb, ui);
-   evas_object_event_callback_add(ui->entry_search, EVAS_CALLBACK_KEY_DOWN, _evisum_search_keypress_cb, ui);
+   evas_object_event_callback_add(ui->entry_search, EVAS_CALLBACK_KEY_DOWN,
+                                  _evisum_search_keypress_cb, ui);
    ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED, _elm_config_change_cb, ui);
 }
 
