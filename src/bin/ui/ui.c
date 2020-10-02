@@ -13,9 +13,10 @@
 
 // These should be static. Please do not change.
 // OpenBSD has issues which are undetermined yet.
+
 Ui *_ui;
 Evisum_Config *_evisum_config;
-static Eina_Lock _lock;
+Eina_Lock _lock;
 
 static void
 _config_save(Ui *ui)

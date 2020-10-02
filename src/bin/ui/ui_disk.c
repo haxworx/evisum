@@ -1,7 +1,7 @@
 #include "ui_disk.h"
 #include "../system/disks.h"
 
-static Eina_Hash *_mounted = NULL;
+Eina_Hash *_mounted;
 
 typedef struct _Item_Disk
 {
@@ -274,6 +274,7 @@ ui_win_disk_add(Ui *ui)
 
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evisum_child_window_show(ui->win, win);
+
    _disk_update(ui);
 
    ui->timer_disk = ecore_timer_add(3.0, _disk_update, ui);
