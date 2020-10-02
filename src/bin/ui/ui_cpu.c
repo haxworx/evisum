@@ -296,7 +296,7 @@ _graph(Ui *ui, Evas_Object *parent)
    Animate *ad = calloc(1, sizeof(Animate));
    if (!ad) return;
 
-   ad->cpu_count = system_cpu_online_count_get();
+   ad->cpu_count = system_cpu_count_get();
    if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
      ad->cpu_freq = EINA_TRUE;
 
