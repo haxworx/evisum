@@ -59,6 +59,18 @@ typedef struct Ui
    Ecore_Thread    *thread_system;
    Ecore_Thread    *thread_process;
 
+   pid_t            selected_pid;
+   pid_t            program_pid;
+
+   char            *search_text;
+
+   Eina_List       *cpu_times;
+   Eina_List       *cpu_list;
+
+
+   Ecore_Animator  *animator;
+   uint8_t          cpu_usage;
+
    struct
    {
       Evas_Object  *win;
@@ -86,28 +98,21 @@ typedef struct Ui
       Evas_Object *timer;
    } misc;
 
-   pid_t           selected_pid;
-   pid_t           program_pid;
+   struct
+   {
+      Eina_Bool  skip_wait;
+      Eina_Bool  ready;
+      Eina_Bool  shutdown_now;
+   } state;
 
-   char            *search_text;
-
-   Eina_Bool       skip_wait;
-   Eina_Bool       ready;
-
-   Eina_List       *cpu_times;
-   Eina_List       *cpu_list;
-
-   int             poll_delay;
-
-   Sort_Type       sort_type;
-   Eina_Bool       sort_reverse;
-   Eina_Bool       show_self;
-   Eina_Bool       show_kthreads;
-   Eina_Bool       shutdown_now;
-
-   Ecore_Animator *animator;
-
-   uint8_t         cpu_usage;
+   struct
+   {
+      int        poll_delay;
+      Sort_Type  sort_type;
+      Eina_Bool  sort_reverse;
+      Eina_Bool  show_self;
+      Eina_Bool  show_kthreads;
+   } settings;
 } Ui;
 
 Ui *

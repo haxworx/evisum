@@ -303,6 +303,6 @@ ui_win_misc_add(Ui *ui)
 
    _misc_update(ui);
 
-   ui->misc.timer = ecore_timer_add(ui->poll_delay, _misc_update, ui);
+   ui->misc.timer = ecore_timer_add(ui->settings.poll_delay, _misc_update, ui);
 }
 

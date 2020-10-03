@@ -46,7 +46,7 @@ _win_add(void)
    if (!ui)
      return NULL;
 
-   ui->shutdown_now = EINA_TRUE;
+   ui->state.shutdown_now = EINA_TRUE;
 
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evas_object_show(win);
