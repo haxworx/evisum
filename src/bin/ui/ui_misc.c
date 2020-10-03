@@ -212,15 +212,15 @@ _network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
      {
         if (incoming)
           {
-             if (ui->incoming_max < bytes)
-               ui->incoming_max = bytes;
-             elm_progressbar_value_set(pb, (double) bytes / ui->incoming_max);
+             if (ui->misc.incoming_max < bytes)
+               ui->misc.incoming_max = bytes;
+             elm_progressbar_value_set(pb, (double) bytes / ui->misc.incoming_max);
           }
         else
           {
-             if (ui->outgoing_max < bytes)
-               ui->outgoing_max = bytes;
-             elm_progressbar_value_set(pb, (double) bytes / ui->outgoing_max);
+             if (ui->misc.outgoing_max < bytes)
+               ui->misc.outgoing_max = bytes;
+             elm_progressbar_value_set(pb, (double) bytes / ui->misc.outgoing_max);
           }
      }
 
@@ -283,19 +283,21 @@ _misc_update(void *data)
    power_t power;
    sensor_t **sensors;
    int sensor_count = 0;
+   network_t usage;
    Evas_Object *box, *frame;
 
    ui = data;
 
-   elm_box_clear(ui->misc_activity);
+   elm_box_clear(ui->misc.box);
 
-   box = elm_box_add(ui->misc_activity);
+   box = elm_box_add(ui->misc.box);
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   _network_usage_add(ui, box, ui->network_usage.incoming, EINA_TRUE);
-   _network_usage_add(ui, box, ui->network_usage.outgoing, EINA_FALSE);
+   system_network_transfer_get(&usage);
+   _network_usage_add(ui, box, usage.incoming, EINA_TRUE);
+   _network_usage_add(ui, box, usage.outgoing, EINA_FALSE);
    _separator_add(box);
 
    memset(&power, 0, sizeof(power));
@@ -313,13 +315,13 @@ _misc_update(void *data)
 
    _misc_free(&power, sensors, sensor_count);
 
-   frame = elm_frame_add(ui->misc_activity);
+   frame = elm_frame_add(ui->misc.box);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    elm_object_style_set(frame, "pad_huge");
    evas_object_show(frame);
    elm_object_content_set(frame, box);
-   elm_box_pack_end(ui->misc_activity, frame);
+   elm_box_pack_end(ui->misc.box, frame);
 
    return EINA_TRUE;
 }
@@ -330,12 +332,12 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   if (ui->timer_misc)
-     ecore_timer_del(ui->timer_misc);
-   ui->timer_misc = NULL;
+   if (ui->misc.timer)
+     ecore_timer_del(ui->misc.timer);
+   ui->misc.timer = NULL;
 
    evas_object_del(obj);
-   ui->win_misc = NULL;
+   ui->misc.win = NULL;
 }
 
 void
@@ -344,13 +346,13 @@ ui_win_misc_add(Ui *ui)
    Evas_Object *win, *box, *hbox, *frame, *scroller;
    Evas_Object *table, *border, *rect;
 
-   if (ui->win_misc)
+   if (ui->misc.win)
      {
-        elm_win_raise(ui->win_misc);
+        elm_win_raise(ui->misc.win);
         return;
      }
 
-   ui->win_misc = win = elm_win_util_standard_add("evisum", _("Misc"));
+   ui->misc.win = win = elm_win_util_standard_add("evisum", _("Misc"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
@@ -360,7 +362,7 @@ ui_win_misc_add(Ui *ui)
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_hide(box);
 
-   ui->misc_activity = hbox = elm_box_add(box);
+   ui->misc.box = hbox = elm_box_add(box);
    evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
    evas_object_show(hbox);
@@ -407,6 +409,6 @@ ui_win_misc_add(Ui *ui)
 
    _misc_update(ui);
 
-   ui->timer_misc = ecore_timer_add(3.0, _misc_update, ui);
+   ui->misc.timer = ecore_timer_add(3.0, _misc_update, ui);
 }
 

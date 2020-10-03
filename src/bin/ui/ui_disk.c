@@ -76,7 +76,7 @@ _ui_item_disk_add(Ui *ui, File_System *inf)
      type = file_system_name_by_id(inf->type);
    if (!type) type = "unknown";
 
-   parent = ui->disk_activity;
+   parent = ui->disk.box;
 
    frame = elm_frame_add(parent);
    evas_object_size_hint_align_set(frame, FILL, 0);
@@ -190,7 +190,7 @@ _disks_poll_timer_cb(void *data)
                {
                   item = _ui_item_disk_add(ui, fs);
                   eina_hash_add(_mounted, eina_slstr_printf("%s:%s", fs->path, fs->mount), item);
-                  elm_box_pack_end(ui->disk_activity, item->parent);
+                  elm_box_pack_end(ui->disk.box, item->parent);
                }
              file_system_info_free(fs);
           }
@@ -208,13 +208,13 @@ _disks_poll_timer_cb(void *data)
           file_system_info_free(fs);
         else
           {
-             elm_box_unpack(ui->disk_activity, item->parent);
+             elm_box_unpack(ui->disk.box, item->parent);
              evas_object_del(item->parent);
              eina_hash_del(_mounted, NULL, item);
           }
      }
    eina_iterator_free(it);
-   elm_box_recalculate(ui->disk_activity);
+   elm_box_recalculate(ui->disk.box);
 
    return EINA_TRUE;
 }
@@ -225,15 +225,15 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   if (ui->timer_disk)
-     ecore_timer_del(ui->timer_disk);
-   ui->timer_disk = NULL;
+   if (ui->disk.timer)
+     ecore_timer_del(ui->disk.timer);
+   ui->disk.timer = NULL;
 
    eina_hash_free(_mounted);
    _mounted = NULL;
 
    evas_object_del(obj);
-   ui->win_disk = NULL;
+   ui->disk.win = NULL;
 }
 
 void
@@ -242,15 +242,15 @@ ui_win_disk_add(Ui *ui)
    Evas_Object *win, *box, *vbox, *scroller;
    Evas_Object *table, *rect;
 
-   if (ui->win_disk)
+   if (ui->disk.win)
      {
-        elm_win_raise(ui->win_disk);
+        elm_win_raise(ui->disk.win);
         return;
      }
 
    _mounted = eina_hash_string_superfast_new(_hash_free_cb);
 
-   ui->win_disk = win = elm_win_util_standard_add("evisum",
+   ui->disk.win = win = elm_win_util_standard_add("evisum",
                    _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
@@ -261,7 +261,7 @@ ui_win_disk_add(Ui *ui)
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_show(box);
 
-   ui->disk_activity = vbox = elm_box_add(win);
+   ui->disk.box = vbox = elm_box_add(win);
    evas_object_size_hint_weight_set(vbox, EXPAND, 0.0);
    evas_object_size_hint_align_set(vbox, FILL, 0.5);
    evas_object_show(vbox);
@@ -294,6 +294,6 @@ ui_win_disk_add(Ui *ui)
 
    _disks_poll_timer_cb(ui);
 
-   ui->timer_disk = ecore_timer_add(3.0, _disks_poll_timer_cb, ui);
+   ui->disk.timer = ecore_timer_add(3.0, _disks_poll_timer_cb, ui);
 }
 

@@ -109,14 +109,14 @@ _win_del_cb(void *data, Evas_Object *obj,
    Widgets *widgets;
    Ui *ui = data;
 
-   ecore_timer_del(ui->timer_memory);
-   ui->timer_memory = NULL;
+   ecore_timer_del(ui->mem.timer);
+   ui->mem.timer = NULL;
 
    widgets = evas_object_data_get(obj, "widgets");
    if (widgets) free(widgets);
 
    evas_object_del(obj);
-   ui->win_mem = NULL;
+   ui->mem.win = NULL;
 }
 
 void
@@ -125,16 +125,16 @@ ui_win_memory_add(Ui *ui)
    Evas_Object *win, *frame, *pb;
    Evas_Object *border, *rect, *label, *table;
 
-   if (ui->win_mem)
+   if (ui->mem.win)
      {
-        elm_win_raise(ui->win_mem);
+        elm_win_raise(ui->mem.win);
         return;
      }
 
    Widgets *widgets = calloc(1, sizeof(Widgets));
    if (!widgets) return;
 
-   ui->win_mem = win = elm_win_util_standard_add("evisum",
+   ui->mem.win = win = elm_win_util_standard_add("evisum",
                    _("Memory Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
@@ -205,5 +205,5 @@ ui_win_memory_add(Ui *ui)
 
    _memory_update(widgets);
 
-   ui->timer_memory = ecore_timer_add(ui->poll_delay, _memory_update, widgets);
+   ui->mem.timer = ecore_timer_add(ui->poll_delay, _memory_update, widgets);
 }

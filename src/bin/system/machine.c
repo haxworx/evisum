@@ -70,16 +70,6 @@
 #include "machine/sensors.bogox"
 #include "machine/network.bogox"
 
-static void *
-_network_transfer_get_thread_cb(void *arg)
-{
-   network_t *usage = arg;
-
-   system_network_transfer_get(usage);
-
-   return NULL;
-}
-
 void
 system_info_all_free(Sys_Info *info)
 {
@@ -118,9 +108,6 @@ Sys_Info *
 system_info_all_get(void)
 {
    Sys_Info *info;
-   void *ret;
-   pthread_t tid;
-   int error;
 
    info = calloc(1, sizeof(Sys_Info));
    if (!info) return NULL;
@@ -129,19 +116,9 @@ system_info_all_get(void)
 
    system_memory_usage_get(&info->memory);
 
-   error = pthread_create(&tid, NULL, _network_transfer_get_thread_cb,
-                   &info->network_usage);
-   if (error)
-     system_network_transfer_get(&info->network_usage);
-
    system_power_state_get(&info->power);
-   info->sensors = system_sensors_thermal_get(&info->sensor_count);
 
-   if (!error)
-     {
-        ret = NULL;
-        pthread_join(tid, ret);
-     }
+   info->sensors = system_sensors_thermal_get(&info->sensor_count);
 
    return info;
 }

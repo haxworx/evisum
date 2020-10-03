@@ -646,30 +646,22 @@ _process_list(void *data, Ecore_Thread *thread)
      }
 }
 
-Evas_Object *_selected;
-
 static void
 _btn_icon_state_update(Evas_Object *button, Eina_Bool reverse)
 {
    Evas_Object *icon = elm_icon_add(button);
 
-   if (_selected)
-     evas_object_color_set(_selected, 255, 255, 255, 255);
-
    if (reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
-
-   _selected = icon;
-   evas_object_color_set(_selected, 255, 255, 255, 255);
 
    elm_object_part_content_set(button, "icon", icon);
    evas_object_show(icon);
 }
 
 static void
-_btn_icon_state_init(Evas_Object *button, Eina_Bool reverse, Eina_Bool selected)
+_btn_icon_state_init(Evas_Object *button, Eina_Bool reverse, Eina_Bool selected EINA_UNUSED)
 {
    Evas_Object *icon = elm_icon_add(button);
 
@@ -677,14 +669,6 @@ _btn_icon_state_init(Evas_Object *button, Eina_Bool reverse, Eina_Bool selected)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
-
-   if (!selected)
-     evas_object_color_set(icon, 255, 255, 255, 255);
-   else
-     {
-        _selected = icon;
-        evas_object_color_set(icon, 255, 255, 255, 255);
-     }
 
    elm_object_part_content_set(button, "icon", icon);
    evas_object_show(icon);
@@ -1580,9 +1564,6 @@ evisum_ui_shutdown(Ui *ui)
 
    evas_object_del(ui->win);
 
-   if (ui->timer_pid)
-     ecore_timer_del(ui->timer_pid);
-
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
 
@@ -1595,14 +1576,14 @@ evisum_ui_shutdown(Ui *ui)
    if (ui->thread_process)
      ecore_thread_wait(ui->thread_process, 1.0);
 
-   if (ui->win_cpu)
-     evas_object_smart_callback_call(ui->win_cpu, "delete,request", NULL);
-   if (ui->win_mem)
-     evas_object_smart_callback_call(ui->win_mem, "delete,request", NULL);
-   if (ui->win_disk)
-     evas_object_smart_callback_call(ui->win_disk, "delete,request", NULL);
-   if (ui->win_misc)
-     evas_object_smart_callback_call(ui->win_misc, "delete,request", NULL);
+   if (ui->cpu.win)
+     evas_object_smart_callback_call(ui->cpu.win, "delete,request", NULL);
+   if (ui->mem.win)
+     evas_object_smart_callback_call(ui->mem.win, "delete,request", NULL);
+   if (ui->disk.win)
+     evas_object_smart_callback_call(ui->disk.win, "delete,request", NULL);
+   if (ui->misc.win)
+     evas_object_smart_callback_call(ui->misc.win, "delete,request", NULL);
    if (ui->win_about)
      evas_object_smart_callback_call(ui->win_about, "delete,request", NULL);
 
@@ -1682,7 +1663,7 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    ui->cpu_usage = cpu_usage;
 
-   if (ui->zfs_mounted)
+   if (ui->mem.zfs_mounted)
      info->memory.used += info->memory.zfs_arc_used;
 
    pb = ui->progress_mem;
@@ -1692,8 +1673,6 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    elm_progressbar_unit_format_set(pb, eina_slstr_printf("%s / %s",
                    evisum_size_format(info->memory.used),
                    evisum_size_format(info->memory.total)));
-
-   ui->network_usage = info->network_usage;
 out:
    system_info_all_free(info);
 }
@@ -1733,6 +1712,12 @@ _ui_launch(Ui *ui)
    ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED, _elm_config_change_cb, ui);
 }
 
+static void
+_ui_init_system_probe(Ui *ui)
+{
+   ui->mem.zfs_mounted = file_system_in_use("ZFS");
+}
+
 static Ui *
 _ui_init(Evas_Object *parent)
 {
@@ -1748,11 +1733,10 @@ _ui_init(Evas_Object *parent)
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
 
-   ui->zfs_mounted = file_system_in_use("ZFS");
+   _ui_init_system_probe(ui);
 
    _ui = NULL;
    _evisum_config = NULL;
-   _selected = NULL;
 
    _config_load(ui);
 

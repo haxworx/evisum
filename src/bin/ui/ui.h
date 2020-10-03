@@ -39,14 +39,7 @@ typedef struct Ui
    Evas_Object     *scroller;
    Evas_Object     *content;
 
-   Evas_Object     *win_cpu;
-   Evas_Object     *win_mem;
-   Evas_Object     *win_disk;
-   Evas_Object     *win_misc;
    Evas_Object     *win_about;
-
-   Evas_Object     *disk_activity;
-   Evas_Object     *misc_activity;
 
    Evas_Object     *progress_cpu;
    Evas_Object     *progress_mem;
@@ -65,12 +58,35 @@ typedef struct Ui
 
    Ecore_Thread    *thread_system;
    Ecore_Thread    *thread_process;
-   Ecore_Thread    *thread_cpu;
 
-   Ecore_Timer     *timer_pid;
-   Ecore_Timer     *timer_memory;
-   Ecore_Timer     *timer_disk;
-   Ecore_Timer     *timer_misc;
+   struct
+   {
+      Evas_Object  *win;
+      Ecore_Thread *thread;
+   } cpu;
+
+   struct
+   {
+      Evas_Object *win;
+      Ecore_Timer *timer;
+      Eina_Bool     zfs_mounted;
+   } mem;
+
+   struct
+   {
+      Evas_Object *win;
+      Evas_Object *box;
+      Ecore_Timer *timer;
+   } disk;
+
+   struct
+   {
+      Evas_Object *win;
+      Evas_Object *box;
+      Evas_Object *timer;
+      uint64_t     incoming_max;
+      uint64_t     outgoing_max;
+   } misc;
 
    pid_t           selected_pid;
    pid_t           program_pid;
@@ -91,11 +107,6 @@ typedef struct Ui
    Eina_Bool       shutdown_now;
 
    Ecore_Animator *animator;
-   Eina_Bool       zfs_mounted;
-
-   uint64_t        incoming_max;
-   uint64_t        outgoing_max;
-   network_t       network_usage;
 
    uint8_t         cpu_usage;
 } Ui;

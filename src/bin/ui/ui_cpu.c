@@ -250,10 +250,10 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
 
    // on deletion of window, cancel thread, free animate data and set cpu
    // dialog handle to null
-   ecore_thread_cancel(ui->thread_cpu);
-   ecore_thread_wait(ui->thread_cpu, 0.5);
+   ecore_thread_cancel(ui->cpu.thread);
+   ecore_thread_wait(ui->cpu.thread, 0.5);
    free(ad);
-   ui->win_cpu = NULL;
+   ui->cpu.win = NULL;
 }
 
 static void
@@ -467,10 +467,10 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_smart_callback_add(check, "changed", _check_changed_cb, ad);
    // since win is on auto-delete, just listen for when it is deleted,
    // whatever the cause/reason
-   evas_object_event_callback_add(ui->win_cpu, EVAS_CALLBACK_DEL, _win_del_cb, ad);
+   evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_DEL, _win_del_cb, ad);
 
    // run a feedback thread that sends feedback to the mainloop
-   ui->thread_cpu = ecore_thread_feedback_run(_core_times_main_cb,
+   ui->cpu.thread = ecore_thread_feedback_run(_core_times_main_cb,
                                               _core_times_feedback_cb,
                                               NULL,
                                               NULL,
@@ -482,13 +482,13 @@ ui_win_cpu_add(Ui *ui)
 {
    Evas_Object *win, *box, *scroller;
 
-   if (ui->win_cpu)
+   if (ui->cpu.win)
      {
-        elm_win_raise(ui->win_cpu);
+        elm_win_raise(ui->cpu.win);
         return;
      }
 
-   ui->win_cpu = win = elm_win_util_standard_add("evisum",
+   ui->cpu.win = win = elm_win_util_standard_add("evisum",
                    _("CPU Usage"));
    elm_win_autodel_set(win, EINA_TRUE);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
