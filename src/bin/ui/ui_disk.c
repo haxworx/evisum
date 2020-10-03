@@ -9,7 +9,7 @@ typedef struct _Item_Disk
    Evas_Object *pb;
    Evas_Object *lbl;
 
-   const char *path;
+   char        *path;
 } Item_Disk;
 
 static char *
@@ -42,7 +42,7 @@ _separator_add(Evas_Object *box)
 }
 
 static void
-_disk_item_update(Item_Disk *item, File_System *inf)
+_ui_item_disk_update(Item_Disk *item, File_System *inf)
 {
    char *usage;
    double ratio, value;
@@ -65,7 +65,7 @@ _disk_item_update(Item_Disk *item, File_System *inf)
 }
 
 static Item_Disk *
-_ui_disk_add(Ui *ui, File_System *inf)
+_ui_item_disk_add(Ui *ui, File_System *inf)
 {
    Evas_Object *frame, *vbox, *hbox, *pb, *ic, *label;
    Evas_Object *parent;
@@ -134,12 +134,14 @@ _ui_disk_add(Ui *ui, File_System *inf)
    elm_object_content_set(frame, vbox);
 
    Item_Disk *it = malloc(sizeof(Item_Disk));
-   it->parent = frame;
-   it->pb = pb;
-   it->lbl = label;
-   it->path = strdup(inf->path);
-   _disk_item_update(it, inf);
-
+   if (it)
+     {
+        it->parent = frame;
+        it->pb = pb;
+        it->lbl = label;
+        it->path = strdup(inf->path);
+        _ui_item_disk_update(it, inf);
+     }
    return it;
 }
 
@@ -147,11 +149,21 @@ static void
 _hash_free_cb(void *data)
 {
    Item_Disk *it = data;
+   if (it->path)
+     free(it->path);
    free(it);
 }
 
 static Eina_Bool
-_disk_update(void *data)
+_ignore_path(char *path)
+{
+   if (!strcmp(path, "devfs"))
+     return 1;
+   return 0;
+}
+
+static Eina_Bool
+_disks_poll_timer_cb(void *data)
 {
    Ui *ui;
    Eina_List *disks;
@@ -164,14 +176,19 @@ _disk_update(void *data)
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
+        if (_ignore_path(path))
+          {
+             free(path);
+             continue;
+          }
         fs = file_system_info_get(path);
         if (fs)
           {
              if ((item = eina_hash_find(_mounted, eina_slstr_printf("%s:%s", fs->path, fs->mount))))
-               _disk_item_update(item, fs);
+               _ui_item_disk_update(item, fs);
              else
                {
-                  item = _ui_disk_add(ui, fs);
+                  item = _ui_item_disk_add(ui, fs);
                   eina_hash_add(_mounted, eina_slstr_printf("%s:%s", fs->path, fs->mount), item);
                   elm_box_pack_end(ui->disk_activity, item->parent);
                }
@@ -275,8 +292,8 @@ ui_win_disk_add(Ui *ui)
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evisum_child_window_show(ui->win, win);
 
-   _disk_update(ui);
+   _disks_poll_timer_cb(ui);
 
-   ui->timer_disk = ecore_timer_add(3.0, _disk_update, ui);
+   ui->timer_disk = ecore_timer_add(3.0, _disks_poll_timer_cb, ui);
 }
 
