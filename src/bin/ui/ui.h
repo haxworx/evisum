@@ -69,7 +69,7 @@ typedef struct Ui
    {
       Evas_Object *win;
       Ecore_Timer *timer;
-      Eina_Bool     zfs_mounted;
+      Eina_Bool    zfs_mounted;
    } mem;
 
    struct
@@ -84,8 +84,6 @@ typedef struct Ui
       Evas_Object *win;
       Evas_Object *box;
       Evas_Object *timer;
-      uint64_t     incoming_max;
-      uint64_t     outgoing_max;
    } misc;
 
    pid_t           selected_pid;

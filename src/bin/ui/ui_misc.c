@@ -128,106 +128,6 @@ _sensor_usage_add(Evas_Object *box, sensor_t **sensors, int count)
    return count;
 }
 
-static char *
-_network_transfer_format(double rate)
-{
-   const char *unit = "B/s";
-
-   if (rate > 1073741824)
-     {
-        rate /= 1073741824;
-        unit = "GB/s";
-     }
-   else if (rate > 1048576 && rate <= 1073741824)
-     {
-        rate /= 1048576;
-        unit = "MB/s";
-     }
-   else if (rate > 1024 && rate <= 1048576)
-     {
-        rate /= 1024;
-        unit = "KB/s";
-     }
-
-   return strdup(eina_slstr_printf("%.2f %s", rate, unit));
-}
-
-static void
-_network_usage_add(Ui *ui, Evas_Object *box, uint64_t bytes, Eina_Bool incoming)
-{
-   Evas_Object *frame, *vbox, *hbox, *label, *pb, *ic;
-   char *tmp;
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-
-   vbox = elm_box_add(box);
-   evas_object_size_hint_align_set(vbox, FILL, FILL);
-   evas_object_size_hint_weight_set(vbox, EXPAND, EXPAND);
-   evas_object_show(vbox);
-
-   label = elm_label_add(box);
-   if (incoming)
-     elm_object_text_set(label, _("Network Incoming"));
-   else
-     elm_object_text_set(label, _("Network Outgoing"));
-
-   evas_object_size_hint_align_set(label, 1.0, FILL);
-   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
-   evas_object_show(label);
-   elm_box_pack_end(vbox, label);
-
-   hbox = elm_box_add(box);
-   evas_object_size_hint_align_set(hbox, FILL, FILL);
-   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
-
-   ic = elm_image_add(box);
-   elm_image_file_set(ic, evisum_icon_path_get("network"), NULL);
-   evas_object_size_hint_min_set(ic, 32 * elm_config_scale_get(),
-                   32 * elm_config_scale_get());
-   evas_object_show(ic);
-   elm_box_pack_end(hbox, ic);
-
-   pb = elm_progressbar_add(box);
-   evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   elm_progressbar_span_size_set(pb, 1.0);
-   evas_object_show(pb);
-   elm_box_pack_end(hbox, pb);
-   elm_box_pack_end(vbox, hbox);
-
-   tmp = _network_transfer_format(bytes);
-   if (tmp)
-     {
-        elm_progressbar_unit_format_set(pb, tmp);
-        free(tmp);
-     }
-
-   if (bytes)
-     {
-        if (incoming)
-          {
-             if (ui->misc.incoming_max < bytes)
-               ui->misc.incoming_max = bytes;
-             elm_progressbar_value_set(pb, (double) bytes / ui->misc.incoming_max);
-          }
-        else
-          {
-             if (ui->misc.outgoing_max < bytes)
-               ui->misc.outgoing_max = bytes;
-             elm_progressbar_value_set(pb, (double) bytes / ui->misc.outgoing_max);
-          }
-     }
-
-   elm_object_content_set(frame, vbox);
-   elm_box_pack_end(box, frame);
-}
-
 static void
 _separator_add(Evas_Object *box)
 {
@@ -283,7 +183,6 @@ _misc_update(void *data)
    power_t power;
    sensor_t **sensors;
    int sensor_count = 0;
-   network_t usage;
    Evas_Object *box, *frame;
 
    ui = data;
@@ -294,11 +193,6 @@ _misc_update(void *data)
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
-
-   system_network_transfer_get(&usage);
-   _network_usage_add(ui, box, usage.incoming, EINA_TRUE);
-   _network_usage_add(ui, box, usage.outgoing, EINA_FALSE);
-   _separator_add(box);
 
    memset(&power, 0, sizeof(power));
    system_power_state_get(&power);
@@ -352,7 +246,7 @@ ui_win_misc_add(Ui *ui)
         return;
      }
 
-   ui->misc.win = win = elm_win_util_standard_add("evisum", _("Misc"));
+   ui->misc.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
@@ -409,6 +303,6 @@ ui_win_misc_add(Ui *ui)
 
    _misc_update(ui);
 
-   ui->misc.timer = ecore_timer_add(3.0, _misc_update, ui);
+   ui->misc.timer = ecore_timer_add(ui->poll_delay, _misc_update, ui);
 }
 

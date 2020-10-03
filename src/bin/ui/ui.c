@@ -1208,7 +1208,7 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    btn = _btn_create(hbox, "storage", _("Storage"), _menu_disk_activity_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
-   btn = _btn_create(hbox, "misc", _("Misc"), _menu_misc_activity_clicked_cb, ui);
+   btn = _btn_create(hbox, "misc", _("Sensors"), _menu_misc_activity_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    sep = elm_separator_add(hbox);
