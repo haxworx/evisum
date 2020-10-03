@@ -1111,3 +1111,107 @@ proc_info_all_get(void)
    return processes;
 }
 
+static Eina_Bool
+_child_add(Eina_List *parents, Proc_Info *child)
+{
+   Eina_List *l;
+   Proc_Info *parent;
+
+   EINA_LIST_FOREACH(parents, l, parent)
+     {
+        if (parent->pid == child->ppid)
+          {
+             parent->children = eina_list_append(parent->children, child);
+             return 1;
+          }
+     }
+
+   return 0;
+}
+
+Eina_List *
+proc_info_all_children_get()
+{
+   Proc_Info *proc;
+   Eina_List *l;
+   Eina_List *procs;
+
+   procs = proc_info_all_get();
+
+   EINA_LIST_FOREACH(procs, l, proc)
+     {
+        int ok =_child_add(procs,  proc);
+        (void) ok;
+     }
+
+    return procs;
+}
+
+Eina_List *
+_append_wanted(Eina_List *wanted, Eina_List *tree)
+{
+   Eina_List *l;
+   Proc_Info *parent;
+
+   EINA_LIST_FOREACH(tree, l, parent)
+     {
+        wanted = eina_list_append(wanted, parent);
+        if (parent->children)
+          wanted = _append_wanted(wanted, parent->children);
+     }
+   return wanted;
+}
+
+Eina_List *
+proc_info_pid_children_get(pid_t pid)
+{
+   Proc_Info *proc;
+   Eina_List *l, *procs, *wanted = NULL;
+
+   procs = proc_info_all_children_get();
+
+   EINA_LIST_FOREACH(procs, l, proc)
+     {
+        if (!wanted && proc->pid == pid)
+          {
+             wanted = eina_list_append(wanted, proc);
+             if (proc->children)
+               wanted = _append_wanted(wanted, proc->children);
+          }
+     }
+
+   EINA_LIST_FREE(procs, proc)
+     {
+        if (!eina_list_data_find(wanted, proc))
+          {
+             proc_info_free(proc);
+          }
+     }
+
+    return wanted;
+}
+
+void
+proc_info_all_children_free(Eina_List *pstree)
+{
+   Proc_Info *parent, *child;
+
+   EINA_LIST_FREE(pstree, parent)
+     {
+        EINA_LIST_FREE(parent->children, child)
+          proc_info_pid_children_free(child);
+        proc_info_free(parent);
+     }
+}
+
+void
+proc_info_pid_children_free(Proc_Info *proc)
+{
+   Proc_Info *child;
+
+   EINA_LIST_FREE(proc->children, child)
+     proc_info_free(child);
+
+   proc_info_free(proc);
+}
+

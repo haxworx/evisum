@@ -33,6 +33,9 @@ _config_save(Ui *ui)
    _evisum_config->height = h;
    _evisum_config->effects = evisum_ui_effects_enabled_get();
    _evisum_config->poll_delay = ui->poll_delay;
+   _evisum_config->show_kthreads = ui->show_kthreads;
+
+   proc_info_kthreads_show_set(ui->show_kthreads);
 
    config_save(_evisum_config);
 }
@@ -50,6 +53,9 @@ _config_load(Ui *ui)
      evas_object_resize(ui->win, _evisum_config->width, _evisum_config->height);
 
    evisum_ui_effects_enabled_set(_evisum_config->effects);
+
+   ui->show_kthreads = _evisum_config->show_kthreads;
+   proc_info_kthreads_show_set(ui->show_kthreads);
 }
 
 static int
@@ -1151,9 +1157,19 @@ _main_menu_slider_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *eve
 }
 
 static void
+_main_menu_show_threads_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui->show_kthreads = elm_check_state_get(obj);
+   _config_save(ui);
+}
+
+static void
 _main_menu_create(Ui *ui, Evas_Object *btn)
 {
-   Evas_Object *o, *bx, *hbox, *sep, *fr, *sli;
+   Evas_Object *o, *bx, *bx2, *hbox, *sep, *fr, *sli;
+   Evas_Object *chk;
    Evas_Coord ox, oy, ow, oh;
 
    evas_object_geometry_get(btn, &ox, &oy, &ow, &oh);
@@ -1168,10 +1184,14 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    evas_object_show(bx);
 
    fr = elm_frame_add(o);
-   elm_object_text_set(fr, _("Options"));
+   elm_object_text_set(fr, _("Actions"));
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_show(fr);
+
+   evas_object_size_hint_min_set(fr, 100, 100);
+   elm_object_content_set(fr, bx);
+   elm_object_content_set(o, fr);
 
    hbox = elm_box_add(o);
    elm_box_horizontal_set(hbox, 1);
@@ -1210,6 +1230,18 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
 
    btn = _btn_create(hbox, "evisum", _("About"), _about_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
+   elm_box_pack_end(bx, hbox);
+
+   fr = elm_frame_add(o);
+   elm_object_text_set(fr, _("Options"));
+   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(fr, FILL, FILL);
+   evas_object_show(fr);
+
+   bx2 = elm_box_add(o);
+   evas_object_size_hint_weight_set(bx2, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx2, FILL, FILL);
+   evas_object_show(bx2);
 
    sli = elm_slider_add(o);
    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
@@ -1225,13 +1257,27 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    evas_object_smart_callback_add(sli, "changed", _main_menu_slider_changed_cb, ui);
    evas_object_show(sli);
    _main_menu_slider_changed_cb(ui, sli, NULL);
+   elm_box_pack_end(bx2, sli);
 
-   elm_box_pack_end(bx, hbox);
-   elm_box_pack_end(bx, sli);
+   sep = elm_separator_add(bx2);
+   evas_object_size_hint_align_set(sep, FILL, FILL);
+   evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
+   elm_separator_horizontal_set(sep, 1);
+   evas_object_show(sep);
+   elm_box_pack_end(bx2, sep);
 
-   evas_object_size_hint_min_set(fr, 100, 100);
-   elm_object_content_set(fr, bx);
-   elm_object_content_set(o, fr);
+   chk = elm_check_add(bx2);
+   evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(chk, FILL, FILL);
+   elm_object_text_set(chk, _("Show kernel threads?"));
+   elm_check_state_set(chk, _evisum_config->show_kthreads);
+   evas_object_show(chk);
+   evas_object_smart_callback_add(chk, "changed",
+                                  _main_menu_show_threads_changed_cb, ui);
+   elm_box_pack_end(bx2, chk);
+
+   elm_object_content_set(fr, bx2);
+   elm_box_pack_end(bx, fr);
 
    elm_ctxpopup_direction_priority_set(o, ELM_CTXPOPUP_DIRECTION_UP, ELM_CTXPOPUP_DIRECTION_DOWN,
                                        ELM_CTXPOPUP_DIRECTION_LEFT, ELM_CTXPOPUP_DIRECTION_RIGHT);
@@ -1534,7 +1580,7 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      ui->show_self = !ui->show_self;
 
    if (ev->keyname[0] == 'k' || ev->keyname[0] == 'K')
-     proc_info_kthreads_show_set(!proc_info_kthreads_show_get());
+     ui->show_kthreads = !ui->show_kthreads;
 
    _config_save(ui);
 }
