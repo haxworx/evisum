@@ -72,25 +72,25 @@ system_sensors_thermal_get(int *sensor_count)
    sensor_t *sensor;
    DIR *dir;
    struct dirent *dh;
-   struct dirent **names = NULL;
-   char *link;
    char buf[4096];
    int seen[128];
-   int n, idx;
 
    dir = opendir("/sys/class/hwmon");
    if (!dir) return NULL;
 
    while ((dh = readdir(dir)) != NULL)
      {
+        struct dirent **names = NULL;
+
         snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s", dh->d_name);
-        link = realpath(buf, NULL);
+        char *link = realpath(buf, NULL);
         if (!link) continue;
 
-        idx = 0;
-        memset(&seen, 0, sizeof(seen));
-        n = scandir(link, &names, 0, alphasort);
+        int n = scandir(link, &names, 0, alphasort);
         if (n < 0) continue;
+
+        int idx = 0;
+        memset(&seen, 0, sizeof(seen));
 
         for (int i = 0; i < n; i++)
           {
@@ -114,8 +114,9 @@ system_sensors_thermal_get(int *sensor_count)
                        continue;
                     }
 
-                  sensors = realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
-                  sensors[(*sensor_count)++] = sensor = calloc(1,sizeof(sensor_t));
+                  void *tmp = realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
+                  sensors = tmp;
+                  sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
 
                   snprintf(buf, sizeof(buf), "%s/name", link);
                   sensor->name = file_contents(buf);
