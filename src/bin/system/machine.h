@@ -33,6 +33,7 @@ typedef struct
 typedef struct
 {
    char   *name;
+   char   *child_name;
    double  value;
    bool    invalid;
 } sensor_t;

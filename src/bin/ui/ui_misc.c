@@ -71,6 +71,7 @@ static Eina_Bool
 _sensor_usage_add(Evas_Object *box, sensor_t **sensors, int count)
 {
    Evas_Object *frame, *vbox, *hbox, *pb, *ic, *label;
+   Eina_Strbuf *name;
    sensor_t *snsr;
 
    for (int i = 0; i < count; i++)
@@ -94,8 +95,14 @@ _sensor_usage_add(Evas_Object *box, sensor_t **sensors, int count)
         evas_object_show(label);
         elm_box_pack_end(vbox, label);
 
+        name = eina_strbuf_new();
+        eina_strbuf_append(name, snsr->name);
+        if (snsr->child_name)
+          eina_strbuf_append_printf(name, " (%s)", snsr->child_name);
+
         elm_object_text_set(label, eina_slstr_printf("%s",
-                        snsr->name));
+                        eina_strbuf_string_get(name)));
+        eina_strbuf_free(name);
 
         hbox = elm_box_add(box);
         evas_object_size_hint_align_set(hbox, FILL, FILL);
@@ -170,6 +177,8 @@ _misc_free(power_t *power, sensor_t **sensors, int sensor_count)
         sensor_t *snsr = sensors[i];
         if (snsr->name)
           free(snsr->name);
+        if (snsr->child_name)
+          free(snsr->child_name);
         free(snsr);
      }
    if (sensors)

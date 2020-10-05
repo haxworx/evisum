@@ -70,44 +70,78 @@ system_sensors_thermal_get(int *sensor_count)
      }
 #elif defined(__linux__)
    sensor_t *sensor;
-   char *type, *value;
-   struct dirent **names;
-   int i, n;
+   DIR *dir;
+   struct dirent *dh;
+   struct dirent **names = NULL;
+   char *link;
+   char buf[4096];
+   int seen[128];
+   int n, idx;
 
-   n = scandir("/sys/class/thermal", &names, 0, alphasort);
-   if (n < 0) return NULL;
+   dir = opendir("/sys/class/hwmon");
+   if (!dir) return NULL;
 
-   for (i = 0; i < n; i++) {
-        if (strncmp(names[i]->d_name, "thermal_zone", 12))
+   while ((dh = readdir(dir)) != NULL)
+     {
+        snprintf(buf, sizeof(buf), "/sys/class/hwmon/%s", dh->d_name);
+        link = realpath(buf, NULL);
+        if (!link) continue;
+
+        idx = 0;
+        memset(&seen, 0, sizeof(seen));
+        n = scandir(link, &names, 0, alphasort);
+        if (n < 0) continue;
+
+        for (int i = 0; i < n; i++)
           {
-             free(names[i]);
-             continue;
-          }
-
-        type = file_contents(strsli_printf("/sys/class/thermal/%s/type", names[i]->d_name));
-        if (type)
-          {
-             sensors =
-                realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
-             sensors[(*sensor_count)++] =
-                 sensor = calloc(1, sizeof(sensor_t));
-
-             sensor->name = type;
-
-             value = file_contents(strsli_printf("/sys/class/thermal/%s/temp", names[i]->d_name));
-             if (!value)
-               sensor->invalid = true;
-             else
+             if (!strncmp(names[i]->d_name, "temp", 4))
                {
-                  sensor->value = (float)atoi(value) / 1000.0;
-                  free(value);
+                  int id = atoi(names[i]->d_name + 4);
+                  if ((!id) || (id > sizeof(seen)))
+                    {
+                       free(names[i]);
+                       continue;
+                    }
+
+                  int found = 0;
+
+                  for (int j = 0; seen[j] != 0 && j < sizeof(seen); j++)
+                     if (seen[j] == id) found = 1;
+
+                  if (found)
+                    {
+                       free(names[i]);
+                       continue;
+                    }
+
+                  sensors = realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
+                  sensors[(*sensor_count)++] = sensor = calloc(1,sizeof(sensor_t));
+
+                  snprintf(buf, sizeof(buf), "%s/name", link);
+                  sensor->name = file_contents(buf);
+
+                  snprintf(buf, sizeof(buf), "%s/temp%d_label", link, id);
+                  sensor->child_name = file_contents(buf);
+                  snprintf(buf, sizeof(buf), "%s/temp%d_input", link, id);
+
+                  char *d = file_contents(buf);
+                  if (d)
+                    {
+                       sensor->value = atoi(d);
+                       if (sensor->value) sensor->value /= 1000;
+                       free(d);
+                    }
+                  seen[idx++] = id;
                }
+             free(names[i]);
           }
 
-        free(names[i]);
+        free(names);
+        free(link);
      }
 
-   free(names);
+   closedir(dir);
+
 #elif defined(__MacOS__)
 #endif
    return sensors;

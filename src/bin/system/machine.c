@@ -84,6 +84,8 @@ system_info_all_free(Sys_Info *info)
         snsr = info->sensors[i];
         if (snsr->name)
           free(snsr->name);
+        if (snsr->child_name)
+          free(snsr->child_name);
         free(snsr);
      }
    if (info->sensors)
