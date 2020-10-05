@@ -96,7 +96,7 @@ typedef struct Ui
       Evas_Object *win;
       Evas_Object *box;
       Evas_Object *timer;
-   } misc;
+   } sensors;
 
    struct
    {

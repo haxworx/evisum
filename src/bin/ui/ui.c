@@ -1,9 +1,9 @@
 #include "config.h"
 #include "ui.h"
-#include "ui/ui_disk.h"
-#include "ui/ui_misc.h"
-#include "ui/ui_memory.h"
 #include "ui/ui_cpu.h"
+#include "ui/ui_memory.h"
+#include "ui/ui_disk.h"
+#include "ui/ui_sensors.h"
 #include "ui/ui_process_view.h"
 
 #include <stdio.h>
@@ -1071,12 +1071,12 @@ _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_menu_misc_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_menu_sensors_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                                void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
 
-   ui_win_misc_add(ui);
+   ui_win_sensors_add(ui);
 }
 
 static void
@@ -1221,7 +1221,7 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    elm_box_pack_end(hbox, btn);
 
    btn = _btn_create(hbox, "misc", _("Sensors"),
-                     _menu_misc_activity_clicked_cb, ui);
+                     _menu_sensors_activity_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
    sep = elm_separator_add(hbox);
@@ -1647,8 +1647,8 @@ evisum_ui_shutdown(Ui *ui)
      evas_object_smart_callback_call(ui->mem.win, "delete,request", NULL);
    if (ui->disk.win)
      evas_object_smart_callback_call(ui->disk.win, "delete,request", NULL);
-   if (ui->misc.win)
-     evas_object_smart_callback_call(ui->misc.win, "delete,request", NULL);
+   if (ui->sensors.win)
+     evas_object_smart_callback_call(ui->sensors.win, "delete,request", NULL);
    if (ui->win_about)
      evas_object_smart_callback_call(ui->win_about, "delete,request", NULL);
 

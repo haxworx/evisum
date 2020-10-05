@@ -1,4 +1,4 @@
-#include "ui_misc.h"
+#include "ui_sensors.h"
 #include "system/machine.h"
 
 static Eina_Bool
@@ -157,7 +157,7 @@ _separator_add(Evas_Object *box)
 }
 
 static void
-_misc_free(power_t *power, sensor_t **sensors, int sensor_count)
+_sensors_free(power_t *power, sensor_t **sensors, int sensor_count)
 {
    for (int i = 0; i < power->battery_count; i++)
      {
@@ -186,7 +186,7 @@ _misc_free(power_t *power, sensor_t **sensors, int sensor_count)
 }
 
 static Eina_Bool
-_misc_update(void *data)
+_sensors_update(void *data)
 {
    Ui *ui;
    power_t power;
@@ -196,9 +196,9 @@ _misc_update(void *data)
 
    ui = data;
 
-   elm_box_clear(ui->misc.box);
+   elm_box_clear(ui->sensors.box);
 
-   box = elm_box_add(ui->misc.box);
+   box = elm_box_add(ui->sensors.box);
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
@@ -216,15 +216,15 @@ _misc_update(void *data)
         _separator_add(box);
      }
 
-   _misc_free(&power, sensors, sensor_count);
+   _sensors_free(&power, sensors, sensor_count);
 
-   frame = elm_frame_add(ui->misc.box);
+   frame = elm_frame_add(ui->sensors.box);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    elm_object_style_set(frame, "pad_huge");
    evas_object_show(frame);
    elm_object_content_set(frame, box);
-   elm_box_pack_end(ui->misc.box, frame);
+   elm_box_pack_end(ui->sensors.box, frame);
 
    return EINA_TRUE;
 }
@@ -235,27 +235,27 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   if (ui->misc.timer)
-     ecore_timer_del(ui->misc.timer);
-   ui->misc.timer = NULL;
+   if (ui->sensors.timer)
+     ecore_timer_del(ui->sensors.timer);
+   ui->sensors.timer = NULL;
 
    evas_object_del(obj);
-   ui->misc.win = NULL;
+   ui->sensors.win = NULL;
 }
 
 void
-ui_win_misc_add(Ui *ui)
+ui_win_sensors_add(Ui *ui)
 {
    Evas_Object *win, *box, *hbox, *frame, *scroller;
    Evas_Object *table, *border, *rect;
 
-   if (ui->misc.win)
+   if (ui->sensors.win)
      {
-        elm_win_raise(ui->misc.win);
+        elm_win_raise(ui->sensors.win);
         return;
      }
 
-   ui->misc.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
+   ui->sensors.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
@@ -265,7 +265,7 @@ ui_win_misc_add(Ui *ui)
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_hide(box);
 
-   ui->misc.box = hbox = elm_box_add(box);
+   ui->sensors.box = hbox = elm_box_add(box);
    evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
    evas_object_show(hbox);
@@ -310,8 +310,8 @@ ui_win_misc_add(Ui *ui)
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evisum_child_window_show(ui->win, win);
 
-   _misc_update(ui);
+   _sensors_update(ui);
 
-   ui->misc.timer = ecore_timer_add(ui->settings.poll_delay, _misc_update, ui);
+   ui->sensors.timer = ecore_timer_add(ui->settings.poll_delay, _sensors_update, ui);
 }
 
