@@ -56,7 +56,7 @@ _win_add(void)
 
 #if defined(DEVELOPMENT)
 static void
-_test(void)
+_test(int all)
 {
    Sys_Info *inf;
    Eina_List *procs, *disks;
@@ -67,6 +67,8 @@ _test(void)
    printf("Starting testing\n");
    inf = system_info_all_get();
    system_info_all_free(inf);
+
+   if (!all) goto out;
 
    eina_init();
    ecore_init();
@@ -88,10 +90,11 @@ _test(void)
           }
         free(path);
      }
-   printf("Ending testing\n");
 
    ecore_shutdown();
    eina_shutdown();
+out:
+   printf("Ending testing\n");
 }
 #endif
 
@@ -113,7 +116,12 @@ main(int argc, char **argv)
 #if defined(DEVELOPMENT)
         else if (!strcmp(argv[i], "-t"))
           {
-             _test();
+             _test(1);
+             exit(0);
+          }
+        else if (!strcmp(argv[i], "-T"))
+          {
+             _test(0);
              exit(0);
           }
 #endif
