@@ -481,6 +481,7 @@ void
 ui_win_cpu_add(Ui *ui)
 {
    Evas_Object *win, *box, *scroller;
+   Evas_Coord x, y;
 
    if (ui->cpu.win)
      {
@@ -512,6 +513,9 @@ ui_win_cpu_add(Ui *ui)
    elm_object_content_set(scroller, box);
    elm_object_content_set(win, scroller);
 
-   evisum_child_window_show(ui->win, win);
+   evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT);
+   evas_object_move(win, x + 20, y + 20);
+   evas_object_show(win);
 }
 

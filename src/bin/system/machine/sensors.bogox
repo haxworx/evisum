@@ -51,7 +51,8 @@ system_sensors_thermal_get(int *sensor_count)
         if (snsr.type != SENSOR_TEMP)
           continue;
 
-        sensors = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        void *tmp = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors = tmp;
         sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup(snsrdev.xname);
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
@@ -63,11 +64,29 @@ system_sensors_thermal_get(int *sensor_count)
 
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
-        sensors = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        void *tmp = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors = tmp;
         sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup("hw.acpi.thermal.tz0");
         sensor->value = (float) (value -  2732) / 10;
      }
+
+   int n = system_cpu_count_get();
+
+   for (int i = 0; i < n; i++)
+     {
+        len = sizeof(value);
+        const char *mibname = strsli_printf("dev.cpu.%d.temperature", i);
+        if ((sysctlbyname(mibname, &value, &len, NULL, 0)) != -1)
+          {
+             void *tmp = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+             sensors = tmp;
+             sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
+             sensor->name = strdup(mibname);
+             sensor->value = (float) (value - 2732) / 10;
+          }
+     }
+
 #elif defined(__linux__)
    sensor_t *sensor;
    DIR *dir;

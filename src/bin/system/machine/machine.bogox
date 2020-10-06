@@ -14,8 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#if defined(__linux__)
-
 #include <stdarg.h>
 
 char *
@@ -65,8 +63,6 @@ strsli_printf(const char *fmt, ...)
 
    return buf;
 }
-
-#endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__)
 static long int

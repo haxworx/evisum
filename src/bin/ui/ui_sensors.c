@@ -121,7 +121,7 @@ _sensor_usage_add(Evas_Object *box, sensor_t **sensors, int count)
         evas_object_size_hint_align_set(pb, FILL, FILL);
         evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
         elm_progressbar_span_size_set(pb, 1.0);
-        elm_progressbar_unit_format_set(pb, "%1.0f°C");
+        elm_progressbar_unit_format_set(pb, "%1.1f°C");
         elm_progressbar_value_set(pb,
                         (double) snsr->value / 100);
         evas_object_show(pb);
