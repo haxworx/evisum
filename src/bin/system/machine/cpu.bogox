@@ -366,12 +366,12 @@ system_cpu_n_temperature_get(int n)
 
    return _cpu_n_temperature_read(n);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
-   static int init = 1;
+   static int init = 0;
 
    if (!init)
      {
         memset(&_core_temps, 0, sizeof(_core_temps));
-        init = 0;
+        init = 1;
      }
 
     return _cpu_n_temperature_read(n);
