@@ -280,20 +280,33 @@ system_cpu_usage_get(int *ncpu)
 }
 
 
-static char _core_temp[128][512];
+static char _core_temps[256][512];
 static char _hwmon_path[256];
 
 int
 _cpu_n_temperature_read(int n)
 {
    int temp = -1;
-
-   char *b = file_contents(_core_temp[n]);
+#if defined(__linux__)
+   char *b = file_contents(_core_temps[n]);
    if (b)
      {
         temp = atoi(b) / 1000;
         free(b);
      }
+#elif defined(__FreeBSD__)
+    int value;
+    size_t len = sizeof(value);
+
+    if (!_core_temps[n][0])
+      snprintf(_core_temps[n], sizeof(_core_temps[n]), "dev.cpu.%d.temperature", n);
+
+    if ((sysctlbyname(_core_temps[n], &value, &len, NULL, 0)) != -1)
+      {
+         temp = (value - 2732) / 10;
+      }
+#endif
+
    return temp;
 }
 
@@ -310,7 +323,7 @@ system_cpu_n_temperature_get(int n)
         struct dirent *dh;
         DIR *dir;
 
-        memset(&_core_temp, 0, sizeof(_core_temp));
+        memset(&_core_temps, 0, sizeof(_core_temps));
         memset(&_hwmon_path, 0, sizeof(_hwmon_path));
 
         dir = opendir("/sys/class/hwmon");
@@ -344,15 +357,25 @@ system_cpu_n_temperature_get(int n)
 
    if (!_hwmon_path[0]) return -1;
 
-   if (_core_temp[n][0])
+   if (_core_temps[n][0])
      return _cpu_n_temperature_read(n);
 
    cpu_count = system_cpu_count_get();
    i = 1 + ((cpu_count + n) / 2) - (cpu_count / 2);
 
-   snprintf(_core_temp[n], sizeof(_core_temp[n]), "%s/temp%d_input", _hwmon_path, i);
+   snprintf(_core_temps[n], sizeof(_core_temps[n]), "%s/temp%d_input", _hwmon_path, i);
 
    return _cpu_n_temperature_read(n);
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   static int init = 1;
+
+   if (!init)
+     {
+        memset(&_core_temps, 0, sizeof(_core_temps));
+        init = 0;
+     }
+
+    return _cpu_n_temperature_read(n);
 #endif
    return -1;
 }
