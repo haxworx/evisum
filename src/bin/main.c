@@ -66,6 +66,13 @@ _test(int all)
 
    printf("Starting testing\n");
    inf = system_info_all_get();
+   int cpu_count = system_cpu_count_get();
+   for (int i = 0; i < cpu_count; i++)
+     {
+        int temp = system_cpu_n_temperature_get(i);
+        if (temp != -1) printf(" cpu %d temp %d C\n", i, temp);
+     }
+
    system_info_all_free(inf);
 
    if (!all) goto out;
