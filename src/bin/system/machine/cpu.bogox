@@ -279,7 +279,6 @@ system_cpu_usage_get(int *ncpu)
    return system_cpu_usage_delayed_get(ncpu, 1000000);
 }
 
-
 static char _core_temps[256][512];
 static char _hwmon_path[256];
 
@@ -294,7 +293,7 @@ _cpu_n_temperature_read(int n)
         temp = atoi(b) / 1000;
         free(b);
      }
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
     int value;
     size_t len = sizeof(value);
 
