@@ -303,7 +303,6 @@ _temp_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    ad->show_cputemp = elm_check_state_get(obj);
 }
 
-
 static void
 _colors_fill(Evas_Object *colors)
 {
@@ -531,6 +530,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_align_set(check, FILL, FILL);
    evas_object_size_hint_weight_set(check, EXPAND, 0);
    elm_object_text_set(check, _("Overlay CPU temperatures?"));
+   if (!ad->cpu_temp) elm_object_disabled_set(check, 1);
    evas_object_smart_callback_add(check, "changed", _temp_check_changed_cb, ad);
    evas_object_show(check);
    elm_box_pack_end(hbx, check);
