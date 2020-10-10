@@ -14,6 +14,7 @@ typedef struct _Evisum_Config
    int       height;
    int       poll_delay;
    Eina_Bool effects;
+   Eina_Bool backgrounds;
    Eina_Bool show_kthreads;
 } Evisum_Config;
 

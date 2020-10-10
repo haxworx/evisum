@@ -42,6 +42,12 @@ Evas_Object *
 evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled);
 
 void
+evisum_ui_backgrounds_enabled_set(Eina_Bool enabled);
+
+Eina_Bool
+evisum_ui_backgrounds_enabled_get(void);
+
+void
 evisum_ui_effects_enabled_set(Eina_Bool enabled);
 
 Eina_Bool

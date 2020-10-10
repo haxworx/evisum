@@ -154,9 +154,9 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
                   Core *core = &(cores_out[n]);
                   core->id = n;
                   core->percent = cores[n]->percent;
-                  if (ad->cpu_freq)
+                  if (ad->show_cpufreq && ad->cpu_freq)
                     core->freq = system_cpu_n_frequency_get(n);
-                  if (ad->cpu_temp)
+                  if (ad->show_cputemp && ad->cpu_temp)
                     core->temp = system_cpu_n_temperature_get(n);
                   free(cores[n]);
                }
@@ -572,7 +572,8 @@ ui_win_cpu_add(Ui *ui)
    elm_win_autodel_set(win, EINA_TRUE);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
+   evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
+                                   evisum_ui_backgrounds_enabled_get()));
 
    scroller = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);

@@ -6,6 +6,7 @@
 #define ARRAY_SIZE(n) sizeof(n) / sizeof(n[0])
 
 static Eina_Bool _effects_enabled = EINA_FALSE;
+static Eina_Bool _backgrounds_enabled = EINA_FALSE;
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
@@ -475,6 +476,18 @@ evisum_ui_background_add(Evas_Object *win, Eina_Bool enabled)
    evas_object_show(bg);
 
    return bg;
+}
+
+Eina_Bool
+evisum_ui_backgrounds_enabled_get(void)
+{
+   return _backgrounds_enabled;
+}
+
+void
+evisum_ui_backgrounds_enabled_set(Eina_Bool enabled)
+{
+   _backgrounds_enabled = enabled;
 }
 
 Eina_Bool

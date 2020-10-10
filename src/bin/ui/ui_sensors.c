@@ -258,7 +258,8 @@ ui_win_sensors_add(Ui *ui)
    ui->sensors.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
+   evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
+                                   evisum_ui_backgrounds_enabled_get()));
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);

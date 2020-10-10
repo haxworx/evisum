@@ -32,6 +32,7 @@ _config_save(Ui *ui)
    _evisum_config->width = w;
    _evisum_config->height = h;
    _evisum_config->effects = evisum_ui_effects_enabled_get();
+   _evisum_config->backgrounds = evisum_ui_backgrounds_enabled_get();
    _evisum_config->poll_delay = ui->settings.poll_delay;
    _evisum_config->show_kthreads = ui->settings.show_kthreads;
 
@@ -53,6 +54,7 @@ _config_load(Ui *ui)
      evas_object_resize(ui->win, _evisum_config->width, _evisum_config->height);
 
    evisum_ui_effects_enabled_set(_evisum_config->effects);
+   evisum_ui_backgrounds_enabled_set(_evisum_config->backgrounds);
 
    ui->settings.show_kthreads = _evisum_config->show_kthreads;
    proc_info_kthreads_show_set(ui->settings.show_kthreads);
@@ -1094,7 +1096,15 @@ _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   evisum_ui_effects_enabled_set(!evisum_ui_effects_enabled_get());
+   if ((!evisum_ui_effects_enabled_get()) && (!evisum_ui_backgrounds_enabled_get()))
+     evisum_ui_backgrounds_enabled_set(1);
+   else if (evisum_ui_backgrounds_enabled_get() && (!evisum_ui_effects_enabled_get()))
+     evisum_ui_effects_enabled_set(1);
+   else
+     {
+        evisum_ui_effects_enabled_set(0);
+        evisum_ui_backgrounds_enabled_set(0);
+     }
 
    _config_save(ui);
    ecore_app_restart();
@@ -1811,7 +1821,7 @@ _ui_init(Evas_Object *parent)
 
    _config_load(ui);
 
-   if (evisum_ui_effects_enabled_get())
+   if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
      evisum_ui_background_random_add(ui->win, 1);
 
    _ui_content_add(parent, ui);
