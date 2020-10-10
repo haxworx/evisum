@@ -448,7 +448,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(colors);
 
    lb = elm_label_add(parent);
-   elm_object_text_set(lb, "<b><color=#fff>0%</></>");
+   elm_object_text_set(lb, "<b><color=#fff> 0%</></>");
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 0, 0, 1, 1);
@@ -457,9 +457,9 @@ _graph(Ui *ui, Evas_Object *parent)
    lb = elm_label_add(parent);
    f = (ad->freq_min + 500) / 1000;
    if (f < 1000)
-     snprintf(buf, sizeof(buf), "<b><color=#fff>%iMHz</></>", f);
+     snprintf(buf, sizeof(buf), "<b><color=#fff> %iMHz</></>", f);
    else
-     snprintf(buf, sizeof(buf), "<b><color=#fff>%1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
+     snprintf(buf, sizeof(buf), "<b><color=#fff> %1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
@@ -486,7 +486,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_show(lb);
 
    lb = elm_label_add(parent);
-   snprintf(buf, sizeof(buf), "<b><color=#fff>%i°C</></>", ad->temp_min);
+   snprintf(buf, sizeof(buf), "<b><color=#fff> %i°C</></>", ad->temp_min);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
