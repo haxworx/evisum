@@ -108,6 +108,9 @@ int
 system_cpu_n_temperature_get(int n);
 
 int
+system_cpu_temperature_min_max_get(int *min, int *max);
+
+int
 system_cpu_frequency_min_max_get(int *min, int *max);
 
 void

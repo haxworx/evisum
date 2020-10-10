@@ -4,6 +4,7 @@ typedef struct {
    short id;
    short percent;
    unsigned int freq;
+   unsigned int temp;
 } Core;
 
 typedef struct {
@@ -21,6 +22,12 @@ typedef struct {
    Eina_Bool       cpu_freq;
    int             freq_min;
    int             freq_max;
+
+   Eina_Bool       show_cputemp;
+   // Have temp readings.
+   Eina_Bool       cpu_temp;
+   int             temp_min;
+   int             temp_max;
 } Animate;
 
 typedef struct _Color_Point {
@@ -46,12 +53,23 @@ static const Color_Point freq_colormap_in[] = {
    { 100, 0xffa0ff80 }, // 3
    { 256, 0xffa0ff80 }  // overflow to avoid if's
 };
+
+#define COLOR_TEMP_NUM 5
+static const Color_Point temp_colormap_in[] = {
+   {  0,  0xff57bb8a }, // 0
+   {  25, 0xffa4c073 },
+   {  50, 0xfff5ce62 },
+   {  75, 0xffe9a268 },
+   { 100, 0xffdd776e },
+   { 256, 0xffdd776e }
+};
 #define BAR_HEIGHT 2
-#define COLORS_HEIGHT 20
+#define COLORS_HEIGHT 60
 
 // stored colormap tables
 static unsigned int cpu_colormap[256];
 static unsigned int freq_colormap[256];
+static unsigned int temp_colormap[256];
 
 // handy macros to access argb values from pixels
 #define AVAL(x) (((x) >> 24) & 0xff)
@@ -116,6 +134,10 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
    if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
      ad->cpu_freq = EINA_TRUE;
 
+   system_cpu_temperature_min_max_get(&ad->temp_min, &ad->temp_max);
+   if ((system_cpu_n_temperature_get(0)) != -1)
+     ad->cpu_temp = EINA_TRUE;
+
    // while this thread has not been canceled
    while (!ecore_thread_check(thread))
      {
@@ -134,6 +156,8 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
                   core->percent = cores[n]->percent;
                   if (ad->cpu_freq)
                     core->freq = system_cpu_n_frequency_get(n);
+                  if (ad->cpu_temp)
+                    core->temp = system_cpu_n_temperature_get(n);
                   free(cores[n]);
                }
              ecore_thread_feedback(thread, cores_out);
@@ -216,6 +240,11 @@ _update(Animate *ad, Core *cores)
              pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
              pix[x] = c2;
           }
+        else if (ad->show_cputemp && ad->cpu_temp)
+          {
+             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix[x] = temp_colormap[core->temp & 0xff];
+          }
         else
           {
              // no freq show - then just repeat cpu usage color
@@ -266,14 +295,24 @@ _check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
+_temp_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Animate *ad = data;
+
+   ad->show_cputemp = elm_check_state_get(obj);
+}
+
+
+static void
 _colors_fill(Evas_Object *colors)
 {
-   // fill a 2 pixel high (and 100 wide) image with 2 gradients matching
+   // fill a 3 pixel high (and 100 wide) image with 3 gradients matching
    // the colormaps we calculated as a legend
    int x, stride;
    unsigned int *pixels;
 
-   evas_object_image_size_set(colors, 101, 2);
+   evas_object_image_size_set(colors, 101, 3);
    pixels = evas_object_image_data_get(colors, EINA_TRUE);
    if (!pixels) return;
    stride = evas_object_image_stride_get(colors);
@@ -281,6 +320,9 @@ _colors_fill(Evas_Object *colors)
    for (x = 0; x <= 100; x++) pixels[x] = cpu_colormap[x];
    // cpu freq (next row)
    for (x = 0; x <= 100; x++) pixels[x + (stride / 4)] = freq_colormap[x];
+   // cpu temp (next row)
+   for (x = 0; x <= 100; x++) pixels[x + (stride / 2)] = temp_colormap[x];
+
    evas_object_image_data_set(colors, pixels);
    evas_object_image_data_update_add(colors, 0, 0, 101, 1);
 }
@@ -289,7 +331,7 @@ static void
 _graph(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *frame, *tbl, *box, *obj, *ic, *lb, *rec;
-   Evas_Object *fr, *bx, *colors, *check;
+   Evas_Object *fr, *bx, *hbx, *colors, *check;
    int i, f;
    char buf[128];
 
@@ -300,9 +342,14 @@ _graph(Ui *ui, Evas_Object *parent)
    if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
      ad->cpu_freq = EINA_TRUE;
 
+   system_cpu_temperature_min_max_get(&ad->temp_min, &ad->temp_max);
+   if ((system_cpu_n_temperature_get(0)) != -1)
+     ad->cpu_temp = EINA_TRUE;
+
    // init colormaps from a small # of points
    _color_init(cpu_colormap_in, COLOR_CPU_NUM, cpu_colormap);
    _color_init(freq_colormap_in, COLOR_FREQ_NUM, freq_colormap);
+   _color_init(temp_colormap_in, COLOR_TEMP_NUM, temp_colormap);
 
    box = parent;
 
@@ -397,7 +444,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_image_filled_set(colors, EINA_TRUE);
    evas_object_image_alpha_set(colors, EINA_FALSE);
    _colors_fill(colors);
-   elm_table_pack(tbl, colors, 0, 0, 2, 2);
+   elm_table_pack(tbl, colors, 0, 0, 2, 3);
    evas_object_show(colors);
 
    lb = elm_label_add(parent);
@@ -438,6 +485,22 @@ _graph(Ui *ui, Evas_Object *parent)
    elm_table_pack(tbl, lb, 1, 1, 1, 1);
    evas_object_show(lb);
 
+   lb = elm_label_add(parent);
+   snprintf(buf, sizeof(buf), "<b><color=#fff>%i°C</></>", ad->temp_min);
+   elm_object_text_set(lb, buf);
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   elm_table_pack(tbl, lb, 0, 2, 1, 1);
+   evas_object_show(lb);
+
+   lb = elm_label_add(parent);
+   snprintf(buf, sizeof(buf), "<b><color=#fff>%i°C</></>", ad->temp_max);
+   elm_object_text_set(lb, buf);
+   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   elm_table_pack(tbl, lb, 1, 2, 1, 1);
+   evas_object_show(lb);
+
    elm_box_pack_end(box, fr);
 
    fr = elm_frame_add(box);
@@ -448,23 +511,38 @@ _graph(Ui *ui, Evas_Object *parent)
    elm_object_text_set(fr, _("Options"));
    elm_box_pack_end(box, fr);
 
+   hbx = elm_box_add(fr);
+   evas_object_size_hint_align_set(hbx, FILL, FILL);
+   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+   elm_box_horizontal_set(hbx, 1);
+   evas_object_show(hbx);
+   elm_object_content_set(fr, hbx);
+
    check = elm_check_add(fr);
    evas_object_size_hint_align_set(check, FILL, FILL);
    evas_object_size_hint_weight_set(check, EXPAND, 0);
    elm_object_text_set(check, _("Overlay CPU frequency?"));
    if (!ad->cpu_freq) elm_object_disabled_set(check, 1);
    evas_object_show(check);
-   elm_object_content_set(fr, check);
+   elm_box_pack_end(hbx, check);
+   evas_object_smart_callback_add(check, "changed", _check_changed_cb, ad);
+
+   check = elm_check_add(fr);
+   evas_object_size_hint_align_set(check, FILL, FILL);
+   evas_object_size_hint_weight_set(check, EXPAND, 0);
+   elm_object_text_set(check, _("Overlay CPU temperatures?"));
+   evas_object_smart_callback_add(check, "changed", _temp_check_changed_cb, ad);
+   evas_object_show(check);
+   elm_box_pack_end(hbx, check);
 
    ad->obj = obj;
    ad->ui = ui;
    ad->colors = colors;
 
-   // min size ofr cpu color graph to show all cores.
+   // min size of cpu color graph to show all cores.
    evas_object_size_hint_min_set
      (obj, 100, (BAR_HEIGHT * ad->cpu_count) * elm_config_scale_get());
 
-   evas_object_smart_callback_add(check, "changed", _check_changed_cb, ad);
    // since win is on auto-delete, just listen for when it is deleted,
    // whatever the cause/reason
    evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_DEL, _win_del_cb, ad);
@@ -514,7 +592,7 @@ ui_win_cpu_add(Ui *ui)
    elm_object_content_set(win, scroller);
 
    evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
-   evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT);
+   evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
    evas_object_move(win, x + 20, y + 20);
    evas_object_show(win);
 }
