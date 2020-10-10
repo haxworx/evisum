@@ -383,7 +383,9 @@ int
 system_cpu_temperature_min_max_get(int *min, int *max)
 {
    *min = 20;
-   *max = 120;
+   *max = 100;
+
+   return 0;
 }
 
 int
