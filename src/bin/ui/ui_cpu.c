@@ -159,7 +159,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
                   core->percent = cores[n]->percent;
                   if (ad->cpu_freq)
                     core->freq = system_cpu_n_frequency_get(n);
-                  if (ad->show_cputemp && ad->cpu_temp)
+                  if (ad->cpu_temp)
                     core->temp = system_cpu_n_temperature_get(n);
                   free(cores[n]);
                }
@@ -278,11 +278,12 @@ _explain(Animate *ad, Core *cores)
           evas_object_hide(lb);
         else
           {
-             eina_strbuf_append_printf(buf, "%i%% ", core->percent);
+             eina_strbuf_append_printf(buf, "<b><color=#fff>%i%% ", core->percent);
              if (ad->cpu_freq)
-               eina_strbuf_append_printf(buf, "%1.1fGHz", (double) core->freq / 1000000);
+               eina_strbuf_append_printf(buf, "%1.1fGHz ", (double) core->freq / 1000000);
              if (ad->cpu_temp)
-               eina_strbuf_append_printf(buf, " %i°C", core->temp);
+               eina_strbuf_append_printf(buf, "%i°C", core->temp);
+             eina_strbuf_append(buf, "</></>");
 
              elm_object_text_set(lb, eina_strbuf_string_get(buf));
              eina_strbuf_reset(buf);
