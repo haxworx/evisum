@@ -1,5 +1,5 @@
-#ifndef __UI_MISC_H__
-#define __UI_MISC_H__
+#ifndef __UI_SENSORS_H__
+#define __UI_SENSORS_H__
 
 #include "ui.h"
 #include "../system/machine.h"
