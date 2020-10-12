@@ -2,6 +2,19 @@
 Evisum 0.5.7
 ============
 
+  * Use a cache of objects for storage.
+  * Add kernel threads to the options.
+  * Add config for backgrounds only as well as effects.
+    Cycle through the 3 modes with the "effects" button.
+  * Remove network from the GUI (for now), needs to be more
+    detailed to have any value.
+  * Move "misc" to "sensors".
+  * Improve the "burger" menu icon.
+  * Add CPU thermal zone support to the UI.
+  * Add "helper" overlay to the CPU view.
+  * Move Linux thermal zone to the sysfs hwmon interface.
+  * Undocumented fixes.
+
 ============
 Evisum 0.5.6
 ============
