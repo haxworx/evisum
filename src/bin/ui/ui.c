@@ -1276,7 +1276,7 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    elm_slider_unit_format_set(sli, _("%1.0f secs"));
    elm_slider_value_set(sli, ui->settings.poll_delay);
    evas_object_size_hint_align_set(sli, FILL, FILL);
-   elm_object_tooltip_text_set(sli, _("Poll delay (seconds)"));
+   elm_object_tooltip_text_set(sli, _("Poll delay"));
    evas_object_smart_callback_add(sli, "slider,drag,stop",
                                   _main_menu_slider_changed_cb, ui);
    evas_object_smart_callback_add(sli, "changed",
