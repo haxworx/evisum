@@ -28,6 +28,9 @@ typedef struct {
    Eina_Bool       cpu_temp;
    int             temp_min;
    int             temp_max;
+
+   Eina_Bool       confused;
+   Eina_List      *explainers;
 } Animate;
 
 typedef struct _Color_Point {
@@ -154,7 +157,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
                   Core *core = &(cores_out[n]);
                   core->id = n;
                   core->percent = cores[n]->percent;
-                  if (ad->show_cpufreq && ad->cpu_freq)
+                  if (ad->cpu_freq)
                     core->freq = system_cpu_n_frequency_get(n);
                   if (ad->show_cputemp && ad->cpu_temp)
                     core->temp = system_cpu_n_temperature_get(n);
@@ -260,14 +263,53 @@ _update(Animate *ad, Core *cores)
 }
 
 static void
+_explain(Animate *ad, Core *cores)
+{
+   Eina_Strbuf *buf;
+   Evas_Object *lb;
+
+   buf = eina_strbuf_new();
+
+   for (int i = 0; i < ad->cpu_count; i++)
+     {
+        Core *core = &(cores[i]);
+        lb = eina_list_nth(ad->explainers, core->id);
+        if (!ad->confused)
+          evas_object_hide(lb);
+        else
+          {
+             eina_strbuf_append_printf(buf, "%i%% ", core->percent);
+             if (ad->cpu_freq)
+               eina_strbuf_append_printf(buf, "%1.1fGHz", (double) core->freq / 1000000);
+             if (ad->cpu_temp)
+               eina_strbuf_append_printf(buf, " %i°C", core->temp);
+
+             elm_object_text_set(lb, eina_strbuf_string_get(buf));
+             eina_strbuf_reset(buf);
+             evas_object_show(lb);
+          }
+     }
+   eina_strbuf_free(buf);
+}
+
+static void
 _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
 {
-   // when the thread sends feedback to mainloop, the feedback is cpu and freq
-   // stat info from the feedback thread, so update based on that info then
-   // free it as we don't need it anyway - producer+consumer model
-   Animate *ad = data;
-   Core *cores = msgdata;
+   Animate *ad;
+   Core *cores;
+   static Eina_Bool was_confused = 0;
+
+   ad = data;
+   cores = msgdata;
+
    _update(ad, cores);
+
+   if (ad->confused || was_confused)
+     {
+        _explain(ad, cores);
+        was_confused = 1;
+     }
+
    free(cores);
 }
 
@@ -281,6 +323,8 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    // dialog handle to null
    ecore_thread_cancel(ui->cpu.thread);
    ecore_thread_wait(ui->cpu.thread, 0.5);
+   eina_list_free(ad->explainers);
+   ad->explainers = NULL;
    free(ad);
    ui->cpu.win = NULL;
 }
@@ -301,6 +345,15 @@ _temp_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Animate *ad = data;
 
    ad->show_cputemp = elm_check_state_get(obj);
+}
+
+static void
+_confused_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                           void *event_info EINA_UNUSED)
+{
+   Animate *ad = data;
+
+   ad->confused = elm_check_state_get(obj);
 }
 
 static void
@@ -410,6 +463,14 @@ _graph(Ui *ui, Evas_Object *parent)
         evas_object_size_hint_weight_set(lb, 0.0, EXPAND);
         elm_table_pack(tbl, lb, 3, i, 1, 1);
         evas_object_show(lb);
+
+        lb = elm_label_add(parent);
+        elm_object_text_set(lb, buf);
+        evas_object_size_hint_align_set(lb, 0.7, 0.5);
+        evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+        elm_table_pack(tbl, lb, 4, i, 1, 1);
+
+        ad->explainers = eina_list_append(ad->explainers, lb);
      }
 
    bx = elm_box_add(box);
@@ -532,6 +593,14 @@ _graph(Ui *ui, Evas_Object *parent)
    elm_object_text_set(check, _("Overlay CPU temperatures?"));
    if (!ad->cpu_temp) elm_object_disabled_set(check, 1);
    evas_object_smart_callback_add(check, "changed", _temp_check_changed_cb, ad);
+   evas_object_show(check);
+   elm_box_pack_end(hbx, check);
+
+   check = elm_check_add(fr);
+   evas_object_size_hint_align_set(check, FILL, FILL);
+   evas_object_size_hint_weight_set(check, EXPAND, 0);
+   elm_object_text_set(check, _("Confused?"));
+   evas_object_smart_callback_add(check, "changed", _confused_check_changed_cb, ad);
    evas_object_show(check);
    elm_box_pack_end(hbx, check);
 
