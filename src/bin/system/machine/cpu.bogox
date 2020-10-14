@@ -341,7 +341,7 @@ _coretemp_init(void)
 }
 
 static void
-_k10_init(void)
+_generic_init(void)
 {
    int i, cpu_count = system_cpu_count_get();
 
@@ -359,7 +359,8 @@ system_cpu_n_temperature_get(int n)
 
    thermal_drv drivers[] = {
       { "coretemp", _coretemp_init, 0, 100 },
-      { "k10temp", _k10_init, 0, 100 },
+      { "k10temp", _generic_init, 0, 100 },
+      { "cpu_thermal", _generic_init, 0, 100 },
    };
 
    if (!init)
