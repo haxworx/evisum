@@ -279,6 +279,9 @@ system_cpu_usage_get(int *ncpu)
    return system_cpu_usage_delayed_get(ncpu, 1000000);
 }
 
+
+static int  _cpu_temp_min = 0;
+static int  _cpu_temp_max = 100;
 static char _core_temps[256][512];
 static char _hwmon_path[256];
 
@@ -315,16 +318,26 @@ _cpu_n_temperature_read(int n)
 typedef struct _thermal_drv {
    const char *name;
    void (*init)(void);
+   char min;
+   char max;
 } thermal_drv;
 
 static void
 _coretemp_init(void)
 {
-   int i, cpu_count = system_cpu_count_get();
+   char buf[4096];
+   int cpu_count = system_cpu_count_get();
+
    for (int j = 0; j < cpu_count; j++)
      {
-        i = 2 + ((cpu_count + j) / 2) - (cpu_count / 2);
-        snprintf(_core_temps[j], sizeof(_core_temps[j]), "%s/temp%d_input", _hwmon_path, i);
+        snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%i/topology/core_id", j);
+        char *b = file_contents(buf);
+        if (b)
+          {
+             int core_id = atoi(b);
+             snprintf(_core_temps[j], sizeof(_core_temps[j]), "%s/temp%d_input", _hwmon_path, 2 + core_id);
+             free(b);
+          }
      }
 }
 
@@ -346,8 +359,8 @@ system_cpu_n_temperature_get(int n)
    static int init = 0;
 
    thermal_drv drivers[] = {
-      { "coretemp", _coretemp_init },
-      { "k10temp", _k10_init },
+      { "coretemp", _coretemp_init, 0, 100 },
+      { "k10temp", _k10_init, 0, 100 },
    };
 
    if (!init)
@@ -415,8 +428,9 @@ system_cpu_n_temperature_get(int n)
 int
 system_cpu_temperature_min_max_get(int *min, int *max)
 {
-   *min = 20;
-   *max = 100;
+
+   *min = _cpu_temp_min;
+   *max = _cpu_temp_max;
 
    return 0;
 }
