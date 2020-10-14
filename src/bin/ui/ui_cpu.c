@@ -398,7 +398,7 @@ _colors_fill(Evas_Object *colors)
 static void
 _graph(Ui *ui, Evas_Object *parent)
 {
-   Evas_Object *frame, *tbl, *box, *obj, *ic, *lb, *rec;
+   Evas_Object *tbl, *box, *obj, *ic, *lb, *rec;
    Evas_Object *fr, *bx, *hbx, *colors, *check;
    int i, f;
    char buf[128];
@@ -425,15 +425,6 @@ _graph(Ui *ui, Evas_Object *parent)
    _color_init(temp_colormap_in, COLOR_TEMP_NUM, temp_colormap);
 
    box = parent;
-
-   frame = elm_frame_add(box);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_show(frame);
-   if (ad->cpu_count > 1)
-     elm_object_text_set(frame, eina_slstr_printf(_("%d CPU Cores"), ad->cpu_count));
-   else
-     elm_object_text_set(frame, _("ONE CPU CORE...MAKE IT COUNT!!!"));
 
    tbl = elm_table_add(box);
    evas_object_size_hint_align_set(tbl, FILL, FILL);
@@ -501,8 +492,7 @@ _graph(Ui *ui, Evas_Object *parent)
    elm_box_pack_end(bx, tbl);
 
    // Set the main content.
-   elm_object_content_set(frame, bx);
-   elm_box_pack_end(box, frame);
+   elm_box_pack_end(box, bx);
 
    tbl = elm_table_add(box);
    evas_object_size_hint_align_set(tbl, FILL, FILL);
