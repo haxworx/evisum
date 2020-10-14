@@ -114,6 +114,9 @@ int
 system_cpu_frequency_min_max_get(int *min, int *max);
 
 void
+system_cpu_topology_get(int *ids, int ncpus);
+
+void
 system_memory_usage_get(meminfo_t *memory);
 
 sensor_t **

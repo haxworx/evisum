@@ -17,6 +17,8 @@ typedef struct {
 
    int             cpu_count;
 
+   int            *cpu_order;
+
    Eina_Bool       show_cpufreq;
    // Have cpu scaling
    Eina_Bool       cpu_freq;
@@ -154,13 +156,14 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
              for (int n = 0; n < ncpu; n++)
                {
                   // Copy our core state data to mainloop
+                  int id = ad->cpu_order[n];
                   Core *core = &(cores_out[n]);
-                  core->id = n;
-                  core->percent = cores[n]->percent;
+                  core->id = id;
+                  core->percent = cores[id]->percent;
                   if (ad->cpu_freq)
-                    core->freq = system_cpu_n_frequency_get(n);
+                    core->freq = system_cpu_n_frequency_get(id);
                   if (ad->cpu_temp)
-                    core->temp = system_cpu_n_temperature_get(n);
+                    core->temp = system_cpu_n_temperature_get(id);
                   free(cores[n]);
                }
              ecore_thread_feedback(thread, cores_out);
@@ -273,7 +276,7 @@ _explain(Animate *ad, Core *cores)
    for (int i = 0; i < ad->cpu_count; i++)
      {
         Core *core = &(cores[i]);
-        lb = eina_list_nth(ad->explainers, core->id);
+        lb = eina_list_nth(ad->explainers, i);
         if (!ad->confused)
           evas_object_hide(lb);
         else
@@ -326,6 +329,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    ecore_thread_wait(ui->cpu.thread, 0.5);
    eina_list_free(ad->explainers);
    ad->explainers = NULL;
+   free(ad->cpu_order);
    free(ad);
    ui->cpu.win = NULL;
 }
@@ -399,6 +403,11 @@ _graph(Ui *ui, Evas_Object *parent)
    if ((system_cpu_n_temperature_get(0)) != -1)
      ad->cpu_temp = EINA_TRUE;
 
+   ad->cpu_order = malloc((ad->cpu_count) * sizeof(int));
+   for (i = 0; i < ad->cpu_count; i++)
+     ad->cpu_order[i] = i;
+   system_cpu_topology_get(ad->cpu_order, ad->cpu_count);
+
    // init colormaps from a small # of points
    _color_init(cpu_colormap_in, COLOR_CPU_NUM, cpu_colormap);
    _color_init(freq_colormap_in, COLOR_FREQ_NUM, freq_colormap);
@@ -458,7 +467,7 @@ _graph(Ui *ui, Evas_Object *parent)
         elm_table_pack(tbl, rec, 2, i, 1, 1);
 
         lb = elm_label_add(parent);
-        snprintf(buf, sizeof(buf), "<b><color=#fff>%i</></>", i);
+        snprintf(buf, sizeof(buf), "<b><color=#fff>%i</></>", ad->cpu_order[i]);
         elm_object_text_set(lb, buf);
         evas_object_size_hint_align_set(lb, 1.0, 0.5);
         evas_object_size_hint_weight_set(lb, 0.0, EXPAND);

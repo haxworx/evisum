@@ -279,7 +279,6 @@ system_cpu_usage_get(int *ncpu)
    return system_cpu_usage_delayed_get(ncpu, 1000000);
 }
 
-
 static int  _cpu_temp_min = 0;
 static int  _cpu_temp_max = 100;
 static char _core_temps[256][512];
@@ -595,4 +594,54 @@ system_cpu_frequency_get(void)
 
 #endif
    return freq;
+}
+
+#if defined(__linux__)
+
+typedef struct {
+   short id;
+   short core_id;
+} core_top_t;
+
+static int
+_cmp(const void *a, const void *b)
+{
+   core_top_t *aa = (core_top_t *) a;
+   core_top_t *bb = (core_top_t *) b;
+
+   if (aa->core_id == bb->core_id) return 0;
+   else if (aa->core_id < bb->core_id) return -1;
+   else return 1;
+}
+
+#endif
+
+void
+system_cpu_topology_get(int *ids, int ncpu)
+{
+#if defined(__linux__)
+   char buf[4096];
+   core_top_t *cores = malloc(ncpu * sizeof(core_top_t));
+
+   for (int i = 0; i < ncpu; i++)
+     {
+        cores[i].id = i;
+        cores[i].core_id = i;
+        snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%i/topology/core_id", i);
+        char *b = file_contents(buf);
+        if (b)
+          {
+             cores[i].core_id = atoi(b);
+             free(b);
+          }
+     }
+
+   qsort(cores, ncpu, sizeof(core_top_t), _cmp);
+
+   for (int i = 0; i < ncpu; i++)
+     {
+        ids[i] = cores[i].id;
+     }
+   free(cores);
+#endif
 }
