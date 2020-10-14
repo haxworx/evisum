@@ -187,7 +187,7 @@ _update(Animate *ad, Core *cores)
    // new size and mark it for clearing when we fill
    if (iw != w)
      {
-        evas_object_image_size_set(obj, w, ad->cpu_count * 2);
+        evas_object_image_size_set(obj, w, ad->cpu_count * 3);
         clear = EINA_TRUE;
      }
 
@@ -207,24 +207,28 @@ _update(Animate *ad, Core *cores)
         if (clear)
           {
              // clear/fill with 0 value from colormap
-             pix = &(pixels[(y * 2) * (stride / 4)]);
+             pix = &(pixels[(y * 3) * (stride / 4)]);
              for (x = 0; x < (w - 1); x++) pix[x] = cpu_colormap[0];
-             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
              for (x = 0; x < (w - 1); x++) pix[x] = freq_colormap[0];
+             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
+             for (x = 0; x < (w - 1); x++) pix[x] = cpu_colormap[0];
           }
         else
           {
              // scroll pixels 1 to the left
-             pix = &(pixels[(y * 2) * (stride / 4)]);
+             pix = &(pixels[(y * 3) * (stride / 4)]);
              for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
-             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
+             for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
+             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
              for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
           }
         // final pixel on end of each row... set it to a new value
         // get color from cpu colormap
         // last pixel == resulting pixel color
         c1 = cpu_colormap[core->percent & 0xff];
-        pix = &(pixels[(y * 2) * (stride / 4)]);
+        pix = &(pixels[(y * 3) * (stride / 4)]);
         pix[x] = c1;
         // 2nd row of pixles for freq
         if ((ad->show_cpufreq) && (ad->cpu_freq))
@@ -243,18 +247,25 @@ _update(Animate *ad, Core *cores)
                   c2 = freq_colormap[v & 0xff];
                }
              else c2 = freq_colormap[0];
-             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
              pix[x] = c2;
           }
-        else if (ad->show_cputemp && ad->cpu_temp)
+
+        if (ad->show_cputemp && ad->cpu_temp)
           {
-             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
              pix[x] = temp_colormap[core->temp & 0xff];
           }
-        else
+
+        if (!ad->show_cpufreq)
           {
              // no freq show - then just repeat cpu usage color
-             pix = &(pixels[((y * 2) + 1) * (stride / 4)]);
+             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
+             pix[x] = c1;
+          }
+        if (!ad->show_cputemp)
+          {
+             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
              pix[x] = c1;
           }
      }
@@ -262,7 +273,7 @@ _update(Animate *ad, Core *cores)
    evas_object_image_data_set(obj, pixels);
    // now add update region for all pixels in the image at the end as we
    // changed everything
-   evas_object_image_data_update_add(obj, 0, 0, w, ad->cpu_count * 2);
+   evas_object_image_data_update_add(obj, 0, 0, w, ad->cpu_count * 3);
 }
 
 static void
