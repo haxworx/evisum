@@ -350,7 +350,7 @@ _check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                   void *event_info EINA_UNUSED)
 {
    Animate *ad = data;
-   // sho freq overlay check changed
+
    ad->show_cpufreq = elm_check_state_get(obj);
 }
 
@@ -441,6 +441,13 @@ _graph(Ui *ui, Evas_Object *parent)
 
    elm_table_pack(tbl, obj, 0, 0, 5, ad->cpu_count);
 
+   rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+   evas_object_size_hint_align_set(rec, FILL, FILL);
+   evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+   evas_object_color_set(rec, 0, 0, 0, 64);
+   evas_object_show(rec);
+   elm_table_pack(tbl, rec, 0, 0, 4, ad->cpu_count);
+
    for (i = 0; i < ad->cpu_count; i++)
      {
         rec = evas_object_rectangle_add(evas_object_evas_get(parent));
@@ -468,10 +475,16 @@ _graph(Ui *ui, Evas_Object *parent)
         evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
         elm_table_pack(tbl, rec, 2, i, 1, 1);
 
+        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
+        elm_table_pack(tbl, rec, 3, i, 1, 1);
+
         lb = elm_label_add(parent);
         snprintf(buf, sizeof(buf), "<b><color=#fff>%i</></>", ad->cpu_order[i]);
         elm_object_text_set(lb, buf);
-        evas_object_size_hint_align_set(lb, 1.0, 0.5);
+        evas_object_size_hint_align_set(lb, 0.0, 0.5);
         evas_object_size_hint_weight_set(lb, 0.0, EXPAND);
         elm_table_pack(tbl, lb, 3, i, 1, 1);
         evas_object_show(lb);
