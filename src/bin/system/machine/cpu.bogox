@@ -357,10 +357,17 @@ system_cpu_n_temperature_get(int n)
 #if defined(__linux__)
    static int init = 0;
 
+   // This list is not exhastive by any means, if you have the
+   // hardware and can provide a better init, please do. WIP.
+   // Min max (where applicable)
    thermal_drv drivers[] = {
-      { "coretemp", _coretemp_init, 0, 100 },
-      { "k10temp", _generic_init, 0, 100 },
-      { "cpu_thermal", _generic_init, 0, 100 },
+      { "coretemp", _coretemp_init, 0, 90 },    /* Intel Coretemp */
+      { "k10temp", _generic_init, 0, 90 },       /* AMD K10 */
+      { "cpu_thermal", _generic_init, 0, 90 },   /* BCM2835/BCM2711 (RPI3/4) */
+      { "cup", _generic_init, 0, 100 },          /* RK3399 */
+      { "soc_thermal", _generic_init, 0, 100 },  /* RK3326 */
+      { "cpu0_thermal", _generic_init, 0, 100 }, /* AllWinner A64 */
+      { "soc_dts0", _generic_init, 0, 90 },      /* Intel Baytrail */
    };
 
    if (!init)
