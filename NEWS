@@ -11,6 +11,8 @@ Evisum 0.5.7
   * Move "misc" to "sensors".
   * Improve the "burger" menu icon.
   * Add CPU thermal zone support to the UI.
+  * CPU thermal support Linux (hwmon) and FreeBSD.
+  * Where possible display CPU core topology correctly.
   * Add "helper" overlay to the CPU view.
   * Move Linux thermal zone to the sysfs hwmon interface.
   * Undocumented fixes.
