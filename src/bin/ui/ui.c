@@ -577,9 +577,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    list = proc_info_all_get();
 
    if (ui->search_text && ui->search_text[0])
-     {
-        len = strlen(ui->search_text);
-     }
+     len = strlen(ui->search_text);
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
@@ -1638,42 +1636,18 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    _config_save(ui);
 }
 
-void
-evisum_ui_shutdown(Ui *ui)
+Eina_Bool
+evisum_ui_can_exit(Ui *ui)
 {
-   if (ui->thread_system)
-     ecore_thread_cancel(ui->thread_system);
-
-   if (ui->thread_process)
-     ecore_thread_cancel(ui->thread_process);
-
-   if (ui->thread_system)
-     ecore_thread_wait(ui->thread_system, 0.1);
-
-   if (ui->thread_process)
-     ecore_thread_wait(ui->thread_process, 0.1);
-
-   if (ui->cpu.win)
-     evas_object_smart_callback_call(ui->cpu.win, "delete,request", NULL);
-   if (ui->mem.win)
-     evas_object_smart_callback_call(ui->mem.win, "delete,request", NULL);
-   if (ui->disk.win)
-     evas_object_smart_callback_call(ui->disk.win, "delete,request", NULL);
-   if (ui->sensors.win)
-     evas_object_smart_callback_call(ui->sensors.win, "delete,request", NULL);
-   if (ui->win_about)
-     evas_object_smart_callback_call(ui->win_about, "delete,request", NULL);
-
-   ecore_main_loop_quit();
+   if (!ui->win && !ui->cpu.win && !ui->mem.win && !ui->sensors.win)
+     return 1;
+   return 0;
 }
 
 void
 evisum_ui_del(Ui *ui)
 {
    _proc_pid_cpu_times_free(ui);
-
-   if (ui->cache)
-     evisum_ui_item_cache_free(ui->cache);
 
    eina_lock_free(&_lock);
 
@@ -1774,7 +1748,32 @@ _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   evisum_ui_shutdown(ui);
+   evas_object_del(ui->win);
+
+   if (ui->thread_system)
+     ecore_thread_cancel(ui->thread_system);
+
+   if (ui->thread_process)
+     ecore_thread_cancel(ui->thread_process);
+
+   if (ui->thread_system)
+     ecore_thread_wait(ui->thread_system, 0.2);
+
+   if (ui->thread_process)
+     ecore_thread_wait(ui->thread_process, 0.2);
+
+   ui->thread_system = ui->thread_process = NULL;
+
+   ui->win = NULL;
+
+   if (ui->animator)
+     ecore_animator_del(ui->animator);
+
+   if (ui->cache)
+     evisum_ui_item_cache_free(ui->cache);
+
+   if (evisum_ui_can_exit(ui))
+     ecore_main_loop_quit();
 }
 
 void
@@ -1801,10 +1800,7 @@ ui_main_win_add(Ui *ui)
    evas_object_show(win);
 
    ui->win = win;
-   _process_list_update(ui);
-
    ecore_timer_add(2.0, _bring_in, ui);
-   elm_object_focus_set(ui->entry_search, EINA_TRUE);
 
    if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
      evisum_ui_background_random_add(ui->win, 1);
@@ -1813,6 +1809,8 @@ ui_main_win_add(Ui *ui)
 
    if (evisum_ui_effects_enabled_get())
      evisum_ui_animate(ui);
+
+   elm_object_focus_set(ui->entry_search, EINA_TRUE);
 
    ui->cache = evisum_ui_item_cache_new(ui->genlist_procs, _item_create, 50);
 
@@ -1833,6 +1831,7 @@ ui_main_win_add(Ui *ui)
                                   _evisum_search_keypress_cb, ui);
    ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
                            _elm_config_change_cb, ui);
+   _process_list_update(ui);
 }
 
 static void

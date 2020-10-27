@@ -4,8 +4,6 @@
  * See COPYING file for details.
  */
 
-#define DEVELOPMENT 1
-
 #include "config.h"
 #include "evisum_config.h"
 #include "evisum_server.h"

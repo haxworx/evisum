@@ -241,6 +241,9 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    evas_object_del(obj);
    ui->sensors.win = NULL;
+
+   if (evisum_ui_can_exit(ui))
+     ecore_main_loop_quit();
 }
 
 void

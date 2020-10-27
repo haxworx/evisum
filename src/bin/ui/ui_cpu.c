@@ -343,6 +343,9 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    free(ad->cpu_order);
    free(ad);
    ui->cpu.win = NULL;
+
+   if (evisum_ui_can_exit(ui))
+     ecore_main_loop_quit();
 }
 
 static void

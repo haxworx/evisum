@@ -122,8 +122,8 @@ evisum_ui_init(void);
 void
 evisum_ui_del(Ui *ui);
 
-void
-evisum_ui_shutdown(Ui *ui);
+Eina_Bool
+evisum_ui_can_exit(Ui *ui);
 
 void
 evisum_ui_activate(Ui *ui, Evisum_Action action, int pid);
