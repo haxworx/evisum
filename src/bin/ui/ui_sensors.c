@@ -30,9 +30,9 @@ _battery_usage_add(Evas_Object *box, power_t *power)
         elm_box_pack_end(vbox, label);
 
         if (power->have_ac && i == 0)
-          fmt = _("%s (plugged in)");
+          fmt = _("<color=#fff>%s (plugged in)</>");
         else
-          fmt = _("%s");
+          fmt = _("<color=#fff>%s</>");
 
         elm_object_text_set(label, eina_slstr_printf(fmt,
                         power->batteries[i]->name));
@@ -100,7 +100,7 @@ _sensor_usage_add(Evas_Object *box, sensor_t **sensors, int count)
         if (snsr->child_name)
           eina_strbuf_append_printf(name, " (%s)", snsr->child_name);
 
-        elm_object_text_set(label, eina_slstr_printf("%s",
+        elm_object_text_set(label, eina_slstr_printf("<color=#fff>%s</>",
                         eina_strbuf_string_get(name)));
         eina_strbuf_free(name);
 
