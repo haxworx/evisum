@@ -1112,8 +1112,8 @@ _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
      }
 
    _config_save(ui);
-   ecore_app_restart();
-   ecore_main_loop_quit();
+
+   evisum_restart();
 }
 
 static void
@@ -1838,6 +1838,14 @@ static void
 _ui_init_system_probe(Ui *ui)
 {
    ui->mem.zfs_mounted = file_system_in_use("ZFS");
+}
+
+void
+evisum_restart(void)
+{
+   evisum_server_shutdown();
+   ecore_app_restart();
+   ecore_main_loop_quit();
 }
 
 void

@@ -2,8 +2,6 @@
 #include "../system/process.h"
 #include "util.c"
 
-static Eina_Lock _lock;
-
 typedef struct {
    int     tid;
    char   *name;
@@ -286,8 +284,6 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
    Elm_Object_Item *it;
    Eina_List *l, *threads = NULL;
 
-   eina_lock_take(&_lock);
-
    if (!ui->hash_cpu_times)
      ui->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
 
@@ -338,7 +334,6 @@ _thread_info_set(Ui_Process *ui, Proc_Info *proc)
              it = elm_genlist_item_next_get(it);
           }
      }
-   eina_lock_release(&_lock);
 }
 
 static void
@@ -1235,8 +1230,6 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->cache)
      evisum_ui_item_cache_free(ui->cache);
 
-   eina_lock_free(&_lock);
-
    evas_object_del(win);
 
    free(ui);
@@ -1310,8 +1303,6 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_d
    evas_object_show(win);
 
    ui->cache = evisum_ui_item_cache_new(ui->genlist_threads, _item_create, 10);
-
-   eina_lock_new(&_lock);
 
    _proc_info_update(ui);
    _tree_view_update(ui);

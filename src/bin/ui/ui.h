@@ -128,4 +128,7 @@ evisum_ui_can_exit(Ui *ui);
 void
 evisum_ui_activate(Ui *ui, Evisum_Action action, int pid);
 
+void
+evisum_restart(void);
+
 #endif
