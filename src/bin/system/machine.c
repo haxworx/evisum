@@ -107,6 +107,19 @@ system_info_all_free(Sys_Info *info)
 }
 
 Sys_Info *
+system_info_basic_get(void)
+{
+   Sys_Info *info = calloc(1, sizeof(Sys_Info));
+   if (!info) return NULL;
+
+   info->cores = system_cpu_usage_get(&info->cpu_count);
+
+   system_memory_usage_get(&info->memory);
+
+   return info;
+}
+
+Sys_Info *
 system_info_all_get(void)
 {
    Sys_Info *info;

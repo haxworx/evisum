@@ -83,6 +83,9 @@ struct Sys_Info
 Sys_Info *
 system_info_all_get(void);
 
+Sys_Info *
+system_info_basic_get(void);
+
 void
 system_info_all_free(Sys_Info *);
 

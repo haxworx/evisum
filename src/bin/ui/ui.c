@@ -1661,7 +1661,7 @@ _system_info_all_poll(void *data, Ecore_Thread *thread)
 
    while (1)
      {
-        Sys_Info *info = system_info_all_get();
+        Sys_Info *info = system_info_basic_get();
         if (!info)
           {
              ecore_main_loop_quit();

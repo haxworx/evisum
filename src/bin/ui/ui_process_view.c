@@ -394,10 +394,7 @@ _tree_text_get(void *data, Evas_Object *obj, const char *part)
 static Evas_Object *
 _tree_icon_get(void *data, Evas_Object *obj, const char *part)
 {
-   Proc_Info *proc;
    Evas_Object *ic = elm_icon_add(obj);
-
-   proc = data;
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
