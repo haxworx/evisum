@@ -389,11 +389,23 @@ _tree_text_get(void *data, Evas_Object *obj, const char *part)
 static Evas_Object *
 _tree_icon_get(void *data, Evas_Object *obj, const char *part)
 {
+   Proc_Info *proc;
    Evas_Object *ic = elm_icon_add(obj);
+   proc = data;
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
-        elm_icon_standard_set(ic, evisum_icon_path_get("application"));
+        Efreet_Desktop *e = efreet_util_desktop_exec_find(proc->command);
+        if (!e)
+          elm_icon_standard_set(ic, evisum_icon_path_get("application"));
+        else
+          {
+             if (e->icon)
+               elm_icon_standard_set(ic, e->icon);
+             else
+               elm_icon_standard_set(ic, proc->command);
+             efreet_desktop_free(e);
+          }
      }
 
    evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
