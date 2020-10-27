@@ -361,6 +361,24 @@ _time_string(int64_t epoch)
    return strdup(buf);
 }
 
+static void
+_item_tree_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+   Ui_Process *ui;
+   Elm_Object_Item *it;
+   Proc_Info *proc;
+
+   ui = data;
+   it = event_info;
+
+   elm_genlist_item_selected_set(it, EINA_FALSE);
+
+   proc = elm_object_item_data_get(it);
+   if (!proc) return;
+
+   ui_process_win_add(ui->win, proc->pid, proc->command, 3);
+}
+
 static char *
 _tree_text_get(void *data, Evas_Object *obj, const char *part)
 
@@ -373,6 +391,33 @@ _tree_text_get(void *data, Evas_Object *obj, const char *part)
    return strdup(buf);
 }
 
+static Evas_Object *
+_tree_icon_get(void *data, Evas_Object *obj, const char *part)
+{
+   Proc_Info *proc;
+   Evas_Object *ic = elm_icon_add(obj);
+
+   proc = data;
+
+   if (!strcmp(part, "elm.swallow.icon"))
+     {
+        elm_icon_standard_set(ic, evisum_icon_path_get("application"));
+     }
+
+   evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
+
+   return ic;
+}
+
+static void
+_tree_del(void *data, Evas_Object *obj EINA_UNUSED)
+{
+   Proc_Info *proc = data;
+
+   eina_list_free(proc->children);
+   proc_info_free(proc);
+}
+
 static void
 _tree_populate(Evas_Object *genlist_tree, Elm_Object_Item *parent, Eina_List *children)
 {
@@ -383,10 +428,10 @@ _tree_populate(Evas_Object *genlist_tree, Elm_Object_Item *parent, Eina_List *ch
 
    itc = elm_genlist_item_class_new();
    itc->item_style = "default";
-   itc->func.content_get = NULL;
+   itc->func.content_get = _tree_icon_get;
    itc->func.text_get = _tree_text_get;
    itc->func.filter_get = NULL;
-   itc->func.del = NULL;
+   itc->func.del = _tree_del;
 
    EINA_LIST_FOREACH(children, l, child)
      {
@@ -416,9 +461,13 @@ _tree_view_update(void *data)
              break;
           }
      }
+
    elm_genlist_realized_items_update(ui->genlist_tree);
 
-   // XXX: free (tired now)...
+   child = eina_list_nth(children, 0);
+   if (child)
+     proc_info_free(child);
+
    return EINA_TRUE;
 }
 
@@ -944,10 +993,12 @@ _tree_tab_add(Evas_Object *parent, Ui_Process *ui)
    evas_object_data_set(genlist, "ui", ui);
    elm_object_focus_allow_set(genlist, EINA_FALSE);
    elm_genlist_homogeneous_set(genlist, EINA_TRUE);
-   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
+   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_DEFAULT);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_show(genlist);
+   evas_object_smart_callback_add(genlist, "selected",
+                   _item_tree_clicked_cb, ui);
 
    elm_box_pack_end(box, genlist);
 
