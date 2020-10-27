@@ -9,6 +9,8 @@ src += files([
    'main.c',
    'evisum_config.c',
    'evisum_config.h',
+   'evisum_server.c',
+   'evisum_server.h',
 ])
 
 executable('evisum', src,

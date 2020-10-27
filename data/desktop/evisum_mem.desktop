@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Memory
+GenericName=Monitor
+Exec=evisum -m
+Icon=evisum_mem
+Categories=System;Monitor;
+StartupWMClass=evisum

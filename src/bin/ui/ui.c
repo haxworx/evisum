@@ -1,4 +1,5 @@
 #include "config.h"
+#include "evisum_actions.h"
 #include "ui.h"
 #include "ui/ui_cpu.h"
 #include "ui/ui_memory.h"
@@ -1634,11 +1635,6 @@ _evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 evisum_ui_shutdown(Ui *ui)
 {
-   if (ui->state.shutdown_now)
-     exit(0);
-
-   evas_object_del(ui->win);
-
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
 
@@ -1646,10 +1642,10 @@ evisum_ui_shutdown(Ui *ui)
      ecore_thread_cancel(ui->thread_process);
 
    if (ui->thread_system)
-     ecore_thread_wait(ui->thread_system, 1.0);
+     ecore_thread_wait(ui->thread_system, 0.1);
 
    if (ui->thread_process)
-     ecore_thread_wait(ui->thread_process, 1.0);
+     ecore_thread_wait(ui->thread_process, 0.1);
 
    if (ui->cpu.win)
      evas_object_smart_callback_call(ui->cpu.win, "delete,request", NULL);
@@ -1767,12 +1763,46 @@ _elm_config_change_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 }
 
 static void
-_ui_launch(Ui *ui)
+_win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+            void *event_info EINA_UNUSED)
 {
+   Ui *ui = data;
+
+   evisum_ui_shutdown(ui);
+}
+
+void
+ui_main_win_add(Ui *ui)
+{
+   Evas_Object *win, *icon;
+
+   elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
+   win = elm_win_util_standard_add("evisum", "evisum");
+   icon = elm_icon_add(win);
+   elm_icon_standard_set(icon, "evisum");
+   elm_win_icon_object_set(win, icon);
+   evas_object_resize(win, EVISUM_WIN_WIDTH * elm_config_scale_get(),
+                   EVISUM_WIN_HEIGHT * elm_config_scale_get());
+   elm_win_title_set(win, _("EFL System Monitor"));
+   elm_win_center(win, EINA_TRUE, EINA_TRUE);
+   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   evas_object_show(win);
+
+   ui->win = win;
    _process_list_update(ui);
 
    ecore_timer_add(2.0, _bring_in, ui);
    elm_object_focus_set(ui->entry_search, EINA_TRUE);
+
+   if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
+     evisum_ui_background_random_add(ui->win, 1);
+
+   _ui_content_add(win, ui);
+
+   if (evisum_ui_effects_enabled_get())
+     evisum_ui_animate(ui);
+
+   ui->cache = evisum_ui_item_cache_new(ui->genlist_procs, _item_create, 50);
 
    ui->thread_system =
       ecore_thread_feedback_run(_system_info_all_poll,
@@ -1799,13 +1829,36 @@ _ui_init_system_probe(Ui *ui)
    ui->mem.zfs_mounted = file_system_in_use("ZFS");
 }
 
+void
+evisum_ui_activate(Ui *ui, Evisum_Action action)
+{
+   switch (action)
+     {
+       case EVISUM_ACTION_DEFAULT:
+       case EVISUM_ACTION_PROCESS:
+         ui_main_win_add(ui);
+         break;
+       case EVISUM_ACTION_CPU:
+         ui_win_cpu_add(ui);
+         break;
+       case EVISUM_ACTION_MEM:
+         ui_win_memory_add(ui);
+         break;
+       case EVISUM_ACTION_STORAGE:
+         ui_win_disk_add(ui);
+         break;
+       case EVISUM_ACTION_SENSORS:
+         ui_win_sensors_add(ui);
+         break;
+     }
+}
+
 static Ui *
-_ui_init(Evas_Object *parent)
+_ui_init(void)
 {
    Ui *ui = calloc(1, sizeof(Ui));
    if (!ui) return NULL;
 
-   ui->win = parent;
    ui->settings.poll_delay = 3;
    ui->settings.sort_reverse = EINA_FALSE;
    ui->settings.sort_type = SORT_BY_PID;
@@ -1821,28 +1874,16 @@ _ui_init(Evas_Object *parent)
 
    _config_load(ui);
 
-   if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
-     evisum_ui_background_random_add(ui->win, 1);
-
-   _ui_content_add(parent, ui);
-
-   if (evisum_ui_effects_enabled_get())
-     evisum_ui_animate(ui);
-
-   ui->cache = evisum_ui_item_cache_new(ui->genlist_procs, _item_create, 50);
-
    return ui;
 }
 
 Ui *
-evisum_ui_add(Evas_Object *parent)
+evisum_ui_init(void)
 {
    eina_lock_new(&_lock);
 
-   Ui *ui = _ui = _ui_init(parent);
+   Ui *ui = _ui = _ui_init();
    if (!ui) return NULL;
-
-   _ui_launch(ui);
 
    return ui;
 }

@@ -6,6 +6,7 @@
 #include "system/machine.h"
 #include "system/process.h"
 #include "../evisum_config.h"
+#include "../evisum_server.h"
 #include "ui/ui_util.h"
 #include "ui/ui_cache.h"
 
@@ -116,12 +117,15 @@ typedef struct Ui
 } Ui;
 
 Ui *
-evisum_ui_add(Evas_Object *win);
+evisum_ui_init(void);
 
 void
 evisum_ui_del(Ui *ui);
 
 void
 evisum_ui_shutdown(Ui *ui);
+
+void
+evisum_ui_activate(Ui *ui, Evisum_Action action);
 
 #endif
