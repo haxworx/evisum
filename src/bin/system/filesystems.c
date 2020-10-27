@@ -170,7 +170,7 @@ File_System *
 file_system_info_get(const char *path)
 {
    File_System *fs;
-   const char *mountpoint;
+   char *mountpoint;
    struct statfs stats;
 
    mountpoint = disk_mount_point_get(path);
@@ -180,7 +180,7 @@ file_system_info_get(const char *path)
      return NULL;
 
    fs = calloc(1, sizeof(File_System));
-   fs->mount = strdup(mountpoint);
+   fs->mount = mountpoint;
    fs->path  = strdup(path);
 
 #if defined(__OpenBSD__)
