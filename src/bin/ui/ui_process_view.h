@@ -9,16 +9,19 @@ typedef struct _Ui_Process {
    Evas_Object  *content;
 
    Evas_Object  *btn_main;
+   Evas_Object  *btn_tree;
    Evas_Object  *btn_info;
    Evas_Object  *btn_thread;
 
    Evas_Object  *main_view;
+   Evas_Object  *tree_view;
    Evas_Object  *info_view;
    Evas_Object  *thread_view;
 
    Evas_Object  *entry_info;
 
    Evas_Object     *genlist_threads;
+   Evas_Object     *genlist_tree;
    Evisum_Ui_Cache *cache;
 
    Evas_Object  *entry_pid_cmd;

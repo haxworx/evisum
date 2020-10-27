@@ -926,23 +926,29 @@ _item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it,
 }
 
 static void
+_process_win_add(Evas_Object *parent, int pid, int delay)
+{
+   Proc_Info *proc;
+
+   proc = proc_info_by_pid(pid);
+   if (!proc) return;
+
+   ui_process_win_add(parent, proc->pid, proc->command, delay);
+
+   proc_info_free(proc);
+}
+
+static void
 _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
    Ui *ui;
-   Proc_Info *proc;
 
    ui = data;
 
    _item_menu_cancel_cb(ui, NULL, NULL);
 
-   proc = proc_info_by_pid(ui->selected_pid);
-   if (!proc) return;
-
-   ui_process_win_add(ui->win, proc->pid, proc->command,
-                      ui->settings.poll_delay);
-
-   proc_info_free(proc);
+   _process_win_add(ui->win, ui->selected_pid, ui->settings.poll_delay);
 }
 
 static Evas_Object *
@@ -1830,13 +1836,15 @@ _ui_init_system_probe(Ui *ui)
 }
 
 void
-evisum_ui_activate(Ui *ui, Evisum_Action action)
+evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
 {
    switch (action)
      {
        case EVISUM_ACTION_DEFAULT:
-       case EVISUM_ACTION_PROCESS:
          ui_main_win_add(ui);
+         break;
+       case EVISUM_ACTION_PROCESS:
+         _process_win_add(NULL, pid, 3);
          break;
        case EVISUM_ACTION_CPU:
          ui_win_cpu_add(ui);

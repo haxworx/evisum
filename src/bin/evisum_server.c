@@ -27,12 +27,15 @@ _evisum_server_server_client_connect_cb(void *data EINA_UNUSED, int type EINA_UN
    Ecore_Con_Event_Client_Data *ev;
    Evisum_Action *action;
    Ui *ui;
+   int *pid;
 
    ev = event;
    action = ev->data;
    ui = data;
 
-   evisum_ui_activate(ui, *action);
+   pid = ev->data + sizeof(int);
+
+   evisum_ui_activate(ui, *action, *pid);
 
    ecore_con_client_del(ev->client);
 
@@ -69,6 +72,7 @@ evisum_server_init(void *data)
 typedef struct _Evisum_Server_Client {
    Ecore_Con_Server *srv;
    Evisum_Action     action;
+   int               pid;
    Eina_Bool         success;
 } Evisum_Server_Client;
 
@@ -120,13 +124,14 @@ _evisum_server_client_connect_cb(void *data, int type EINA_UNUSED, void *event E
    if (client->srv != srv) return ECORE_CALLBACK_RENEW;
 
    ecore_con_server_send(srv, &client->action, sizeof(Evisum_Action));
+   ecore_con_server_send(srv, &client->pid, sizeof(int));
    ecore_con_server_flush(srv);
 
    return ECORE_CALLBACK_DONE;
 }
 
 Eina_Bool
-evisum_server_client_add(Evisum_Action action)
+evisum_server_client_add(Evisum_Action action, int pid)
 {
    Evisum_Server_Client *client;
    Ecore_Con_Server *srv = ecore_con_server_connect(ECORE_CON_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
@@ -139,6 +144,7 @@ evisum_server_client_add(Evisum_Action action)
    if (!client) return EINA_FALSE;
 
    client->action = action;
+   client->pid = pid;
    client->srv = srv;
 
    ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ADD, _evisum_server_client_connect_cb, client);

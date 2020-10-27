@@ -126,6 +126,6 @@ void
 evisum_ui_shutdown(Ui *ui);
 
 void
-evisum_ui_activate(Ui *ui, Evisum_Action action);
+evisum_ui_activate(Ui *ui, Evisum_Action action, int pid);
 
 #endif

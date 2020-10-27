@@ -11,6 +11,6 @@ void
 evisum_server_shutdown(void);
 
 Eina_Bool
-evisum_server_client_add(Evisum_Action action);
+evisum_server_client_add(Evisum_Action action, int pid);
 
 #endif

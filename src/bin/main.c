@@ -15,7 +15,7 @@ int
 main(int argc, char **argv)
 {
    Ui *ui;
-   int i;
+   int i, pid = -1;
    Evisum_Action action = EVISUM_ACTION_DEFAULT;
 
    for (i = 0; i < argc; i++)
@@ -35,6 +35,11 @@ main(int argc, char **argv)
           action = EVISUM_ACTION_STORAGE;
         else if (!strcmp(argv[i], "-s"))
           action = EVISUM_ACTION_SENSORS;
+        else if (!strcmp(argv[i], "-p") && i < (argc -1))
+          {
+             action = EVISUM_ACTION_PROCESS;
+             pid = atoi(argv[i+1]);
+          }
      }
 
    eina_init();
@@ -49,7 +54,7 @@ main(int argc, char **argv)
    textdomain(PACKAGE);
 #endif
 
-   if (evisum_server_client_add(action))
+   if (evisum_server_client_add(action, pid))
      {
        ecore_main_loop_begin();
        return 0;
@@ -59,7 +64,7 @@ main(int argc, char **argv)
    if (!ui) return 1;
 
    evisum_server_init(ui);
-   evisum_ui_activate(ui, action);
+   evisum_ui_activate(ui, action, pid);
 
    ecore_main_loop_begin();
 
