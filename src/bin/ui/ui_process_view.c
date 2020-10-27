@@ -634,7 +634,8 @@ _process_tab_add(Evas_Object *parent, Ui_Process *ui)
    int r, g, b, a;
 
    frame = elm_frame_add(parent);
-   elm_object_text_set(frame, _("General"));
+   //elm_object_text_set(frame, _("General"));
+   elm_object_style_set(frame, "pad_small");
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    evas_object_show(frame);
@@ -881,7 +882,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Process *ui)
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("Threads"));
+   elm_object_style_set(frame, "pad_small");
 
    if (evisum_ui_effects_enabled_get())
      {
@@ -975,7 +976,7 @@ _tree_tab_add(Evas_Object *parent, Ui_Process *ui)
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("Children"));
+   elm_object_style_set(frame, "pad_small");
 
    if (evisum_ui_effects_enabled_get())
      {
@@ -1014,7 +1015,7 @@ _info_tab_add(Evas_Object *parent, Ui_Process *ui)
    frame = elm_frame_add(parent);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("Documentation"));
+   elm_object_style_set(frame, "pad_small");
 
    if (evisum_ui_effects_enabled_get())
      {
