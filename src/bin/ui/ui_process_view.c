@@ -456,6 +456,8 @@ _tree_view_update(void *data)
    Proc_Info *child;
    Ui_Process *ui = data;
 
+   if (ui->selected_pid == 0) return EINA_FALSE;
+
    children = proc_info_pid_children_get(ui->selected_pid);
    EINA_LIST_FOREACH(children, l, child)
      {
