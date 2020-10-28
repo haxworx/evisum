@@ -367,6 +367,8 @@ _icon_cache_find(Ui *ui, const char *cmd)
    exists = eina_hash_find(ui->icon_cache, cmd);
    if (exists) return exists;
 
+   if (!strncmp(cmd, "enlightenment", 13)) return "e";
+
    e = efreet_util_desktop_exec_find(cmd);
    if (!e)
      return "application";
