@@ -54,6 +54,7 @@ typedef struct Ui
    Evas_Object     *btn_cpu_usage;
 
    Evisum_Ui_Cache *cache;
+   Eina_Hash       *icon_cache;
    Evas_Object     *genlist_procs;
    Evas_Object     *entry_search;
 
@@ -113,6 +114,8 @@ typedef struct Ui
       Eina_Bool  sort_reverse;
       Eina_Bool  show_self;
       Eina_Bool  show_kthreads;
+      Eina_Bool  show_user;
+      Eina_Bool  show_desktop;
    } settings;
 } Ui;
 
