@@ -422,6 +422,10 @@ _item_create(Evas_Object *parent)
    evas_object_show(label);
    elm_box_pack_end(hbx, label);
 
+   rect = evas_object_rectangle_add(table);
+   evas_object_size_hint_min_set(rect, 4, 1);
+   elm_box_pack_end(hbx, rect);
+
    label =_item_column_add(table, "proc_uid", i++);
    evas_object_size_hint_align_set(label, 0.0, FILL);
    label = _item_column_add(table, "proc_pid", i++);
