@@ -7,6 +7,7 @@
 
 static Eina_Bool _effects_enabled = EINA_FALSE;
 static Eina_Bool _backgrounds_enabled = EINA_FALSE;
+static Eina_Hash *_icon_cache = NULL;
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
@@ -147,6 +148,54 @@ _path_append(const char *path, const char *file)
    snprintf(concat, len, "%s%c%s", path, separator, file);
 
    return concat;
+}
+
+void
+_icon_cache_free_cb(void *data)
+{
+   char *ic_name = data;
+
+   free(ic_name);
+}
+
+void
+evisum_icon_cache_init(void)
+{
+   _icon_cache = eina_hash_string_superfast_new(_icon_cache_free_cb);
+}
+
+void
+evisum_icon_cache_shutdown(void)
+{
+   eina_hash_free(_icon_cache);
+}
+
+const char *
+evisum_icon_cache_find(const char *cmd)
+{
+   Efreet_Desktop *e;
+   const char *name;
+   char *exists;
+
+   exists = eina_hash_find(_icon_cache, cmd);
+   if (exists) return exists;
+
+   if (!strncmp(cmd, "enlightenment", 13)) return "e";
+
+   e = efreet_util_desktop_exec_find(cmd);
+   if (!e)
+     return "application";
+
+   if (e->icon)
+     name = e->icon;
+   else
+     name = cmd;
+
+   eina_hash_add(_icon_cache, cmd, strdup(name));
+
+   efreet_desktop_free(e);
+
+   return name;
 }
 
 const char *

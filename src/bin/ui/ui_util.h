@@ -16,7 +16,14 @@
 #define MISC_MAX_WIDTH      350
 #define MISC_MIN_WIDTH      340
 
-#define TEXT_PAD "   "
+void
+evisum_icon_cache_init(void);
+
+void
+evisum_icon_cache_shutdown(void);
+
+const char *
+evisum_icon_cache_find(const char *cmd);
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,

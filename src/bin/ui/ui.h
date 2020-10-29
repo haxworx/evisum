@@ -54,7 +54,6 @@ typedef struct Ui
    Evas_Object     *btn_cpu_usage;
 
    Evisum_Ui_Cache *cache;
-   Eina_Hash       *icon_cache;
    Evas_Object     *genlist_procs;
    Evas_Object     *entry_search;
 
@@ -130,6 +129,9 @@ evisum_ui_can_exit(Ui *ui);
 
 void
 evisum_ui_activate(Ui *ui, Evisum_Action action, int pid);
+
+const char *
+evisum_ui_icon_cache_find(Ui *ui, const char *cmd);
 
 void
 evisum_restart(void);

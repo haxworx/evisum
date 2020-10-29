@@ -395,17 +395,7 @@ _tree_icon_get(void *data, Evas_Object *obj, const char *part)
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
-        Efreet_Desktop *e = efreet_util_desktop_exec_find(proc->command);
-        if (!e)
-          elm_icon_standard_set(ic, evisum_icon_path_get("application"));
-        else
-          {
-             if (e->icon)
-               elm_icon_standard_set(ic, e->icon);
-             else
-               elm_icon_standard_set(ic, proc->command);
-             efreet_desktop_free(e);
-          }
+        elm_icon_standard_set(ic, evisum_icon_path_get(evisum_icon_cache_find(proc->command)));
      }
 
    evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);

@@ -349,41 +349,6 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
      }
 }
 
-static void
-_icon_cache_free_cb(void *data)
-{
-   char *ic_name = data;
-
-   free(ic_name);
-}
-
-static const char *
-_icon_cache_find(Ui *ui, const char *cmd)
-{
-   Efreet_Desktop *e;
-   const char *name;
-   char *exists;
-
-   exists = eina_hash_find(ui->icon_cache, cmd);
-   if (exists) return exists;
-
-   if (!strncmp(cmd, "enlightenment", 13)) return "e";
-
-   e = efreet_util_desktop_exec_find(cmd);
-   if (!e)
-     return "application";
-
-   if (e->icon)
-     name = e->icon;
-   else
-     name = cmd;
-
-   eina_hash_add(ui->icon_cache, cmd, strdup(name));
-
-   efreet_desktop_free(e);
-
-   return name;
-}
 
 static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
@@ -516,7 +481,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    l = evas_object_data_get(it->obj, "proc_uid");
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
-     elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s%s</>", TEXT_PAD, pwd_entry->pw_name));
+     elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s</>", pwd_entry->pw_name));
    else
      elm_object_text_set(l, eina_slstr_printf("<color=#fff>%d</>", proc->uid));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
@@ -545,7 +510,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(ui->btn_cmd, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cmd");
-   elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s%s</>", TEXT_PAD, proc->command));
+   elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s</>", proc->command));
    hbx = evas_object_data_get(l, "hbox");
    evas_object_geometry_get(hbx, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(ui->btn_cmd, w, 1);
@@ -554,7 +519,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(l);
 
    o = evas_object_data_get(it->obj, "icon");
-   elm_icon_standard_set(o, evisum_icon_path_get(_icon_cache_find(ui, proc->command)));
+   elm_icon_standard_set(o, evisum_icon_path_get(evisum_icon_cache_find(proc->command)));
    r = evas_object_data_get(o, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(o);
@@ -1082,7 +1047,8 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
 
    stopped = !(!strcmp(proc->state, "stop"));
 
-   menu_it = elm_menu_item_add(menu, NULL, evisum_icon_path_get(_icon_cache_find(ui, proc->command)),
+   menu_it = elm_menu_item_add(menu, NULL,
+                               evisum_icon_path_get(evisum_icon_cache_find(proc->command)),
                                proc->command, NULL, NULL);
 
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
@@ -1796,16 +1762,6 @@ evisum_ui_can_exit(Ui *ui)
    return 0;
 }
 
-void
-evisum_ui_del(Ui *ui)
-{
-   _proc_pid_cpu_times_free(ui);
-
-   eina_lock_free(&_lock);
-
-   free(ui);
-}
-
 static void
 _system_info_all_poll(void *data, Ecore_Thread *thread)
 {
@@ -1924,9 +1880,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    if (ui->cache)
      evisum_ui_item_cache_free(ui->cache);
 
-   if (ui->icon_cache)
-     eina_hash_free(ui->icon_cache);
-
    if (evisum_ui_can_exit(ui))
      ecore_main_loop_quit();
 }
@@ -1973,8 +1926,6 @@ ui_main_win_add(Ui *ui)
    elm_object_focus_set(ui->entry_search, EINA_TRUE);
 
    ui->cache = evisum_ui_item_cache_new(ui->genlist_procs, _item_create, 50);
-
-   ui->icon_cache = eina_hash_string_superfast_new(_icon_cache_free_cb);
 
    ui->thread_system =
       ecore_thread_feedback_run(_system_info_all_poll,
@@ -2036,6 +1987,18 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
      }
 }
 
+void
+evisum_ui_del(Ui *ui)
+{
+   _proc_pid_cpu_times_free(ui);
+
+   evisum_icon_cache_shutdown();
+
+   eina_lock_free(&_lock);
+
+   free(ui);
+}
+
 static Ui *
 _ui_init(void)
 {
@@ -2049,6 +2012,8 @@ _ui_init(void)
    ui->program_pid = getpid();
    ui->cpu_times = NULL;
    ui->cpu_list = NULL;
+
+   evisum_icon_cache_init();
 
    _ui_init_system_probe(ui);
 
