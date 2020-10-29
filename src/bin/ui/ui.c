@@ -408,6 +408,10 @@ _item_create(Evas_Object *parent)
    elm_table_pack(table, hbx, i, 0, 1, 1);
 
    rect = evas_object_rectangle_add(table);
+   evas_object_size_hint_min_set(rect, 6, 1);
+   elm_box_pack_end(hbx, rect);
+
+   rect = evas_object_rectangle_add(table);
    evas_object_data_set(ic, "rect", rect);
    elm_table_pack(table, rect, i++, 0, 1, 1);
 
