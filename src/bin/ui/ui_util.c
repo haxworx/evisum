@@ -280,7 +280,6 @@ typedef struct {
    Ui             *ui;
    Evas_Object    *label;
    Evas_Object    *win;
-   Evas_Object    *version;
    Evas_Object    *bg;
    Evas_Object    *im;
    Ecore_Animator *animator;
@@ -373,12 +372,12 @@ evisum_about_window_show(void *data)
 {
    Ui *ui;
    Animate_Data *about;
-   Evas_Object *win, *bg, *box, *version, *label, *btn, *im;
+   Evas_Object *win, *bg, *tbl, *version, *label, *btn, *im;
+   Evas_Object *hbx, *rec, *br;
    Evas_Coord x, y, w, h;
    Evas_Coord iw, ih;
    const char *copyright =
       "<font color=#ffffff>"
-      "<small>"
       "<b>"
       "Copyright &copy; 2019-2020 Alastair Poole &lt;netstar@gmail.com&gt;<br>"
       "<br>"
@@ -396,15 +395,16 @@ evisum_about_window_show(void *data)
       "FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF <br>"
       "CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT <br>"
       "OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS <br>"
-      "SOFTWARE.<br>"
-      "</small>";
+      "SOFTWARE.<br></></>";
 
    ui = data;
 
    if (ui->win_about) return;
 
-   ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_BASIC);
-   elm_win_title_set(win, "About Evisum");
+   ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
+   elm_win_title_set(win, _("About"));
+
+   /* All that moves */
 
    bg = elm_bg_add(win);
    evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
@@ -415,19 +415,15 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_min_set(bg, 320 * elm_config_scale_get(),
                    320 * elm_config_scale_get());
 
-   box = elm_box_add(win);
-   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_show(box);
+   tbl = elm_table_add(win);
+   evas_object_show(tbl);
+   elm_win_resize_object_add(tbl, win);
+   elm_table_align_set(tbl, 0, 0);
 
    label = elm_label_add(win);
+   evas_object_size_hint_align_set(label, 0.0, 0.5);
+   evas_object_size_hint_weight_set(label, EXPAND, 0);
    elm_object_text_set(label, copyright);
-
-   version = elm_label_add(win);
-   evas_object_show(version);
-   elm_object_text_set(version,
-                   eina_slstr_printf("<font color=#ffffff><b>%s</b>",
-                   PACKAGE_VERSION));
 
    evas_object_geometry_get(win, &x, &y, &w, &h);
 
@@ -443,28 +439,70 @@ evisum_about_window_show(void *data)
    about->win = win;
    about->bg = bg;
    about->label = label;
-   about->version = version;
    about->pos = elm_config_scale_get() * 320;
    about->ui = ui;
    about->im = im;
    about->pos2 = h + ih + ih;
    about->im_upwards = 1;
    about->animator = ecore_animator_add(about_anim, about);
-
-   btn = elm_button_add(win);
-   evas_object_size_hint_align_set(btn, 0.5, 0.9);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   elm_object_text_set(btn, _("Close"));
-   evas_object_show(btn);
-
-   evas_object_smart_callback_add(btn, "clicked", _win_del_cb, about);
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, about);
    evas_object_smart_callback_add(win, "resize", _about_resize_cb, about);
 
-   elm_box_pack_end(box, version);
-   elm_box_pack_end(box, label);
-   elm_box_pack_end(box, btn);
-   elm_object_content_set(win, box);
+   /* Version overlay */
+
+   hbx = elm_box_add(win);
+   elm_box_horizontal_set(hbx, 1);
+   evas_object_size_hint_align_set(hbx, FILL, 0.5);
+   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+   evas_object_show(hbx);
+
+   version = elm_label_add(win);
+   evas_object_size_hint_weight_set(version, EXPAND, 0);
+   evas_object_size_hint_align_set(version, 0.1, 0.5);
+   evas_object_show(version);
+   elm_object_text_set(version,
+                   eina_slstr_printf("<font color=#ffffff><b>Evisum (%s)</b>",
+                   PACKAGE_VERSION));
+
+   br = elm_table_add(win);
+   evas_object_size_hint_weight_set(br, EXPAND, 0);
+   evas_object_size_hint_align_set(br, 0.9, 0.5);
+   evas_object_show(br);
+
+   rec = evas_object_rectangle_add(evas_object_evas_get(win));
+   evas_object_size_hint_align_set(rec, FILL, FILL);
+   evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+   evas_object_size_hint_min_set(rec, 92, 1);
+
+   btn = elm_button_add(win);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("Close"));
+   evas_object_show(btn);
+   elm_table_pack(br, btn, 0, 0, 1, 1);
+   elm_table_pack(br, rec, 0, 0, 1, 1);
+
+   rec = evas_object_rectangle_add(evas_object_evas_get(win));
+   evas_object_size_hint_align_set(rec, FILL, FILL);
+   evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+
+   elm_box_pack_end(hbx, version);
+   elm_box_pack_end(hbx, rec);
+   elm_box_pack_end(hbx, br);
+
+   rec = evas_object_rectangle_add(evas_object_evas_get(win));
+   evas_object_size_hint_align_set(rec, FILL, FILL);
+   evas_object_size_hint_min_set(rec, 320 * elm_config_scale_get(), 64);
+   evas_object_color_set(rec, 0, 0, 0, 128);
+   evas_object_show(rec);
+
+   evas_object_smart_callback_add(btn, "clicked", _win_del_cb, about);
+
+   elm_table_pack(tbl, label, 0, 1, 1, 1);
+   elm_table_pack(tbl, im, 0, 1, 1, 1);
+   elm_table_pack(tbl, rec, 0, 0, 1, 1);
+   elm_table_pack(tbl, hbx, 0, 0, 1, 1);
+   elm_object_content_set(win, tbl);
 
    evas_object_show(win);
 }
