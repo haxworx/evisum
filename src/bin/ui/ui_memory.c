@@ -7,6 +7,7 @@ typedef struct  {
    Evas_Object  *buffered;
    Evas_Object  *shared;
    Evas_Object  *swap;
+   Evas_Object  *video[MEM_VIDEO_CARD_MAX];
 } Widgets;
 
 static Evas_Object *
@@ -40,6 +41,7 @@ _memory_update(void *data)
    Evas_Object *pb;
    double ratio, value;
    meminfo_t memory;
+   int i;
 
    memset(&memory, 0, sizeof(memory));
    system_memory_usage_get(&memory);
@@ -88,10 +90,15 @@ _memory_update(void *data)
    pb = widgets->swap;
    if (memory.swap_total)
      {
+        elm_object_disabled_set(pb, EINA_FALSE);
         ratio = memory.swap_total / 100.0;
         value = memory.swap_used / ratio;
      }
-   else value = 0.0;
+   else
+     {
+        elm_object_disabled_set(pb, EINA_TRUE);
+        value = 0.0;
+     }
 
    elm_progressbar_value_set(pb, value / 100);
    elm_progressbar_unit_format_set(pb,
@@ -99,6 +106,20 @@ _memory_update(void *data)
                    evisum_size_format(memory.swap_used),
                    evisum_size_format(memory.swap_total)));
 
+   for (i = 0; i < memory.video_count; i++)
+     {
+        pb = widgets->video[i];
+        if (!pb) break;
+        if (memory.video[i].total) elm_object_disabled_set(pb, EINA_FALSE);
+        else elm_object_disabled_set(pb, EINA_TRUE);
+        ratio = memory.video[i].total / 100.0;
+        value = memory.video[i].used / ratio;
+        elm_progressbar_value_set(pb, value / 100);
+        elm_progressbar_unit_format_set(pb,
+                        eina_slstr_printf("%s / %s",
+                        evisum_size_format(memory.video[i].used),
+                        evisum_size_format(memory.video[i].total)));
+     }
    return EINA_TRUE;
 }
 
@@ -127,6 +148,8 @@ ui_win_memory_add(Ui *ui)
 {
    Evas_Object *win, *frame, *pb;
    Evas_Object *border, *rect, *label, *table;
+   int i;
+   meminfo_t memory;
 
    if (ui->mem.win)
      {
@@ -136,6 +159,9 @@ ui_win_memory_add(Ui *ui)
 
    Widgets *widgets = calloc(1, sizeof(Widgets));
    if (!widgets) return;
+
+   memset(&memory, 0, sizeof(memory));
+   system_memory_usage_get(&memory);
 
    ui->mem.win = win = elm_win_util_standard_add("evisum",
                    _("Memory Usage"));
@@ -156,30 +182,38 @@ ui_win_memory_add(Ui *ui)
    elm_table_padding_set(table, 8, 2);
    evas_object_show(table);
 
-   label = _label_mem(table, _("<color=#fff>Used</>"));
+   label = _label_mem(table, _("Used"));
    widgets->used = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 0, 1, 1);
    elm_table_pack(table, pb, 1, 0, 1, 1);
 
-   label = _label_mem(table, _("<color=#fff>Cached</>"));
+   label = _label_mem(table, _("Cached"));
    widgets->cached = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 1, 1, 1);
    elm_table_pack(table, pb, 1, 1, 1, 1);
 
-   label = _label_mem(table, _("<color=#fff>Buffered</>"));
+   label = _label_mem(table, _("Buffered"));
    widgets->buffered = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 2, 1, 1);
    elm_table_pack(table, pb, 1, 2, 1, 1);
 
-   label = _label_mem(table, _("<color=#fff>Shared</>"));
+   label = _label_mem(table, _("Shared"));
    widgets->shared = pb = _progress_add(table);
    elm_table_pack(table, label, 0, 3, 1, 1);
    elm_table_pack(table, pb, 1, 3, 1, 1);
 
-   label = _label_mem(table, _("<color=#fff>Swapped</>"));
+   label = _label_mem(table, _("Swapped"));
    widgets->swap = pb = _progress_add(frame);
    elm_table_pack(table, label, 0, 4, 1, 1);
    elm_table_pack(table, pb, 1, 4, 1, 1);
+
+   for (i = 0; i < memory.video_count; i++)
+     {
+        label = _label_mem(table, _("Video"));
+        widgets->video[i] = pb = _progress_add(frame);
+        elm_table_pack(table, label, 0, 5 + i, 1, 1);
+        elm_table_pack(table, pb, 1, 5 + i, 1, 1);
+     }
 
    border = elm_frame_add(win);
    elm_object_style_set(border, "pad_small");

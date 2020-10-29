@@ -17,6 +17,15 @@ typedef struct
    float         percent;
 } cpu_core_t;
 
+// Will anyone have more than 8 vdrm/video card devices?
+#define MEM_VIDEO_CARD_MAX 8
+
+typedef struct
+{
+   uint64_t total;
+   uint64_t used;
+} meminfo_video_t;
+
 typedef struct
 {
    uint64_t total;
@@ -28,6 +37,9 @@ typedef struct
    uint64_t swap_used;
 
    uint64_t zfs_arc_used;
+
+   uint64_t        video_count;
+   meminfo_video_t video[MEM_VIDEO_CARD_MAX];
 } meminfo_t;
 
 typedef struct
