@@ -334,6 +334,7 @@ about_anim(void *data)
    evas_object_show(ad->label);
 
    ad->pos--;
+
    if (ad->pos <= -oh) ad->pos = h;
 
    if (!(t % 20)) begin = 1;
@@ -430,8 +431,8 @@ evisum_about_window_show(void *data)
    im = evas_object_image_filled_add(evas_object_evas_get(bg));
    evas_object_image_file_set(im, evisum_icon_path_get("lovethisdogharvey"), NULL);
    evas_object_image_size_get(im, &iw, &ih);
-   evas_object_size_hint_min_set(im, iw, ih);
-   evas_object_resize(im, iw, ih);
+   evas_object_size_hint_min_set(im, iw / 2, ih / 2);
+   evas_object_resize(im, iw / 2, ih / 2);
    evas_object_move(im, iw / 3, h + ih + ih);
    evas_object_pass_events_set(im, 1);
 
@@ -461,7 +462,7 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_align_set(version, 0.1, 0.5);
    evas_object_show(version);
    elm_object_text_set(version,
-                   eina_slstr_printf("<font color=#ffffff><b>Evisum (%s)</b>",
+                   eina_slstr_printf("<font color=#ffffff><big>%s</>",
                    PACKAGE_VERSION));
 
    br = elm_table_add(win);
