@@ -13,6 +13,7 @@
 #include "src/bin/ui/ui_sensors.h"
 
 #define LISTEN_SOCKET_NAME "evisum_server"
+#define WANTED "bonjour monde"
 
 typedef struct _Evisum_Server {
    Ecore_Event_Handler *handler;
@@ -35,9 +36,10 @@ _evisum_server_server_client_connect_cb(void *data EINA_UNUSED, int type EINA_UN
 
    pid = ev->data + sizeof(int);
 
-   evisum_ui_activate(ui, *action, *pid);
+   ecore_con_client_send(ev->client, WANTED, strlen(WANTED));
+   ecore_con_client_flush(ev->client);
 
-   ecore_con_client_del(ev->client);
+   evisum_ui_activate(ui, *action, *pid);
 
    return ECORE_CALLBACK_RENEW;
 }
@@ -77,7 +79,7 @@ typedef struct _Evisum_Server_Client {
 } Evisum_Server_Client;
 
 static Eina_Bool
-_evisum_server_client_closed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
+_evisum_server_client_done_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Ecore_Con_Event_Server_Del *ev;
    Evisum_Server_Client *client = data;
@@ -86,25 +88,24 @@ _evisum_server_client_closed_cb(void *data, int type EINA_UNUSED, void *event EI
 
    if (client->srv != ev->server) return ECORE_CALLBACK_RENEW;
 
-   client->success = EINA_TRUE;
+   ecore_main_loop_quit();
 
    return ECORE_CALLBACK_DONE;
 }
 
 static Eina_Bool
-_evisum_server_client_check_timer_cb(void *data EINA_UNUSED)
+_evisum_server_client_data_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
-   Evisum_Server_Client *client;
-   static double total = 0.0;
+   Ecore_Con_Server *srv;
+   Ecore_Con_Event_Server_Data *ev;
+   Evisum_Server_Client *client = data;
 
-   client = data;
-   total += 0.1;
+   ev = event;
+   srv = ev->server;
 
-   if (total < 1.0)
-     return ECORE_CALLBACK_RENEW;
+   if (client->srv != srv) return ECORE_CALLBACK_RENEW;
 
-   free(client);
-
+   client->success = 1;
    ecore_main_loop_quit();
 
    return ECORE_CALLBACK_DONE;
@@ -134,11 +135,11 @@ Eina_Bool
 evisum_server_client_add(Evisum_Action action, int pid)
 {
    Evisum_Server_Client *client;
+   Eina_Bool ok;
+
    Ecore_Con_Server *srv = ecore_con_server_connect(ECORE_CON_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
    if (!srv)
-     {
-        return EINA_FALSE;
-     }
+     return EINA_FALSE;
 
    client = calloc(1, sizeof(Evisum_Server_Client));
    if (!client) return EINA_FALSE;
@@ -148,9 +149,15 @@ evisum_server_client_add(Evisum_Action action, int pid)
    client->srv = srv;
 
    ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ADD, _evisum_server_client_connect_cb, client);
-   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DEL, _evisum_server_client_closed_cb, client);
-   ecore_timer_add(0.1, _evisum_server_client_check_timer_cb, client);
+   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DEL, _evisum_server_client_done_cb, client);
+   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ERROR, _evisum_server_client_done_cb, client);
+   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DATA, _evisum_server_client_data_cb, client);
 
-   return EINA_TRUE;
+   ecore_main_loop_begin();
+
+   ok = client->success;
+   free(client);
+
+   return ok;
 }
 

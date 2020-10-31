@@ -53,10 +53,7 @@ main(int argc, char **argv)
 #endif
 
    if (evisum_server_client_add(action, pid))
-     {
-       ecore_main_loop_begin();
-       return 0;
-     }
+     return 0;
 
    ui = evisum_ui_init();
    if (!ui) return 1;
