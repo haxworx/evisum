@@ -1,7 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=Memory
-GenericName=Monitor
+Name=Memory Activity
 Exec=evisum -m
 Icon=evisum_mem
 Categories=System;Monitor;

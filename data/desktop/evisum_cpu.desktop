@@ -1,7 +1,6 @@
 [Desktop Entry]
 Type=Application
-Name=CPU
-GenericName=Monitor
+Name=CPU Activity
 Exec=evisum -c
 Icon=evisum_cpu
 Categories=System;Monitor;
