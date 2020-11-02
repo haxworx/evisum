@@ -1364,7 +1364,7 @@ _main_menu_create(Ui *ui, Evas_Object *btn)
    chk = elm_check_add(bx2);
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
    evas_object_size_hint_align_set(chk, FILL, FILL);
-   elm_object_text_set(chk, _("Children of the light?"));
+   elm_object_text_set(chk, _("Current desktop session only?"));
    elm_check_state_set(chk, _evisum_config->show_desktop);
    evas_object_show(chk);
    evas_object_smart_callback_add(chk, "changed",
