@@ -920,44 +920,6 @@ _item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_item_menu_priority_increase_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                                void *event_info EINA_UNUSED)
-{
-   Ui *ui;
-   Proc_Info *proc;
-
-   ui = data;
-
-   _item_menu_cancel_cb(ui, NULL, NULL);
-
-   proc = proc_info_by_pid(ui->selected_pid);
-   if (!proc) return;
-
-   setpriority(PRIO_PROCESS, proc->pid, proc->nice - 1);
-
-   proc_info_free(proc);
-}
-
-static void
-_item_menu_priority_decrease_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                                void *event_info EINA_UNUSED)
-{
-   Ui *ui;
-   Proc_Info *proc;
-
-   ui = data;
-
-   _item_menu_cancel_cb(ui, NULL, NULL);
-
-   proc = proc_info_by_pid(ui->selected_pid);
-   if (!proc) return;
-
-   setpriority(PRIO_PROCESS, proc->pid, proc->nice + 1);
-
-   proc_info_free(proc);
-}
-
-static void
 _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
@@ -978,27 +940,6 @@ _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
    ecore_exe_run(eina_slstr_printf("%s -e gdb attach %d", terminal, proc->pid),
                  NULL);
 
-   proc_info_free(proc);
-}
-
-static void
-_item_menu_priority_add(Evas_Object *menu, Elm_Object_Item *menu_it,
-                        Ui *ui)
-{
-   Elm_Object_Item *it;
-   Proc_Info *proc;
-
-   proc = proc_info_by_pid(ui->selected_pid);
-   if (!proc) return;
-
-   it = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
-                          eina_slstr_printf("%d", proc->nice), NULL, NULL);
-   elm_menu_item_separator_add(menu, menu_it);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("increase"),
-                     _("Increase"), _item_menu_priority_increase_cb, ui);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("decrease"),
-                     _("Decrease"), _item_menu_priority_decrease_cb, ui);
-   elm_object_item_disabled_set(it, EINA_TRUE);
    proc_info_free(proc);
 }
 
@@ -1062,11 +1003,6 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
                                 _("Actions"), NULL, NULL);
    _item_menu_actions_add(menu, menu_it2, ui);
-   elm_menu_item_separator_add(menu, menu_it);
-
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
-                                _("Priority"), NULL, NULL);
-   _item_menu_priority_add(menu, menu_it2, ui);
    elm_menu_item_separator_add(menu, menu_it);
 
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("start"),
