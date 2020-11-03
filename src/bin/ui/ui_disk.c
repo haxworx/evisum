@@ -14,6 +14,8 @@ typedef struct
    Ecore_Timer     *timer;
 } Widgets;
 
+static Eina_Lock _lock;
+
 static Widgets *_widgets = NULL;
 
 static void
@@ -184,6 +186,8 @@ _disks_poll_timer_cb(void *data)
    File_System *fs;
    Eina_List *mounted = NULL;
 
+   eina_lock_take(&_lock);
+
    disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
@@ -206,6 +210,8 @@ _disks_poll_timer_cb(void *data)
         it = elm_genlist_item_next_get(it);
      }
 
+   eina_lock_release(&_lock);
+
    return EINA_TRUE;
 }
 
@@ -222,11 +228,18 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
         free(_widgets);
      }
 
+   eina_lock_free(&_lock);
    evas_object_del(obj);
    ui->disk.win = NULL;
 
    if (evisum_ui_can_exit(ui))
      ecore_main_loop_quit();
+}
+
+static void
+_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   _disks_poll_timer_cb(NULL);
 }
 
 void
@@ -242,6 +255,7 @@ ui_win_disk_add(Ui *ui)
         return;
      }
 
+   eina_lock_new(&_lock);
    ui->disk.win = win = elm_win_util_standard_add("evisum",
                    _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
@@ -326,11 +340,14 @@ ui_win_disk_add(Ui *ui)
 
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evisum_child_window_show(ui->win, win);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
+                                  _win_resize_cb, NULL);
+
 
    w->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 
-   _disks_poll_timer_cb(ui);
+   _disks_poll_timer_cb(NULL);
 
-   w->timer = ecore_timer_add(3.0, _disks_poll_timer_cb, ui);
+   w->timer = ecore_timer_add(3.0, _disks_poll_timer_cb, NULL);
 }
 
