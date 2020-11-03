@@ -88,8 +88,6 @@ typedef struct Ui
    struct
    {
       Evas_Object *win;
-      Evas_Object *box;
-      Ecore_Timer *timer;
    } disk;
 
    struct
