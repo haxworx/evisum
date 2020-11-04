@@ -349,7 +349,6 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
      }
 }
 
-
 static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
