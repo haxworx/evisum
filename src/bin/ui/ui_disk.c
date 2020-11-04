@@ -19,6 +19,22 @@ static Eina_Lock _lock;
 static Widgets *_widgets = NULL;
 
 static void
+_item_unrealized_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
+{
+   Ui *ui;
+   Evas_Object *o;
+   Eina_List *contents = NULL;
+
+   elm_genlist_item_all_contents_unset(event_info, &contents);
+
+   EINA_LIST_FREE(contents, o)
+     {
+        evisum_ui_item_cache_item_release(_widgets->cache, o);
+     }
+}
+
+static void
 _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
    File_System *inf = data;
@@ -50,14 +66,14 @@ _item_create(Evas_Object *parent)
    Evas_Object *table, *label, *pb;
 
    table = elm_table_add(parent);
-   evas_object_size_hint_align_set(table, EXPAND, EXPAND);
-   evas_object_size_hint_weight_set(table, FILL, FILL);
+   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(table, FILL, FILL);
    evas_object_show(table);
 
    label = _item_column_add(table, "device", 0);
-   evas_object_size_hint_align_set(label, 0.5, FILL);
+   evas_object_size_hint_align_set(label, 0, FILL);
    label = _item_column_add(table, "mount", 1);
-   evas_object_size_hint_align_set(label, 0.5, FILL);
+   evas_object_size_hint_align_set(label, 0, FILL);
    label = _item_column_add(table, "fs", 2);
    evas_object_size_hint_align_set(label, 0.5, FILL);
    label = _item_column_add(table, "used", 3);
@@ -116,6 +132,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(wig->btn_fs, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "fs");
    elm_object_text_set(l, eina_slstr_printf("%s", inf->type_name));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(wig->btn_mount, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
@@ -123,6 +141,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(wig->btn_used, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "used");
    elm_object_text_set(l, eina_slstr_printf("%s", evisum_size_format(inf->usage.used)));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(wig->btn_mount, ow, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
@@ -130,6 +150,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(wig->btn_total, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "total");
    elm_object_text_set(l, eina_slstr_printf("%s", evisum_size_format(inf->usage.total)));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(wig->btn_mount, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
@@ -247,6 +269,7 @@ ui_win_disk_add(Ui *ui)
 {
    Evas_Object *win, *box, *tbl, *scroller;
    Evas_Object *genlist, *btn;
+   Evas_Coord x = 0, y = 0;
    int i = 0;
 
    if (ui->disk.win)
@@ -270,7 +293,7 @@ ui_win_disk_add(Ui *ui)
 
    tbl = elm_table_add(win);
    evas_object_size_hint_weight_set(tbl, EXPAND, 0);
-   evas_object_size_hint_align_set(tbl, FILL, 0);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
    evas_object_show(tbl);
    elm_box_pack_end(box, tbl);
 
@@ -318,7 +341,6 @@ ui_win_disk_add(Ui *ui)
    elm_object_text_set(btn, _("Usage"));
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
-
    scroller = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
    evas_object_size_hint_align_set(scroller, FILL, FILL);
@@ -332,6 +354,7 @@ ui_win_disk_add(Ui *ui)
    elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
+   evas_object_smart_callback_add(genlist, "unrealized", _item_unrealized_cb, ui);
    evas_object_show(genlist);
 
    elm_object_content_set(scroller, genlist);
@@ -339,10 +362,17 @@ ui_win_disk_add(Ui *ui)
    elm_object_content_set(win, box);
 
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
-   evisum_child_window_show(ui->win, win);
+
+   if (ui->win)
+     evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
+   evas_object_move(win, x + 20, y + 20);
+   if (x > 0 && y > 0)
+     evas_object_move(win, x, y);
+   evas_object_show(win);
+
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                                   _win_resize_cb, NULL);
-
 
    w->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 
