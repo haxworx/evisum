@@ -299,7 +299,7 @@ _sort_by_used(const void *p1, const void *p2)
 
    fs1 = p1; fs2 = p2;
 
-   return fs1->usage.used - fs1->usage.used;
+   return fs1->usage.used - fs2->usage.used;
 }
 
 static int
@@ -309,7 +309,7 @@ _sort_by_total(const void *p1, const void *p2)
 
    fs1 = p1; fs2 = p2;
 
-   return fs1->usage.total - fs1->usage.total;
+   return fs1->usage.total - fs2->usage.total;
 }
 
 static void
