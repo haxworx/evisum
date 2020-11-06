@@ -1722,12 +1722,6 @@ _system_info_all_poll(void *data, Ecore_Thread *thread)
         for (int i = 0; i < 4 * ui->settings.poll_delay; i++)
           {
              if (ecore_thread_check(thread)) return;
-
-             if (ui->state.skip_wait)
-               {
-                  ui->state.skip_wait = EINA_FALSE;
-                  break;
-               }
              usleep(250000);
           }
      }
