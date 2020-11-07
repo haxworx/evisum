@@ -665,7 +665,7 @@ ui_win_cpu_add(Ui *ui)
      }
 
    ui->cpu.win = win = elm_win_util_standard_add("evisum",
-                   _("CPU Usage"));
+                   _("CPU Activity"));
    elm_win_autodel_set(win, EINA_TRUE);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
