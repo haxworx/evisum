@@ -206,7 +206,7 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
    for (i = existing; i < items; i++)
      {
         elm_genlist_item_append(genlist, itc, NULL, NULL,
-                        ELM_GENLIST_ITEM_NONE, NULL, NULL);
+                                ELM_GENLIST_ITEM_NONE, NULL, NULL);
      }
 
    elm_genlist_item_class_free(itc);
@@ -412,6 +412,14 @@ _tree_del(void *data, Evas_Object *obj EINA_UNUSED)
    proc_info_free(proc);
 }
 
+static int
+_sort_by_age(const void *p1, const void *p2)
+{
+   const Proc_Info *c1 = p1, *c2 = p2;
+
+   return c1->start - c2->start;
+}
+
 static void
 _tree_populate(Evas_Object *genlist_tree, Elm_Object_Item *parent, Eina_List *children)
 {
@@ -433,7 +441,10 @@ _tree_populate(Evas_Object *genlist_tree, Elm_Object_Item *parent, Eina_List *ch
                       child->children ? ELM_GENLIST_ITEM_TREE : ELM_GENLIST_ITEM_NONE, NULL, NULL);
         elm_genlist_item_update(it);
         if (child->children)
-          _tree_populate(genlist_tree, it, child->children);
+          {
+             child->children = eina_list_sort(child->children, eina_list_count(child->children), _sort_by_age);
+             _tree_populate(genlist_tree, it, child->children);
+          }
      }
 
    elm_genlist_item_class_free(itc);
@@ -446,6 +457,8 @@ _tree_view_update(void *data)
    Proc_Info *child;
    Ui_Process *ui = data;
 
+   elm_genlist_clear(ui->genlist_tree);
+
    if (ui->selected_pid == 0) return EINA_FALSE;
 
    children = proc_info_pid_children_get(ui->selected_pid);
@@ -453,6 +466,7 @@ _tree_view_update(void *data)
      {
         if (child->pid == ui->selected_pid)
           {
+             child->children = eina_list_sort(child->children, eina_list_count(child->children), _sort_by_age);
              _tree_populate(ui->genlist_tree, NULL, child->children);
              break;
           }
@@ -1072,6 +1086,7 @@ _btn_tree_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    ui = data;
 
+   _tree_view_update(ui);
    _hide_all(ui, obj);
    evas_object_show(ui->tree_view);
 }
@@ -1223,7 +1238,6 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    ui  = data;
    win = obj;
-
 
    if (ui->hash_cpu_times)
      eina_hash_free(ui->hash_cpu_times);
