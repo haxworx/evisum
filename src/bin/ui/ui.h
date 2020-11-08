@@ -38,7 +38,6 @@ typedef struct Ui
    Evas_Object     *main_menu;
    Evas_Object     *menu;
    Evas_Object     *scroller;
-   Evas_Object     *content;
 
    Evas_Object     *win_about;
 
