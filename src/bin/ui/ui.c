@@ -1800,6 +1800,7 @@ void
 ui_main_win_add(Ui *ui)
 {
    Evas_Object *win, *icon;
+   Evas_Object *o;
 
    if (ui->win)
      {
@@ -1830,7 +1831,8 @@ ui_main_win_add(Ui *ui)
    if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
      evisum_ui_background_random_add(ui->win, 1);
 
-   elm_object_content_set(win, _ui_content_system_add(ui, win));
+   o = _ui_content_system_add(ui, win);
+   elm_object_content_set(win, o);
 
    if (evisum_ui_effects_enabled_get())
      evisum_ui_animate(ui);
@@ -1850,7 +1852,7 @@ ui_main_win_add(Ui *ui)
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
                                   _evisum_resize_cb, ui);
-   evas_object_event_callback_add(ui->win, EVAS_CALLBACK_KEY_DOWN,
+   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
                                   _evisum_key_down_cb, ui);
    evas_object_event_callback_add(ui->entry_search, EVAS_CALLBACK_KEY_DOWN,
                                   _evisum_search_keypress_cb, ui);
