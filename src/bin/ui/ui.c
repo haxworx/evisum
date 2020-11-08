@@ -1406,48 +1406,6 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_align_set(table, FILL, FILL);
    evas_object_show(table);
 
-   box = elm_box_add(parent);
-   evas_object_size_hint_weight_set(box, EXPAND, 0);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_show(box);
-   elm_table_pack(table, box, 0, 0, 7, 1);
-
-   hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
-   evas_object_size_hint_align_set(hbox, FILL, 0);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
-   elm_box_pack_end(box, hbox);
-
-   frame = elm_frame_add(hbox);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("System CPU"));
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-   elm_box_pack_end(hbox, frame);
-
-   ui->progress_cpu = pb = elm_progressbar_add(parent);
-   evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   elm_progressbar_unit_format_set(pb, "%1.2f %%");
-   elm_object_content_set(frame, pb);
-   evas_object_show(pb);
-
-   frame = elm_frame_add(hbox);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("System Memory"));
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-   elm_box_pack_end(hbox, frame);
-
-   ui->progress_mem = pb = elm_progressbar_add(parent);
-   evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   evas_object_show(pb);
-   elm_object_content_set(frame, pb);
-
    ui->btn_cmd = button = elm_button_add(parent);
    _btn_icon_state_init(button,
             ui->settings.sort_type == SORT_BY_CMD ? ui->settings.sort_reverse : EINA_FALSE,
@@ -1550,6 +1508,48 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
 
    elm_box_pack_end(hbox, entry);
    elm_table_pack(table, hbox, 0, 3, i, 1);
+
+   box = elm_box_add(parent);
+   evas_object_size_hint_weight_set(box, EXPAND, 0);
+   evas_object_size_hint_align_set(box, FILL, FILL);
+   evas_object_show(box);
+   elm_table_pack(table, box, 0, 0, i, 1);
+
+   hbox = elm_box_add(box);
+   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, FILL, 0);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+   elm_box_pack_end(box, hbox);
+
+   frame = elm_frame_add(hbox);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_text_set(frame, _("System CPU"));
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+   elm_box_pack_end(hbox, frame);
+
+   ui->progress_cpu = pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_progressbar_unit_format_set(pb, "%1.2f %%");
+   elm_object_content_set(frame, pb);
+   evas_object_show(pb);
+
+   frame = elm_frame_add(hbox);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_text_set(frame, _("System Memory"));
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+   elm_box_pack_end(hbox, frame);
+
+   ui->progress_mem = pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   evas_object_show(pb);
+   elm_object_content_set(frame, pb);
 
    evas_object_smart_callback_add(ui->btn_pid, "clicked",
                    _btn_pid_clicked_cb, ui);
@@ -1709,7 +1709,6 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    Evas_Object *pb;
    Sys_Info *info;
    double ratio, value, cpu_usage = 0.0;
-   int Hz;
 
    ui = data;
    info = msg;
@@ -1720,20 +1719,9 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    for (int i = 0; i < info->cpu_count; i++)
      cpu_usage += info->cores[i]->percent;
 
-   cpu_usage = cpu_usage / system_cpu_online_count_get();
+   cpu_usage /= system_cpu_online_count_get();
 
    elm_progressbar_value_set(ui->progress_cpu, cpu_usage / 100);
-   Hz = system_cpu_frequency_get();
-   if (Hz != -1)
-     {
-        if (Hz > 1000000)
-          elm_object_tooltip_text_set(ui->progress_cpu,
-                                      eina_slstr_printf("%1.1f GHz",
-                                      (double) Hz / 1000000.0));
-        else
-          elm_object_tooltip_text_set(ui->progress_cpu,
-                                      eina_slstr_printf("%d MHz",  Hz / 1000));
-     }
 
    ui->cpu_usage = cpu_usage;
 
@@ -1809,7 +1797,7 @@ ui_main_win_add(Ui *ui)
      }
 
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
-   win = elm_win_util_standard_add("evisum", "evisum");
+   ui->win = win = elm_win_util_standard_add("evisum", "evisum");
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
@@ -1825,7 +1813,6 @@ ui_main_win_add(Ui *ui)
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evas_object_show(win);
 
-   ui->win = win;
    ecore_timer_add(2.0, _bring_in, ui);
 
    if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
@@ -1849,6 +1836,7 @@ ui_main_win_add(Ui *ui)
       ecore_thread_feedback_run(_process_list,
                                 _process_list_feedback_cb,
                                 NULL, NULL, ui, EINA_FALSE);
+   _process_list_update(ui);
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
                                   _evisum_resize_cb, ui);
@@ -1858,7 +1846,6 @@ ui_main_win_add(Ui *ui)
                                   _evisum_search_keypress_cb, ui);
    ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
                            _elm_config_change_cb, ui);
-   _process_list_update(ui);
 }
 
 static void
