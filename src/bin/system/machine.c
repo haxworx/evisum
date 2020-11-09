@@ -115,6 +115,7 @@ system_info_basic_get(void)
    info->cores = system_cpu_usage_get(&info->cpu_count);
 
    system_memory_usage_get(&info->memory);
+   system_power_state_get(&info->power);
 
    return info;
 }

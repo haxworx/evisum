@@ -42,12 +42,17 @@ typedef struct Ui
       Evas_Object     *win;
       Evas_Object     *bg;
       Evas_Object     *menu;
+
+      Evas_Object     *summary_box;
+      Evas_Object     *summary_bat;
+
       Evas_Object     *scroller;
 
       Ecore_Thread    *thread;
 
       Evas_Object     *progress_cpu;
       Evas_Object     *progress_mem;
+      Evas_Object     *progress_bat;
 
       Evas_Object     *btn_pid;
       Evas_Object     *btn_uid;

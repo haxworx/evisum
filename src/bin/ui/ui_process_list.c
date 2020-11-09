@@ -1200,7 +1200,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    evas_object_show(box);
    elm_table_pack(table, box, 0, 0, i, 1);
 
-   hbox = elm_box_add(box);
+   ui->processes.summary_box = hbox = elm_box_add(box);
    evas_object_size_hint_weight_set(hbox, EXPAND, 0);
    evas_object_size_hint_align_set(hbox, FILL, 0);
    elm_box_horizontal_set(hbox, EINA_TRUE);
@@ -1231,6 +1231,19 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    elm_box_pack_end(hbox, frame);
 
    ui->processes.progress_mem = pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   evas_object_show(pb);
+   elm_object_content_set(frame, pb);
+
+   ui->processes.summary_bat = frame = elm_frame_add(hbox);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+   elm_box_pack_end(hbox, frame);
+
+   ui->processes.progress_bat = pb = elm_progressbar_add(parent);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_show(pb);
@@ -1385,7 +1398,7 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    Ui *ui;
    Evas_Object *pb;
    Sys_Info *info;
-   double ratio, value, cpu_usage = 0.0;
+   double ratio, value, usage = 0.0;
 
    ui = data;
    info = msg;
@@ -1394,13 +1407,13 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
      goto out;
 
    for (int i = 0; i < info->cpu_count; i++)
-     cpu_usage += info->cores[i]->percent;
+     usage += info->cores[i]->percent;
 
-   cpu_usage /= system_cpu_online_count_get();
+   usage /= system_cpu_online_count_get();
 
-   elm_progressbar_value_set(ui->processes.progress_cpu, cpu_usage / 100);
+   elm_progressbar_value_set(ui->processes.progress_cpu, usage / 100);
 
-   ui->cpu_usage = cpu_usage;
+   ui->cpu_usage = usage;
 
    if (ui->mem.zfs_mounted)
      info->memory.used += info->memory.zfs_arc_used;
@@ -1412,6 +1425,19 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    elm_progressbar_unit_format_set(pb, eina_slstr_printf("%s / %s",
                                    evisum_size_format(info->memory.used),
                                    evisum_size_format(info->memory.total)));
+   usage = 0.0;
+
+   if (info->power.battery_count)
+     {
+        for (int i = 0; i < info->power.battery_count; i++)
+          usage += info->power.batteries[i]->percent;
+        elm_progressbar_value_set(ui->processes.progress_bat, (usage / info->power.battery_count) / 100);
+     }
+   else if (!info->power.battery_count)
+     {
+        elm_box_unpack(ui->processes.summary_box, ui->processes.summary_bat);
+        evas_object_hide(ui->processes.summary_bat);
+     }
 out:
    system_info_all_free(info);
 }
@@ -1458,7 +1484,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
      evisum_ui_item_cache_free(ui->processes.cache);
 
    _proc_pid_cpu_times_free(ui);
-   
+
    eina_lock_free(&_lock);
 
    if (evisum_ui_can_exit(ui))
