@@ -125,10 +125,19 @@ Eina_Bool
 evisum_ui_can_exit(Ui *ui);
 
 void
+evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent);
+
+void
 evisum_ui_activate(Ui *ui, Evisum_Action action, int pid);
 
 const char *
 evisum_ui_icon_cache_find(Ui *ui, const char *cmd);
+
+void
+evisum_ui_config_load(Ui *ui);
+
+void
+evisum_ui_config_save(Ui *ui);
 
 void
 evisum_restart(void);
