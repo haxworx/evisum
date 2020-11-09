@@ -1433,6 +1433,8 @@ _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
+   evas_object_del(obj);
+
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
 
