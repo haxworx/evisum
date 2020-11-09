@@ -1,5 +1,8 @@
 #include "config.h"
 #include "evisum_actions.h"
+#include "evisum_config.h"
+#include "evisum_server.h"
+
 #include "ui.h"
 #include "ui/ui_cpu.h"
 #include "ui/ui_memory.h"
@@ -13,10 +16,6 @@
 #include <sys/resource.h>
 #include <pwd.h>
 
-// These should be static. Please do not change.
-// OpenBSD has issues which are undetermined yet.
-
-Ui *_ui;
 Evisum_Config *_evisum_config;
 
 void
@@ -47,6 +46,8 @@ evisum_ui_config_save(Ui *ui)
 void
 evisum_ui_config_load(Ui *ui)
 {
+   _evisum_config = NULL;
+
    _evisum_config   = config_load();
 
    ui->settings.sort_type    = _evisum_config->sort_type;
@@ -64,7 +65,6 @@ evisum_ui_config_load(Ui *ui)
    ui->settings.show_user = _evisum_config->show_user;
    ui->settings.show_desktop = _evisum_config->show_desktop;
 }
-
 
 static void
 _about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
@@ -430,8 +430,8 @@ evisum_ui_del(Ui *ui)
    free(ui);
 }
 
-static Ui *
-_ui_init(void)
+Ui *
+evisum_ui_init(void)
 {
    Ui *ui = calloc(1, sizeof(Ui));
    if (!ui) return NULL;
@@ -439,28 +439,13 @@ _ui_init(void)
    ui->settings.poll_delay = 3;
    ui->settings.sort_reverse = EINA_FALSE;
    ui->settings.sort_type = SORT_BY_PID;
-   ui->selected_pid = -1;
    ui->program_pid = getpid();
-   ui->cpu_times = NULL;
-   ui->cpu_list = NULL;
+
+   evisum_ui_config_load(ui);
 
    evisum_icon_cache_init();
 
    _ui_init_system_probe(ui);
-
-   _ui = NULL;
-   _evisum_config = NULL;
-
-   evisum_ui_config_load(ui);
-
-   return ui;
-}
-
-Ui *
-evisum_ui_init(void)
-{
-   Ui *ui = _ui = _ui_init();
-   if (!ui) return NULL;
 
    return ui;
 }

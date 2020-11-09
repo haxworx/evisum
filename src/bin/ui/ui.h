@@ -3,10 +3,11 @@
 
 #include <Elementary.h>
 #include "gettext.h"
+
+#include "evisum_actions.h"
+
 #include "system/machine.h"
 #include "system/process.h"
-#include "../evisum_config.h"
-#include "../evisum_server.h"
 #include "ui/ui_util.h"
 #include "ui/ui_cache.h"
 
@@ -33,42 +34,46 @@ typedef enum
 
 typedef struct Ui
 {
-   Evas_Object     *win;
-   Evas_Object     *bg;
-   Evas_Object     *main_menu;
-   Evas_Object     *menu;
-   Evas_Object     *scroller;
-
-   Evas_Object     *win_about;
-
-   Evas_Object     *progress_cpu;
-   Evas_Object     *progress_mem;
-
-   Evas_Object     *btn_pid;
-   Evas_Object     *btn_uid;
-   Evas_Object     *btn_size;
-   Evas_Object     *btn_rss;
-   Evas_Object     *btn_cmd;
-   Evas_Object     *btn_state;
-   Evas_Object     *btn_cpu_usage;
-
-   Evisum_Ui_Cache *cache;
-   Evas_Object     *genlist_procs;
-   Evas_Object     *entry_search;
-
-   Ecore_Thread    *thread_system;
-   Ecore_Thread    *thread_process;
-
-   pid_t            selected_pid;
    pid_t            program_pid;
+   Ecore_Thread    *thread_system;
 
-   char            *search_text;
+   struct
+   {
+      Evas_Object     *win;
+      Evas_Object     *bg;
+      Evas_Object     *menu;
+      Evas_Object     *scroller;
 
-   Eina_List       *cpu_times;
-   Eina_List       *cpu_list;
+      Ecore_Thread    *thread;
 
+      Evas_Object     *progress_cpu;
+      Evas_Object     *progress_mem;
 
-   Ecore_Animator  *animator;
+      Evas_Object     *btn_pid;
+      Evas_Object     *btn_uid;
+      Evas_Object     *btn_size;
+      Evas_Object     *btn_rss;
+      Evas_Object     *btn_cmd;
+      Evas_Object     *btn_state;
+      Evas_Object     *btn_cpu_usage;
+
+      Evisum_Ui_Cache *cache;
+      Evas_Object     *genlist_procs;
+      Evas_Object     *entry_search;
+
+      pid_t            selected_pid;
+
+      char            *search_text;
+
+      Eina_List       *cpu_times;
+      Eina_List       *cpu_list;
+      Ecore_Animator  *animator;
+   } processes;
+
+   Evas_Object     *win;
+   Evas_Object     *win_about;
+   Evas_Object     *main_menu;
+
    uint8_t          cpu_usage;
 
    struct

@@ -696,6 +696,6 @@ evisum_ui_animate(void *data)
    evas_object_pass_events_set(im, 1);
    evas_object_show(im);
 
-   ui->animator = ecore_animator_add(_anim_clouds, anim);
+   ui->processes.animator = ecore_animator_add(_anim_clouds, anim);
 }
 
