@@ -1095,7 +1095,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    _btn_icon_state_init(button,
             ui->settings.sort_type == SORT_BY_CMD ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_CMD);
-   evas_object_size_hint_weight_set(button, EXPAND, 0);
+   evas_object_size_hint_weight_set(button, 0.01, 0);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Command"));
    evas_object_show(button);
@@ -1105,7 +1105,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    _btn_icon_state_init(button,
             ui->settings.sort_type == SORT_BY_UID ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_UID);
-   evas_object_size_hint_weight_set(button, 0.5, 0);
+   evas_object_size_hint_weight_set(button, 0.01, 0);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("User"));
    evas_object_show(button);
@@ -1115,7 +1115,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    _btn_icon_state_init(button,
             ui->settings.sort_type == SORT_BY_PID ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_PID);
-   evas_object_size_hint_weight_set(button, 0.5, 0);
+   evas_object_size_hint_weight_set(button, 0.01, 0);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("PID"));
    evas_object_show(button);
@@ -1125,7 +1125,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    _btn_icon_state_init(button,
             ui->settings.sort_type == SORT_BY_SIZE ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_SIZE);
-   evas_object_size_hint_weight_set(button, 0.1, 0);
+   evas_object_size_hint_weight_set(button, 0.01, 0);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Size"));
    evas_object_show(button);
@@ -1135,7 +1135,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    _btn_icon_state_init(button,
             ui->settings.sort_type == SORT_BY_RSS ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_RSS);
-   evas_object_size_hint_weight_set(button, 0.1, 0);
+   evas_object_size_hint_weight_set(button, 0.01, 0);
    evas_object_size_hint_align_set(button, FILL, FILL);
    elm_object_text_set(button, _("Res"));
    evas_object_show(button);
