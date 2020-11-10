@@ -492,7 +492,8 @@ system_cpu_frequency_min_max_get(int *min, int *max)
              free(s);
              *min = freq_min;
              *max = freq_max;
-             return 0;
+             if (freq_min < freq_max)
+               return 0;
           }
      }
 
@@ -503,8 +504,11 @@ system_cpu_frequency_min_max_get(int *min, int *max)
    while (t)
      {
         int freq = atoi(t);
-        if (freq > freq_max) freq_max = freq;
-        if (freq < freq_min) freq_min = freq;
+        if (freq != 0)
+          {
+             if (freq > freq_max) freq_max = freq;
+             if (freq < freq_min) freq_min = freq;
+          }
         t = strtok(NULL, " ");
      }
 
