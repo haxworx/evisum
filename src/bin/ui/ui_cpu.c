@@ -709,6 +709,9 @@ ui_win_cpu_add(Ui *ui)
      evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
    if (x > 0 && y > 0)
      evas_object_move(win, x + 20, y + 20);
+   else
+     elm_win_center(win, 1, 1);
+
    evas_object_show(win);
 }
 

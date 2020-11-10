@@ -47,6 +47,27 @@ evisum_ui_config_save(Ui *ui)
         _evisum_config->cpu.height = ui->cpu.height = h;
      }
 
+   if (ui->mem.win)
+     {
+        evas_object_geometry_get(ui->mem.win, NULL, NULL, &w, &h);
+        _evisum_config->mem.width = ui->mem.width = w;
+        _evisum_config->mem.height = ui->mem.height = h;
+     }
+
+   if (ui->disk.win)
+     {
+        evas_object_geometry_get(ui->disk.win, NULL, NULL, &w, &h);
+        _evisum_config->disk.width = ui->disk.width = w;
+        _evisum_config->disk.height = ui->disk.height = h;
+     }
+
+   if (ui->sensors.win)
+     {
+        evas_object_geometry_get(ui->sensors.win, NULL, NULL, &w, &h);
+        _evisum_config->sensors.width = ui->sensors.width = w;
+        _evisum_config->sensors.height = ui->sensors.height = h;
+     }
+
    config_save(_evisum_config);
 }
 
@@ -55,14 +76,11 @@ evisum_ui_config_load(Ui *ui)
 {
    _evisum_config = NULL;
 
-   _evisum_config   = config_load();
+   _evisum_config = config_load();
 
    ui->settings.sort_type    = _evisum_config->sort_type;
    ui->settings.sort_reverse = _evisum_config->sort_reverse;
    ui->settings.poll_delay   = _evisum_config->poll_delay;
-
-   if ((_evisum_config->width > 0) && (_evisum_config->height > 0))
-     evas_object_resize(ui->win, _evisum_config->width, _evisum_config->height);
 
    evisum_ui_effects_enabled_set(_evisum_config->effects);
    evisum_ui_backgrounds_enabled_set(_evisum_config->backgrounds);
@@ -74,6 +92,15 @@ evisum_ui_config_load(Ui *ui)
 
    ui->cpu.width = _evisum_config->cpu.width;
    ui->cpu.height = _evisum_config->cpu.height;
+
+   ui->mem.width = _evisum_config->mem.width;
+   ui->mem.height = _evisum_config->mem.height;
+
+   ui->disk.width = _evisum_config->disk.width;
+   ui->disk.height = _evisum_config->disk.height;
+
+   ui->sensors.width = _evisum_config->sensors.width;
+   ui->sensors.height = _evisum_config->sensors.height;
 }
 
 static void

@@ -143,12 +143,21 @@ _win_del_cb(void *data, Evas_Object *obj,
      ecore_main_loop_quit();
 }
 
+static void
+_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Ui *ui = data;
+
+   evisum_ui_config_save(ui);
+}
+
 void
 ui_win_memory_add(Ui *ui)
 {
    Evas_Object *win, *frame, *pb;
    Evas_Object *border, *rect, *label, *table;
    int i;
+   Evas_Coord x = 0, y = 0;
    meminfo_t memory;
 
    if (ui->mem.win)
@@ -163,12 +172,13 @@ ui_win_memory_add(Ui *ui)
    memset(&memory, 0, sizeof(memory));
    system_memory_usage_get(&memory);
 
-   ui->mem.win = win = elm_win_util_standard_add("evisum",
-                   _("Memory Usage"));
+   ui->mem.win = win = elm_win_util_standard_add("evisum", _("Memory Usage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
                                    evisum_ui_backgrounds_enabled_get()));
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
+                                  _win_resize_cb, ui);
 
    frame = elm_frame_add(win);
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
@@ -238,8 +248,22 @@ ui_win_memory_add(Ui *ui)
 
    evas_object_data_set(win, "widgets", widgets);
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
-   evisum_child_window_show(ui->win, win);
-   evas_object_resize(win, UI_CHILD_WIN_WIDTH , UI_CHILD_WIN_HEIGHT / 2);
+
+   if (ui->mem.width > 0 && ui->mem.height > 0)
+     evas_object_resize(win, ui->mem.width, ui->mem.height);
+   else
+     evas_object_resize(win, UI_CHILD_WIN_WIDTH , UI_CHILD_WIN_HEIGHT / 2);
+
+   if (ui->win)
+     evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   if (x > 0 && y > 0)
+     evas_object_move(win, x + 20, y + 20);
+   else
+     elm_win_center(win, 1, 1);
+
+   evas_object_show(win);
+
+   evas_object_show(win);
 
    _memory_update(widgets);
 

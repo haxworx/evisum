@@ -402,7 +402,10 @@ _btn_usage_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
+   Ui *ui = data;
+
    _disks_poll_timer_cb(NULL);
+   evisum_ui_config_save(ui);
 }
 
 void
@@ -420,8 +423,7 @@ ui_win_disk_add(Ui *ui)
      }
 
    eina_lock_new(&_lock);
-   ui->disk.win = win = elm_win_util_standard_add("evisum",
-                   _("Storage"));
+   ui->disk.win = win = elm_win_util_standard_add("evisum", _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
@@ -498,7 +500,7 @@ ui_win_disk_add(Ui *ui)
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
    evas_object_size_hint_align_set(scroller, FILL, FILL);
    elm_scroller_policy_set(scroller,
-                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
+                           ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
 
    pd->genlist = genlist = elm_genlist_add(win);
@@ -516,16 +518,22 @@ ui_win_disk_add(Ui *ui)
 
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
 
+   if (ui->disk.width > 0 && ui->disk.height > 0)
+     evas_object_resize(win, ui->disk.width, ui->disk.height);
+   else
+     evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
+
    if (ui->win)
      evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
-   evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
-   evas_object_move(win, x + 20, y + 20);
    if (x > 0 && y > 0)
-     evas_object_move(win, x, y);
+     evas_object_move(win, x + 20, y + 20);
+   else
+     elm_win_center(win, 1, 1);
+
    evas_object_show(win);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
-                                  _win_resize_cb, NULL);
+                                  _win_resize_cb, ui);
 
    pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 

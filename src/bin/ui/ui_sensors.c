@@ -246,11 +246,20 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
      ecore_main_loop_quit();
 }
 
+static void
+_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Ui *ui = data;
+
+   evisum_ui_config_save(ui);
+}
+
 void
 ui_win_sensors_add(Ui *ui)
 {
    Evas_Object *win, *box, *hbox, *frame, *scroller;
    Evas_Object *table, *border, *rect;
+   Evas_Coord x = 0, y = 0;
 
    if (ui->sensors.win)
      {
@@ -263,6 +272,8 @@ ui_win_sensors_add(Ui *ui)
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
                                    evisum_ui_backgrounds_enabled_get()));
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
+                                  _win_resize_cb, ui);
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -284,7 +295,7 @@ ui_win_sensors_add(Ui *ui)
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
    evas_object_size_hint_align_set(scroller, FILL, FILL);
    elm_scroller_policy_set(scroller,
-                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
+                           ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
 
    border = elm_frame_add(box);
@@ -312,7 +323,20 @@ ui_win_sensors_add(Ui *ui)
    elm_object_content_set(win, box);
 
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
-   evisum_child_window_show(ui->win, win);
+
+   if (ui->sensors.width > 0 && ui->sensors.height > 0)
+     evas_object_resize(win, ui->sensors.width, ui->sensors.height);
+   else
+     evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
+
+   if (ui->win)
+     evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   if (x > 0 && y > 0)
+     evas_object_move(win, x + 20, y + 20);
+   else
+     elm_win_center(win, 1, 1);
+
+   evas_object_show(win);
 
    _sensors_update(ui);
 

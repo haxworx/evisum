@@ -92,6 +92,8 @@ typedef struct Ui
    struct
    {
       Evas_Object *win;
+      int          width;
+      int          height;
       Ecore_Timer *timer;
       Eina_Bool    zfs_mounted;
    } mem;
@@ -99,11 +101,15 @@ typedef struct Ui
    struct
    {
       Evas_Object *win;
+      int          width;
+      int          height;
    } disk;
 
    struct
    {
       Evas_Object *win;
+      int          width;
+      int          height;
       Evas_Object *box;
       Evas_Object *timer;
    } sensors;
