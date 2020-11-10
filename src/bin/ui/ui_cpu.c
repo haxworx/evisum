@@ -555,7 +555,7 @@ _graph(Ui *ui, Evas_Object *parent)
 
    lb = elm_label_add(parent);
    elm_object_text_set(lb, "<b><color=#fff>100%</></>");
-   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   evas_object_size_hint_align_set(lb, 0.99, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 1, 0, 1, 1);
    evas_object_show(lb);
@@ -567,7 +567,7 @@ _graph(Ui *ui, Evas_Object *parent)
    else
      snprintf(buf, sizeof(buf), "<b><color=#fff>%1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
-   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   evas_object_size_hint_align_set(lb, 0.99, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 1, 1, 1, 1);
    evas_object_show(lb);
@@ -583,7 +583,7 @@ _graph(Ui *ui, Evas_Object *parent)
    lb = elm_label_add(parent);
    snprintf(buf, sizeof(buf), "<b><color=#fff>%i°C</></>", ad->temp_max);
    elm_object_text_set(lb, buf);
-   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   evas_object_size_hint_align_set(lb, 0.99, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 1, 2, 1, 1);
    evas_object_show(lb);
