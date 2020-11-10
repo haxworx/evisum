@@ -247,6 +247,8 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
+   evas_object_del(obj);
+
    if (_private_data)
      {
         ecore_timer_del(_private_data->timer);
@@ -255,7 +257,6 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
      }
 
    eina_lock_free(&_lock);
-   evas_object_del(obj);
    ui->disk.win = NULL;
 
    if (evisum_ui_can_exit(ui))
