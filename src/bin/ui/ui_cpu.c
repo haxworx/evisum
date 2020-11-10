@@ -652,6 +652,14 @@ _graph(Ui *ui, Evas_Object *parent)
                                               ad, EINA_TRUE);
 }
 
+ static void
+_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Ui *ui = data;
+
+   evisum_ui_config_save(ui);
+}
+
 void
 ui_win_cpu_add(Ui *ui)
 {
@@ -672,11 +680,14 @@ ui_win_cpu_add(Ui *ui)
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
                                    evisum_ui_backgrounds_enabled_get()));
 
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
+                                  _win_resize_cb, ui);
+
    scroller = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
    evas_object_size_hint_align_set(scroller, FILL, FILL);
    elm_scroller_policy_set(scroller,
-                   ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
+                           ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scroller);
 
    box = elm_box_add(win);
@@ -689,9 +700,13 @@ ui_win_cpu_add(Ui *ui)
    elm_object_content_set(scroller, box);
    elm_object_content_set(win, scroller);
 
+   if (ui->cpu.width > 0 && ui->cpu.height > 0)
+     evas_object_resize(win, ui->cpu.width, ui->cpu.height);
+   else
+     evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
+
    if (ui->win)
      evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
-   evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
    if (x > 0 && y > 0)
      evas_object_move(win, x + 20, y + 20);
    evas_object_show(win);

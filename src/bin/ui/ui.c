@@ -40,6 +40,13 @@ evisum_ui_config_save(Ui *ui)
 
    proc_info_kthreads_show_set(ui->settings.show_kthreads);
 
+   if (ui->cpu.win)
+     {
+        evas_object_geometry_get(ui->cpu.win, NULL, NULL, &w, &h);
+        _evisum_config->cpu.width = ui->cpu.width = w;
+        _evisum_config->cpu.height = ui->cpu.height = h;
+     }
+
    config_save(_evisum_config);
 }
 
@@ -64,6 +71,9 @@ evisum_ui_config_load(Ui *ui)
    proc_info_kthreads_show_set(ui->settings.show_kthreads);
    ui->settings.show_user = _evisum_config->show_user;
    ui->settings.show_desktop = _evisum_config->show_desktop;
+
+   ui->cpu.width = _evisum_config->cpu.width;
+   ui->cpu.height = _evisum_config->cpu.height;
 }
 
 static void

@@ -3,7 +3,7 @@
 
 #include "ui/ui.h"
 
-#define CONFIG_VERSION 0x0007
+#define CONFIG_VERSION 0x0008
 
 typedef struct _Evisum_Config
 {
@@ -18,6 +18,11 @@ typedef struct _Evisum_Config
    Eina_Bool show_kthreads;
    Eina_Bool show_user;
    Eina_Bool show_desktop;
+   struct
+   {
+      int width;
+      int height;
+   } cpu;
 } Evisum_Config;
 
 void config_init(void);

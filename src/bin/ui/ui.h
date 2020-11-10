@@ -85,6 +85,8 @@ typedef struct Ui
    {
       Evas_Object  *win;
       Ecore_Thread *thread;
+      int           width;
+      int           height;
    } cpu;
 
    struct
