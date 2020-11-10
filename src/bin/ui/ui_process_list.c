@@ -395,6 +395,7 @@ _item_create(Evas_Object *parent)
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
+   elm_progressbar_unit_format_set(pb, "%1.0f %%");
    elm_box_pack_end(hbx, pb);
    evas_object_data_set(table, "proc_cpu_usage", pb);
 
@@ -1216,9 +1217,9 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    elm_box_pack_end(hbox, frame);
 
    ui->processes.progress_cpu = pb = elm_progressbar_add(parent);
+   elm_progressbar_unit_format_set(pb, "");
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   elm_progressbar_unit_format_set(pb, "%1.2f %%");
    elm_object_content_set(frame, pb);
    evas_object_show(pb);
 
@@ -1237,6 +1238,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    elm_object_content_set(frame, pb);
 
    ui->processes.summary_bat = frame = elm_frame_add(hbox);
+   elm_progressbar_unit_format_set(pb, "");
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
    elm_object_style_set(frame, "pad_small");
@@ -1244,6 +1246,7 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    elm_box_pack_end(hbox, frame);
 
    ui->processes.progress_bat = pb = elm_progressbar_add(parent);
+   elm_progressbar_unit_format_set(pb, "");
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_show(pb);
@@ -1411,6 +1414,7 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    usage /= system_cpu_online_count_get();
 
+   elm_progressbar_unit_format_set(ui->processes.progress_cpu, "%1.2f %%");
    elm_progressbar_value_set(ui->processes.progress_cpu, usage / 100);
 
    ui->cpu_usage = usage;
@@ -1431,6 +1435,10 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
      {
         for (int i = 0; i < info->power.battery_count; i++)
           usage += info->power.batteries[i]->percent;
+	if (info->power.have_ac)
+          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% AC");
+	else
+          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% DC");
         elm_progressbar_value_set(ui->processes.progress_bat, (usage / info->power.battery_count) / 100);
      }
    else if (!info->power.battery_count)
