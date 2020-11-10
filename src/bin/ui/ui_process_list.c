@@ -1083,7 +1083,7 @@ static Evas_Object *
 _ui_content_system_add(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *box, *hbox, *frame, *table;
-   Evas_Object *entry, *pb, *button, *plist, *btn;
+   Evas_Object *entry, *pb, *btn, *plist;
    int i = 0;
 
    table = elm_table_add(parent);
@@ -1091,75 +1091,75 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_align_set(table, FILL, FILL);
    evas_object_show(table);
 
-   ui->processes.btn_cmd = button = elm_button_add(parent);
-   _btn_icon_state_init(button,
+   ui->processes.btn_cmd = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
             ui->settings.sort_type == SORT_BY_CMD ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_CMD);
-   evas_object_size_hint_weight_set(button, 0.01, 0);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("Command"));
-   evas_object_show(button);
-   elm_table_pack(table, button, i++, 1, 1, 1);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("Command"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
 
-   ui->processes.btn_uid = button = elm_button_add(parent);
-   _btn_icon_state_init(button,
+   ui->processes.btn_uid = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
             ui->settings.sort_type == SORT_BY_UID ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_UID);
-   evas_object_size_hint_weight_set(button, 0.01, 0);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("User"));
-   evas_object_show(button);
-   elm_table_pack(table, button, i++, 1, 1, 1);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("User"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
 
-   ui->processes.btn_pid = button = elm_button_add(parent);
-   _btn_icon_state_init(button,
+   ui->processes.btn_pid = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
             ui->settings.sort_type == SORT_BY_PID ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_PID);
-   evas_object_size_hint_weight_set(button, 0.01, 0);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("PID"));
-   evas_object_show(button);
-   elm_table_pack(table, button, i++, 1, 1, 1);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("PID"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
 
-   ui->processes.btn_size = button = elm_button_add(parent);
-   _btn_icon_state_init(button,
+   ui->processes.btn_size = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
             ui->settings.sort_type == SORT_BY_SIZE ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_SIZE);
-   evas_object_size_hint_weight_set(button, 0.01, 0);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("Size"));
-   evas_object_show(button);
-   elm_table_pack(table, button, i++, 1, 1, 1);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("Size"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
 
-   ui->processes.btn_rss = button = elm_button_add(parent);
-   _btn_icon_state_init(button,
+   ui->processes.btn_rss = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
             ui->settings.sort_type == SORT_BY_RSS ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_RSS);
-   evas_object_size_hint_weight_set(button, 0.01, 0);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("Res"));
-   evas_object_show(button);
-   elm_table_pack(table, button, i++, 1, 1, 1);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("Res"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
 
-   ui->processes.btn_state = button = elm_button_add(parent);
-   _btn_icon_state_init(button,
+   ui->processes.btn_state = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
             ui->settings.sort_type == SORT_BY_STATE ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_STATE);
-   evas_object_size_hint_weight_set(button, 0, 0);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("State"));
-   evas_object_show(button);
-   elm_table_pack(table, button, i++, 1, 1, 1);
+   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("State"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
 
-   ui->processes.btn_cpu_usage = button = elm_button_add(parent);
-   _btn_icon_state_init(button,
+   ui->processes.btn_cpu_usage = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
             ui->settings.sort_type == SORT_BY_CPU_USAGE ? ui->settings.sort_reverse : EINA_FALSE,
             ui->settings.sort_type == SORT_BY_CPU_USAGE);
-   evas_object_size_hint_weight_set(button, EXPAND, 0);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   elm_object_text_set(button, _("CPU %"));
-   evas_object_show(button);
-   elm_table_pack(table, button, i++, 1, 1, 1);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("CPU %"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
 
    ui->processes.scroller = ui->processes.genlist_procs = plist = elm_genlist_add(parent);
    elm_scroller_gravity_set(ui->processes.scroller, 0.0, 1.0);
