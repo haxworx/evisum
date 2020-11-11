@@ -3,6 +3,7 @@
 
 typedef struct
 {
+   Evas_Object     *panes;
    Evas_Object     *btn_device;
    Evas_Object     *btn_mount;
    Evas_Object     *btn_fs;
@@ -14,11 +15,11 @@ typedef struct
    Ecore_Timer     *timer;
    int             (*sort_cb)(const void *, const void *);
    Eina_Bool        sort_reverse;
-} UI_Data;
+} Ui_Data;
 
 static Eina_Lock _lock;
 
-static UI_Data *_private_data = NULL;
+static Ui_Data *_private_data = NULL;
 
 static void
 _item_unrealized_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
@@ -97,7 +98,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Evas_Object *lb, *r, *pb;
    Evas_Coord w, ow;
-   UI_Data *pd;
+   Ui_Data *pd;
    File_System *inf =  data;
 
    if (!inf) return NULL;
@@ -197,6 +198,24 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
      }
 
    elm_genlist_item_class_free(itc);
+}
+
+static void
+_item_disk_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+   Elm_Object_Item *it;
+   File_System *fs;
+   Ui_Data *pd = data;
+
+   it = event_info;
+
+   elm_genlist_item_selected_set(it, 0);
+   fs = elm_object_item_data_get(it);
+   if (!fs) return;
+
+   return;
+   elm_panes_content_right_size_set(pd->panes, 0.5);
+   elm_panes_content_left_size_set(pd->panes, 0.5);
 }
 
 static Eina_Bool
@@ -414,6 +433,7 @@ ui_win_disk_add(Ui *ui)
 {
    Evas_Object *win, *box, *tbl, *scroller;
    Evas_Object *genlist, *btn;
+   Evas_Object *panes;
    Evas_Coord x = 0, y = 0;
    int i = 0;
 
@@ -424,11 +444,20 @@ ui_win_disk_add(Ui *ui)
      }
 
    eina_lock_new(&_lock);
+
    ui->disk.win = win = elm_win_util_standard_add("evisum", _("Storage"));
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
                                    evisum_ui_backgrounds_enabled_get()));
+
+   Ui_Data *pd = _private_data = calloc(1, sizeof(Ui_Data));
+
+   pd->panes = panes = elm_panes_add(win);
+   evas_object_size_hint_weight_set(panes, EXPAND, EXPAND);
+   elm_panes_horizontal_set(panes, 1);
+   evas_object_show(panes);
+   elm_object_content_set(win, panes);
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -440,8 +469,6 @@ ui_win_disk_add(Ui *ui)
    evas_object_size_hint_align_set(tbl, FILL, FILL);
    evas_object_show(tbl);
    elm_box_pack_end(box, tbl);
-
-   UI_Data *pd = _private_data = calloc(1, sizeof(UI_Data));
 
    pd->btn_device = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
@@ -507,17 +534,19 @@ ui_win_disk_add(Ui *ui)
    pd->genlist = genlist = elm_genlist_add(win);
    elm_object_focus_allow_set(genlist, 0);
    evas_object_data_set(genlist, "private", pd);
-   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
+   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_DEFAULT);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_smart_callback_add(genlist, "unrealized", _item_unrealized_cb, ui);
+   evas_object_smart_callback_add(genlist, "selected", _item_disk_clicked_cb, pd);
    evas_object_show(genlist);
-
    elm_object_content_set(scroller, genlist);
-   elm_box_pack_end(box, scroller);
-   elm_object_content_set(win, box);
 
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
+
+   elm_box_pack_end(box, scroller);
+   elm_object_part_content_set(panes, "left", box);
+   elm_panes_content_left_size_set(panes, 1.0);
 
    if (ui->disk.width > 0 && ui->disk.height > 0)
      evas_object_resize(win, ui->disk.width, ui->disk.height);
@@ -531,15 +560,12 @@ ui_win_disk_add(Ui *ui)
    else
      elm_win_center(win, 1, 1);
 
+   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, ui);
    evas_object_show(win);
 
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
-                                  _win_resize_cb, ui);
-
-   pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
+   pd->timer = ecore_timer_add(3.0, _disks_poll_timer_cb, NULL);
 
    _disks_poll_timer_cb(NULL);
-
-   pd->timer = ecore_timer_add(3.0, _disks_poll_timer_cb, NULL);
 }
 
