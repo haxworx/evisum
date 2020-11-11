@@ -303,7 +303,6 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 {
    Proc_Info *proc = data;
    proc_info_free(proc);
-   proc = NULL;
 }
 
 static Evas_Object *
@@ -893,8 +892,7 @@ _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it,
-                       Ui *ui)
+_item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui *ui)
 {
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("bug"),
                      _("Debug"), _item_menu_debug_cb, ui);
@@ -966,7 +964,7 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
                      _item_menu_kill_cb, ui);
 
    elm_menu_item_separator_add(menu, menu_it);
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
+   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("info"),
                                 _("Properties"), _item_menu_properties_cb, ui);
 
    elm_menu_item_separator_add(menu, menu_it);
@@ -1166,9 +1164,9 @@ _ui_content_system_add(Ui *ui, Evas_Object *parent)
    elm_scroller_gravity_set(ui->processes.scroller, 0.0, 1.0);
    elm_object_focus_allow_set(plist, EINA_FALSE);
    elm_scroller_movement_block_set(ui->processes.scroller,
-                   ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
+                                  ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
    elm_scroller_policy_set(ui->processes.scroller, ELM_SCROLLER_POLICY_OFF,
-                   ELM_SCROLLER_POLICY_AUTO);
+                           ELM_SCROLLER_POLICY_AUTO);
    elm_genlist_homogeneous_set(plist, EINA_TRUE);
    elm_genlist_multi_select_set(plist, EINA_FALSE);
    evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
