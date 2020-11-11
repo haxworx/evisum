@@ -1437,9 +1437,9 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
         for (int i = 0; i < info->power.battery_count; i++)
           usage += info->power.batteries[i]->percent;
 	if (info->power.have_ac)
-          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% AC");
+          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% AC ");
 	else
-          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% DC");
+          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% DC ");
         elm_progressbar_value_set(ui->processes.progress_bat, (usage / info->power.battery_count) / 100);
      }
    else if (!info->power.battery_count)
