@@ -17,13 +17,18 @@
 #include <pwd.h>
 
 Evisum_Config *_evisum_config;
+int EVISUM_EVENT_CONFIG_CHANGED;
 
 void
 evisum_ui_config_save(Ui *ui)
 {
    Evas_Coord w, h;
+   Eina_Bool notify = EINA_FALSE;
 
    if (!_evisum_config) return;
+
+   if (_evisum_config->poll_delay != ui->settings.poll_delay)
+     notify = EINA_TRUE;
 
    evas_object_geometry_get(ui->win, NULL, NULL, &w, &h);
 
@@ -69,6 +74,9 @@ evisum_ui_config_save(Ui *ui)
      }
 
    config_save(_evisum_config);
+
+   if (notify)
+     ecore_event_add(EVISUM_EVENT_CONFIG_CHANGED, NULL, NULL, NULL);
 }
 
 void
@@ -477,6 +485,8 @@ evisum_ui_init(void)
    ui->settings.sort_reverse = EINA_FALSE;
    ui->settings.sort_type = SORT_BY_PID;
    ui->program_pid = getpid();
+
+   EVISUM_EVENT_CONFIG_CHANGED = ecore_event_type_new();
 
    evisum_ui_config_load(ui);
 

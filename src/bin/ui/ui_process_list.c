@@ -11,6 +11,8 @@
 #include <pwd.h>
 
 extern Evisum_Config *_evisum_config;
+extern int EVISUM_EVENT_CONFIG_CHANGED;
+
 Ui *_ui;
 Eina_Lock _lock;
 
@@ -1375,6 +1377,7 @@ static void
 _system_info_all_poll(void *data, Ecore_Thread *thread)
 {
    Ui *ui = data;
+   (void) ui;
 
    while (1)
      {
@@ -1449,12 +1452,22 @@ out:
 }
 
 static Eina_Bool
-_elm_config_change_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
+_elm_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Ui *ui = data;
 
    elm_genlist_clear(ui->processes.genlist_procs);
    _process_list_update(ui);
+
+   return EINA_TRUE;
+}
+
+static Eina_Bool
+_evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   _proc_pid_cpu_times_reset(ui);
 
    return EINA_TRUE;
 }
@@ -1563,7 +1576,10 @@ ui_process_list_win_add(Ui *ui)
                                   _evisum_key_down_cb, ui);
    evas_object_event_callback_add(ui->processes.entry_search, EVAS_CALLBACK_KEY_DOWN,
                                   _evisum_search_keypress_cb, ui);
+
    ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
-                           _elm_config_change_cb, ui);
+                           _elm_config_changed_cb, ui);
+   ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
+                           _evisum_config_changed_cb, ui);
 }
 
