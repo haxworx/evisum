@@ -1385,7 +1385,7 @@ _system_info_all_poll(void *data, Ecore_Thread *thread)
              return;
           }
         ecore_thread_feedback(thread, info);
-        for (int i = 0; i < 4 * ui->settings.poll_delay; i++)
+        for (int i = 0; i < 4 * 1; i++)
           {
              if (ecore_thread_check(thread)) return;
              usleep(250000);
