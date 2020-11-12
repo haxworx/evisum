@@ -365,6 +365,8 @@ _process_list_linux_get(void)
         p->nice = st.nice;
         p->priority = st.pri;
         p->numthreads = st.numthreads;
+        if (st->flags & PF_KTHREAD)
+          p->is_kernel = 1;
         _mem_size(p);
         _cmd_args(p, st.name, sizeof(st.name));
 
@@ -925,6 +927,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
 
    p->tid = kp->ki_tid;
    p->thread_name = strdup(kp->ki_tdname);
+   if (kp->ki_flag & P_KPROC) p->is_kernel = 1;
 
    return p;
 }

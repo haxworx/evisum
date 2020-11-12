@@ -10,5 +10,5 @@ install_data('go-up.png', 'go-down.png',
              'sky_04.jpg', 'effects.png', 'info.png',
              'clo.png', 'bolt.png', 'menu.png',
              'lovethisdogharvey.png', 'application.png',
-             'e.png', 'border.png',
+             'e.png', 'border.png', 'freebsd.png',
              install_dir: join_paths(dir_data, 'evisum/images'))

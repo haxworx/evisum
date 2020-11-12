@@ -31,6 +31,7 @@ typedef struct _Proc_Info
    char       *arguments;
    const char *state;
 
+   short       is_kernel;
    int         tid;
    char       *thread_name;
 
