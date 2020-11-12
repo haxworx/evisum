@@ -365,7 +365,7 @@ _process_list_linux_get(void)
         p->nice = st.nice;
         p->priority = st.pri;
         p->numthreads = st.numthreads;
-        if (st->flags & PF_KTHREAD)
+        if (st.flags & PF_KTHREAD)
           p->is_kernel = 1;
         _mem_size(p);
         _cmd_args(p, st.name, sizeof(st.name));
