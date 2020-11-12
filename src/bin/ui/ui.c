@@ -111,6 +111,14 @@ evisum_ui_config_load(Ui *ui)
    ui->sensors.height = _evisum_config->sensors.height;
 }
 
+void
+evisum_restart(void)
+{
+   evisum_server_shutdown();
+   ecore_app_restart();
+   ecore_main_loop_quit();
+}
+
 static void
 _about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                   void *event_info EINA_UNUSED)
@@ -418,14 +426,6 @@ static void
 _ui_init_system_probe(Ui *ui)
 {
    ui->mem.zfs_mounted = file_system_in_use("ZFS");
-}
-
-void
-evisum_restart(void)
-{
-   evisum_server_shutdown();
-   ecore_app_restart();
-   ecore_main_loop_quit();
 }
 
 static void

@@ -13,8 +13,43 @@
 extern Evisum_Config *_evisum_config;
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
-Ui *_ui;
 Eina_Lock _lock;
+
+typedef struct
+{
+   Ecore_Thread    *thread;
+   Evisum_Ui_Cache *cache;
+   Eina_List       *cpu_times;
+   Eina_List       *cpu_list;
+
+   Ui              *ui;
+
+   pid_t            selected_pid;
+   char            *search_text;
+
+   Evas_Object     *summary;
+   Evas_Object     *pb_cpu;
+   Evas_Object     *pb_mem;
+   Evas_Object     *summary_bat;
+   Evas_Object     *pb_bat;
+
+   Evas_Object     *menu;
+
+   Evas_Object     *entry;
+   Evas_Object     *scroller;
+   Evas_Object     *genlist;
+
+   Evas_Object     *btn_pid;
+   Evas_Object     *btn_uid;
+   Evas_Object     *btn_cmd;
+   Evas_Object     *btn_size;
+   Evas_Object     *btn_rss;
+   Evas_Object     *btn_state;
+   Evas_Object     *btn_cpu_usage;
+
+} Ui_Data;
+
+static Ui_Data *_private_data = NULL;
 
 static int
 _sort_by_pid(const void *p1, const void *p2)
@@ -218,8 +253,9 @@ static void
 _proc_pid_cpu_times_free(Ui *ui)
 {
    pid_cpu_time_t *tmp;
+   Ui_Data *pd = _private_data;
 
-   EINA_LIST_FREE(ui->processes.cpu_times, tmp)
+   EINA_LIST_FREE(pd->cpu_times, tmp)
      {
         free(tmp);
      }
@@ -230,7 +266,9 @@ _proc_pid_cpu_times_reset(Ui *ui)
 {
    Eina_List *l;
    pid_cpu_time_t *tmp;
-   EINA_LIST_FOREACH(ui->processes.cpu_times, l, tmp)
+   Ui_Data *pd = _private_data;
+
+   EINA_LIST_FOREACH(pd->cpu_times, l, tmp)
      tmp->cpu_time_prev = 0;
 }
 
@@ -239,8 +277,9 @@ _proc_pid_cpu_time_save(Ui *ui, Proc_Info *proc)
 {
    Eina_List *l;
    pid_cpu_time_t *tmp;
+   Ui_Data *pd = _private_data;
 
-   EINA_LIST_FOREACH(ui->processes.cpu_times, l, tmp)
+   EINA_LIST_FOREACH(pd->cpu_times, l, tmp)
      {
         if (tmp->pid == proc->pid)
           {
@@ -254,7 +293,7 @@ _proc_pid_cpu_time_save(Ui *ui, Proc_Info *proc)
      {
         tmp->pid = proc->pid;
         tmp->cpu_time_prev = proc->cpu_time;
-        ui->processes.cpu_times = eina_list_append(ui->processes.cpu_times, tmp);
+        pd->cpu_times = eina_list_append(pd->cpu_times, tmp);
      }
 }
 
@@ -263,8 +302,9 @@ _proc_pid_cpu_usage_get(Ui *ui, Proc_Info *proc)
 {
    Eina_List *l;
    pid_cpu_time_t *tmp;
+   Ui_Data *pd = _private_data;
 
-   EINA_LIST_FOREACH(ui->processes.cpu_times, l, tmp)
+   EINA_LIST_FOREACH(pd->cpu_times, l, tmp)
      {
         if (tmp->pid == proc->pid)
           {
@@ -286,17 +326,17 @@ static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui *ui;
    Evas_Object *o;
+   Ui_Data *pd;
    Eina_List *contents = NULL;
 
-   ui = data;
+   pd = _private_data;
 
    elm_genlist_item_all_contents_unset(event_info, &contents);
 
    EINA_LIST_FREE(contents, o)
      {
-        evisum_ui_item_cache_item_release(ui->processes.cache, o);
+        evisum_ui_item_cache_item_release(pd->cache, o);
      }
 }
 
@@ -406,72 +446,71 @@ _item_create(Evas_Object *parent)
 static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source)
 {
-   Ui *ui;
    Proc_Info *proc;
    struct passwd *pwd_entry;
    Evas_Object *l, *r, *o, *hbx, *pb;
    Evas_Coord w, ow;
+   Ui_Data *pd = _private_data;
 
    proc = (void *) data;
-   ui = _ui;
 
    if (strcmp(source, "elm.swallow.content")) return NULL;
    if (!proc) return NULL;
-   if (!ui->state.ready) return NULL;
+   if (!pd->ui->state.ready) return NULL;
 
-   Item_Cache *it = evisum_ui_item_cache_item_get(ui->processes.cache);
+   Item_Cache *it = evisum_ui_item_cache_item_get(pd->cache);
    if (!it)
      {
         fprintf(stderr, "Error: Object cache creation failed.\n");
         exit(-1);
      }
 
-   evas_object_geometry_get(ui->processes.btn_pid, NULL, NULL, &w, NULL);
+   evas_object_geometry_get(pd->btn_pid, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_pid");
-   elm_object_text_set(l, eina_slstr_printf("<color=#fff>%d</>", proc->pid));
+   elm_object_text_set(l, eina_slstr_printf("%d", proc->pid));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
-   if (ow > w) evas_object_size_hint_min_set(ui->processes.btn_pid, w, 1);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_pid, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
 
-   evas_object_geometry_get(ui->processes.btn_uid, NULL, NULL, &w, NULL);
+   evas_object_geometry_get(pd->btn_uid, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_uid");
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
-     elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s</>", pwd_entry->pw_name));
+     elm_object_text_set(l, eina_slstr_printf("%s", pwd_entry->pw_name));
    else
-     elm_object_text_set(l, eina_slstr_printf("<color=#fff>%d</>", proc->uid));
+     elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
-   if (ow > w) evas_object_size_hint_min_set(ui->processes.btn_uid, w, 1);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_uid, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
 
-   evas_object_geometry_get(ui->processes.btn_size, NULL, NULL, &w, NULL);
+   evas_object_geometry_get(pd->btn_size, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_size");
-   elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s</>", evisum_size_format(proc->mem_size)));
+   elm_object_text_set(l, eina_slstr_printf("%s", evisum_size_format(proc->mem_size)));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
-   if (ow > w) evas_object_size_hint_min_set(ui->processes.btn_size, w, 1);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_size, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
 
-   evas_object_geometry_get(ui->processes.btn_rss, NULL, NULL, &w, NULL);
+   evas_object_geometry_get(pd->btn_rss, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_rss");
-   elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s</>", evisum_size_format(proc->mem_rss)));
+   elm_object_text_set(l, eina_slstr_printf("%s", evisum_size_format(proc->mem_rss)));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
-   if (ow > w) evas_object_size_hint_min_set(ui->processes.btn_rss, w, 1);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_rss, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
 
-   evas_object_geometry_get(ui->processes.btn_cmd, NULL, NULL, &w, NULL);
+   evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_cmd");
-   elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s</>", proc->command));
+   elm_object_text_set(l, eina_slstr_printf("%s", proc->command));
    hbx = evas_object_data_get(l, "hbox");
    evas_object_geometry_get(hbx, NULL, NULL, &ow, NULL);
-   if (ow > w) evas_object_size_hint_min_set(ui->processes.btn_cmd, w, 1);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_cmd, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
@@ -482,11 +521,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(o);
 
-   evas_object_geometry_get(ui->processes.btn_state, NULL, NULL, &w, NULL);
+   evas_object_geometry_get(pd->btn_state, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_state");
-   elm_object_text_set(l, eina_slstr_printf("<color=#fff>%s</>", proc->state));
+   elm_object_text_set(l, eina_slstr_printf("%s", proc->state));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
-   //if (ow > w) evas_object_size_hint_min_set(ui->processes.btn_state, w, 1);
+   //if (ow > w) evas_object_size_hint_min_set(pd->btn_state, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(l);
@@ -540,10 +579,10 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
 static Eina_Bool
 _show_items(void *data)
 {
-   Ui *ui = data;
+   Ui_Data *pd = data;
 
-   elm_genlist_realized_items_update(ui->processes.genlist_procs);
-   evas_object_show(ui->processes.genlist_procs);
+   elm_genlist_realized_items_update(pd->genlist);
+   evas_object_show(pd->genlist);
 
    return EINA_FALSE;
 }
@@ -551,15 +590,15 @@ _show_items(void *data)
 static Eina_Bool
 _bring_in(void *data)
 {
-   Ui *ui;
+   Ui_Data *pd;
    int h_page, v_page;
 
-   ui = data;
-   elm_scroller_gravity_set(ui->processes.scroller, 0.0, 0.0);
-   elm_scroller_last_page_get(ui->processes.scroller, &h_page, &v_page);
-   elm_scroller_page_bring_in(ui->processes.scroller, h_page, v_page);
+   pd = data;
+   elm_scroller_gravity_set(pd->scroller, 0.0, 0.0);
+   elm_scroller_last_page_get(pd->scroller, &h_page, &v_page);
+   elm_scroller_page_bring_in(pd->scroller, h_page, v_page);
 
-   ecore_timer_add(0.5, _show_items, ui);
+   ecore_timer_add(0.5, _show_items, pd);
 
    return EINA_FALSE;
 }
@@ -569,6 +608,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                           void *msg EINA_UNUSED)
 {
    Ui *ui;
+   Ui_Data *pd = _private_data;
    Eina_List *list, *l, *l_next;
    Proc_Info *proc;
    Elm_Object_Item *it;
@@ -597,8 +637,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    if (!list)
      list = proc_info_all_get();
 
-   if (ui->processes.search_text && ui->processes.search_text[0])
-     len = strlen(ui->processes.search_text);
+   if (pd->search_text && pd->search_text[0])
+     len = strlen(pd->search_text);
 
    if (ui->settings.show_user)
      {
@@ -618,7 +658,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if (((len && (strncasecmp(proc->command, ui->processes.search_text, len))) ||
+        if (((len && (strncasecmp(proc->command, pd->search_text, len))) ||
             (!ui->settings.show_self && (proc->pid == ui->program_pid))))
          {
             proc_info_free(proc);
@@ -630,9 +670,9 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
          }
      }
 
-   _genlist_ensure_n_items(ui->processes.genlist_procs, eina_list_count(list));
+   _genlist_ensure_n_items(pd->genlist, eina_list_count(list));
 
-   it = elm_genlist_first_item_get(ui->processes.genlist_procs);
+   it = elm_genlist_first_item_get(pd->genlist);
 
    list = _list_sort(ui, list);
 
@@ -652,7 +692,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
           }
      }
 
-   elm_genlist_realized_items_update(ui->processes.genlist_procs);
+   elm_genlist_realized_items_update(pd->genlist);
 
    eina_lock_release(&_lock);
 }
@@ -722,12 +762,13 @@ _btn_icon_state_init(Evas_Object *button, Eina_Bool reverse,
 static void
 _btn_clicked_state_save(Ui *ui, Evas_Object *btn)
 {
+   Ui_Data *pd = _private_data;
    _btn_icon_state_update(btn, ui->settings.sort_reverse);
 
    evisum_ui_config_save(ui);
    _process_list_update(ui);
 
-   elm_scroller_page_bring_in(ui->processes.scroller, 0, 0);
+   elm_scroller_page_bring_in(pd->scroller, 0, 0);
 }
 
 static void
@@ -735,12 +776,13 @@ _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (ui->settings.sort_type == SORT_BY_PID)
      ui->settings.sort_reverse = !ui->settings.sort_reverse;
    ui->settings.sort_type = SORT_BY_PID;
 
-   _btn_clicked_state_save(ui, ui->processes.btn_pid);
+   _btn_clicked_state_save(ui, pd->btn_pid);
 }
 
 static void
@@ -748,12 +790,13 @@ _btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (ui->settings.sort_type == SORT_BY_UID)
      ui->settings.sort_reverse = !ui->settings.sort_reverse;
    ui->settings.sort_type = SORT_BY_UID;
 
-   _btn_clicked_state_save(ui, ui->processes.btn_uid);
+   _btn_clicked_state_save(ui, pd->btn_uid);
 }
 
 static void
@@ -761,12 +804,13 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                           void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (ui->settings.sort_type == SORT_BY_CPU_USAGE)
      ui->settings.sort_reverse = !ui->settings.sort_reverse;
    ui->settings.sort_type = SORT_BY_CPU_USAGE;
 
-   _btn_clicked_state_save(ui, ui->processes.btn_cpu_usage);
+   _btn_clicked_state_save(ui, pd->btn_cpu_usage);
 }
 
 static void
@@ -774,12 +818,13 @@ _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (ui->settings.sort_type == SORT_BY_SIZE)
      ui->settings.sort_reverse = !ui->settings.sort_reverse;
    ui->settings.sort_type = SORT_BY_SIZE;
 
-   _btn_clicked_state_save(ui, ui->processes.btn_size);
+   _btn_clicked_state_save(ui, pd->btn_size);
 }
 
 static void
@@ -787,12 +832,13 @@ _btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (ui->settings.sort_type == SORT_BY_RSS)
      ui->settings.sort_reverse = !ui->settings.sort_reverse;
    ui->settings.sort_type = SORT_BY_RSS;
 
-   _btn_clicked_state_save(ui, ui->processes.btn_rss);
+   _btn_clicked_state_save(ui, pd->btn_rss);
 }
 
 static void
@@ -800,12 +846,13 @@ _btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (ui->settings.sort_type == SORT_BY_CMD)
      ui->settings.sort_reverse = !ui->settings.sort_reverse;
    ui->settings.sort_type = SORT_BY_CMD;
 
-   _btn_clicked_state_save(ui, ui->processes.btn_cmd);
+   _btn_clicked_state_save(ui, pd->btn_cmd);
 }
 
 static void
@@ -813,60 +860,56 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (ui->settings.sort_type == SORT_BY_STATE)
      ui->settings.sort_reverse = !ui->settings.sort_reverse;
    ui->settings.sort_type = SORT_BY_STATE;
 
-   _btn_clicked_state_save(ui, ui->processes.btn_state);
+   _btn_clicked_state_save(ui, pd->btn_state);
 }
 
 static void
 _item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                         void *ev EINA_UNUSED)
 {
-   Ui *ui = data;
-
+   Ui_Data *pd = _private_data;
    evas_object_del(obj);
 
-   ui->processes.menu = NULL;
+   pd->menu = NULL;
 }
 
 static void
 _item_menu_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
-
-   kill(ui->processes.selected_pid, SIGCONT);
+   Ui_Data *pd = _private_data;
+   kill(pd->selected_pid, SIGCONT);
 }
 
 static void
 _item_menu_stop_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
-
-   kill(ui->processes.selected_pid, SIGSTOP);
+   Ui_Data *pd = _private_data;
+   kill(pd->selected_pid, SIGSTOP);
 }
 
 static void
 _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
-
-   kill(ui->processes.selected_pid, SIGKILL);
+   Ui_Data *pd = _private_data;
+   kill(pd->selected_pid, SIGKILL);
 }
 
 static void
 _item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
-
-   elm_menu_close(ui->processes.menu);
-   ui->processes.menu = NULL;
+   Ui_Data *pd = _private_data;
+   elm_menu_close(pd->menu);
+   pd->menu = NULL;
 }
 
 static void
@@ -876,12 +919,13 @@ _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
    Ui *ui;
    Proc_Info *proc;
    const char *terminal = "xterm";
+   Ui_Data *pd = _private_data;
 
    ui = data;
 
    _item_menu_cancel_cb(ui, NULL, NULL);
 
-   proc = proc_info_by_pid(ui->processes.selected_pid);
+   proc = proc_info_by_pid(pd->selected_pid);
    if (!proc) return;
 
    if (ecore_file_app_installed("terminology"))
@@ -918,12 +962,13 @@ _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
    Ui *ui;
+   Ui_Data *pd = _private_data;
 
    ui = data;
 
    _item_menu_cancel_cb(ui, NULL, NULL);
 
-   _process_win_add(ui->win, ui->processes.selected_pid, ui->settings.poll_delay);
+   _process_win_add(ui->win, pd->selected_pid, ui->settings.poll_delay);
 }
 
 static Evas_Object *
@@ -932,12 +977,13 @@ _item_menu_create(Ui *ui, Proc_Info *proc)
    Elm_Object_Item *menu_it, *menu_it2;
    Evas_Object *menu;
    Eina_Bool stopped;
+   Ui_Data *pd = _private_data;
 
    if (!proc) return NULL;
 
-   ui->processes.selected_pid = proc->pid;
+   pd->selected_pid = proc->pid;
 
-   ui->processes.menu = menu = elm_menu_add(ui->win);
+   pd->menu = menu = elm_menu_add(ui->win);
    if (!menu) return NULL;
 
    evas_object_smart_callback_add(menu, "dismissed",
@@ -1008,17 +1054,18 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    Ui *ui;
    Elm_Object_Item *it;
    Proc_Info *proc;
+   Ui_Data *pd = _private_data;
 
    ui = data;
    it = event_info;
 
    elm_genlist_item_selected_set(it, EINA_FALSE);
-   if (ui->processes.menu) return;
+   if (pd->menu) return;
 
    proc = elm_object_item_data_get(it);
    if (!proc) return;
 
-   ui->processes.selected_pid = proc->pid;
+   pd->selected_pid = proc->pid;
    ui_process_win_add(ui->win, proc->pid, proc->command,
                       ui->settings.poll_delay);
 }
@@ -1080,216 +1127,15 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
      _main_menu_dismissed_cb(ui, NULL, NULL);
 }
 
-static Evas_Object *
-_ui_content_system_add(Ui *ui, Evas_Object *parent)
-{
-   Evas_Object *box, *hbox, *frame, *table;
-   Evas_Object *entry, *pb, *btn, *plist;
-   int i = 0;
-
-   table = elm_table_add(parent);
-   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(table, FILL, FILL);
-   evas_object_show(table);
-
-   ui->processes.btn_cmd = btn = elm_button_add(parent);
-   _btn_icon_state_init(btn,
-            ui->settings.sort_type == SORT_BY_CMD ? ui->settings.sort_reverse : EINA_FALSE,
-            ui->settings.sort_type == SORT_BY_CMD);
-   evas_object_size_hint_weight_set(btn, 1.0, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("Command"));
-   evas_object_show(btn);
-   elm_table_pack(table, btn, i++, 1, 1, 1);
-
-   ui->processes.btn_uid = btn = elm_button_add(parent);
-   _btn_icon_state_init(btn,
-            ui->settings.sort_type == SORT_BY_UID ? ui->settings.sort_reverse : EINA_FALSE,
-            ui->settings.sort_type == SORT_BY_UID);
-   evas_object_size_hint_weight_set(btn, 1.0, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("User"));
-   evas_object_show(btn);
-   elm_table_pack(table, btn, i++, 1, 1, 1);
-
-   ui->processes.btn_pid = btn = elm_button_add(parent);
-   _btn_icon_state_init(btn,
-            ui->settings.sort_type == SORT_BY_PID ? ui->settings.sort_reverse : EINA_FALSE,
-            ui->settings.sort_type == SORT_BY_PID);
-   evas_object_size_hint_weight_set(btn, 1.0, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("PID"));
-   evas_object_show(btn);
-   elm_table_pack(table, btn, i++, 1, 1, 1);
-
-   ui->processes.btn_size = btn = elm_button_add(parent);
-   _btn_icon_state_init(btn,
-            ui->settings.sort_type == SORT_BY_SIZE ? ui->settings.sort_reverse : EINA_FALSE,
-            ui->settings.sort_type == SORT_BY_SIZE);
-   evas_object_size_hint_weight_set(btn, 1.0, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("Size"));
-   evas_object_show(btn);
-   elm_table_pack(table, btn, i++, 1, 1, 1);
-
-   ui->processes.btn_rss = btn = elm_button_add(parent);
-   _btn_icon_state_init(btn,
-            ui->settings.sort_type == SORT_BY_RSS ? ui->settings.sort_reverse : EINA_FALSE,
-            ui->settings.sort_type == SORT_BY_RSS);
-   evas_object_size_hint_weight_set(btn, 1.0, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("Res"));
-   evas_object_show(btn);
-   elm_table_pack(table, btn, i++, 1, 1, 1);
-
-   ui->processes.btn_state = btn = elm_button_add(parent);
-   _btn_icon_state_init(btn,
-            ui->settings.sort_type == SORT_BY_STATE ? ui->settings.sort_reverse : EINA_FALSE,
-            ui->settings.sort_type == SORT_BY_STATE);
-   evas_object_size_hint_weight_set(btn, 0, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("State"));
-   evas_object_show(btn);
-   elm_table_pack(table, btn, i++, 1, 1, 1);
-
-   ui->processes.btn_cpu_usage = btn = elm_button_add(parent);
-   _btn_icon_state_init(btn,
-            ui->settings.sort_type == SORT_BY_CPU_USAGE ? ui->settings.sort_reverse : EINA_FALSE,
-            ui->settings.sort_type == SORT_BY_CPU_USAGE);
-   evas_object_size_hint_weight_set(btn, EXPAND, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("CPU %"));
-   evas_object_show(btn);
-   elm_table_pack(table, btn, i++, 1, 1, 1);
-
-   ui->processes.scroller = ui->processes.genlist_procs = plist = elm_genlist_add(parent);
-   elm_scroller_gravity_set(ui->processes.scroller, 0.0, 1.0);
-   elm_object_focus_allow_set(plist, EINA_FALSE);
-   elm_scroller_movement_block_set(ui->processes.scroller,
-                                  ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
-   elm_scroller_policy_set(ui->processes.scroller, ELM_SCROLLER_POLICY_OFF,
-                           ELM_SCROLLER_POLICY_AUTO);
-   elm_genlist_homogeneous_set(plist, EINA_TRUE);
-   elm_genlist_multi_select_set(plist, EINA_FALSE);
-   evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(plist, FILL, FILL);
-   elm_table_pack(table, plist, 0, 2, i, 1);
-
-   hbox = elm_box_add(parent);
-   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
-   evas_object_size_hint_align_set(hbox, FILL, 1.0);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
-
-   btn = _btn_create(hbox, "menu", NULL, _btn_menu_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
-
-   ui->processes.entry_search = entry = elm_entry_add(parent);
-   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(entry, FILL, FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_TRUE);
-   evas_object_show(entry);
-
-   elm_box_pack_end(hbox, entry);
-   elm_table_pack(table, hbox, 0, 3, i, 1);
-
-   box = elm_box_add(parent);
-   evas_object_size_hint_weight_set(box, EXPAND, 0);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_show(box);
-   elm_table_pack(table, box, 0, 0, i, 1);
-
-   ui->processes.summary_box = hbox = elm_box_add(box);
-   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
-   evas_object_size_hint_align_set(hbox, FILL, 0);
-   elm_box_horizontal_set(hbox, EINA_TRUE);
-   evas_object_show(hbox);
-   elm_box_pack_end(box, hbox);
-
-   frame = elm_frame_add(hbox);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("System CPU"));
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-   elm_box_pack_end(hbox, frame);
-
-   ui->processes.progress_cpu = pb = elm_progressbar_add(parent);
-   elm_progressbar_unit_format_set(pb, "");
-   evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   elm_object_content_set(frame, pb);
-   evas_object_show(pb);
-
-   frame = elm_frame_add(hbox);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_text_set(frame, _("System Memory"));
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-   elm_box_pack_end(hbox, frame);
-
-   ui->processes.progress_mem = pb = elm_progressbar_add(parent);
-   evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   evas_object_show(pb);
-   elm_object_content_set(frame, pb);
-
-   ui->processes.summary_bat = frame = elm_frame_add(hbox);
-   elm_progressbar_unit_format_set(pb, "");
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-   elm_box_pack_end(hbox, frame);
-
-   ui->processes.progress_bat = pb = elm_progressbar_add(parent);
-   elm_progressbar_unit_format_set(pb, "");
-   evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   evas_object_show(pb);
-   elm_object_content_set(frame, pb);
-
-   evas_object_smart_callback_add(ui->processes.btn_pid, "clicked",
-                   _btn_pid_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.btn_uid, "clicked",
-                   _btn_uid_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.btn_size, "clicked",
-                   _btn_size_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.btn_rss, "clicked",
-                   _btn_rss_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.btn_cmd, "clicked",
-                   _btn_cmd_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.btn_state, "clicked",
-                   _btn_state_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.btn_cpu_usage, "clicked",
-                   _btn_cpu_usage_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.genlist_procs, "selected",
-                   _item_pid_clicked_cb, ui);
-   evas_object_event_callback_add(ui->processes.genlist_procs, EVAS_CALLBACK_MOUSE_UP,
-                   _item_pid_secondary_clicked_cb, ui);
-   evas_object_smart_callback_add(ui->processes.genlist_procs, "unrealized",
-                   _item_unrealized_cb, ui);
-
-   frame = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(frame, FILL, FILL);
-   elm_object_style_set(frame, "pad_small");
-   evas_object_show(frame);
-   elm_object_content_set(frame, table);
-
-   return frame;
-}
-
 static void
 _evisum_process_filter(Ui *ui, const char *text)
 {
-   if (ui->processes.search_text)
-     free(ui->processes.search_text);
+   Ui_Data *pd = _private_data;
 
-   ui->processes.search_text = strdup(text);
+   if (pd->search_text)
+     free(pd->search_text);
+
+   pd->search_text = strdup(text);
 }
 
 static void
@@ -1319,11 +1165,218 @@ _evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
      }
 }
 
+static Evas_Object *
+_ui_content_system_add(Ui *ui, Evas_Object *parent)
+{
+   Evas_Object *box, *hbox, *frame, *table;
+   Evas_Object *entry, *pb, *btn, *plist;
+   Ui_Data *pd = _private_data;
+   int i = 0;
+
+   table = elm_table_add(parent);
+   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(table, FILL, FILL);
+   evas_object_show(table);
+
+   pd->btn_cmd = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            ui->settings.sort_type == SORT_BY_CMD ? ui->settings.sort_reverse : EINA_FALSE,
+            ui->settings.sort_type == SORT_BY_CMD);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("Command"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_cmd_clicked_cb, ui);
+
+   pd->btn_uid = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            ui->settings.sort_type == SORT_BY_UID ? ui->settings.sort_reverse : EINA_FALSE,
+            ui->settings.sort_type == SORT_BY_UID);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("User"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_uid_clicked_cb, ui);
+
+   pd->btn_pid = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            ui->settings.sort_type == SORT_BY_PID ? ui->settings.sort_reverse : EINA_FALSE,
+            ui->settings.sort_type == SORT_BY_PID);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("PID"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_pid_clicked_cb, ui);
+
+   pd->btn_size = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            ui->settings.sort_type == SORT_BY_SIZE ? ui->settings.sort_reverse : EINA_FALSE,
+            ui->settings.sort_type == SORT_BY_SIZE);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("Size"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_size_clicked_cb, ui);
+
+   pd->btn_rss = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            ui->settings.sort_type == SORT_BY_RSS ? ui->settings.sort_reverse : EINA_FALSE,
+            ui->settings.sort_type == SORT_BY_RSS);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("Res"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_rss_clicked_cb, ui);
+
+   pd->btn_state = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            ui->settings.sort_type == SORT_BY_STATE ? ui->settings.sort_reverse : EINA_FALSE,
+            ui->settings.sort_type == SORT_BY_STATE);
+   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("State"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_state_clicked_cb, ui);
+
+   pd->btn_cpu_usage = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            ui->settings.sort_type == SORT_BY_CPU_USAGE ? ui->settings.sort_reverse : EINA_FALSE,
+            ui->settings.sort_type == SORT_BY_CPU_USAGE);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("CPU %"));
+   evas_object_show(btn);
+   elm_table_pack(table, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_cpu_usage_clicked_cb, ui);
+
+   pd->scroller = pd->genlist = plist = elm_genlist_add(parent);
+   elm_scroller_gravity_set(pd->scroller, 0.0, 1.0);
+   elm_object_focus_allow_set(plist, EINA_FALSE);
+   elm_scroller_movement_block_set(pd->scroller,
+                                  ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
+   elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
+                           ELM_SCROLLER_POLICY_AUTO);
+   elm_genlist_homogeneous_set(plist, EINA_TRUE);
+   elm_genlist_multi_select_set(plist, EINA_FALSE);
+   evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(plist, FILL, FILL);
+   elm_table_pack(table, plist, 0, 2, i, 1);
+
+   hbox = elm_box_add(parent);
+   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, FILL, 1.0);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+
+   btn = _btn_create(hbox, "menu", NULL, _btn_menu_clicked_cb, ui);
+   elm_box_pack_end(hbox, btn);
+
+   pd->entry = entry = elm_entry_add(parent);
+   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(entry, FILL, FILL);
+   elm_entry_single_line_set(entry, EINA_TRUE);
+   elm_entry_scrollable_set(entry, EINA_TRUE);
+   elm_entry_editable_set(entry, EINA_TRUE);
+   evas_object_show(entry);
+   evas_object_event_callback_add(pd->entry, EVAS_CALLBACK_KEY_DOWN,
+                                  _evisum_search_keypress_cb, ui);
+
+   elm_box_pack_end(hbox, entry);
+   elm_table_pack(table, hbox, 0, 3, i, 1);
+
+   box = elm_box_add(parent);
+   evas_object_size_hint_weight_set(box, EXPAND, 0);
+   evas_object_size_hint_align_set(box, FILL, FILL);
+   evas_object_show(box);
+   elm_table_pack(table, box, 0, 0, i, 1);
+
+   pd->summary = hbox = elm_box_add(box);
+   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
+   evas_object_size_hint_align_set(hbox, FILL, 0);
+   elm_box_horizontal_set(hbox, EINA_TRUE);
+   evas_object_show(hbox);
+   elm_box_pack_end(box, hbox);
+
+   frame = elm_frame_add(hbox);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_text_set(frame, _("System CPU"));
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+   elm_box_pack_end(hbox, frame);
+
+   pd->pb_cpu = pb = elm_progressbar_add(parent);
+   elm_progressbar_unit_format_set(pb, "");
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_object_content_set(frame, pb);
+   evas_object_show(pb);
+
+   frame = elm_frame_add(hbox);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_text_set(frame, _("System Memory"));
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+   elm_box_pack_end(hbox, frame);
+
+   pd->pb_mem = pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   evas_object_show(pb);
+   elm_object_content_set(frame, pb);
+
+   pd->summary_bat = frame = elm_frame_add(hbox);
+   elm_progressbar_unit_format_set(pb, "");
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+   elm_box_pack_end(hbox, frame);
+
+   pd->pb_bat = pb = elm_progressbar_add(parent);
+   elm_progressbar_unit_format_set(pb, "");
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   evas_object_show(pb);
+   elm_object_content_set(frame, pb);
+
+   evas_object_smart_callback_add(pd->genlist, "selected",
+                   _item_pid_clicked_cb, ui);
+   evas_object_event_callback_add(pd->genlist, EVAS_CALLBACK_MOUSE_UP,
+                   _item_pid_secondary_clicked_cb, ui);
+   evas_object_smart_callback_add(pd->genlist, "unrealized",
+                   _item_unrealized_cb, ui);
+
+   frame = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(frame, FILL, FILL);
+   elm_object_style_set(frame, "pad_small");
+   evas_object_show(frame);
+   elm_object_content_set(frame, table);
+
+   return frame;
+}
+
 static void
 _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
    Ui *ui;
+   Ui_Data *pd = _private_data;
    Eina_Bool control;
 
    ev = event_info;
@@ -1343,7 +1396,7 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    control = evas_key_modifier_is_set(ev->modifiers, "Control");
    if (!control)
      {
-        elm_object_focus_set(ui->processes.entry_search, EINA_TRUE);
+        elm_object_focus_set(pd->entry, EINA_TRUE);
         return;
      }
 
@@ -1357,13 +1410,14 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_evisum_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    if (eina_lock_take_try(&_lock))
      {
-        elm_genlist_realized_items_update(ui->processes.genlist_procs);
+        elm_genlist_realized_items_update(pd->genlist);
         eina_lock_release(&_lock);
      }
 
@@ -1403,6 +1457,7 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    Evas_Object *pb;
    Sys_Info *info;
    double ratio, value, usage = 0.0;
+   Ui_Data *pd = _private_data;
 
    ui = data;
    info = msg;
@@ -1415,15 +1470,15 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    usage /= system_cpu_online_count_get();
 
-   elm_progressbar_unit_format_set(ui->processes.progress_cpu, "%1.2f %%");
-   elm_progressbar_value_set(ui->processes.progress_cpu, usage / 100);
+   elm_progressbar_unit_format_set(pd->pb_cpu, "%1.2f %%");
+   elm_progressbar_value_set(pd->pb_cpu, usage / 100);
 
    ui->cpu_usage = usage;
 
    if (ui->mem.zfs_mounted)
      info->memory.used += info->memory.zfs_arc_used;
 
-   pb = ui->processes.progress_mem;
+   pb = pd->pb_mem;
    ratio = info->memory.total / 100.0;
    value = info->memory.used / ratio;
    elm_progressbar_value_set(pb, value / 100);
@@ -1436,16 +1491,16 @@ _system_info_all_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
      {
         for (int i = 0; i < info->power.battery_count; i++)
           usage += info->power.batteries[i]->percent;
-	if (info->power.have_ac)
-          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% AC ");
-	else
-          elm_progressbar_unit_format_set(ui->processes.progress_bat, "%1.0f %% DC ");
-        elm_progressbar_value_set(ui->processes.progress_bat, (usage / info->power.battery_count) / 100);
+        if (info->power.have_ac)
+          elm_progressbar_unit_format_set(pd->pb_bat, "%1.0f %% AC ");
+        else
+          elm_progressbar_unit_format_set(pd->pb_bat, "%1.0f %% DC ");
+        elm_progressbar_value_set(pd->pb_bat, (usage / info->power.battery_count) / 100);
      }
    else if (!info->power.battery_count)
      {
-        elm_box_unpack(ui->processes.summary_box, ui->processes.summary_bat);
-        evas_object_hide(ui->processes.summary_bat);
+        elm_box_unpack(pd->summary, pd->summary_bat);
+        evas_object_hide(pd->summary_bat);
      }
 out:
    system_info_all_free(info);
@@ -1455,8 +1510,9 @@ static Eina_Bool
 _elm_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
-   elm_genlist_clear(ui->processes.genlist_procs);
+   elm_genlist_clear(pd->genlist);
    _process_list_update(ui);
 
    return EINA_TRUE;
@@ -1477,34 +1533,39 @@ _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
+   Ui_Data *pd = _private_data;
 
    evas_object_del(obj);
 
    if (ui->thread_system)
      ecore_thread_cancel(ui->thread_system);
 
-   if (ui->processes.thread)
-     ecore_thread_cancel(ui->processes.thread);
+   if (pd->thread)
+     ecore_thread_cancel(pd->thread);
 
    if (ui->thread_system)
      ecore_thread_wait(ui->thread_system, 0.2);
 
-   if (ui->processes.thread)
-     ecore_thread_wait(ui->processes.thread, 0.2);
+   if (pd->thread)
+     ecore_thread_wait(pd->thread, 0.2);
 
-   ui->thread_system = ui->processes.thread = NULL;
+   ui->thread_system = pd->thread = NULL;
 
    ui->win = NULL;
 
    if (ui->processes.animator)
      ecore_animator_del(ui->processes.animator);
 
-   if (ui->processes.cache)
-     evisum_ui_item_cache_free(ui->processes.cache);
+   if (pd->cache)
+     evisum_ui_item_cache_free(pd->cache);
+
+   if (pd->search_text) free(pd->search_text);
 
    _proc_pid_cpu_times_free(ui);
 
    eina_lock_free(&_lock);
+
+   free(pd);
 
    if (evisum_ui_can_exit(ui))
      ecore_main_loop_quit();
@@ -1524,11 +1585,13 @@ ui_process_list_win_add(Ui *ui)
 
    eina_lock_new(&_lock);
 
-   _ui = ui;
+   Ui_Data *pd = _private_data = calloc(1, sizeof(Ui_Data));
+   if (!pd) return;
 
-   ui->processes.cpu_times = NULL;
-   ui->processes.cpu_list = NULL;
-   ui->processes.selected_pid = -1;
+   pd->cpu_times = NULL;
+   pd->cpu_list = NULL;
+   pd->selected_pid = -1;
+   pd->ui = ui;
 
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
    ui->win = win = elm_win_util_standard_add("evisum", "evisum");
@@ -1547,7 +1610,7 @@ ui_process_list_win_add(Ui *ui)
    evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
    evas_object_show(win);
 
-   ecore_timer_add(2.0, _bring_in, ui);
+   ecore_timer_add(2.0, _bring_in, pd);
 
    if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
      evisum_ui_background_random_add(ui->win, 1);
@@ -1558,28 +1621,26 @@ ui_process_list_win_add(Ui *ui)
    if (evisum_ui_effects_enabled_get())
      evisum_ui_animate(ui);
 
-   ui->processes.cache = evisum_ui_item_cache_new(ui->processes.genlist_procs, _item_create, 50);
+   pd->cache = evisum_ui_item_cache_new(pd->genlist, _item_create, 50);
 
    ui->thread_system =
       ecore_thread_feedback_run(_system_info_all_poll,
                                 _system_info_all_poll_feedback_cb,
                                 NULL, NULL, ui, EINA_FALSE);
-   ui->processes.thread =
+   pd->thread =
       ecore_thread_feedback_run(_process_list,
                                 _process_list_feedback_cb,
                                 NULL, NULL, ui, EINA_FALSE);
    _process_list_update(ui);
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
-                                  _evisum_resize_cb, ui);
+                                  _win_resize_cb, ui);
    evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
                                   _evisum_key_down_cb, ui);
-   evas_object_event_callback_add(ui->processes.entry_search, EVAS_CALLBACK_KEY_DOWN,
-                                  _evisum_search_keypress_cb, ui);
 
    ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
                            _elm_config_changed_cb, ui);
    ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
-                           _evisum_config_changed_cb, ui);
+                           _evisum_config_changed_cb, pd);
 }
 
