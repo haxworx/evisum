@@ -76,7 +76,7 @@ _item_create(Evas_Object *parent)
    evas_object_show(tbl);
 
    lb = _item_column_add(tbl, "device", 0);
-   evas_object_size_hint_align_set(lb, 0, FILL);
+   evas_object_size_hint_align_set(lb, 0.1, FILL);
    lb = _item_column_add(tbl, "mount", 1);
    evas_object_size_hint_align_set(lb, 0, FILL);
    lb = _item_column_add(tbl, "fs", 2);
