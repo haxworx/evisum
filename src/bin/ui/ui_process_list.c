@@ -1450,6 +1450,7 @@ _system_info_all_poll(void *data, Ecore_Thread *thread)
              ecore_main_loop_quit();
              return;
           }
+        if (ecore_thread_check(thread)) return;
         ecore_thread_feedback(thread, info);
         for (int i = 0; i < 4 * 1; i++)
           {

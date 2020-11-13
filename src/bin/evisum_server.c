@@ -7,10 +7,6 @@
 #include <Ecore_Con.h>
 #include "evisum_server.h"
 #include "src/bin/ui/ui.h"
-#include "src/bin/ui/ui_cpu.h"
-#include "src/bin/ui/ui_memory.h"
-#include "src/bin/ui/ui_disk.h"
-#include "src/bin/ui/ui_sensors.h"
 
 #define LISTEN_SOCKET_NAME "evisum_server"
 #define WANTED "bonjour monde"
