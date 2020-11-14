@@ -289,7 +289,7 @@ typedef struct {
 } Animate_Data;
 
 static void
-_win_del_cb(void *data, Evas_Object *obj,
+_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Animate_Data *ad;
@@ -308,7 +308,20 @@ _win_del_cb(void *data, Evas_Object *obj,
 }
 
 static void
-_about_resize_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_btn_close_cb(void *data EINA_UNUSED, Evas_Object *obj,
+              void *event_info EINA_UNUSED)
+{
+   Animate_Data *ad;
+   Ui *ui;
+
+   ad = data;
+   ui = ad->ui;
+
+   evas_object_del(ui->win_about);
+}
+
+static void
+_about_resize_cb(void *data, Evas *e, Evas_Object *obj EINA_UNUSED,
                  void *event_info EINA_UNUSED)
 {
    Animate_Data *ad = data;
@@ -403,6 +416,7 @@ evisum_about_window_show(void *data)
    if (ui->win_about) return;
 
    ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
+   elm_win_autodel_set(win, EINA_TRUE);
    elm_win_title_set(win, _("About"));
 
    /* All that moves */
@@ -446,8 +460,8 @@ evisum_about_window_show(void *data)
    about->pos2 = h + ih + ih;
    about->im_upwards = 1;
    about->animator = ecore_animator_add(about_anim, about);
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, about);
-   evas_object_smart_callback_add(win, "resize", _about_resize_cb, about);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, about);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _about_resize_cb, about);
 
    /* Version overlay */
 
@@ -497,7 +511,7 @@ evisum_about_window_show(void *data)
    evas_object_color_set(rec, 0, 0, 0, 128);
    evas_object_show(rec);
 
-   evas_object_smart_callback_add(btn, "clicked", _win_del_cb, about);
+   evas_object_smart_callback_add(btn, "clicked", _btn_close_cb, about);
 
    elm_table_pack(tbl, label, 0, 1, 1, 1);
    elm_table_pack(tbl, im, 0, 1, 1, 1);

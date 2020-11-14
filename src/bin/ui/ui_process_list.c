@@ -607,6 +607,15 @@ _bring_in(void *data)
    return EINA_FALSE;
 }
 
+
+static void
+_process_list_cancel_cb(void *data, Ecore_Thread *thread)
+{
+   Ui_Data *pd = data;
+
+   _proc_pid_cpu_times_free(pd);
+}
+
 static void
 _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                           void *msg EINA_UNUSED)
@@ -720,6 +729,7 @@ _process_list(void *data, Ecore_Thread *thread)
 
    while (1)
      {
+        if (ecore_thread_check(thread)) return;
         ecore_thread_feedback(thread, ui);
         for (int i = 0; i < delay * 4; i++)
           {
@@ -1536,7 +1546,7 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNU
 }
 
 static void
-_win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Ui *ui;
@@ -1574,9 +1584,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    eina_lock_free(&_lock);
 
    free(pd);
-
-   if (evisum_ui_can_exit(ui))
-     ecore_main_loop_quit();
 }
 
 void
@@ -1599,11 +1606,12 @@ ui_process_list_win_add(Ui *ui)
    pd->ui = ui;
 
    ui->win = win = elm_win_util_standard_add("evisum", "evisum");
+   elm_win_autodel_set(win, EINA_TRUE);
    elm_win_title_set(win, _("EFL System Monitor"));
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
 
    if (_evisum_config->width > 1 && _evisum_config->height > 1)
      evas_object_resize(win, _evisum_config->width, _evisum_config->height);
@@ -1630,7 +1638,7 @@ ui_process_list_win_add(Ui *ui)
    pd->thread =
       ecore_thread_feedback_run(_process_list,
                                 _process_list_feedback_cb,
-                                NULL, NULL, pd, EINA_FALSE);
+                                _process_list_cancel_cb, NULL, pd, EINA_FALSE);
    _process_list_update(pd);
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,

@@ -414,14 +414,6 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    ui->main_menu = o;
 }
 
-Eina_Bool
-evisum_ui_can_exit(Ui *ui)
-{
-   if (!ui->win && !ui->cpu.win && !ui->mem.win && !ui->sensors.win)
-     return 1;
-   return 0;
-}
-
 static void
 _ui_init_system_probe(Ui *ui)
 {
@@ -468,7 +460,7 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
 }
 
 void
-evisum_ui_del(Ui *ui)
+evisum_ui_shutdown(Ui *ui)
 {
    evisum_icon_cache_shutdown();
 

@@ -1295,7 +1295,7 @@ _tabs_add(Evas_Object *parent, Ui_Data *pd)
 }
 
 static void
-_win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Evas_Object *win;
@@ -1340,6 +1340,7 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_d
    pd->sort_cb = _sort_by_cpu_usage;
 
    pd->win = win = elm_win_util_standard_add("evisum", "evisum");
+   elm_win_autodel_set(win, EINA_TRUE);
    _win_title_set(win, "%s (%d)", cmd, pid);
    ic = elm_icon_add(win);
    elm_icon_standard_set(ic, "evisum");
@@ -1371,7 +1372,7 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_d
 
    elm_box_pack_end(box, pd->content);
    elm_object_content_set(win, box);
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                    _win_resize_cb, pd);
 

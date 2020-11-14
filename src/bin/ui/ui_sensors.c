@@ -230,7 +230,7 @@ _sensors_update(void *data)
 }
 
 static void
-_win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Ui *ui = data;
@@ -241,9 +241,6 @@ _win_del_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    evas_object_del(obj);
    ui->sensors.win = NULL;
-
-   if (evisum_ui_can_exit(ui))
-     ecore_main_loop_quit();
 }
 
 static void
@@ -268,6 +265,7 @@ ui_win_sensors_add(Ui *ui)
      }
 
    ui->sensors.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
+   elm_win_autodel_set(win, EINA_TRUE);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
@@ -322,7 +320,7 @@ ui_win_sensors_add(Ui *ui)
    elm_box_pack_end(box, frame);
    elm_object_content_set(win, box);
 
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, ui);
 
    if (ui->sensors.width > 0 && ui->sensors.height > 0)
      evas_object_resize(win, ui->sensors.width, ui->sensors.height);

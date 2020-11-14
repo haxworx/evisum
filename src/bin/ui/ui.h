@@ -91,10 +91,7 @@ Ui *
 evisum_ui_init(void);
 
 void
-evisum_ui_del(Ui *ui);
-
-Eina_Bool
-evisum_ui_can_exit(Ui *ui);
+evisum_ui_shutdown(Ui *ui);
 
 void
 evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent);

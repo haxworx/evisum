@@ -9,6 +9,26 @@
 #include "evisum_server.h"
 #include "ui/ui.h"
 
+static Eina_Bool
+_shutdown_cb(void *data, int type, void *event EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   if (ui->cpu.win) evas_object_del(ui->cpu.win);
+   if (ui->mem.win) evas_object_del(ui->mem.win);
+   if (ui->disk.win) evas_object_del(ui->disk.win);
+   if (ui->sensors.win) evas_object_del(ui->sensors.win);
+   if (ui->win) evas_object_del(ui->win);
+
+   return EINA_FALSE;
+}
+
+static void
+_signals(Ui *ui)
+{
+   ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT, _shutdown_cb, ui);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -44,6 +64,7 @@ main(int argc, char **argv)
    ecore_init();
    config_init();
    elm_init(argc, argv);
+   elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
 
 #if ENABLE_NLS
    setlocale(LC_ALL, "");
@@ -58,12 +79,14 @@ main(int argc, char **argv)
    ui = evisum_ui_init();
    if (!ui) return 1;
 
+   _signals(ui);
+
    evisum_server_init(ui);
    evisum_ui_activate(ui, action, pid);
 
    ecore_main_loop_begin();
 
-   evisum_ui_del(ui);
+   evisum_ui_shutdown(ui);
    evisum_server_shutdown();
 
    elm_shutdown();

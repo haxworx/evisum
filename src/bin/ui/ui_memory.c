@@ -124,7 +124,7 @@ _memory_update(void *data)
 }
 
 static void
-_win_del_cb(void *data, Evas_Object *obj,
+_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
             void *event_info EINA_UNUSED)
 {
    Widgets *widgets;
@@ -138,9 +138,6 @@ _win_del_cb(void *data, Evas_Object *obj,
 
    evas_object_del(obj);
    ui->mem.win = NULL;
-
-   if (evisum_ui_can_exit(ui))
-     ecore_main_loop_quit();
 }
 
 static void
@@ -173,6 +170,7 @@ ui_win_memory_add(Ui *ui)
    system_memory_usage_get(&memory);
 
    ui->mem.win = win = elm_win_util_standard_add("evisum", _("Memory Usage"));
+   elm_win_autodel_set(win, EINA_TRUE);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
@@ -247,7 +245,7 @@ ui_win_memory_add(Ui *ui)
    elm_object_content_set(win, frame);
 
    evas_object_data_set(win, "widgets", widgets);
-   evas_object_smart_callback_add(win, "delete,request", _win_del_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, ui);
 
    if (ui->mem.width > 0 && ui->mem.height > 0)
      evas_object_resize(win, ui->mem.width, ui->mem.height);

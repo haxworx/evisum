@@ -362,9 +362,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    free(ad->cpu_order);
    free(ad);
    ui->cpu.win = NULL;
-
-   if (evisum_ui_can_exit(ui))
-     ecore_main_loop_quit();
 }
 
 static void
@@ -466,7 +463,7 @@ _graph(Ui *ui, Evas_Object *parent)
    rec = evas_object_rectangle_add(evas_object_evas_get(parent));
    evas_object_size_hint_align_set(rec, FILL, FILL);
    evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-   evas_object_color_set(rec, 0, 0, 0, 128);
+   evas_object_color_set(rec, 0, 0, 0, 64);
    evas_object_show(rec);
    elm_table_pack(tbl, rec, 0, 0, 4, ad->cpu_count);
 
