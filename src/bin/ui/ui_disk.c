@@ -492,7 +492,7 @@ ui_win_disk_add(Ui *ui)
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("FS"));
+   elm_object_text_set(btn, _("Type"));
    evas_object_smart_callback_add(btn, "clicked", _btn_fs_clicked_cb, NULL);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
