@@ -276,20 +276,32 @@ _update(Animate *ad, Core *cores)
    evas_object_image_data_update_add(obj, 0, 0, w, ad->cpu_count * 3);
 }
 
+typedef struct
+{
+   Evas_Object *lb;
+   Evas_Object *rec;
+} Explainer;
+
 static void
 _explain(Animate *ad, Core *cores)
 {
    Eina_Strbuf *buf;
-   Evas_Object *lb;
+   Explainer *exp;
+   Evas_Object *lb, *rec;
 
    buf = eina_strbuf_new();
 
    for (int i = 0; i < ad->cpu_count; i++)
      {
         Core *core = &(cores[i]);
-        lb = eina_list_nth(ad->explainers, i);
+        exp = eina_list_nth(ad->explainers, i);
+        lb = exp->lb;
+        rec = exp->rec;
         if (!ad->confused)
-          evas_object_hide(lb);
+          {
+             evas_object_hide(rec);
+             evas_object_hide(lb);
+          }
         else
           {
              eina_strbuf_append_printf(buf, "<b><color=#fff>%i%% ", core->percent);
@@ -301,6 +313,7 @@ _explain(Animate *ad, Core *cores)
 
              elm_object_text_set(lb, eina_strbuf_string_get(buf));
              eina_strbuf_reset(buf);
+             evas_object_show(rec);
              evas_object_show(lb);
           }
      }
@@ -331,6 +344,7 @@ _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgd
 static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
+   Explainer *exp;
    Animate *ad = data;
    Ui *ui = ad->ui;
 
@@ -338,7 +352,12 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    // dialog handle to null
    ecore_thread_cancel(ui->cpu.thread);
    ecore_thread_wait(ui->cpu.thread, 0.5);
-   eina_list_free(ad->explainers);
+
+   EINA_LIST_FREE(ad->explainers, exp)
+     {
+        free(exp);
+     }
+
    ad->explainers = NULL;
    free(ad->cpu_order);
    free(ad);
@@ -401,7 +420,7 @@ _colors_fill(Evas_Object *colors)
 static void
 _graph(Ui *ui, Evas_Object *parent)
 {
-   Evas_Object *tbl, *box, *obj, *ic, *lb, *rec;
+   Evas_Object *tbl, *tbl2, *box, *obj, *ic, *lb, *rec;
    Evas_Object *fr, *bx, *hbx, *colors, *check;
    int i, f;
    char buf[128];
@@ -447,7 +466,7 @@ _graph(Ui *ui, Evas_Object *parent)
    rec = evas_object_rectangle_add(evas_object_evas_get(parent));
    evas_object_size_hint_align_set(rec, FILL, FILL);
    evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-   evas_object_color_set(rec, 0, 0, 0, 64);
+   evas_object_color_set(rec, 0, 0, 0, 128);
    evas_object_show(rec);
    elm_table_pack(tbl, rec, 0, 0, 4, ad->cpu_count);
 
@@ -492,13 +511,31 @@ _graph(Ui *ui, Evas_Object *parent)
         elm_table_pack(tbl, lb, 3, i, 1, 1);
         evas_object_show(lb);
 
-        lb = elm_label_add(parent);
-        elm_object_text_set(lb, buf);
-        evas_object_size_hint_align_set(lb, 0.7, 0.5);
-        evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-        elm_table_pack(tbl, lb, 4, i, 1, 1);
+        // Begin explainer label overlay.
 
-        ad->explainers = eina_list_append(ad->explainers, lb);
+        tbl2 = elm_table_add(parent);
+        evas_object_size_hint_align_set(tbl2, 0.7, 0.5);
+        evas_object_size_hint_weight_set(tbl2, EXPAND, EXPAND);
+        evas_object_show(tbl2);
+
+        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+        evas_object_color_set(rec, 0, 0, 0, 128);
+        evas_object_size_hint_align_set(rec, FILL, FILL);
+        evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+        elm_table_pack(tbl2, rec, 0, 0, 1, 1);
+
+        lb = elm_label_add(parent);
+        evas_object_size_hint_align_set(lb, FILL, FILL);
+        evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+        elm_object_text_set(lb, buf);
+        elm_table_pack(tbl2, lb, 0, 0, 1, 1);
+        elm_table_pack(tbl, tbl2, 4, i, 1, 1);
+
+        Explainer *exp = malloc(sizeof(Explainer));
+        exp->rec = rec;
+        exp->lb = lb;
+
+        ad->explainers = eina_list_append(ad->explainers, exp);
      }
 
    bx = elm_box_add(box);
