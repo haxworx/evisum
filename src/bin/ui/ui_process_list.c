@@ -1622,7 +1622,7 @@ ui_process_list_win_add(Ui *ui)
    evas_object_show(win);
 
    if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
-     evisum_ui_background_random_add(ui->win, 1);
+     evisum_ui_background_add(ui->win, EINA_TRUE);
 
    o = _ui_content_system_add(pd, win);
    elm_object_content_set(win, o);
