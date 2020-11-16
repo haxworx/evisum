@@ -51,6 +51,7 @@ typedef struct
 
 static Ui_Data *_private_data = NULL;
 
+// See pb_format_cb.
 static double _cpu_usage = 0.0;
 
 static int
@@ -368,7 +369,7 @@ _item_column_add(Evas_Object *table, const char *text, int col)
 static char *
 _pb_format_cb(double val)
 {
-   char buf[32];
+   static char buf[32];
 
    snprintf(buf, sizeof(buf), "%1.1f %%", _cpu_usage);
 

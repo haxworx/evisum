@@ -709,12 +709,11 @@ static Evas_Object *
 _process_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *frame, *hbox, *table;
-   Evas_Object *label, *entry, *button, *border;
+   Evas_Object *label, *entry, *button, *border, *ic;
    int i = 0;
    int r, g, b, a;
 
    frame = elm_frame_add(parent);
-   //elm_object_text_set(frame, _("General"));
    elm_object_style_set(frame, "pad_small");
    evas_object_size_hint_weight_set(frame, EXPAND, EXPAND);
    evas_object_size_hint_align_set(frame, FILL, FILL);
@@ -822,52 +821,65 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    hbox = elm_box_add(parent);
-   evas_object_size_hint_weight_set(hbox, 0.5, EXPAND);
-   evas_object_size_hint_align_set(hbox, FILL, 0);
+   evas_object_size_hint_weight_set(hbox, EXPAND, 0);
+   evas_object_size_hint_align_set(hbox,  FILL, FILL);
    elm_box_horizontal_set(hbox, EINA_TRUE);
+   elm_box_homogeneous_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
-   elm_table_pack(table, hbox, 0, i, 2, 1);
+   elm_table_pack(table, hbox, 1, i, 2, 1);
 
    border = elm_frame_add(parent);
    evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(border, FILL, 0.5);
+   elm_object_style_set(border, "pad_small");
+   evas_object_show(border);
+   elm_box_pack_end(hbox, border);
+   border = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
    elm_object_style_set(border, "pad_small");
    evas_object_show(border);
    elm_box_pack_end(hbox, border);
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_align_set(border, FILL, FILL);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
-
-   button = evisum_ui_tab_add(parent, &pd->btn_stop, _("Stop"),
-                   _btn_stop_clicked_cb, pd);
+   button = elm_button_add(parent);
+   evas_object_size_hint_align_set(button, FILL, FILL);
+   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
+   elm_object_text_set(button, _("Stop"));
+   evas_object_smart_callback_add(button, "clicked", _btn_stop_clicked_cb, pd);
+   evas_object_show(button);
    pd->btn_stop = button;
-   elm_object_content_set(border, button);
-   elm_box_pack_end(hbox, border);
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_align_set(border, FILL, FILL);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
+   ic = elm_icon_add(button);
+   elm_icon_standard_set(ic, evisum_icon_path_get("stop"));
+   elm_object_part_content_set(button, "icon", ic);
+   evas_object_show(ic);
+   elm_box_pack_end(hbox, button);
 
-   button = evisum_ui_tab_add(parent, &pd->btn_start, _("Start"),
-                   _btn_start_clicked_cb, pd);
-   pd->btn_start = button;
-   elm_object_content_set(border, button);
-   elm_box_pack_end(hbox, border);
+   button = elm_button_add(parent);
+   evas_object_size_hint_align_set(button, FILL, FILL);
+   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
+   elm_object_text_set(button, _("Start"));
    evas_object_smart_callback_add(button, "clicked", _btn_start_clicked_cb, pd);
+   evas_object_show(button);
+   pd->btn_start = button;
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_align_set(border, FILL, FILL);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
+   ic = elm_icon_add(button);
+   elm_icon_standard_set(ic, evisum_icon_path_get("start"));
+   elm_object_part_content_set(button, "icon", ic);
+   evas_object_show(ic);
+   elm_box_pack_end(hbox, button);
 
-   button = evisum_ui_tab_add(parent, &pd->btn_kill, _("Kill"),
-                   _btn_kill_clicked_cb, pd);
+   button = elm_button_add(parent);
+   evas_object_size_hint_align_set(button, FILL, FILL);
+   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
+   elm_object_text_set(button, _("Kill"));
+   evas_object_smart_callback_add(button, "clicked", _btn_kill_clicked_cb, pd);
+   evas_object_show(button);
    pd->btn_kill = button;
-   elm_object_content_set(border, button);
-   elm_box_pack_end(hbox, border);
+
+   ic = elm_icon_add(button);
+   elm_icon_standard_set(ic, evisum_icon_path_get("kill"));
+   elm_object_part_content_set(button, "icon", ic);
+   evas_object_show(ic);
+   elm_box_pack_end(hbox, button);
 
    return frame;
 }
@@ -1362,7 +1374,7 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_d
 
    pd->content = elm_table_add(box);
    evas_object_size_hint_weight_set(pd->content, 0.5, EXPAND);
-   evas_object_size_hint_align_set(pd->content, FILL, FILL);
+   evas_object_size_hint_align_set(pd->content, FILL, 0.0);
    evas_object_show(pd->content);
 
    pd->main_view = _process_tab_add(win, pd);
