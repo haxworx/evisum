@@ -1079,6 +1079,8 @@ proc_info_free(Proc_Info *proc)
 {
    Proc_Info *t;
 
+   if (!proc) return;
+
    EINA_LIST_FREE(proc->threads, t)
      {
         proc_info_free(t);

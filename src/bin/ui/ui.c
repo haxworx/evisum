@@ -423,12 +423,13 @@ _ui_init_system_probe(Ui *ui)
 static void
 _process_win_add(Evas_Object *parent, int pid, int delay)
 {
+   const char *command = _("Unknown");
    Proc_Info *proc;
 
    proc = proc_info_by_pid(pid);
-   if (!proc) return;
+   if (proc) command = proc->command;
 
-   ui_process_win_add(parent, proc->pid, proc->command, delay);
+   ui_process_win_add(parent, pid, command, delay);
 
    proc_info_free(proc);
 }
