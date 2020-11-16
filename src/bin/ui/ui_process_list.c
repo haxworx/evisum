@@ -51,6 +51,8 @@ typedef struct
 
 static Ui_Data *_private_data = NULL;
 
+static double _cpu_usage = 0.0;
+
 static int
 _sort_by_pid(const void *p1, const void *p2)
 {
@@ -363,6 +365,22 @@ _item_column_add(Evas_Object *table, const char *text, int col)
    return label;
 }
 
+static char *
+_pb_format_cb(double val)
+{
+   char buf[32];
+
+   snprintf(buf, sizeof(buf), "%1.1f %%", _cpu_usage);
+
+   return strdup(buf);
+}
+
+static void
+_pb_format_free_cb(char *str)
+{
+   free(str);
+}
+
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
@@ -432,7 +450,7 @@ _item_create(Evas_Object *parent)
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
-   elm_progressbar_unit_format_set(pb, "%1.0f %%");
+   elm_progressbar_unit_format_function_set(pb, _pb_format_cb, _pb_format_free_cb);
    elm_box_pack_end(hbx, pb);
    evas_object_data_set(table, "proc_cpu_usage", pb);
 
@@ -535,6 +553,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(l);
 
    pb = evas_object_data_get(it->obj, "proc_cpu_usage");
+   _cpu_usage = proc->cpu_usage;
    elm_progressbar_value_set(pb, proc->cpu_usage / 100.0);
    evas_object_show(pb);
 

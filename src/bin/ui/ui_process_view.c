@@ -149,8 +149,8 @@ _item_column_add(Evas_Object *table, const char *text, int col)
    Evas_Object *rect, *label;
 
    label = elm_label_add(table);
-   evas_object_size_hint_align_set(label, 0.0, EXPAND);
-   evas_object_size_hint_weight_set(label, FILL, FILL);
+   evas_object_size_hint_weight_set(label, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(label, 0.0, FILL);
    evas_object_data_set(table, text, label);
    evas_object_show(label);
 
@@ -166,22 +166,27 @@ _item_column_add(Evas_Object *table, const char *text, int col)
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *table, *label;
+   Evas_Object *table, *label, *pb;
 
    table = elm_table_add(parent);
-   evas_object_size_hint_align_set(table, EXPAND, EXPAND);
-   evas_object_size_hint_weight_set(table, FILL, FILL);
+   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(table, FILL, FILL);
    evas_object_show(table);
 
    label = _item_column_add(table, "tid", 0);
-   evas_object_size_hint_align_set(label, 0.5, EXPAND);
+   evas_object_size_hint_align_set(label, 0.5, FILL);
    _item_column_add(table, "name", 1);
    label = _item_column_add(table, "state", 2);
-   evas_object_size_hint_align_set(label, 0.5, EXPAND);
+   evas_object_size_hint_align_set(label, 0.5, FILL);
    label = _item_column_add(table, "cpu_id", 3);
-   evas_object_size_hint_align_set(label, 0.5, EXPAND);
-   label = _item_column_add(table, "cpu_usage", 4);
-   evas_object_size_hint_align_set(label, 0.5, EXPAND);
+   evas_object_size_hint_align_set(label, 0.5, FILL);
+
+   pb = elm_progressbar_add(parent);
+   evas_object_size_hint_align_set(pb, FILL, FILL);
+   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   elm_progressbar_unit_format_set(pb, "%1.1f %%");
+   evas_object_data_set(table, "cpu_usage", pb);
+   elm_table_pack(table, pb, 4, 0, 1, 1);
 
    return table;
 }
@@ -191,8 +196,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Ui_Data *pd;
    Thread_Info *th;
-   Evas_Object *l, *r;
-   Evas_Coord w;
+   Evas_Object *l, *r, *pb;
+   Evas_Coord w, ow;
 
    th = (void *) data;
 
@@ -218,6 +223,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(pd->btn_thread_name, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "name");
    elm_object_text_set(l, eina_slstr_printf("%s", th->name));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_thread_name, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
@@ -233,11 +240,9 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
-   evas_object_geometry_get(pd->btn_thread_cpu_usage, NULL, NULL, &w, NULL);
-   l = evas_object_data_get(it->obj, "cpu_usage");
-   elm_object_text_set(l, eina_slstr_printf("%1.1f%%", th->cpu_usage));
-   r = evas_object_data_get(l, "rect");
-   evas_object_size_hint_min_set(r, w, 1);
+   pb = evas_object_data_get(it->obj, "cpu_usage");
+   elm_progressbar_value_set(pb, th->cpu_usage / 100.0);
+   evas_object_show(pb);
 
    return it->obj;
 }
