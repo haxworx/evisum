@@ -465,11 +465,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    struct passwd *pwd_entry;
    Evas_Object *l, *r, *o, *hbx, *pb;
    Evas_Coord w, ow;
-#if defined(__linux__)
-   const char *kernel_icon = "linux";
-#else
-   const char *kernel_icon = "freebsd";
-#endif
    Ui_Data *pd = _private_data;
 
    proc = (void *) data;
@@ -536,10 +531,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(l);
 
    o = evas_object_data_get(it->obj, "icon");
-   if (proc->is_kernel)
-     elm_icon_standard_set(o, evisum_icon_path_get(kernel_icon));
-   else
-     elm_icon_standard_set(o, evisum_icon_path_get(evisum_icon_cache_find(proc->command)));
+   elm_icon_standard_set(o, evisum_icon_path_get(evisum_icon_cache_find(proc)));
    r = evas_object_data_get(o, "rect");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(o);
@@ -1029,7 +1021,7 @@ _item_menu_create(Ui_Data *pd, Proc_Info *proc)
    stopped = !(!strcmp(proc->state, "stop"));
 
    menu_it = elm_menu_item_add(menu, NULL,
-                               evisum_icon_path_get(evisum_icon_cache_find(proc->command)),
+                               evisum_icon_path_get(evisum_icon_cache_find(proc)),
                                proc->command, NULL, NULL);
 
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),

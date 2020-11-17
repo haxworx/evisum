@@ -2,6 +2,7 @@
 #define __UI_UTIL_H__
 
 #include <Evas.h>
+#include "system/process.h"
 
 #define FILL EVAS_HINT_FILL
 #define EXPAND EVAS_HINT_EXPAND
@@ -23,7 +24,7 @@ void
 evisum_icon_cache_shutdown(void);
 
 const char *
-evisum_icon_cache_find(const char *cmd);
+evisum_icon_cache_find(const Proc_Info *proc);
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,

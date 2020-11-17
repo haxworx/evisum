@@ -170,12 +170,22 @@ evisum_icon_cache_shutdown(void)
    eina_hash_free(_icon_cache);
 }
 
+
 const char *
-evisum_icon_cache_find(const char *cmd)
+evisum_icon_cache_find(const Proc_Info *proc)
 {
    Efreet_Desktop *e;
-   const char *name;
+   const char *name, *cmd;
    char *exists;
+
+   if (proc->is_kernel)
+#if defined(__linux__)
+     return "linux";
+#else
+     return "freebsd;
+#endif
+
+   cmd = proc->command;
 
    exists = eina_hash_find(_icon_cache, cmd);
    if (exists) return exists;
