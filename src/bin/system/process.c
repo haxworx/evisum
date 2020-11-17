@@ -430,6 +430,7 @@ proc_info_by_pid(int pid)
    p->priority = st.pri;
    p->nice = st.nice;
    p->numthreads = st.numthreads;
+   if (st.flags & PF_KTHREAD) p->is_kernel = 1;
    _mem_size(p);
    _cmd_args(p, st.name, sizeof(st.name));
 

@@ -591,7 +591,7 @@ _proc_info_update(void *data)
         elm_object_disabled_set(pd->btn_start, EINA_TRUE);
      }
 
-   elm_object_text_set(pd->entry_pid_cmd, proc->command);
+   elm_object_text_set(pd->entry_pid_cmd, eina_slstr_printf("<subtitle>%s</subtitle>", proc->command));
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
      elm_object_text_set(pd->entry_pid_user, pwd_entry->pw_name);
@@ -710,6 +710,8 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *frame, *hbox, *table;
    Evas_Object *label, *entry, *button, *border, *ic;
+   Evas_Object *rec;
+   Proc_Info *proc;
    int i = 0;
    int r, g, b, a;
 
@@ -731,9 +733,33 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_show(table);
    elm_object_content_set(frame, table);
 
+
+   rec = evas_object_rectangle_add(evas_object_evas_get(table));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(64), ELM_SCALE_SIZE(64));
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(64), ELM_SCALE_SIZE(64));
+   evas_object_size_hint_align_set(rec, FILL, 1.0);
+
+   elm_table_pack(table, rec, 0, i, 1, 1);
+
+   proc = proc_info_by_pid(pd->selected_pid);
+   ic = elm_icon_add(parent);
+   evas_object_size_hint_weight_set(ic, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(ic, FILL, FILL);
+   if (proc)
+     {
+        elm_icon_standard_set(ic, evisum_icon_path_get(evisum_icon_cache_find(proc)));
+        evas_object_show(ic);
+        proc_info_free(proc);
+        elm_table_pack(table, ic, 0, i, 1, 1);
+     }
+
    label = _label_add(parent, _("Command:"));
    elm_table_pack(table, label, 0, i, 1, 1);
-   pd->entry_pid_cmd = entry = _entry_add(parent);
+   pd->entry_pid_cmd = entry = elm_label_add(parent);
+   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(entry, 0.0, 0.5);
+   evas_object_show(entry);
+   evas_object_hide(label);
    elm_table_pack(table, entry, 1, i++, 1, 1);
 
    label = _label_add(parent, _("Command line:"));
