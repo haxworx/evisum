@@ -182,7 +182,7 @@ evisum_icon_cache_find(const Proc_Info *proc)
 #if defined(__linux__)
      return "linux";
 #else
-     return "freebsd;
+     return "freebsd";
 #endif
 
    cmd = proc->command;
