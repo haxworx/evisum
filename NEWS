@@ -2,7 +2,21 @@
 Evisum 0.5.8
 ============
 
-  * ...
+  * Make evisum client/server based.
+  * Internal changes.
+  * Process tree tab (process view).
+  * Add CPU and Memory desktop launcher files.
+  * Introduce icons for process view and process list.
+  * Use progress bars for CPU/process/thread usage.
+  * Improve storage UI to prepare for stats.
+  * Fix some ASAN detected issues.
+  * Icons from the rasterman and myself.
+  * Show system battery total in summary panel (process list).
+  * CPU frequency logic improvement.
+  * Display video memory usage per device in memory usage (Linux only).
+    Thanks raster.
+  * Lots more included in the commit logs and hidden away completely
+    irrelevant to the title of the commit. :)
 
 ============
 Evisum 0.5.7
