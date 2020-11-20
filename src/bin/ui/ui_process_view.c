@@ -1018,7 +1018,6 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_weight_set(hbox, EXPAND, 0);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
    elm_box_horizontal_set(hbox, EINA_TRUE);
-   elm_box_homogeneous_set(hbox, EINA_TRUE);
    evas_object_show(hbox);
 
    pd->btn_thread_id = btn = elm_button_add(hbox);
@@ -1049,7 +1048,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    elm_box_pack_end(hbox, btn);
 
    pd->btn_thread_cpu_id = btn = elm_button_add(hbox);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("CPU ID"));
    _btn_icon_state_set(btn, pd->sort_reverse);
