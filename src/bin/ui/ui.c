@@ -27,7 +27,8 @@ evisum_ui_config_save(Ui *ui)
 
    if (!_evisum_config) return;
 
-   if (_evisum_config->poll_delay != ui->settings.poll_delay)
+   if (_evisum_config->poll_delay != ui->settings.poll_delay ||
+       _evisum_config->show_kthreads != ui->settings.show_kthreads)
      notify = EINA_TRUE;
 
    evas_object_geometry_get(ui->win, NULL, NULL, &w, &h);

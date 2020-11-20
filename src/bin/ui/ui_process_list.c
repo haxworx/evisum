@@ -404,8 +404,8 @@ _item_create(Evas_Object *parent)
    ic = elm_icon_add(table);
    evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
    evas_object_size_hint_align_set(ic, FILL, FILL);
-   evas_object_size_hint_min_set(ic, 16, 16);
-   evas_object_size_hint_max_set(ic, 24, 24);
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_size_hint_max_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_show(ic);
    evas_object_data_set(table, "icon", ic);
    elm_box_pack_end(hbx, ic);
