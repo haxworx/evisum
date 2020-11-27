@@ -164,7 +164,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
                     core->freq = system_cpu_n_frequency_get(id);
                   if (ad->cpu_temp)
                     core->temp = system_cpu_n_temperature_get(id);
-                  free(cores[n]);
+                  free(cores[id]);
                }
              ecore_thread_feedback(thread, cores_out);
           }
