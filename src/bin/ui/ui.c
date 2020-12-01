@@ -3,6 +3,8 @@
 #include "evisum_config.h"
 #include "evisum_server.h"
 
+#include "system/filesystems.h"
+
 #include "ui.h"
 #include "ui/ui_cpu.h"
 #include "ui/ui_memory.h"
