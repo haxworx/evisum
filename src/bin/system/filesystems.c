@@ -1,5 +1,4 @@
 #include "filesystems.h"
-#include "disks.h"
 
 #include <stdio.h>
 #include <limits.h>
@@ -169,12 +168,51 @@ file_system_type_name(const char *mountpoint)
 Eina_List *
 file_system_info_all_get(void)
 {
+   Eina_List *list = NULL;
 # if defined(__linux__)
-   return NULL;
+
+   FILE *f;
+   char *dev, *mount, *type_name, *cp, *end;
+   struct statfs stats;
+   char buf[4096];
+
+   f = fopen("/proc/mounts", "r");
+   if (!f) return NULL;
+
+   while ((fgets(buf, sizeof(buf), f)) != NULL)
+     {
+        mount = strchr(buf, ' ') + 1;
+        if (!mount) continue;
+        dev = strndup(buf, mount - buf);
+        cp = strchr(mount, ' ');
+        if (!cp) continue;
+        end = cp;
+        *end = '\0';
+        cp++;
+        end = strchr(cp, ' ');
+        if (!end) continue;
+        type_name = strndup(cp, end - cp);
+
+        if ((strstr(cp, "nodev")) || (statfs(mount, &stats) < 0) ||
+            (stats.f_blocks == 0 && stats.f_bfree == 0))
+          {
+             free(dev);
+             free(type_name);
+             continue;
+          }
+
+        File_System *fs = calloc(1, sizeof(File_System));
+        fs->mount = strdup(mount);
+        fs->path = dev;
+        fs->type_name = type_name;
+        fs->usage.total = stats.f_bsize * stats.f_blocks;
+        fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
+        list = eina_list_append(list, fs);
+     }
+   fclose(f);
 # else
    struct statfs *mounts;
    int i, count;
-   Eina_List *list = NULL;
 
    count = getmntinfo(&mounts, MNT_WAIT);
    for (i = 0; i < count; i++)

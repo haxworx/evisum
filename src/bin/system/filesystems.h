@@ -2,6 +2,7 @@
 #define __FILESYSTEMS_H__
 
 #include <Eina.h>
+#include "disks.h"
 
 typedef struct {
    unsigned long long total;

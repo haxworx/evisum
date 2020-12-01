@@ -1,5 +1,5 @@
 #include "ui_disk.h"
-#include "../system/disks.h"
+#include "../system/filesystems.h"
 
 typedef struct
 {
@@ -77,7 +77,7 @@ _item_create(Evas_Object *parent)
    lb = _item_column_add(table, "mount", 1);
    evas_object_size_hint_align_set(lb, 0, FILL);
    lb = _item_column_add(table, "fs", 2);
-   evas_object_size_hint_align_set(lb, 0.5, FILL);
+   evas_object_size_hint_align_set(lb, 0, FILL);
    lb = _item_column_add(table, "used", 3);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
    lb = _item_column_add(table, "total", 4);
@@ -227,20 +227,7 @@ _disks_poll_timer_cb(void *data)
 
    eina_lock_take(&_lock);
 
-#if defined(__linux__)
-   char *path;
-   Eina_List *disks = disks_get();
-   EINA_LIST_FREE(disks, path)
-     {
-        fs = file_system_info_get(path);
-        if (fs)
-          mounted = eina_list_append(mounted, fs);
-
-        free(path);
-     }
-#else
    mounted = file_system_info_all_get();
-#endif
 
    if (_private_data->sort_cb)
      mounted = eina_list_sort(mounted, eina_list_count(mounted), _private_data->sort_cb);
