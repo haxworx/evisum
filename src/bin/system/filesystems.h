@@ -22,6 +22,9 @@ file_system_name_by_id(unsigned int id);
 unsigned int
 file_system_id_by_name(const char *name);
 
+Eina_List *
+file_system_info_all_get(void);
+
 File_System *
 file_system_info_get(const char *path);
 

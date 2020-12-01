@@ -166,6 +166,36 @@ file_system_type_name(const char *mountpoint)
 
 #endif
 
+Eina_List *
+file_system_info_all_get(void)
+{
+# if defined(__linux__)
+   return NULL;
+# else
+   struct statfs *mounts;
+   int i, count;
+   Eina_List *list = NULL;
+
+   count = getmntinfo(&mounts, MNT_WAIT);
+   for (i = 0; i < count; i++)
+     {
+        File_System *fs = calloc(1, sizeof(File_System));
+        fs->mount = strdup(mounts[i].f_mntonname);
+        fs->path  = strdup(mounts[i].f_mntfromname);
+#if defined(__OpenBSD__)
+#else
+        fs->type  = mounts[i].f_type;
+#endif
+        fs->type_name = strdup(mounts[i].f_fstypename);
+        fs->usage.total = mounts[i].f_bsize * mounts[i].f_blocks;
+        fs->usage.used  = fs->usage.total - (mounts[i].f_bsize * mounts[i].f_bfree);
+
+        list = eina_list_append(list, fs);
+     }
+# endif
+   return list;
+}
+
 File_System *
 file_system_info_get(const char *path)
 {

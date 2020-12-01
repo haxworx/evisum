@@ -221,15 +221,15 @@ _item_disk_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
 static Eina_Bool
 _disks_poll_timer_cb(void *data)
 {
-   Eina_List *disks;
-   char *path;
    Elm_Object_Item *it;
    File_System *fs;
    Eina_List *mounted = NULL;
 
    eina_lock_take(&_lock);
 
-   disks = disks_get();
+#if defined(__linux__)
+   char *path;
+   Eina_List *disks = disks_get();
    EINA_LIST_FREE(disks, path)
      {
         fs = file_system_info_get(path);
@@ -238,6 +238,9 @@ _disks_poll_timer_cb(void *data)
 
         free(path);
      }
+#else
+   mounted = file_system_info_all_get();
+#endif
 
    if (_private_data->sort_cb)
      mounted = eina_list_sort(mounted, eina_list_count(mounted), _private_data->sort_cb);
