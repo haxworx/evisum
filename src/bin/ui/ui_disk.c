@@ -79,9 +79,9 @@ _item_create(Evas_Object *parent)
    lb = _item_column_add(table, "fs", 2);
    evas_object_size_hint_align_set(lb, 0, FILL);
    lb = _item_column_add(table, "used", 3);
-   evas_object_size_hint_align_set(lb, 0.5, FILL);
+   evas_object_size_hint_align_set(lb, 0, FILL);
    lb = _item_column_add(table, "total", 4);
-   evas_object_size_hint_align_set(lb, 0.5, FILL);
+   evas_object_size_hint_align_set(lb, 0, FILL);
 
    pb = elm_progressbar_add(table);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
