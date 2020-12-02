@@ -28,41 +28,6 @@
 # include <sys/mount.h>
 #endif
 
-#if defined(__linux__)
-static char *
-file_system_type_name(const char *mountpoint)
-{
-   FILE *f;
-   char *mount, *res, *type, *end;
-   char buf[4096];
-
-   res = NULL;
-
-   f = fopen("/proc/mounts", "r");
-   if (!f) return NULL;
-
-   while ((fgets(buf, sizeof(buf), f)) != NULL)
-     {
-        mount = strchr(buf, ' ') + 1;
-        if (!mount) continue;
-        type = strchr(mount, ' ');
-        if (!type) continue;
-        end = type;
-        *end = '\0';
-        if (strcmp(mount, mountpoint))
-          continue;
-        type++;
-        end = strchr(type, ' ');
-        if (!end) continue;
-        res = strndup(type, end - type);
-        break;
-     }
-   fclose(f);
-   return res;
-}
-
-#endif
-
 Eina_List *
 file_system_info_all_get(void)
 {
