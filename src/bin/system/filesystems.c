@@ -33,7 +33,6 @@ file_system_info_all_get(void)
 {
    Eina_List *list = NULL;
 # if defined(__linux__)
-
    FILE *f;
    char *dev, *mount, *type_name, *cp, *end;
    struct statfs stats;
