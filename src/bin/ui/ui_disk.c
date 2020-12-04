@@ -461,7 +461,7 @@ ui_win_disk_add(Ui *ui)
    evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
                                    evisum_ui_backgrounds_enabled_get()));
 
-   Ui_Data *pd = pd = calloc(1, sizeof(Ui_Data));
+   Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    pd->ui = ui;
 
    pd->panes = panes = elm_panes_add(win);
