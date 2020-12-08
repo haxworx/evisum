@@ -49,19 +49,19 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 }
 
 static Evas_Object *
-_item_column_add(Evas_Object *table, const char *text, int col)
+_item_column_add(Evas_Object *tbl, const char *text, int col)
 {
    Evas_Object *rect, *lb;
 
-   lb = elm_label_add(table);
-   evas_object_data_set(table, text, lb);
+   lb = elm_label_add(tbl);
+   evas_object_data_set(tbl, text, lb);
    evas_object_show(lb);
 
-   rect = evas_object_rectangle_add(table);
+   rect = evas_object_rectangle_add(tbl);
    evas_object_data_set(lb, "rect", rect);
 
-   elm_table_pack(table, lb, col, 0, 1, 1);
-   elm_table_pack(table, rect, col, 0, 1, 1);
+   elm_table_pack(tbl, lb, col, 0, 1, 1);
+   elm_table_pack(tbl, rect, col, 0, 1, 1);
 
    return lb;
 }
@@ -69,34 +69,34 @@ _item_column_add(Evas_Object *table, const char *text, int col)
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *table, *lb, *pb;
+   Evas_Object *tbl, *lb, *pb;
 
-   table = elm_table_add(parent);
-   evas_object_size_hint_weight_set(table, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(table, FILL, FILL);
-   evas_object_show(table);
+   tbl = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   evas_object_show(tbl);
 
-   lb = _item_column_add(table, "device", 0);
+   lb = _item_column_add(tbl, "device", 0);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(table, "mount", 1);
+   lb = _item_column_add(tbl, "mount", 1);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(table, "fs", 2);
+   lb = _item_column_add(tbl, "fs", 2);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(table, "total", 3);
+   lb = _item_column_add(tbl, "total", 3);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(table, "used", 4);
+   lb = _item_column_add(tbl, "used", 4);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(table, "free", 5);
+   lb = _item_column_add(tbl, "free", 5);
    evas_object_size_hint_align_set(lb, 0, FILL);
 
-   pb = elm_progressbar_add(table);
+   pb = elm_progressbar_add(tbl);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_data_set(table, "usage", pb);
+   evas_object_data_set(tbl, "usage", pb);
 
-   elm_table_pack(table, pb, 6, 0, 1, 1);
+   elm_table_pack(tbl, pb, 6, 0, 1, 1);
 
-   return table;
+   return tbl;
 }
 
 static Evas_Object *
@@ -326,10 +326,17 @@ static int
 _sort_by_used(const void *p1, const void *p2)
 {
    const File_System *fs1, *fs2;
+   int64_t used1, used2;
 
    fs1 = p1; fs2 = p2;
 
-   return fs1->usage.used - fs2->usage.used;
+   used1 = fs1->usage.used;
+   used2 = fs2->usage.used;
+
+   if (used1 > used2) return 1;
+   if (used1 < used2) return -1;
+
+   return 0;
 }
 
 static int
@@ -353,10 +360,17 @@ static int
 _sort_by_total(const void *p1, const void *p2)
 {
    const File_System *fs1, *fs2;
+   int64_t total1, total2;
 
    fs1 = p1; fs2 = p2;
 
-   return fs1->usage.total - fs2->usage.total;
+   total1 = fs1->usage.total;
+   total2 = fs2->usage.total;
+
+   if (total1 > total2) return 1;
+   if (total1 < total2) return -1;
+
+   return 0;
 }
 
 static void
@@ -432,7 +446,7 @@ _btn_used_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
 static void
 _btn_free_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
-                      void *event_info EINA_UNUSED)
+                     void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
 
@@ -484,9 +498,8 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 ui_win_disk_add(Ui *ui)
 {
-   Evas_Object *win, *box, *tbl, *scroller;
-   Evas_Object *fr, *genlist, *btn;
-   Evas_Object *panes;
+   Evas_Object *win, *panes, *fr,  *bx, *tbl, *scr;
+   Evas_Object *genlist, *btn;
    Evas_Coord x = 0, y = 0;
    int i = 0;
 
@@ -520,16 +533,16 @@ ui_win_disk_add(Ui *ui)
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_show(fr);
 
-   box = elm_box_add(win);
-   evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(box, FILL, FILL);
-   evas_object_show(box);
+   bx = elm_box_add(win);
+   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   evas_object_show(bx);
 
    tbl = elm_table_add(win);
    evas_object_size_hint_weight_set(tbl, EXPAND, 0);
    evas_object_size_hint_align_set(tbl, FILL, FILL);
    evas_object_show(tbl);
-   elm_box_pack_end(box, tbl);
+   elm_box_pack_end(bx, tbl);
 
    pd->btn_device = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
@@ -594,12 +607,12 @@ ui_win_disk_add(Ui *ui)
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
-   scroller = elm_scroller_add(win);
-   evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(scroller, FILL, FILL);
-   elm_scroller_policy_set(scroller,
+   scr = elm_scroller_add(win);
+   evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(scr, FILL, FILL);
+   elm_scroller_policy_set(scr,
                            ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
-   evas_object_show(scroller);
+   evas_object_show(scr);
 
    pd->genlist = genlist = elm_genlist_add(win);
    elm_object_focus_allow_set(genlist, 0);
@@ -610,12 +623,12 @@ ui_win_disk_add(Ui *ui)
    evas_object_smart_callback_add(genlist, "unrealized", _item_unrealized_cb, pd);
    evas_object_smart_callback_add(genlist, "selected", _item_disk_clicked_cb, pd);
    evas_object_show(genlist);
-   elm_object_content_set(scroller, genlist);
+   elm_object_content_set(scr, genlist);
 
    pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 
-   elm_box_pack_end(box, scroller);
-   elm_object_content_set(fr, box);
+   elm_box_pack_end(bx, scr);
+   elm_object_content_set(fr, bx);
    elm_object_part_content_set(panes, "left", fr);
    elm_panes_content_left_size_set(panes, 1.0);
 
