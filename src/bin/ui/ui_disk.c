@@ -343,7 +343,10 @@ _sort_by_free(const void *p1, const void *p2)
    free1 = fs1->usage.total - fs1->usage.used;
    free2 = fs2->usage.total - fs2->usage.used;
 
-   return free1 - free2;
+   if (free1 > free2) return 1;
+   if (free1 < free2) return -1;
+
+   return 0;
 }
 
 static int
