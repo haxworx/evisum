@@ -45,11 +45,11 @@ typedef struct Ui
 
    struct
    {
-      Evas_Object *win;
-      int          width;
-      int          height;
-      Ecore_Timer *timer;
-      Eina_Bool    zfs_mounted;
+      Evas_Object  *win;
+      int           width;
+      int           height;
+      Ecore_Thread *thread;
+      Eina_Bool     zfs_mounted;
    } mem;
 
    struct
