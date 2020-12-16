@@ -403,15 +403,11 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_weight_set(hbx, EXPAND, EXPAND);
    evas_object_show(hbx);
 
-   rec = evas_object_rectangle_add(tbl);
-   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(24));
-   elm_box_pack_end(hbx, rec);
-
    ic = elm_icon_add(tbl);
    evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
    evas_object_size_hint_align_set(ic, FILL, FILL);
-   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(20), ELM_SCALE_SIZE(20));
-   evas_object_size_hint_max_set(ic, ELM_SCALE_SIZE(20), ELM_SCALE_SIZE(20));
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_size_hint_max_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_show(ic);
    evas_object_data_set(tbl, "icon", ic);
    elm_box_pack_end(hbx, ic);
@@ -1205,7 +1201,7 @@ _evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
    evas_object_raise(pd->entry_pop);
 
    if (!pd->timer_entry)
-     pd->timer_entry = ecore_timer_add(1.0, _search_empty, pd);
+     pd->timer_entry = ecore_timer_add(2.0, _search_empty, pd);
 
    markup = elm_object_part_text_get(entry, NULL);
    text = elm_entry_markup_to_utf8(markup);
