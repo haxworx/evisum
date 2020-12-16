@@ -51,7 +51,7 @@ typedef struct
 
 #define PAD_W 2
 
-static Ui_Data *_private_data = NULL;
+static Ui_Data *_pd = NULL;
 
 // See pb_format_cb.
 static double _cpu_usage = 0.0;
@@ -467,7 +467,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    struct passwd *pwd_entry;
    Evas_Object *l, *r, *o, *hbx, *pb;
    Evas_Coord w, ow;
-   Ui_Data *pd = _private_data;
+   Ui_Data *pd = _pd;
 
    proc = (void *) data;
 
@@ -690,8 +690,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if (((len && (strncasecmp(proc->command, pd->search_text, len))) ||
-            (!ui->settings.show_self && (proc->pid == ui->program_pid))))
+        if ((len && (strncasecmp(proc->command, pd->search_text, len))) ||
+            (proc->pid == ui->program_pid))
          {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
@@ -745,9 +745,8 @@ _process_list(void *data, Ecore_Thread *thread)
    pd = data;
    ui = pd->ui;
 
-   while (1)
+   while (!ecore_thread_check(thread))
      {
-        if (ecore_thread_check(thread)) return;
         ecore_thread_feedback(thread, ui);
         for (int i = 0; i < delay * 4; i++)
           {
@@ -1269,7 +1268,8 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_show(tbl);
    elm_table_padding_set(tbl, PAD_W, 0);
 
-   pd->btn_menu = btn = _btn_create(tbl, "menu", NULL, _btn_menu_clicked_cb, ui);
+   pd->btn_menu = btn = _btn_create(tbl, "menu", _("Menu"),
+                                    _btn_menu_clicked_cb, ui);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
 
    pd->btn_cmd = btn = elm_button_add(parent);
@@ -1367,7 +1367,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_scroller_gravity_set(pd->scroller, 0.0, 1.0);
    elm_object_focus_allow_set(plist, EINA_FALSE);
    elm_scroller_movement_block_set(pd->scroller,
-                                  ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
+                                   ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
    elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
                            ELM_SCROLLER_POLICY_AUTO);
    elm_genlist_multi_select_set(plist, EINA_FALSE);
@@ -1515,7 +1515,7 @@ ui_process_list_win_add(Ui *ui)
 
    eina_lock_new(&_lock);
 
-   Ui_Data *pd = _private_data = calloc(1, sizeof(Ui_Data));
+   Ui_Data *pd = _pd = calloc(1, sizeof(Ui_Data));
    if (!pd) return;
    pd->selected_pid = -1;
    pd->ui = ui;
@@ -1534,7 +1534,6 @@ ui_process_list_win_add(Ui *ui)
      evas_object_resize(win, EVISUM_WIN_WIDTH * elm_config_scale_get(),
                         EVISUM_WIN_HEIGHT * elm_config_scale_get());
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
-   evas_object_show(win);
 
    if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
      evisum_ui_background_add(ui->win, EINA_TRUE);
@@ -1543,13 +1542,12 @@ ui_process_list_win_add(Ui *ui)
    elm_object_content_set(win, o);
    pd->cache = evisum_ui_item_cache_new(pd->genlist, _item_create, 50);
 
-   if (evisum_ui_effects_enabled_get())
-     evisum_ui_animate(ui);
+   if (evisum_ui_effects_enabled_get()) evisum_ui_animate(ui);
 
-   pd->thread =
-      ecore_thread_feedback_run(_process_list,
-                                _process_list_feedback_cb,
-                                _process_list_cancel_cb, NULL, pd, EINA_FALSE);
+   pd->thread = ecore_thread_feedback_run(_process_list,
+                                          _process_list_feedback_cb,
+                                          _process_list_cancel_cb,
+                                          NULL, pd, EINA_FALSE);
    _process_list_update(pd);
 
    evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
@@ -1561,5 +1559,6 @@ ui_process_list_win_add(Ui *ui)
                            _elm_config_changed_cb, pd);
    ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
                            _evisum_config_changed_cb, pd);
+   evas_object_show(win);
 }
 
