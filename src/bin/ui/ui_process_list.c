@@ -1364,6 +1364,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
                                   _btn_cpu_usage_clicked_cb, pd);
 
    pd->scroller = pd->genlist = plist = elm_genlist_add(parent);
+   elm_genlist_homogeneous_set(plist, 1);
    elm_scroller_gravity_set(pd->scroller, 0.0, 1.0);
    elm_object_focus_allow_set(plist, EINA_FALSE);
    elm_scroller_movement_block_set(pd->scroller,
