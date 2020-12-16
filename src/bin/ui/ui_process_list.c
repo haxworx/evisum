@@ -1194,6 +1194,17 @@ _evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 
    if (!event) return;
 
+   if (!strcmp(event->keyname, "Escape"))
+     {
+        elm_object_text_set(obj, "");
+        if (pd->search_text) free(pd->search_text);
+        pd->search_text = NULL;
+        ui->state.skip_wait = EINA_FALSE;
+        evas_object_lower(pd->entry_pop);
+        elm_object_focus_set(elm_object_content_get(pd->win), 1);
+        return;
+     }
+
    ui->state.skip_wait = EINA_TRUE;
 
    evas_object_geometry_get(pd->win, NULL, NULL, &w, &h);
@@ -1394,7 +1405,6 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    Evas_Event_Key_Down *ev;
    Ui *ui;
    Ui_Data *pd = data;
-   Eina_Bool control;
 
    ev = event_info;
    ui = pd->ui;
@@ -1410,20 +1420,7 @@ _evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
         return;
      }
 
-   control = evas_key_modifier_is_set(ev->modifiers, "Control");
-   if (!control)
-     {
-        elm_object_focus_set(pd->entry, EINA_TRUE);
-        return;
-     }
-
-   if (ev->keyname[0] == 'e' || ev->keyname[0] == 'E')
-     ui->settings.show_self = !ui->settings.show_self;
-
-   if (ev->keyname[0] == 'k' || ev->keyname[0] == 'K')
-     ui->settings.show_kthreads = !ui->settings.show_kthreads;
-
-   evisum_ui_config_save(ui);
+   elm_object_focus_set(pd->entry, EINA_TRUE);
 }
 
 static void
