@@ -528,7 +528,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(pd->btn_menu, NULL, NULL, &ow, NULL);
    evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
-   w += ow + PAD_W;
+   w += ow;
    l = evas_object_data_get(it->obj, "proc_cmd");
    elm_object_text_set(l, eina_slstr_printf("%s", proc->command));
    hbx = evas_object_data_get(l, "hbx");
