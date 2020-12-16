@@ -198,19 +198,19 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb,
    evas_object_show(ot);
 
    or = evas_object_rectangle_add(evas_object_evas_get(parent));
-   evas_object_size_hint_min_set(or,
-                                 24 * elm_config_scale_get(),
-                                 24 * elm_config_scale_get());
    elm_table_pack(ot, or, 0, 0, 1, 1);
 
    btn = elm_button_add(parent);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
 
    ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get(icon));
    elm_object_part_content_set(btn, "icon", ic);
+   evas_object_size_hint_min_set(or,
+                                 24 * elm_config_scale_get(),
+                                 24 * elm_config_scale_get());
    evas_object_show(ic);
 
    elm_object_tooltip_text_set(btn, text);

@@ -1305,26 +1305,16 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_size_hint_align_set(plist, FILL, FILL);
    elm_table_pack(tbl, plist, 0, 2, i, 1);
 
-   /*
-   hbx = elm_box_add(parent);
-   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
-   evas_object_size_hint_align_set(hbx, FILL, 1.0);
-   elm_box_horizontal_set(hbx, EINA_TRUE);
-   evas_object_show(hbx);
 
    pd->entry = entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, FILL, FILL);
    elm_entry_single_line_set(entry, EINA_TRUE);
    elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editbl_set(entry, EINA_TRUE);
-   evas_object_show(entry);
+   elm_entry_editable_set(entry, EINA_TRUE);
    evas_object_event_callback_add(pd->entry, EVAS_CALLBACK_KEY_DOWN,
                                   _evisum_search_keypress_cb, pd);
-
-   elm_box_pack_end(hbx, entry);
-   elm_table_pack(tbl, hbx, 0, 3, i, 1);
-   */
+   evas_object_show(entry);
 
    evas_object_smart_callback_add(pd->genlist, "selected",
                    _item_pid_clicked_cb, pd);
