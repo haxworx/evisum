@@ -306,13 +306,19 @@ _graph_init(Graph *graph, int r, int g, int b, int a)
 static Evas_Object *
 _graph_guide(Evas_Object *parent, int r, int g, int b, int a)
 {
-   Evas_Object *rec = evas_object_rectangle_add(parent);
+   Evas_Object *btn, *rec;;
+
+   btn = elm_button_add(parent);
+   evas_object_show(btn);
+
+   rec = evas_object_rectangle_add(parent);
    evas_object_color_set(rec, r, g, b, a);
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_show(rec);
+   elm_object_part_content_set(btn, "elm.swallow.content", rec);
 
-   return rec;
+   return btn;
 }
 
 static Eina_Bool
@@ -457,8 +463,6 @@ ui_win_memory_add(Ui *ui)
 
    lb = _label_mem(tbl, _("Swapped"));
    pd->swap = pb = _progress_add(tbl);
-   rec = _graph_guide(tbl, COLOR_NONE);
-   elm_table_pack(tbl, rec, 0, 5, 1, 1);
    elm_table_pack(tbl, lb, 1, 5, 1, 1);
    elm_table_pack(tbl, pb, 2, 5, 1, 1);
 
@@ -466,8 +470,6 @@ ui_win_memory_add(Ui *ui)
      {
         lb = _label_mem(tbl, _("Video"));
         pd->video[i] = pb = _progress_add(tbl);
-        rec = _graph_guide(tbl, COLOR_NONE);
-        elm_table_pack(tbl, rec, 1, 6 + i, 1, 1);
         elm_table_pack(tbl, lb, 1, 6 + i, 1, 1);
         elm_table_pack(tbl, pb, 2, 6 + i, 1, 1);
      }

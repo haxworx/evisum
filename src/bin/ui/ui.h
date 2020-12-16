@@ -19,7 +19,6 @@
 typedef struct Ui
 {
    pid_t            program_pid;
-   Ecore_Thread    *thread_system;
 
    struct
    {

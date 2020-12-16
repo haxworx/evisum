@@ -412,7 +412,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
                                        ELM_CTXPOPUP_DIRECTION_DOWN,
                                        ELM_CTXPOPUP_DIRECTION_LEFT,
                                        ELM_CTXPOPUP_DIRECTION_RIGHT);
-   evas_object_move(o, ox + (ow / 2), oy);
+   evas_object_move(o, ox + (ow / 2), oy + oh);
    evas_object_show(o);
    ui->main_menu = o;
 }
