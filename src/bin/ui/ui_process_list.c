@@ -1168,11 +1168,9 @@ _evisum_process_filter(Ui_Data *pd, const char *text)
 static Eina_Bool
 _search_empty(void *data)
 {
-   const char *markup;
    Ui_Data *pd = data;
 
-   markup = elm_object_part_text_get(pd->entry, NULL);
-   if (strlen(markup) == 0)
+   if (pd->search_text && !pd->search_text[0])
      {
         evas_object_lower(pd->entry_pop);
         return EINA_TRUE;
