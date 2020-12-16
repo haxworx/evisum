@@ -1172,12 +1172,10 @@ _search_empty(void *data)
    Ui_Data *pd = data;
 
    markup = elm_object_part_text_get(pd->entry, NULL);
-
    if (strlen(markup) == 0)
      {
         evas_object_lower(pd->entry_pop);
-        pd->timer_entry = NULL;
-        return EINA_FALSE;
+        return EINA_TRUE;
      }
 
    return EINA_TRUE;
@@ -1223,11 +1221,7 @@ _evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 static void
 _evisum_search_add(Ui_Data *pd)
 {
-   Evas_Object *tbl, *rec, *box, *entry;
-
-   pd->entry_pop = tbl = elm_table_add(pd->win);
-   evas_object_lower(tbl);
-   evas_object_show(tbl);
+   Evas_Object *tbl, *rec, *entry;
 
    pd->entry = entry = elm_entry_add(pd->win);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
@@ -1238,6 +1232,10 @@ _evisum_search_add(Ui_Data *pd)
    evas_object_event_callback_add(pd->entry, EVAS_CALLBACK_KEY_DOWN,
                                   _evisum_search_keypress_cb, pd);
    evas_object_show(entry);
+
+   pd->entry_pop = tbl = elm_table_add(pd->win);
+   evas_object_lower(tbl);
+   evas_object_show(tbl);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(pd->win));
    evas_object_color_set(rec, 0, 0, 0, 128);
@@ -1251,8 +1249,7 @@ _evisum_search_add(Ui_Data *pd)
 static Evas_Object *
 _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 {
-   Evas_Object *bx, *fr, *tbl;
-   Evas_Object *entry, *btn, *plist;
+   Evas_Object *bx, *fr, *tbl, *btn, *plist;
    Ui *ui = pd->ui;
    int i = 0;
 
