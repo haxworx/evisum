@@ -1148,11 +1148,11 @@ _evisum_search_add(Ui_Data *pd)
    elm_entry_single_line_set(entry, EINA_TRUE);
    elm_entry_scrollable_set(entry, EINA_FALSE);
    elm_entry_editable_set(entry, EINA_TRUE);
+   elm_object_focus_allow_set(entry, 0);
    evas_object_show(entry);
 
    pd->entry_pop = tbl = elm_table_add(pd->win);
    evas_object_lower(tbl);
-   elm_object_focus_allow_set(tbl, 0);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(pd->win));
    evas_object_color_set(rec, 0, 0, 0, 128);
@@ -1369,6 +1369,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      }
    else if (pd->search_len < sizeof(pd->search))
      {
+        if (!ev->string || isspace(ev->string[0])) return;
         pd->search[pd->search_len++] = ev->keyname[0];
         elm_object_text_set(entry, pd->search);
         elm_entry_cursor_pos_set(entry, pd->search_len);
