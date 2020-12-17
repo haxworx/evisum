@@ -25,12 +25,13 @@ typedef struct
    Ui              *ui;
 
    pid_t            selected_pid;
-   char            *search_text;
+   char             search[128];
+   int              search_len;
 
    Evas_Object     *win;
    Evas_Object     *menu;
 
-   Ecore_Timer     *timer_entry;
+   Ecore_Timer     *timer_search;
    Evas_Object     *entry_pop;
    Evas_Object     *entry;
 
@@ -655,8 +656,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    if (!list)
      list = proc_info_all_get();
 
-   if (pd->search_text && pd->search_text[0])
-     len = strlen(pd->search_text);
+   if (pd->search[0])
+     len = strlen(pd->search);
 
    if (ui->settings.show_user)
      {
@@ -676,7 +677,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if ((len && (strncasecmp(proc->command, pd->search_text, len))) ||
+        if ((len && (strncasecmp(proc->command, pd->search, len))) ||
             (proc->pid == ui->program_pid))
          {
             proc_info_free(proc);
@@ -988,7 +989,7 @@ _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
-   _process_win_add(ui->win, pd->selected_pid, ui->settings.poll_delay);
+   _process_win_add(pd->win, pd->selected_pid, ui->settings.poll_delay);
 }
 
 static Evas_Object *
@@ -997,13 +998,12 @@ _item_menu_create(Ui_Data *pd, Proc_Info *proc)
    Elm_Object_Item *menu_it, *menu_it2;
    Evas_Object *menu;
    Eina_Bool stopped;
-   Ui *ui = pd->ui;
 
    if (!proc) return NULL;
 
    pd->selected_pid = proc->pid;
 
-   pd->menu = menu = elm_menu_add(ui->win);
+   pd->menu = menu = elm_menu_add(pd->win);
    if (!menu) return NULL;
 
    evas_object_smart_callback_add(menu, "dismissed",
@@ -1086,7 +1086,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    pd->selected_pid = proc->pid;
-   ui_process_win_add(ui->win, proc->pid, proc->command,
+   ui_process_win_add(pd->win, proc->pid, proc->command,
                       ui->settings.poll_delay);
 }
 
@@ -1138,77 +1138,6 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
 }
 
 static void
-_evisum_process_filter(Ui_Data *pd, const char *text)
-{
-   if (pd->search_text)
-     free(pd->search_text);
-
-   pd->search_text = strdup(text);
-}
-
-static Eina_Bool
-_search_empty(void *data)
-{
-   Ui_Data *pd = data;
-
-   if (pd->search_text && !pd->search_text[0])
-     {
-        evas_object_lower(pd->entry_pop);
-        return EINA_TRUE;
-     }
-
-   return EINA_TRUE;
-}
-
-static void
-_evisum_search_keypress_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
-                           void *event_info)
-{
-   Ui *ui;
-   const char *markup;
-   Evas_Coord w, h;
-   char *text;
-   Evas_Object *entry;
-   Evas_Event_Key_Down *event;
-   Ui_Data *pd;
-
-   pd = data;
-   ui = pd->ui;
-   event = event_info;
-   entry = obj;
-
-   if (!event) return;
-
-   if (!strcmp(event->keyname, "Escape"))
-     {
-        elm_object_text_set(obj, "");
-        if (pd->search_text) free(pd->search_text);
-        pd->search_text = NULL;
-        ui->state.skip_wait = EINA_FALSE;
-        evas_object_lower(pd->entry_pop);
-        elm_object_focus_set(elm_object_content_get(pd->win), 1);
-        return;
-     }
-
-   ui->state.skip_wait = EINA_TRUE;
-
-   evas_object_geometry_get(pd->win, NULL, NULL, &w, &h);
-   evas_object_move(pd->entry_pop, w / 2, h / 2);
-   evas_object_raise(pd->entry_pop);
-
-   if (!pd->timer_entry)
-     pd->timer_entry = ecore_timer_add(2.0, _search_empty, pd);
-
-   markup = elm_object_part_text_get(entry, NULL);
-   text = elm_entry_markup_to_utf8(markup);
-   if (text)
-     {
-       _evisum_process_filter(pd, text);
-       free(text);
-     }
-}
-
-static void
 _evisum_search_add(Ui_Data *pd)
 {
    Evas_Object *tbl, *rec, *entry;
@@ -1219,13 +1148,11 @@ _evisum_search_add(Ui_Data *pd)
    elm_entry_single_line_set(entry, EINA_TRUE);
    elm_entry_scrollable_set(entry, EINA_FALSE);
    elm_entry_editable_set(entry, EINA_TRUE);
-   evas_object_event_callback_add(pd->entry, EVAS_CALLBACK_KEY_DOWN,
-                                  _evisum_search_keypress_cb, pd);
    evas_object_show(entry);
 
    pd->entry_pop = tbl = elm_table_add(pd->win);
    evas_object_lower(tbl);
-   evas_object_show(tbl);
+   elm_object_focus_allow_set(tbl, 0);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(pd->win));
    evas_object_color_set(rec, 0, 0, 0, 128);
@@ -1385,28 +1312,72 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    return fr;
 }
 
+static Eina_Bool
+_search_empty(void *data)
+{
+   Ui_Data *pd = data;
+
+   if (!pd->search_len)
+     {
+        evas_object_lower(pd->entry_pop);
+        pd->timer_search = NULL;
+        return EINA_FALSE;
+     }
+
+   return EINA_TRUE;
+}
+
+
 static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
    Ui *ui;
-   Ui_Data *pd = data;
+   Ui_Data *pd;
+   Evas_Coord w, h;
+   Evas_Object *entry;
 
-   ev = event_info;
+   pd = data;
    ui = pd->ui;
+   ev = event_info;
+
+   entry = pd->entry;
 
    if (!ev || !ev->keyname)
      return;
 
-   ui->state.skip_wait = EINA_TRUE;
-
    if (!strcmp(ev->keyname, "Escape"))
      {
-        ecore_main_loop_quit();
-        return;
+        elm_object_text_set(obj, "");
+        ui->state.skip_wait = EINA_FALSE;
+        evas_object_lower(pd->entry_pop);
+        pd->search_len = 0;
+        for (int i = 0; i < sizeof(pd->search); i++)
+          pd->search[i] = '\0';
      }
+   else if (!strcmp(ev->keyname, "BackSpace"))
+     {
+         if (pd->search_len)
+           {
+              pd->search[--pd->search_len] = '\0';
+              elm_object_text_set(entry, pd->search);
+              elm_entry_cursor_pos_set(entry, pd->search_len - 1);
+           }
 
-   elm_object_focus_set(pd->entry, EINA_TRUE);
+         if (pd->search_len == 0 && !pd->timer_search)
+           pd->timer_search = ecore_timer_add(2.0, _search_empty, pd);
+     }
+   else if (pd->search_len < sizeof(pd->search))
+     {
+        pd->search[pd->search_len++] = ev->keyname[0];
+        elm_object_text_set(entry, pd->search);
+        elm_entry_cursor_pos_set(entry, pd->search_len);
+        evas_object_geometry_get(pd->win, NULL, NULL, &w, &h);
+        evas_object_move(pd->entry_pop, w / 2, h / 2);
+        evas_object_raise(pd->entry_pop);
+        evas_object_show(pd->entry_pop);
+     }
+   ui->state.skip_wait = EINA_TRUE;
 }
 
 static void
@@ -1460,8 +1431,8 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 
    evas_object_del(obj);
 
-   if (pd->timer_entry)
-     ecore_timer_del(pd->timer_entry);
+   if (pd->timer_search)
+     ecore_timer_del(pd->timer_search);
 
    if (pd->thread)
      ecore_thread_cancel(pd->thread);
@@ -1475,8 +1446,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
    if (pd->cache)
      evisum_ui_item_cache_free(pd->cache);
 
-   if (pd->search_text) free(pd->search_text);
-
    _proc_pid_cpu_times_free(pd);
 
    eina_lock_free(&_lock);
@@ -1488,7 +1457,7 @@ void
 ui_process_list_win_add(Ui *ui)
 {
    Evas_Object *win, *icon;
-   Evas_Object *o;
+   Evas_Object *obj;
 
    if (ui->win)
      {
@@ -1503,6 +1472,11 @@ ui_process_list_win_add(Ui *ui)
    pd->selected_pid = -1;
    pd->ui = ui;
 
+   ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
+                           _elm_config_changed_cb, pd);
+   ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
+                           _evisum_config_changed_cb, pd);
+
    ui->win = pd->win = win = elm_win_util_standard_add("evisum", "evisum");
    elm_win_autodel_set(win, EINA_TRUE);
    elm_win_title_set(win, _("EFL System Monitor"));
@@ -1514,34 +1488,25 @@ ui_process_list_win_add(Ui *ui)
    else
      evas_object_resize(win, EVISUM_WIN_WIDTH * elm_config_scale_get(),
                         EVISUM_WIN_HEIGHT * elm_config_scale_get());
-   elm_win_center(win, EINA_TRUE, EINA_TRUE);
-   evas_object_show(win);
-
-   if (evisum_ui_backgrounds_enabled_get())
-     evisum_ui_background_add(ui->win, EINA_TRUE);
-
-   o = _ui_content_system_add(pd, win);
-   elm_object_content_set(win, o);
-
+   obj = _ui_content_system_add(pd, win);
    pd->cache = evisum_ui_item_cache_new(pd->genlist, _item_create, 50);
+   elm_win_center(win, EINA_TRUE, EINA_TRUE);
+   evisum_ui_background_add(win, evisum_ui_backgrounds_enabled_get());
+   evas_object_show(win);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL,
                                   _win_del_cb, pd);
-   evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                                   _win_resize_cb, pd);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
+   evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
                                   _win_key_down_cb, pd);
-
-   ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
-                           _elm_config_changed_cb, pd);
-   ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
-                           _evisum_config_changed_cb, pd);
+   elm_object_content_set(win, obj);
+   evas_object_show(win);
 
    pd->thread = ecore_thread_feedback_run(_process_list,
                                           _process_list_feedback_cb,
                                           _process_list_cancel_cb,
                                           NULL, pd, EINA_FALSE);
    _process_list_update(pd);
-
 }
 
