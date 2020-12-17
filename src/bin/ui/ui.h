@@ -25,7 +25,6 @@ typedef struct Ui
       Evas_Object     *win;
       int              width;
       int              height;
-      Ecore_Animator  *animator;
    } processes;
 
    Evas_Object     *win;

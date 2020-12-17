@@ -394,8 +394,8 @@ ui_win_memory_add(Ui *ui)
    elm_win_autodel_set(win, EINA_TRUE);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win, (evisum_ui_effects_enabled_get() ||
-                                   evisum_ui_backgrounds_enabled_get()));
+   evisum_ui_background_random_add(win,
+                                   evisum_ui_backgrounds_enabled_get());
 
    _graph_init(&graphs[GR_USED],   COLOR_USED);
    _graph_init(&graphs[GR_CACHED], COLOR_CACHED);

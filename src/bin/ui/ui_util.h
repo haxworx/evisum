@@ -55,15 +55,6 @@ evisum_ui_backgrounds_enabled_set(Eina_Bool enabled);
 Eina_Bool
 evisum_ui_backgrounds_enabled_get(void);
 
-void
-evisum_ui_effects_enabled_set(Eina_Bool enabled);
-
-Eina_Bool
-evisum_ui_effects_enabled_get(void);
-
-void
-evisum_ui_animate(void *data);
-
 int
 evisum_ui_textblock_font_size_get(Evas_Object *tb);
 

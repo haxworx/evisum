@@ -652,20 +652,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    if (!eina_lock_take_try(&_lock))
      return;
 
-   if (ui->settings.show_desktop)
-     {
-        int pid = 0;
-        list = proc_info_all_get();
-        EINA_LIST_FREE(list, proc)
-          {
-             if (!strcmp(proc->command, "enlightenment"))
-               pid = proc->pid;
-             proc_info_free(proc);
-          }
-        if (pid != -1)
-          list = proc_info_pid_children_get(pid);
-     }
-
    if (!list)
      list = proc_info_all_get();
 
@@ -702,11 +688,11 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
          }
      }
 
+   list = _list_sort(ui, list);
+
    _genlist_ensure_n_items(pd->genlist, eina_list_count(list));
 
    it = elm_genlist_first_item_get(pd->genlist);
-
-   list = _list_sort(ui, list);
 
    EINA_LIST_FREE(list, proc)
      {
@@ -1376,7 +1362,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_size_hint_align_set(plist, FILL, FILL);
    elm_table_pack(tbl, plist, 0, 2, i, 1);
 
-
    _evisum_search_add(pd);
 
    evas_object_smart_callback_add(pd->genlist, "selected",
@@ -1401,7 +1386,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 }
 
 static void
-_evisum_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
    Ui *ui;
@@ -1487,9 +1472,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
    pd->thread = NULL;
    ui->win = NULL;
 
-   if (ui->processes.animator)
-     ecore_animator_del(ui->processes.animator);
-
    if (pd->cache)
      evisum_ui_item_cache_free(pd->cache);
 
@@ -1527,23 +1509,33 @@ ui_process_list_win_add(Ui *ui)
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
-
    if (_evisum_config->width > 1 && _evisum_config->height > 1)
      evas_object_resize(win, _evisum_config->width, _evisum_config->height);
    else
      evas_object_resize(win, EVISUM_WIN_WIDTH * elm_config_scale_get(),
                         EVISUM_WIN_HEIGHT * elm_config_scale_get());
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
+   evas_object_show(win);
 
-   if (evisum_ui_effects_enabled_get() || evisum_ui_backgrounds_enabled_get())
+   if (evisum_ui_backgrounds_enabled_get())
      evisum_ui_background_add(ui->win, EINA_TRUE);
 
    o = _ui_content_system_add(pd, win);
    elm_object_content_set(win, o);
+
    pd->cache = evisum_ui_item_cache_new(pd->genlist, _item_create, 50);
 
-   if (evisum_ui_effects_enabled_get()) evisum_ui_animate(ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL,
+                                  _win_del_cb, pd);
+   evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
+                                  _win_resize_cb, pd);
+   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
+                                  _win_key_down_cb, pd);
+
+   ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
+                           _elm_config_changed_cb, pd);
+   ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
+                           _evisum_config_changed_cb, pd);
 
    pd->thread = ecore_thread_feedback_run(_process_list,
                                           _process_list_feedback_cb,
@@ -1551,15 +1543,5 @@ ui_process_list_win_add(Ui *ui)
                                           NULL, pd, EINA_FALSE);
    _process_list_update(pd);
 
-   evas_object_event_callback_add(ui->win, EVAS_CALLBACK_RESIZE,
-                                  _win_resize_cb, pd);
-   evas_object_event_callback_add(o, EVAS_CALLBACK_KEY_DOWN,
-                                  _evisum_key_down_cb, pd);
-
-   ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
-                           _elm_config_changed_cb, pd);
-   ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
-                           _evisum_config_changed_cb, pd);
-   evas_object_show(win);
 }
 

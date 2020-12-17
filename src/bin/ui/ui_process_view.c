@@ -713,19 +713,12 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    Evas_Object *rec;
    Proc_Info *proc;
    int i = 0;
-   int r, g, b, a;
 
    fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_show(fr);
-
-   if (evisum_ui_effects_enabled_get())
-     {
-        evas_object_color_get(fr, &r, &g, &b, &a);
-        evas_object_color_set(fr, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
-     }
 
    tbl = elm_table_add(parent);
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
@@ -995,18 +988,11 @@ static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *fr, *box, *hbox, *btn, *genlist;
-   int r, g, b, a;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
    elm_object_style_set(fr, "pad_small");
-
-   if (evisum_ui_effects_enabled_get())
-     {
-        evas_object_color_get(fr, &r, &g, &b, &a);
-        evas_object_color_set(fr, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
-     }
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -1088,18 +1074,11 @@ static Evas_Object *
 _tree_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *fr, *box, *genlist;
-   int r, g, b, a;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
    elm_object_style_set(fr, "pad_small");
-
-   if (evisum_ui_effects_enabled_get())
-     {
-        evas_object_color_get(fr, &r, &g, &b, &a);
-        evas_object_color_set(fr, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
-     }
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -1127,18 +1106,11 @@ static Evas_Object *
 _info_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *fr, *box, *entry;
-   int r, g, b, a;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
    elm_object_style_set(fr, "pad_small");
-
-   if (evisum_ui_effects_enabled_get())
-     {
-        evas_object_color_get(fr, &r, &g, &b, &a);
-        evas_object_color_set(fr, r * 0.75, g * 0.75, b * 0.75, a * 0.75);
-     }
 
    box = elm_box_add(parent);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
@@ -1389,7 +1361,7 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_d
    elm_win_icon_object_set(win, ic);
    tabs = _tabs_add(win, pd);
 
-   evisum_ui_background_random_add(win, evisum_ui_effects_enabled_get());
+   evisum_ui_background_random_add(win, evisum_ui_backgrounds_enabled_get());
 
    box = elm_box_add(win);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);

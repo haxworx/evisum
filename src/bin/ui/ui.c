@@ -39,12 +39,12 @@ evisum_ui_config_save(Ui *ui)
    _evisum_config->sort_reverse = ui->settings.sort_reverse;
    _evisum_config->width = w;
    _evisum_config->height = h;
-   _evisum_config->effects = evisum_ui_effects_enabled_get();
+   _evisum_config->effects = 0;
    _evisum_config->backgrounds = evisum_ui_backgrounds_enabled_get();
    _evisum_config->poll_delay = ui->settings.poll_delay;
    _evisum_config->show_kthreads = ui->settings.show_kthreads;
    _evisum_config->show_user = ui->settings.show_user;
-   _evisum_config->show_desktop = ui->settings.show_desktop;
+   _evisum_config->show_desktop = 0; //ui->settings.show_desktop;
 
    proc_info_kthreads_show_set(ui->settings.show_kthreads);
 
@@ -93,13 +93,12 @@ evisum_ui_config_load(Ui *ui)
    ui->settings.sort_reverse = _evisum_config->sort_reverse;
    ui->settings.poll_delay   = _evisum_config->poll_delay;
 
-   evisum_ui_effects_enabled_set(_evisum_config->effects);
    evisum_ui_backgrounds_enabled_set(_evisum_config->backgrounds);
 
    ui->settings.show_kthreads = _evisum_config->show_kthreads;
    proc_info_kthreads_show_set(ui->settings.show_kthreads);
    ui->settings.show_user = _evisum_config->show_user;
-   ui->settings.show_desktop = _evisum_config->show_desktop;
+   ui->settings.show_desktop = 0; // _evisum_config->show_desktop;
 
    ui->cpu.width = _evisum_config->cpu.width;
    ui->cpu.height = _evisum_config->cpu.height;
@@ -171,17 +170,14 @@ static void
 _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Ui *ui;
+   Eina_Bool state;
 
-   if ((!evisum_ui_effects_enabled_get()) && (!evisum_ui_backgrounds_enabled_get()))
-     evisum_ui_backgrounds_enabled_set(1);
-   else if (evisum_ui_backgrounds_enabled_get() && (!evisum_ui_effects_enabled_get()))
-     evisum_ui_effects_enabled_set(1);
-   else
-     {
-        evisum_ui_effects_enabled_set(0);
-        evisum_ui_backgrounds_enabled_set(0);
-     }
+   ui = data;
+
+   state = !evisum_ui_backgrounds_enabled_get();
+
+   evisum_ui_backgrounds_enabled_set(state);
 
    evisum_ui_config_save(ui);
 
@@ -247,6 +243,7 @@ _main_menu_show_threads_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
    evisum_ui_config_save(ui);
 }
 
+/*
 static void
 _main_menu_show_desktop_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                                    void *event_info EINA_UNUSED)
@@ -256,6 +253,7 @@ _main_menu_show_desktop_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
    ui->settings.show_desktop = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
 }
+*/
 
 static void
 _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
@@ -395,6 +393,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
                                   _main_menu_show_user_changed_cb, ui);
    elm_box_pack_end(bx2, chk);
 
+   /*
    chk = elm_check_add(bx2);
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
    evas_object_size_hint_align_set(chk, FILL, FILL);
@@ -404,6 +403,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    evas_object_smart_callback_add(chk, "changed",
                                   _main_menu_show_desktop_changed_cb, ui);
    elm_box_pack_end(bx2, chk);
+   */
 
    elm_object_content_set(fr, bx2);
    elm_box_pack_end(bx, fr);
