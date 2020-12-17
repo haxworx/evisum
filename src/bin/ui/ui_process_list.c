@@ -193,63 +193,6 @@ _sort_by_state(const void *p1, const void *p2)
    return strcmp(inf1->state, inf2->state);
 }
 
-static Eina_List *
-_list_sort(Ui *ui, Eina_List *list)
-{
-   switch (ui->settings.sort_type)
-     {
-      case SORT_BY_NONE:
-      case SORT_BY_PID:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_pid);
-        break;
-
-      case SORT_BY_UID:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_uid);
-        break;
-
-      case SORT_BY_NICE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_nice);
-        break;
-
-      case SORT_BY_PRI:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_pri);
-        break;
-
-      case SORT_BY_CPU:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_cpu);
-        break;
-
-      case SORT_BY_THREADS:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_threads);
-        break;
-
-      case SORT_BY_SIZE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_size);
-        break;
-
-      case SORT_BY_RSS:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_rss);
-        break;
-
-      case SORT_BY_CMD:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_cmd);
-        break;
-
-      case SORT_BY_STATE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_state);
-        break;
-
-      case SORT_BY_CPU_USAGE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_cpu_usage);
-        break;
-     }
-
-   if (ui->settings.sort_reverse)
-     list = eina_list_reverse(list);
-
-   return list;
-}
-
 typedef struct {
    pid_t pid;
    int64_t cpu_time_prev;
@@ -635,49 +578,93 @@ _process_list_cancel_cb(void *data, Ecore_Thread *thread)
    _proc_pid_cpu_times_free(pd);
 }
 
-static void
-_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
-                          void *msg EINA_UNUSED)
+
+static Eina_List *
+_process_list_sort(Ui *ui, Eina_List *list)
 {
-   Ui *ui;
-   Ui_Data *pd;
-   Eina_List *list, *l, *l_next;
-   Proc_Info *proc;
-   Elm_Object_Item *it;
-   int len = 0;
-   list = NULL;
-
-   pd = data;
-   ui = pd->ui;
-
-   if (!eina_lock_take_try(&_lock))
-     return;
-
-   if (!list)
-     list = proc_info_all_get();
-
-   if (pd->search[0])
-     len = strlen(pd->search);
-
-   if (ui->settings.show_user)
+   switch (ui->settings.sort_type)
      {
-        static uid_t uid = 0;
+      case SORT_BY_NONE:
+      case SORT_BY_PID:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_pid);
+        break;
 
-        if (!uid) uid = getuid();
+      case SORT_BY_UID:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_uid);
+        break;
 
-        EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
-          {
-             if (proc->uid != uid)
-               {
-                  proc_info_free(proc);
-                  list = eina_list_remove_list(list, l);
-               }
-          }
+      case SORT_BY_NICE:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_nice);
+        break;
+
+      case SORT_BY_PRI:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_pri);
+        break;
+
+      case SORT_BY_CPU:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_cpu);
+        break;
+
+      case SORT_BY_THREADS:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_threads);
+        break;
+
+      case SORT_BY_SIZE:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_size);
+        break;
+
+      case SORT_BY_RSS:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_rss);
+        break;
+
+      case SORT_BY_CMD:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_cmd);
+        break;
+
+      case SORT_BY_STATE:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_state);
+        break;
+
+      case SORT_BY_CPU_USAGE:
+        list = eina_list_sort(list, eina_list_count(list), _sort_by_cpu_usage);
+        break;
      }
+
+   if (ui->settings.sort_reverse)
+     list = eina_list_reverse(list);
+
+   return list;
+}
+static Eina_List *
+_process_list_uid_trim(Eina_List *list, uid_t uid)
+{
+   Proc_Info *proc;
+   Eina_List *l, *l_next;
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if ((len && (strncasecmp(proc->command, pd->search, len))) ||
+        if (proc->uid != uid)
+          {
+             proc_info_free(proc);
+             list = eina_list_remove_list(list, l);
+          }
+     }
+
+   return list;
+}
+
+static Eina_List *
+_process_list_search_trim(Eina_List *list, Ui_Data *pd)
+{
+   Ui *ui;
+   Eina_List *l, *l_next;
+   Proc_Info *proc;
+
+   ui = pd->ui;
+
+   EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
+     {
+        if ((pd->search_len && (strncasecmp(proc->command, pd->search, pd->search_len))) ||
             (proc->pid == ui->program_pid))
          {
             proc_info_free(proc);
@@ -689,7 +676,72 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
          }
      }
 
-   list = _list_sort(ui, list);
+    return list;
+}
+
+static Eina_List *
+_process_list_get(Ui_Data *pd)
+{
+   Eina_List *list;
+   Ui *ui;
+
+   ui = pd->ui;
+
+   list = proc_info_all_get();
+
+   if (ui->settings.show_user)
+     list = _process_list_uid_trim(list, getuid());
+
+   list = _process_list_search_trim(list, pd);
+   list = _process_list_sort(ui, list);
+
+   return list;
+}
+
+static void
+_process_list(void *data, Ecore_Thread *thread)
+{
+   Ui_Data *pd;
+   Eina_List *list;
+   Ui *ui;
+   int delay = 1;
+
+   pd = data;
+   ui = pd->ui;
+
+   while (!ecore_thread_check(thread))
+     {
+        list = _process_list_get(pd);
+        ecore_thread_feedback(thread, list);
+        for (int i = 0; i < delay * 4; i++)
+          {
+             if (ecore_thread_check(thread)) return;
+
+             if (ui->state.skip_wait)
+               {
+                  ui->state.skip_wait = EINA_FALSE;
+                  break;
+               }
+             usleep(250000);
+          }
+        ui->state.ready = EINA_TRUE;
+        delay = ui->settings.poll_delay;
+     }
+}
+
+static void
+_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
+                          void *msg EINA_UNUSED)
+{
+   Ui_Data *pd;
+   Eina_List *list;
+   Proc_Info *proc;
+   Elm_Object_Item *it;
+
+   pd = data;
+   list = msg;
+
+   eina_lock_take(&_lock);
 
    _genlist_ensure_n_items(pd->genlist, eina_list_count(list));
 
@@ -719,36 +771,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 static void
 _process_list_update(Ui_Data *pd)
 {
-   _process_list_feedback_cb(pd, NULL, NULL);
-}
-
-static void
-_process_list(void *data, Ecore_Thread *thread)
-{
-   Ui_Data *pd;
-   Ui *ui;
-   int delay = 1;
-
-   pd = data;
-   ui = pd->ui;
-
-   while (!ecore_thread_check(thread))
-     {
-        ecore_thread_feedback(thread, ui);
-        for (int i = 0; i < delay * 4; i++)
-          {
-             if (ecore_thread_check(thread)) return;
-
-             if (ui->state.skip_wait)
-               {
-                  ui->state.skip_wait = EINA_FALSE;
-                  break;
-               }
-             usleep(250000);
-          }
-        ui->state.ready = EINA_TRUE;
-        delay = ui->settings.poll_delay;
-     }
+   Eina_List *list = _process_list_get(pd);
+   _process_list_feedback_cb(pd, NULL, list);
 }
 
 static void
