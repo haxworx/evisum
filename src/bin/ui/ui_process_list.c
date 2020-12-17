@@ -25,7 +25,7 @@ typedef struct
    Ui              *ui;
 
    pid_t            selected_pid;
-   char             search[128];
+   char             search[16];
    int              search_len;
 
    Evas_Object     *win;
@@ -1162,29 +1162,40 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
 }
 
 static void
-_evisum_search_add(Ui_Data *pd)
+_search_add(Ui_Data *pd)
 {
-   Evas_Object *tbl, *rec, *entry;
-
-   pd->entry = entry = elm_entry_add(pd->win);
-   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(entry, FILL, FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_FALSE);
-   elm_entry_editable_set(entry, EINA_TRUE);
-   elm_object_focus_allow_set(entry, 0);
-   evas_object_show(entry);
+   Evas_Object *tbl, *tbl2, *rec, *entry;
 
    pd->entry_pop = tbl = elm_table_add(pd->win);
    evas_object_lower(tbl);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(pd->win));
    evas_object_color_set(rec, 0, 0, 0, 128);
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(192), ELM_SCALE_SIZE(128));
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(192), ELM_SCALE_SIZE(128));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(220), ELM_SCALE_SIZE(128));
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(220), ELM_SCALE_SIZE(128));
    evas_object_show(rec);
    elm_table_pack(tbl, rec, 0, 0, 1, 1);
-   elm_table_pack(tbl, entry, 0, 0, 1, 1);
+
+   tbl2 = elm_table_add(pd->win);
+   evas_object_show(tbl2);
+
+   pd->entry = entry = elm_entry_add(tbl2);
+   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(entry, 0, FILL);
+   elm_entry_single_line_set(entry, 1);
+   elm_entry_scrollable_set(entry, 0);
+   elm_entry_editable_set(entry, 1);
+   elm_object_focus_allow_set(entry, 1);
+   evas_object_show(entry);
+
+   rec = evas_object_rectangle_add(evas_object_evas_get(tbl2));
+   evas_object_color_set(rec, 233, 0, 0, 128);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(192), 1);
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(192), -1);
+   elm_table_pack(tbl2, rec, 0, 0, 1, 1);
+   elm_table_pack(tbl2, entry, 0, 0, 1, 1);
+
+   elm_table_pack(tbl, tbl2, 0, 0, 1, 1);
 }
 
 static Evas_Object *
@@ -1313,8 +1324,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_size_hint_align_set(plist, FILL, FILL);
    elm_table_pack(tbl, plist, 0, 2, i, 1);
 
-   _evisum_search_add(pd);
-
    evas_object_smart_callback_add(pd->genlist, "selected",
                    _item_pid_clicked_cb, pd);
    evas_object_event_callback_add(pd->genlist, EVAS_CALLBACK_MOUSE_UP,
@@ -1391,7 +1400,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
          if (pd->search_len == 0 && !pd->timer_search)
            pd->timer_search = ecore_timer_add(2.0, _search_empty, pd);
      }
-   else if (pd->search_len < sizeof(pd->search))
+   else if (pd->search_len < (sizeof(pd->search)-1))
      {
         if (!ev->string || isspace(ev->string[0])) return;
         pd->search[pd->search_len++] = ev->keyname[0];
@@ -1518,6 +1527,8 @@ ui_process_list_win_add(Ui *ui)
    elm_win_center(win, EINA_TRUE, EINA_TRUE);
    evisum_ui_background_add(win, evisum_ui_backgrounds_enabled_get());
    evas_object_show(win);
+
+   _search_add(pd);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL,
                                   _win_del_cb, pd);
