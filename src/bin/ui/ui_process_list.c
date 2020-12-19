@@ -1185,7 +1185,7 @@ _search_add(Ui_Data *pd)
    elm_entry_single_line_set(entry, 1);
    elm_entry_scrollable_set(entry, 0);
    elm_entry_editable_set(entry, 1);
-   elm_object_focus_allow_set(entry, 1);
+   elm_object_focus_allow_set(entry, 0);
    evas_object_show(entry);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tbl2));

@@ -265,11 +265,19 @@ _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
    evisum_ui_config_save(ui);
 }
 
+static Eina_Bool
+_menu_focus_cb(void *data)
+{
+   Evas_Object *o = data;
+   elm_object_focus_set(o, 1);
+   return EINA_FALSE;
+}
+
 void
 evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *o, *bx, *bx2, *hbox, *sep, *fr, *sli;
-   Evas_Object *btn, *chk;
+   Evas_Object *it_focus, *btn, *chk;
    Evas_Coord ox, oy, ow, oh;
 
    evas_object_geometry_get(parent, &ox, &oy, &ow, &oh);
@@ -299,7 +307,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    evas_object_show(hbox);
 
-   btn = _btn_create(hbox, "cpu", _("CPU"),
+   it_focus = btn = _btn_create(hbox, "cpu", _("CPU"),
                      _menu_cpu_activity_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
@@ -415,6 +423,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    evas_object_move(o, ox + (ow / 2), oy + oh);
    evas_object_show(o);
    ui->main_menu = o;
+   ecore_timer_add(0.5, _menu_focus_cb, it_focus);
 }
 
 static void
