@@ -51,6 +51,22 @@ system_sensor_thermal_by_id(char *id, double *value)
    return 0;
 }
 
+#if defined(__OpenBSD__)
+int
+system_sensor_thermal_by_mib(int mibs[], double *value)
+{
+   struct sensor snsr;
+   size_t slen = sizeof(struct sensor);
+
+   if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1) return 0;
+
+   *value = (snsr.value - 273150000) / 1000000.0;
+
+   return 1;
+}
+
+#endif
+
 sensor_t **
 system_sensors_thermal_get(int *sensor_count)
 {
@@ -94,6 +110,7 @@ system_sensors_thermal_get(int *sensor_count)
         sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup(snsrdev.xname);
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
+        memcpy(sensor->mibs, &mibs, sizeof(mibs));
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    sensor_t *sensor;

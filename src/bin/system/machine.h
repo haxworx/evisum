@@ -48,6 +48,8 @@ typedef struct
    char   *child_name;
 #if defined(__linux__)
    char   *path;
+#elif defined(__OpenBSD__)
+   int      mibs[5];
 #endif
    double  value;
    bool    invalid;
@@ -142,6 +144,11 @@ system_sensors_thermal_get(int *count);
 
 int
 system_sensor_thermal_by_id(char *id, double *value);
+
+#if defined(__OpenBSD__)
+int
+system_sensor_thermal_by_mib(int mib[], double *value);
+#endif
 
 void
 system_sensors_thermal_free(sensor_t **sensors, int count);

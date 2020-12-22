@@ -85,7 +85,11 @@ _sensors_update(void *data, Ecore_Thread *thread)
      {
         if (pd->selected_it)
           {
+#if defined(__OpenBSD__)
+             if (system_sensor_thermal_by_mib(pd->sensor->mibs, &msg->thermal_temp))
+#else
              if (system_sensor_thermal_by_id(pd->sensor->path, &msg->thermal_temp))
+#endif
                msg->thermal_valid = 1;
           }
         system_power_state_get(&msg->power);
@@ -285,19 +289,22 @@ ui_win_sensors_add(Ui *ui)
    evas_object_show(content);
    elm_object_content_set(win, content);
 
-   pd->power_fr = fr = elm_frame_add(win);
-   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(fr, FILL, FILL);
-   elm_object_text_set(fr, _("Power"));
-   evas_object_show(fr);
-
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
-   elm_object_content_set(fr, bx);
-
    system_power_state_get(&power);
+   if (power.battery_count)
+     {
+        pd->power_fr = fr = elm_frame_add(win);
+        evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(fr, FILL, FILL);
+        elm_object_text_set(fr, _("Power"));
+        evas_object_show(fr);
+
+        bx = elm_box_add(win);
+        evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(bx, FILL, FILL);
+        evas_object_show(bx);
+        elm_object_content_set(fr, bx);
+        elm_box_pack_end(content, fr);
+     }
 
    for (int i = 0; i < power.battery_count; i++)
      {
@@ -345,8 +352,6 @@ ui_win_sensors_add(Ui *ui)
      }
 
    system_power_state_free(&power);
-
-   elm_box_pack_end(content, fr);
 
    fr = elm_frame_add(win);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
