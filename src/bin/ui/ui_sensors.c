@@ -131,7 +131,7 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
         if (msg->power.batteries[i]->present)
           {
               Bat *bat = eina_list_data_get(l);
-              double perc = msg->power.batteries[i]->percent / 100;
+              double perc = (double) msg->power.batteries[i]->percent / 100;
               elm_progressbar_value_set(bat->pb, perc);
           }
         l = eina_list_next(l);
