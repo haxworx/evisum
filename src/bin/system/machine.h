@@ -143,12 +143,7 @@ sensor_t **
 system_sensors_thermal_get(int *count);
 
 int
-system_sensor_thermal_by_id(char *id, double *value);
-
-#if defined(__OpenBSD__)
-int
-system_sensor_thermal_by_mib(int mib[], double *value);
-#endif
+system_sensor_thermal_get(sensor_t *snsr);
 
 void
 system_sensors_thermal_free(sensor_t **sensors, int count);

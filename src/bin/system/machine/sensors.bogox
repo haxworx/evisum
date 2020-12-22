@@ -35,37 +35,31 @@ system_sensors_thermal_free(sensor_t **sensors, int count)
 }
 
 int
-system_sensor_thermal_by_id(char *id, double *value)
+system_sensor_thermal_get(sensor_t *sensor)
 {
 #if defined(__linux__)
-   char *d = file_contents(id);
+   char *d = file_contents(sensor->path);
    if (d)
      {
-       *value = atof(d);
-       if (*value) *value /= 1000;
+       double val = atof(d);
+       if (val);
+         sensor->value = val /= 1000;
        free(d);
        return 1;
      }
    return 0;
-#endif
-   return 0;
-}
-
-#if defined(__OpenBSD__)
-int
-system_sensor_thermal_by_mib(int mibs[], double *value)
-{
+#elif defined(__OpenBSD__)
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
 
-   if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1) return 0;
+   if (sysctl(sensor->mibs, 5, &snsr, &slen, NULL, 0) == -1) return 0;
 
-   *value = (snsr.value - 273150000) / 1000000.0;
+   sensor->value = (snsr.value - 273150000) / 1000000.0;
 
    return 1;
-}
-
 #endif
+   return 0;
+}
 
 sensor_t **
 system_sensors_thermal_get(int *sensor_count)

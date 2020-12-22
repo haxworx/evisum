@@ -85,12 +85,13 @@ _sensors_update(void *data, Ecore_Thread *thread)
      {
         if (pd->selected_it)
           {
-#if defined(__OpenBSD__)
-             if (system_sensor_thermal_by_mib(pd->sensor->mibs, &msg->thermal_temp))
-#else
-             if (system_sensor_thermal_by_id(pd->sensor->path, &msg->thermal_temp))
-#endif
-               msg->thermal_valid = 1;
+             if (!system_sensor_thermal_get(pd->sensor))
+               msg->thermal_valid = 0;
+             else
+               {
+                  msg->thermal_valid = 1;
+                  msg->thermal_temp = pd->sensor->value;
+               }
           }
         system_power_state_get(&msg->power);
 
