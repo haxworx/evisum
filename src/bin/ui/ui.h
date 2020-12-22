@@ -59,11 +59,11 @@ typedef struct Ui
 
    struct
    {
-      Evas_Object *win;
-      int          width;
-      int          height;
-      Evas_Object *box;
-      Evas_Object *timer;
+      Evas_Object  *win;
+      int           width;
+      int           height;
+      Evas_Object  *box;
+      Ecore_Thread *thread;
    } sensors;
 
    struct

@@ -14,10 +14,48 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+void
+system_sensors_thermal_free(sensor_t **sensors, int count)
+{
+   for (int i = 0; i < count; i++)
+     {
+        sensor_t *snsr = sensors[i];
+        if (snsr->name)
+          free(snsr->name);
+        if (snsr->child_name)
+          free(snsr->child_name);
+#if defined(__linux__)
+        if (snsr->path)
+          free(snsr->path);
+#endif
+        free(snsr);
+     }
+   if (sensors)
+     free(sensors);
+}
+
+int
+system_sensor_thermal_by_id(char *id, double *value)
+{
+#if defined(__linux__)
+   char *d = file_contents(id);
+   if (d)
+     {
+       *value = atof(d);
+       if (*value) *value /= 1000;
+       free(d);
+       return 1;
+     }
+   return 0;
+#endif
+   return 0;
+}
+
 sensor_t **
 system_sensors_thermal_get(int *sensor_count)
 {
    sensor_t **sensors = NULL;
+   *sensor_count = 0;
 #if defined(__OpenBSD__)
    sensor_t *sensor;
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
@@ -143,7 +181,7 @@ system_sensors_thermal_get(int *sensor_count)
                   snprintf(buf, sizeof(buf), "%s/temp%d_label", link, id);
                   sensor->child_name = file_contents(buf);
                   snprintf(buf, sizeof(buf), "%s/temp%d_input", link, id);
-
+                  sensor->path = strdup(buf);
                   char *d = file_contents(buf);
                   if (d)
                     {
@@ -328,6 +366,7 @@ _battery_state_get(power_t *power)
 
 #elif defined(__linux__)
    const char *path;
+   char *link;
    struct dirent *dh;
    struct stat st;
    DIR *dir;
@@ -338,11 +377,15 @@ _battery_state_get(power_t *power)
 
         path = strsli_printf("/sys/class/power_supply/%s", power->batteries[i]->name);
 
-        if (((stat(path, &st) < 0)) || (S_ISLNK(st.st_mode)) || (!S_ISDIR(st.st_mode)))
+        if ((stat(path, &st) < 0) || (!S_ISDIR(st.st_mode)))
           continue;
 
+        link = realpath(path, NULL);
+        if (!link) return;
+
         dir = opendir(path);
-        if (!dir) return;
+        if (!dir)
+          goto done;
 
         while ((dh = readdir(dir)) != NULL)
           {
@@ -360,13 +403,13 @@ _battery_state_get(power_t *power)
         if (!naming)
           continue;
 
-        buf = file_contents(strsli_printf("/sys/class/power_supply/%s/%s_full", power->batteries[i]->name, naming));
+        buf = file_contents(strsli_printf("%s/%s_full", link, naming));
         if (buf)
           {
              power->batteries[i]->charge_full = atol(buf);
              free(buf);
           }
-        buf = file_contents(strsli_printf("/sys/class/power_supply/%s/%s_now", power->batteries[i]->name, naming));
+        buf = file_contents(strsli_printf("%s/%s_now", link, naming));
         if (buf)
           {
              power->batteries[i]->charge_current = atol(buf);
@@ -374,6 +417,8 @@ _battery_state_get(power_t *power)
           }
         free(naming);
      }
+done:
+   if (link) free(link);
 #endif
 }
 
@@ -381,6 +426,7 @@ void
 system_power_state_get(power_t *power)
 {
    int i;
+   memset(power, 0, sizeof(power_t));
 #if defined(__OpenBSD__)
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
@@ -422,3 +468,20 @@ system_power_state_get(power_t *power)
      }
 }
 
+void
+system_power_state_free(power_t *power)
+{
+   for (int i = 0; i < power->battery_count; i++)
+     {
+
+        if (power->batteries[i]->name)
+          free(power->batteries[i]->name);
+#if defined(__OpenBSD__)
+        if (power->batteries[i]->mibs)
+          free(power->batteries[i]->mibs);
+#endif
+        free(power->batteries[i]);
+     }
+   if (power->batteries)
+     free(power->batteries);
+}

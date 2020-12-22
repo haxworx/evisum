@@ -46,6 +46,9 @@ typedef struct
 {
    char   *name;
    char   *child_name;
+#if defined(__linux__)
+   char   *path;
+#endif
    double  value;
    bool    invalid;
 } sensor_t;
@@ -137,8 +140,17 @@ system_memory_usage_get(meminfo_t *memory);
 sensor_t **
 system_sensors_thermal_get(int *count);
 
+int
+system_sensor_thermal_by_id(char *id, double *value);
+
+void
+system_sensors_thermal_free(sensor_t **sensors, int count);
+
 void
 system_power_state_get(power_t *power);
+
+void
+system_power_state_free(power_t *power);
 
 void
 system_network_transfer_get(network_t *usage);
