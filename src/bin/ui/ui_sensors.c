@@ -8,13 +8,11 @@ typedef struct
    Eina_List              *sensors;
    Eina_List              *batteries;
 
-   Evas_Object            *combobox;
+   Evas_Object            *genlist;
    Elm_Genlist_Item_Class *itc;
-   Elm_Object_Item        *selected_it;
 
    sensor_t               *sensor;
 
-   Evas_Object            *power_fr;
    Evas_Object            *thermal_pb;
 
    Ui                     *ui;
@@ -70,7 +68,7 @@ _sensors_refresh(Ui_Data *pd)
 
    pd->sensors = eina_list_sort(pd->sensors, n, _sort_cb);
 
-   elm_genlist_clear(pd->combobox);
+   elm_genlist_clear(pd->genlist);
 }
 
 static void
@@ -96,7 +94,8 @@ _sensors_update(void *data, Ecore_Thread *thread)
 
         system_power_state_get(&msg->power);
 
-        ecore_thread_feedback(thread, msg);
+        if (eina_lock_take_try(&_lock))
+          ecore_thread_feedback(thread, msg);
 
         if (ecore_thread_check(thread)) break;
 
@@ -109,37 +108,42 @@ _sensors_update(void *data, Ecore_Thread *thread)
 static void
 _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 {
+   Data *msg;
+   Ui_Data *pd;
    sensor_t *s;
-   Ui_Data *pd = data;
    Eina_List *l;
-   Data *msg = msgdata;
+   int i = 0;
+
+   msg = msgdata;
+   pd = data;
 
    EINA_LIST_FREE(pd->sensors, s)
-     elm_genlist_item_append(pd->combobox, pd->itc, s,
+     elm_genlist_item_append(pd->genlist, pd->itc, s,
                              NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
-   if (msg->thermal_valid)
-     elm_progressbar_value_set(pd->thermal_pb, msg->thermal_temp / 100);
+   if (msg->thermal_valid && pd->sensor)
+     {
+        elm_progressbar_value_set(pd->thermal_pb, msg->thermal_temp / 100);
+        elm_object_tooltip_text_set(pd->thermal_pb, pd->sensor->name);
+     }
 
    l = eina_list_nth_list(pd->batteries, 0);
-   if (l)
-     {
-        if (msg->power.have_ac)
-          elm_object_text_set(pd->power_fr, _("Power (AC)"));
-        else
-          elm_object_text_set(pd->power_fr, _("Power"));
-     }
-   for (int i = 0; l && msg->power.battery_count; i++)
+   while (l && msg->power.battery_count)
      {
         if (msg->power.batteries[i]->present)
           {
               Bat *bat = eina_list_data_get(l);
+              elm_object_tooltip_text_set(bat->pb,
+                                          msg->power.batteries[i]->name);
               double perc = (double) msg->power.batteries[i]->percent / 100;
               elm_progressbar_value_set(bat->pb, perc);
           }
         l = eina_list_next(l);
+        i++;
      }
 
    system_power_state_free(&msg->power);
+
+   eina_lock_release(&_lock);
 }
 
 static void
@@ -151,22 +155,7 @@ _item_del(void *data, Evas_Object *obj)
 }
 
 static void
-_combo_expanded_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
-{
-   Elm_Object_Item *it;
-   Ui_Data *pd = data;
-
-   if (pd->selected_it)
-     it = pd->selected_it;
-   else
-     it = elm_genlist_selected_item_get(obj);
-
-   if (it)
-     elm_genlist_item_selected_set(it, 1);
-}
-
-static void
-_combo_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
+_genlist_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd;
    Elm_Object_Item *it;
@@ -174,13 +163,11 @@ _combo_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
    char buf[64];
 
    pd = data;
-   it = pd->selected_it = event_info;
+   it = event_info;
 
    pd->sensor = s = elm_object_item_data_get(it);
    _name_set(buf, sizeof(buf), s);
    elm_object_text_set(obj, buf);
-
-   elm_combobox_hover_end(obj);
 }
 
 static Evas_Object *
@@ -219,6 +206,8 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
 
+   eina_lock_take(&_lock);
+
    ecore_thread_cancel(ui->sensors.thread);
    ecore_thread_wait(ui->sensors.thread, 0.5);
    ui->sensors.thread = NULL;
@@ -231,6 +220,9 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 
    elm_genlist_item_class_free(pd->itc);
    free(pd);
+
+   eina_lock_release(&_lock);
+   eina_lock_free(&_lock);
 }
 
 static void
@@ -245,7 +237,7 @@ void
 ui_win_sensors_add(Ui *ui)
 {
    Evas_Object *win, *content, *bx, *tbl, *fr;
-   Evas_Object *combo, *rec, *lb, *ic, *pb;
+   Evas_Object *genlist, *pb;
    Elm_Genlist_Item_Class *itc;
    power_t power;
    Evas_Coord x = 0, y = 0;
@@ -259,6 +251,8 @@ ui_win_sensors_add(Ui *ui)
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    if (!pd) return;
    pd->ui = ui;
+
+   eina_lock_new(&_lock);
 
    ui->sensors.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
    elm_win_autodel_set(win, EINA_TRUE);
@@ -274,24 +268,16 @@ ui_win_sensors_add(Ui *ui)
    evas_object_size_hint_weight_set(content, EXPAND, EXPAND);
    evas_object_size_hint_align_set(content, FILL, FILL);
    evas_object_show(content);
-   elm_object_content_set(win, content);
+
+   fr = elm_frame_add(win);
+   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(fr, FILL, FILL);
+   elm_object_style_set(fr, "pad_small");
+   evas_object_show(fr);
+   elm_object_content_set(fr, content);
+   elm_object_content_set(win, fr);
 
    system_power_state_get(&power);
-   if (power.battery_count)
-     {
-        pd->power_fr = fr = elm_frame_add(win);
-        evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-        evas_object_size_hint_align_set(fr, FILL, FILL);
-        elm_object_text_set(fr, _("Power"));
-        evas_object_show(fr);
-
-        bx = elm_box_add(win);
-        evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-        evas_object_size_hint_align_set(bx, FILL, FILL);
-        evas_object_show(bx);
-        elm_object_content_set(fr, bx);
-        elm_box_pack_end(content, fr);
-     }
 
    for (int i = 0; i < power.battery_count; i++)
      {
@@ -301,28 +287,9 @@ ui_win_sensors_add(Ui *ui)
         if (!bat) return;
 
         tbl = elm_table_add(win);
-        evas_object_size_hint_weight_set(tbl, EXPAND, 0.5);
+        evas_object_size_hint_weight_set(tbl, EXPAND, 0);
         evas_object_size_hint_align_set(tbl, FILL, FILL);
         evas_object_show(tbl);
-        elm_box_pack_end(bx, tbl);
-
-        rec = evas_object_rectangle_add(evas_object_evas_get(win));
-        evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(48));
-        elm_table_pack(tbl, rec, 0, 0, 1, 1);
-
-        ic = elm_icon_add(win);
-        elm_icon_standard_set(ic, evisum_icon_path_get("battery"));
-        evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(32), ELM_SCALE_SIZE(32));
-        evas_object_show(ic);
-        elm_table_pack(tbl, ic, 0, 0, 1, 1);
-        elm_object_content_set(fr, bx);
-        elm_box_pack_end(content, fr);
-
-        lb = elm_label_add(win);
-        elm_object_text_set(lb, eina_slstr_printf("<small>%s</>", power.batteries[i]->name));
-        evas_object_size_hint_weight_set(lb, EXPAND, 0);
-        evas_object_size_hint_align_set(lb, 0.5, 0.5);
-        evas_object_show(lb);
 
         pb = elm_progressbar_add(win);
         evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
@@ -330,62 +297,38 @@ ui_win_sensors_add(Ui *ui)
         evas_object_show(pb);
         bat->pb = pb;
 
-        elm_table_pack(tbl, pb, 1, 0, 1, 1);
-        elm_table_pack(tbl, lb, 1, 0, 1, 1);
+        elm_table_pack(tbl, pb, 0, 0, 1, 1);
 
-        elm_box_pack_end(bx, tbl);
+        elm_box_pack_end(content, tbl);
 
         pd->batteries = eina_list_append(pd->batteries, bat);
      }
 
    system_power_state_free(&power);
 
-   fr = elm_frame_add(win);
-   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(fr, FILL, FILL);
-   elm_object_text_set(fr, _("Thermal"));
-   evas_object_show(fr);
-
    bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_show(bx);
 
-   pd->combobox = combo = elm_combobox_add(win);
-   evas_object_size_hint_weight_set(combo, EXPAND, 0);
-   evas_object_size_hint_align_set(combo, FILL, FILL);
-   elm_object_text_set(combo, _("Select..."));
-   elm_genlist_multi_select_set(combo, 0);
-   evas_object_smart_callback_add(combo, "item,pressed", _combo_item_pressed_cb, pd);
-   evas_object_smart_callback_add(combo, "expanded", _combo_expanded_cb, pd);
-   evas_object_show(combo);
-   elm_box_pack_end(bx, combo);
-
-   tbl = elm_table_add(win);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   elm_table_align_set(tbl, 0, 0.5);
-   evas_object_show(tbl);
-   elm_box_pack_end(bx, tbl);
-
-   rec = evas_object_rectangle_add(evas_object_evas_get(win));
-   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(48));
-   elm_table_pack(tbl, rec, 0, 0, 1, 1);
-
-   ic = elm_icon_add(win);
-   elm_icon_standard_set(ic, evisum_icon_path_get("sensor"));
-   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(32), ELM_SCALE_SIZE(32));
-   evas_object_show(ic);
-   elm_table_pack(tbl, ic, 0, 0, 1, 1);
-   elm_object_content_set(fr, bx);
-   elm_box_pack_end(content, fr);
+   elm_box_pack_end(content, bx);
 
    pd->thermal_pb = pb = elm_progressbar_add(win);
-   evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(pb, EXPAND, 0);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    elm_progressbar_unit_format_set(pb, "%1.1f°C");
    evas_object_show(pb);
-   elm_table_pack(tbl, pb, 1, 0, 1, 1);
+   elm_box_pack_end(bx, pb);
+
+   pd->genlist = genlist = elm_genlist_add(win);
+   evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(genlist, FILL, FILL);
+   elm_object_text_set(genlist, _("Select..."));
+   elm_genlist_multi_select_set(genlist, 0);
+   evas_object_smart_callback_add(genlist, "selected", _genlist_item_pressed_cb, pd);
+   elm_object_focus_allow_set(genlist, 0);
+   evas_object_show(genlist);
+   elm_box_pack_end(bx, genlist);
 
    pd->itc = itc = elm_genlist_item_class_new();
    itc->item_style = "full";
