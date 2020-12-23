@@ -82,30 +82,6 @@ typedef struct
    uint64_t outgoing;
 } network_t;
 
-typedef struct Sys_Info Sys_Info;
-struct Sys_Info
-{
-   int           cpu_count;
-   cpu_core_t  **cores;
-
-   meminfo_t     memory;
-   power_t       power;
-
-   int           sensor_count;
-   sensor_t    **sensors;
-
-   network_t     network_usage;
-};
-
-Sys_Info *
-system_info_all_get(void);
-
-Sys_Info *
-system_info_basic_get(void);
-
-void
-system_info_all_free(Sys_Info *);
-
 int
 system_cpu_online_count_get(void);
 
