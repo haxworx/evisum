@@ -49,7 +49,7 @@ typedef struct
 #if defined(__linux__)
    char   *path;
 #elif defined(__OpenBSD__)
-   int      mibs[5];
+   int     mibs[5];
 #endif
    double  value;
    bool    invalid;
@@ -142,11 +142,14 @@ system_memory_usage_get(meminfo_t *memory);
 sensor_t **
 system_sensors_thermal_get(int *count);
 
-int
-system_sensor_thermal_get(sensor_t *snsr);
-
 void
 system_sensors_thermal_free(sensor_t **sensors, int count);
+
+int
+system_sensor_thermal_get(sensor_t *sensor);
+
+void
+system_sensor_thermal_free(sensor_t *sensor);
 
 void
 system_power_state_get(power_t *power);

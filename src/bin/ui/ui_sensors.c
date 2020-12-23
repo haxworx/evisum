@@ -83,7 +83,7 @@ _sensors_update(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
-        if (pd->selected_it)
+        if (pd->sensor)
           {
              if (!system_sensor_thermal_get(pd->sensor))
                msg->thermal_valid = 0;
@@ -93,9 +93,11 @@ _sensors_update(void *data, Ecore_Thread *thread)
                   msg->thermal_temp = pd->sensor->value;
                }
           }
+
         system_power_state_get(&msg->power);
 
         ecore_thread_feedback(thread, msg);
+
         if (ecore_thread_check(thread)) break;
 
         usleep(1000000);
@@ -112,21 +114,21 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
    Eina_List *l;
    Data *msg = msgdata;
 
-   if (!eina_lock_take_try(&_lock)) return;
-
    EINA_LIST_FREE(pd->sensors, s)
      elm_genlist_item_append(pd->combobox, pd->itc, s,
                              NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
+   if (msg->thermal_valid)
+     elm_progressbar_value_set(pd->thermal_pb, msg->thermal_temp / 100);
 
    l = eina_list_nth_list(pd->batteries, 0);
    if (l)
      {
         if (msg->power.have_ac)
           elm_object_text_set(pd->power_fr, _("Power (AC)"));
-	else
+        else
           elm_object_text_set(pd->power_fr, _("Power"));
      }
-   for (int i = 0; i < msg->power.battery_count; i++)
+   for (int i = 0; l && msg->power.battery_count; i++)
      {
         if (msg->power.batteries[i]->present)
           {
@@ -136,27 +138,16 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
           }
         l = eina_list_next(l);
      }
-   if (msg->thermal_valid)
-     elm_progressbar_value_set(pd->thermal_pb, msg->thermal_temp / 100);
 
    system_power_state_free(&msg->power);
-
-   eina_lock_release(&_lock);
 }
 
 static void
 _item_del(void *data, Evas_Object *obj)
 {
    sensor_t *s = data;
-   if (s->name)
-     free(s->name);
-   if (s->child_name)
-     free(s->child_name);
-#if defined(__linux__)
-   if (s->path)
-     free(s->path);
-#endif
-   free(s);
+
+   system_sensor_thermal_free(s);
 }
 
 static void
@@ -175,7 +166,7 @@ _combo_expanded_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 }
 
 static void
-_combo_item_pressed_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
+_combo_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd;
    Elm_Object_Item *it;
@@ -193,7 +184,7 @@ _combo_item_pressed_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_inf
 }
 
 static Evas_Object *
-_content_get(void *data, Evas_Object *obj EINA_UNUSED, const char *part EINA_UNUSED)
+_content_get(void *data, Evas_Object *obj, const char *part)
 {
    Evas_Object *bx, *lb;
    sensor_t *s;
@@ -209,8 +200,8 @@ _content_get(void *data, Evas_Object *obj EINA_UNUSED, const char *part EINA_UNU
    evas_object_show(bx);
 
    lb = elm_label_add(obj);
-   evas_object_size_hint_weight_set(lb, FILL, FILL);
-   evas_object_size_hint_align_set(lb, 0.0, EXPAND);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(lb, 0.0, FILL);
    _name_set(buf, sizeof(buf), s);
    elm_object_text_set(lb, buf);
    evas_object_show(lb);
@@ -228,7 +219,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
 
-   eina_lock_take(&_lock);
    ecore_thread_cancel(ui->sensors.thread);
    ecore_thread_wait(ui->sensors.thread, 0.5);
    ui->sensors.thread = NULL;
@@ -241,8 +231,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 
    elm_genlist_item_class_free(pd->itc);
    free(pd);
-   eina_lock_release(&_lock);
-   eina_lock_free(&_lock);
 }
 
 static void
@@ -271,8 +259,6 @@ ui_win_sensors_add(Ui *ui)
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    if (!pd) return;
    pd->ui = ui;
-
-   eina_lock_new(&_lock);
 
    ui->sensors.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
    elm_win_autodel_set(win, EINA_TRUE);

@@ -15,20 +15,26 @@
  */
 
 void
+system_sensor_thermal_free(sensor_t *sensor)
+{
+   if (sensor->name)
+     free(sensor->name);
+   if (sensor->child_name)
+     free(sensor->child_name);
+#if defined(__linux__)
+   if (sensor->path)
+     free(sensor->path);
+#endif
+   free(sensor);
+}
+
+void
 system_sensors_thermal_free(sensor_t **sensors, int count)
 {
    for (int i = 0; i < count; i++)
      {
-        sensor_t *snsr = sensors[i];
-        if (snsr->name)
-          free(snsr->name);
-        if (snsr->child_name)
-          free(snsr->child_name);
-#if defined(__linux__)
-        if (snsr->path)
-          free(snsr->path);
-#endif
-        free(snsr);
+        sensor_t *sensor = sensors[i];
+        system_sensor_thermal_free(sensor);
      }
    if (sensors)
      free(sensors);
@@ -492,7 +498,6 @@ system_power_state_free(power_t *power)
 {
    for (int i = 0; i < power->battery_count; i++)
      {
-
         if (power->batteries[i]->name)
           free(power->batteries[i]->name);
 #if defined(__OpenBSD__)
