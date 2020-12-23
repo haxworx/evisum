@@ -14,23 +14,26 @@ typedef struct  {
    Evas_Object  *swap;
    Evas_Object  *video[MEM_VIDEO_CARD_MAX];
 
-   double        scale;
+   int           pos;
 
    Ui           *ui;
 } Ui_Data;
 
+static Eina_Bool starting = 1;
+
+#define STEP      1
 #define MAX_HIST  2048
-#define UPOLLTIME 100000
+#define UPOLLTIME 250000
 
 #define GR_USED   0
 #define GR_CACHED 1
 #define GR_BUFFER 2
 #define GR_SHARED 3
 
-#define COLOR_USED   229, 64, 89, 255
-#define COLOR_CACHED 253, 179, 106, 255
-#define COLOR_BUFFER 142, 31, 81, 255
-#define COLOR_SHARED 89, 229, 64, 255
+#define COLOR_USED   206, 70, 93, 255
+#define COLOR_CACHED 135, 190, 85, 255
+#define COLOR_BUFFER 100, 177, 242, 255
+#define COLOR_SHARED 225, 107, 62, 255
 #define COLOR_NONE   0, 0, 0, 0
 
 static Eina_Lock _lock;
@@ -79,8 +82,8 @@ vg_add(Evas_Object *w)
    o = evas_object_vg_add(evas_object_evas_get(w));
    con = evas_vg_container_add(o);
    sh = evas_vg_shape_add(con);
-   evas_object_vg_root_node_set(o, con);
    evas_object_show(o);
+   evas_object_vg_root_node_set(o, con);
    evas_object_data_set(o, "con", con);
    evas_object_data_set(o, "shape", sh);
    return o;
@@ -92,17 +95,12 @@ vg_fill(Evas_Object *o, Ui_Data *pd, int w, int h, double *pt, int r, int g, int
    Evas_Vg_Shape *sh;
    int i;
    double v;
+   Evas_Vg_Node *n;
 
    evas_object_resize(o, w, h);
    sh = evas_object_data_get(o, "shape");
    evas_vg_shape_reset(sh);
-   if (pd->scale > 1.0)
-     evas_vg_shape_stroke_width_set(sh, 2);
-   else
-     evas_vg_shape_stroke_width_set(sh, 1);
-
-   evas_vg_shape_stroke_color_set(sh, r, g, b, a);
-   evas_vg_shape_append_move_to(sh, 0, 1 + h - ((h / 100) * pt[0]));
+   evas_vg_shape_append_move_to(sh, 0, h);
    for (i = 0; i < w; i++)
      {
         v = (h / 100) * pt[i];
@@ -110,7 +108,11 @@ vg_fill(Evas_Object *o, Ui_Data *pd, int w, int h, double *pt, int r, int g, int
         else if (v >  h) v = h;
         evas_vg_shape_append_line_to(sh, i, h - v);
      }
-   evas_vg_node_origin_set(evas_object_data_get(0, "shape"), 0, 0);
+   evas_vg_shape_append_line_to(sh, pd->pos, h);
+   n = evas_object_data_get(sh, "shape");
+   evas_vg_shape_fill_set(sh, n);
+   evas_vg_node_color_set(sh, r, g, b, a);
+   evas_vg_node_origin_set(n, 0, 0);
 }
 
 static void
@@ -149,7 +151,7 @@ position_gr_list(Eina_List *list, int w, int h, int offset)
              evas_object_move(o, x, 0);
              evas_object_resize(o, w, h);
           }
-        x -= (w - 1);
+        x -= (w - STEP);
      }
 }
 
@@ -244,25 +246,42 @@ _update_widgets(Ui_Data *pd, meminfo_t *memory)
 }
 
 static void
+_reverse(double *arr, int n)
+{
+   for (int i = 0, j = n - 1; i < j; i++, j--)
+     {
+        double tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+     }
+}
+
+static void
 _update_graph(Graph *graph, double perc, Ui_Data *pd, Evas_Coord w, Evas_Coord h)
 {
-   int i, r, g, b;
+   int i, r, g, b, a;
    Evas_Object *o;
 
-   r = graph->r; g = graph->g; b = graph->b;
+   r = graph->r; g = graph->g; b = graph->b; a = graph->a;
 
    if (graph->pos == 0)
      {
-        for (i = 0; i < MAX_HIST; i++) graph->history[i] = perc;
+        if (starting)
+          for (i = 0; i < MAX_HIST; i++)
+            graph->history[i] = 0;
+        else
+          _reverse(graph->history, MAX_HIST);
+
         o = vg_add(pd->bg);
         graph->blocks = eina_list_prepend(graph->blocks, o);
      }
    o = graph->blocks->data;
    graph->history[graph->pos] = perc;
-   vg_fill(o, pd, w, h, graph->history, r, g, b, 255);
+   pd->pos = graph->pos;
+   vg_fill(o, pd, w, h, graph->history, r, g, b, a);
    position_gr_list(graph->blocks, w, h, graph->pos);
 
-   graph->pos++;
+   graph->pos += STEP;
    if (graph->pos >= w) graph->pos = 0;
 }
 
@@ -293,6 +312,7 @@ _mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgda
    _update_graph(&graphs[GR_BUFFER], memory->buffered / ratio, pd, w, h);
    _update_graph(&graphs[GR_SHARED], memory->shared / ratio, pd, w, h);
 
+   if (starting) starting = 0;
    eina_lock_release(&_lock);
 }
 
@@ -325,8 +345,6 @@ static Eina_Bool
 _elm_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Ui_Data *pd = data;
-
-   pd->scale = elm_config_scale_get();
 
    return EINA_TRUE;
 }

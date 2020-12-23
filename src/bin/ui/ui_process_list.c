@@ -22,6 +22,8 @@ typedef struct
    Eina_List       *cpu_times;
    Eina_List       *cpu_list;
 
+   Ecore_Event_Handler *handler[2];
+
    Ui              *ui;
 
    pid_t            selected_pid;
@@ -776,31 +778,31 @@ _process_list_update(Ui_Data *pd)
 }
 
 static void
-_btn_icon_state_update(Evas_Object *button, Eina_Bool reverse)
+_btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse)
 {
-   Evas_Object *icon = elm_icon_add(button);
+   Evas_Object *icon = elm_icon_add(btn);
 
    if (reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
-   elm_object_part_content_set(button, "icon", icon);
+   elm_object_part_content_set(btn, "icon", icon);
    evas_object_show(icon);
 }
 
 static void
-_btn_icon_state_init(Evas_Object *button, Eina_Bool reverse,
+_btn_icon_state_init(Evas_Object *btn, Eina_Bool reverse,
                      Eina_Bool selected EINA_UNUSED)
 {
-   Evas_Object *icon = elm_icon_add(button);
+   Evas_Object *icon = elm_icon_add(btn);
 
    if (reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
-   elm_object_part_content_set(button, "icon", icon);
+   elm_object_part_content_set(btn, "icon", icon);
    evas_object_show(icon);
 }
 
@@ -1474,6 +1476,9 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
    if (pd->thread)
      ecore_thread_wait(pd->thread, 0.2);
 
+   ecore_event_handler_del(pd->handler[0]);
+   ecore_event_handler_del(pd->handler[1]);
+
    pd->thread = NULL;
    ui->win = NULL;
 
@@ -1506,10 +1511,10 @@ ui_process_list_win_add(Ui *ui)
    pd->selected_pid = -1;
    pd->ui = ui;
 
-   ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
-                           _elm_config_changed_cb, pd);
-   ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
-                           _evisum_config_changed_cb, pd);
+   pd->handler[0] = ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
+                                            _elm_config_changed_cb, pd);
+   pd->handler[1] = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
+                                            _evisum_config_changed_cb, pd);
 
    ui->win = pd->win = win = elm_win_util_standard_add("evisum", "evisum");
    elm_win_autodel_set(win, EINA_TRUE);
