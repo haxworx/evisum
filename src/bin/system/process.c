@@ -234,8 +234,8 @@ static int
 _uid(int pid)
 {
    FILE *f;
-   int uid;
    char line[1024];
+   int uid = 0;
 
    f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
    if (!f) return -1;

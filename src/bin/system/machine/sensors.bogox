@@ -391,11 +391,11 @@ _battery_state_get(power_t *power)
 
 #elif defined(__linux__)
    const char *path;
-   char *link;
    struct dirent *dh;
    struct stat st;
    DIR *dir;
-   char *buf, *naming = NULL;
+   char *buf, *link = NULL, *naming = NULL;
+
 
    for (int i = 0; i < power->battery_count; i++) {
         naming = NULL;
