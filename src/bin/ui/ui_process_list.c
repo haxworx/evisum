@@ -13,7 +13,7 @@
 extern Evisum_Config *_evisum_config;
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
-Eina_Lock _lock;
+static Eina_Lock _lock;
 
 typedef struct
 {

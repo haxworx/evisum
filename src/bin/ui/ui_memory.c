@@ -341,14 +341,6 @@ _graph_guide(Evas_Object *parent, int r, int g, int b, int a)
    return btn;
 }
 
-static Eina_Bool
-_elm_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
-{
-   Ui_Data *pd = data;
-
-   return EINA_TRUE;
-}
-
 static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
             void *event_info EINA_UNUSED)
@@ -502,11 +494,6 @@ ui_win_memory_add(Ui *ui)
      evas_object_move(win, x + 20, y + 20);
    else
      elm_win_center(win, 1, 1);
-
-   _elm_config_changed_cb(pd, 0, NULL);
-
-   ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
-                           _elm_config_changed_cb, pd);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);

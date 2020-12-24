@@ -26,7 +26,7 @@ _shutdown_cb(void *data, int type, void *event EINA_UNUSED)
 static void
 _signals(Ui *ui)
 {
-   ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT, _shutdown_cb, ui);
+   ui->handler_sig = ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT, _shutdown_cb, ui);
 }
 
 int
@@ -86,6 +86,7 @@ main(int argc, char **argv)
 
    ecore_main_loop_begin();
 
+   ecore_event_handler_del(ui->handler_sig);
    evisum_ui_shutdown(ui);
    evisum_server_shutdown();
 

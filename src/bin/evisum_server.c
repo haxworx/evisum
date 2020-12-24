@@ -68,10 +68,10 @@ evisum_server_init(void *data)
 }
 
 typedef struct _Evisum_Server_Client {
-   Ecore_Con_Server *srv;
-   Evisum_Action     action;
-   int               pid;
-   Eina_Bool         success;
+   Ecore_Con_Server     *srv;
+   Evisum_Action        action;
+   int                  pid;
+   Eina_Bool            success;
 } Evisum_Server_Client;
 
 static Eina_Bool
@@ -131,6 +131,7 @@ Eina_Bool
 evisum_server_client_add(Evisum_Action action, int pid)
 {
    Evisum_Server_Client *client;
+   Ecore_Event_Handler  *handler[4];
    Eina_Bool ok;
 
    Ecore_Con_Server *srv = ecore_con_server_connect(ECORE_CON_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
@@ -144,12 +145,21 @@ evisum_server_client_add(Evisum_Action action, int pid)
    client->pid = pid;
    client->srv = srv;
 
-   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ADD, _evisum_server_client_connect_cb, client);
-   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DEL, _evisum_server_client_done_cb, client);
-   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ERROR, _evisum_server_client_done_cb, client);
-   ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DATA, _evisum_server_client_data_cb, client);
+   handler[0] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ADD,
+                                       _evisum_server_client_connect_cb, client);
+   handler[1] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DEL,
+                                        _evisum_server_client_done_cb, client);
+   handler[2] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ERROR,
+                                        _evisum_server_client_done_cb, client);
+   handler[3] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DATA,
+                                        _evisum_server_client_data_cb, client);
 
    ecore_main_loop_begin();
+
+   ecore_event_handler_del(handler[0]);
+   ecore_event_handler_del(handler[1]);
+   ecore_event_handler_del(handler[2]);
+   ecore_event_handler_del(handler[3]);
 
    ok = client->success;
    free(client);

@@ -18,7 +18,8 @@
 
 typedef struct Ui
 {
-   pid_t            program_pid;
+   pid_t                program_pid;
+   Ecore_Event_Handler *handler_sig;
 
    struct
    {
