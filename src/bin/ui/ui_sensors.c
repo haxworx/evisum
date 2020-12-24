@@ -15,6 +15,7 @@ typedef struct
 
    Evas_Object            *thermal_pb;
 
+   Evas_Object            *power_ic;
    Ui                     *ui;
 } Ui_Data;
 
@@ -124,6 +125,15 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
      {
         elm_progressbar_value_set(pd->thermal_pb, msg->thermal_temp / 100);
         elm_object_tooltip_text_set(pd->thermal_pb, pd->sensor->name);
+     }
+
+   if (pd->power_ic)
+     {
+        if (msg->power.have_ac)
+          elm_icon_standard_set(pd->power_ic, evisum_icon_path_get("on"));
+        else
+          elm_icon_standard_set(pd->power_ic, evisum_icon_path_get("off"));
+        evas_object_show(pd->power_ic);
      }
 
    l = eina_list_nth_list(pd->batteries, 0);
@@ -238,6 +248,7 @@ ui_win_sensors_add(Ui *ui)
 {
    Evas_Object *win, *content, *bx, *tbl, *fr;
    Evas_Object *genlist, *pb, *pad;
+   Evas_Object *ic;
    Elm_Genlist_Item_Class *itc;
    power_t power;
    Evas_Coord x = 0, y = 0;
@@ -303,9 +314,16 @@ ui_win_sensors_add(Ui *ui)
         evas_object_show(pb);
         bat->pb = pb;
 
-        elm_object_content_set(pad, pb);
-        elm_table_pack(tbl, pad, 0, 0, 1, 1);
-        elm_box_pack_end(content, tbl);
+        elm_table_pack(tbl, pb, 1, 0, 1, 1);
+        if (!i)
+          {
+             pd->power_ic = ic = elm_icon_add(win);
+             evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(3), ELM_SCALE_SIZE(3));
+             evas_object_size_hint_align_set(ic, 0.0, 0.5);
+             elm_table_pack(tbl, ic, 0, 0, 1, 1);
+          }
+        elm_object_content_set(pad, tbl);
+        elm_box_pack_end(content, pad);
 
         pd->batteries = eina_list_append(pd->batteries, bat);
      }

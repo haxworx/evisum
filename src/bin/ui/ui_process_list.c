@@ -17,21 +17,19 @@ static Eina_Lock _lock;
 
 typedef struct
 {
-   Ecore_Thread    *thread;
-   Evisum_Ui_Cache *cache;
-   Eina_List       *cpu_times;
-   Eina_List       *cpu_list;
-
+   Ecore_Thread        *thread;
+   Evisum_Ui_Cache     *cache;
+   Eina_List           *cpu_times;
+   Eina_List           *cpu_list;
    Ecore_Event_Handler *handler[2];
 
+   Evas_Object     *win;
+   Evas_Object     *menu;
    Ui              *ui;
 
    pid_t            selected_pid;
    char             search[16];
    int              search_len;
-
-   Evas_Object     *win;
-   Evas_Object     *menu;
 
    Ecore_Timer     *timer_search;
    Evas_Object     *entry_pop;
@@ -196,7 +194,8 @@ _sort_by_state(const void *p1, const void *p2)
    return strcmp(inf1->state, inf2->state);
 }
 
-typedef struct {
+typedef struct
+{
    pid_t pid;
    int64_t cpu_time_prev;
 } pid_cpu_time_t;
@@ -1527,9 +1526,9 @@ ui_process_list_win_add(Ui *ui)
 
    Ui_Data *pd = _pd = calloc(1, sizeof(Ui_Data));
    if (!pd) return;
+
    pd->selected_pid = -1;
    pd->ui = ui;
-
    pd->handler[0] = ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
                                             _elm_config_changed_cb, pd);
    pd->handler[1] = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
@@ -1546,11 +1545,11 @@ ui_process_list_win_add(Ui *ui)
    else
      evas_object_resize(win, EVISUM_WIN_WIDTH * elm_config_scale_get(),
                         EVISUM_WIN_HEIGHT * elm_config_scale_get());
+   elm_win_center(win, 1, 1);
+
    obj = _ui_content_system_add(pd, win);
    pd->cache = evisum_ui_item_cache_new(pd->genlist, _item_create, 50);
-   elm_win_center(win, EINA_TRUE, EINA_TRUE);
    evisum_ui_background_add(win, evisum_ui_backgrounds_enabled_get());
-   evas_object_show(win);
 
    _search_add(pd);
 
