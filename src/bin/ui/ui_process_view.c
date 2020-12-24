@@ -709,7 +709,7 @@ static Evas_Object *
 _process_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *fr, *hbox, *tbl;
-   Evas_Object *lb, *entry, *button, *border, *ic;
+   Evas_Object *lb, *entry, *btn, *pad, *ic;
    Evas_Object *rec;
    Proc_Info *proc;
    int i = 0;
@@ -847,73 +847,73 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_show(hbox);
    elm_table_pack(tbl, hbox, 1, i, 2, 1);
 
-   border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
-   elm_box_pack_end(hbox, border);
-   border = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(border, EXPAND, EXPAND);
-   elm_object_style_set(border, "pad_small");
-   evas_object_show(border);
-   elm_box_pack_end(hbox, border);
+   pad = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(pad, EXPAND, EXPAND);
+   elm_object_style_set(pad, "pad_small");
+   evas_object_show(pad);
+   elm_box_pack_end(hbox, pad);
+   pad = elm_frame_add(parent);
+   evas_object_size_hint_weight_set(pad, EXPAND, EXPAND);
+   elm_object_style_set(pad, "pad_small");
+   evas_object_show(pad);
+   elm_box_pack_end(hbox, pad);
 
-   button = elm_button_add(parent);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   elm_object_text_set(button, _("Stop"));
-   evas_object_smart_callback_add(button, "clicked", _btn_stop_clicked_cb, pd);
-   evas_object_show(button);
-   pd->btn_stop = button;
+   btn = elm_button_add(parent);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   elm_object_text_set(btn, _("Stop"));
+   evas_object_smart_callback_add(btn, "clicked", _btn_stop_clicked_cb, pd);
+   evas_object_show(btn);
+   pd->btn_stop = btn;
 
-   ic = elm_icon_add(button);
+   ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get("stop"));
-   elm_object_part_content_set(button, "icon", ic);
+   elm_object_part_content_set(btn, "icon", ic);
    evas_object_show(ic);
-   elm_box_pack_end(hbox, button);
+   elm_box_pack_end(hbox, btn);
 
-   button = elm_button_add(parent);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   elm_object_text_set(button, _("Start"));
-   evas_object_smart_callback_add(button, "clicked", _btn_start_clicked_cb, pd);
-   evas_object_show(button);
-   pd->btn_start = button;
+   btn = elm_button_add(parent);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   elm_object_text_set(btn, _("Start"));
+   evas_object_smart_callback_add(btn, "clicked", _btn_start_clicked_cb, pd);
+   evas_object_show(btn);
+   pd->btn_start = btn;
 
-   ic = elm_icon_add(button);
+   ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get("start"));
-   elm_object_part_content_set(button, "icon", ic);
+   elm_object_part_content_set(btn, "icon", ic);
    evas_object_show(ic);
-   elm_box_pack_end(hbox, button);
+   elm_box_pack_end(hbox, btn);
 
-   button = elm_button_add(parent);
-   evas_object_size_hint_align_set(button, FILL, FILL);
-   evas_object_size_hint_weight_set(button, EXPAND, EXPAND);
-   elm_object_text_set(button, _("Kill"));
-   evas_object_smart_callback_add(button, "clicked", _btn_kill_clicked_cb, pd);
-   evas_object_show(button);
-   pd->btn_kill = button;
+   btn = elm_button_add(parent);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   elm_object_text_set(btn, _("Kill"));
+   evas_object_smart_callback_add(btn, "clicked", _btn_kill_clicked_cb, pd);
+   evas_object_show(btn);
+   pd->btn_kill = btn;
 
-   ic = elm_icon_add(button);
+   ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get("kill"));
-   elm_object_part_content_set(button, "icon", ic);
+   elm_object_part_content_set(btn, "icon", ic);
    evas_object_show(ic);
-   elm_box_pack_end(hbox, button);
+   elm_box_pack_end(hbox, btn);
 
    return fr;
 }
 
 static void
-_btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
+_btn_icon_state_set(Evas_Object *btn, Eina_Bool reverse)
 {
-   Evas_Object *icon = elm_icon_add(button);
+   Evas_Object *icon = elm_icon_add(btn);
 
    if (reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
-   elm_object_part_content_set(button, "icon", icon);
+   elm_object_part_content_set(btn, "icon", icon);
    evas_object_color_set(icon, 255, 255, 255, 255);
 
    evas_object_show(icon);
@@ -1106,6 +1106,8 @@ static Evas_Object *
 _info_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *fr, *box, *entry;
+   Evas_Object *tb;
+   int sz;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
@@ -1127,6 +1129,11 @@ _info_tab_add(Evas_Object *parent, Ui_Data *pd)
    elm_entry_scrollable_set(entry, EINA_TRUE);
    evas_object_show(entry);
    elm_box_pack_end(box, entry);
+
+   tb = elm_entry_textblock_get(entry);
+   sz = evisum_ui_textblock_font_size_get(tb);
+   evisum_ui_textblock_font_size_set(tb, sz - 2);
+
 
    return fr;
 }
@@ -1197,8 +1204,9 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (pd->info_init) return;
 
+   setenv("MANWIDTH", "80", 1);
    if (pd->selected_cmd && pd->selected_cmd[0] && !strchr(pd->selected_cmd, ' '))
-     lines =_exe_response(eina_slstr_printf("man %s | col -b", pd->selected_cmd));
+     lines =_exe_response(eina_slstr_printf("man %s | col -bx", pd->selected_cmd));
 
    if (!lines)
      {
@@ -1218,7 +1226,7 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
         int n = 1;
         Eina_Strbuf *buf = eina_strbuf_new();
 
-        eina_strbuf_append(buf, "<code>");
+        eina_strbuf_append(buf,"<code>");
 
         n = 1;
         EINA_LIST_FREE(lines, line)
@@ -1232,6 +1240,7 @@ _btn_info_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
         eina_strbuf_free(buf);
      }
 
+   unsetenv("MANWIDTH");
    pd->info_init = EINA_TRUE;
 }
 

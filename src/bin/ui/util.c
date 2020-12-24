@@ -10,6 +10,7 @@ _man2entry(const char *text)
    int i = 0, len = strlen(text) + 1;
 
    str = malloc(len);
+   if (!str) return NULL;
    p = text;
 
    while (*p)
@@ -58,8 +59,8 @@ _evisum_docs(void)
 {
    const char *txt =
          "<b>Congratulations you found the documentation!</b><br><br>"
-         "Control + K - Toggle kernel threads. <br>"
-         "Control + E - Show Self. <br>";
+         "<br>"
+         "There isn't any!.<br>";
 
    return txt;
 }
