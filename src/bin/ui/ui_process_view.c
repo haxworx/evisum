@@ -1134,7 +1134,6 @@ _info_tab_add(Evas_Object *parent, Ui_Data *pd)
    sz = evisum_ui_textblock_font_size_get(tb);
    evisum_ui_textblock_font_size_set(tb, sz - 2);
 
-
    return fr;
 }
 

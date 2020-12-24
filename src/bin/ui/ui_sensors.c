@@ -237,7 +237,7 @@ void
 ui_win_sensors_add(Ui *ui)
 {
    Evas_Object *win, *content, *bx, *tbl, *fr;
-   Evas_Object *genlist, *pb;
+   Evas_Object *genlist, *pb, *pad;
    Elm_Genlist_Item_Class *itc;
    power_t power;
    Evas_Coord x = 0, y = 0;
@@ -291,14 +291,20 @@ ui_win_sensors_add(Ui *ui)
         evas_object_size_hint_align_set(tbl, FILL, FILL);
         evas_object_show(tbl);
 
+        pad = elm_frame_add(win);
+        evas_object_size_hint_weight_set(pad, EXPAND, 0);
+        evas_object_size_hint_align_set(pad, FILL, FILL);
+        elm_object_style_set(pad, "pad_small");
+        evas_object_show(pad);
+
         pb = elm_progressbar_add(win);
         evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
         evas_object_size_hint_align_set(pb, FILL, FILL);
         evas_object_show(pb);
         bat->pb = pb;
 
-        elm_table_pack(tbl, pb, 0, 0, 1, 1);
-
+        elm_object_content_set(pad, pb);
+        elm_table_pack(tbl, pad, 0, 0, 1, 1);
         elm_box_pack_end(content, tbl);
 
         pd->batteries = eina_list_append(pd->batteries, bat);
@@ -313,12 +319,20 @@ ui_win_sensors_add(Ui *ui)
 
    elm_box_pack_end(content, bx);
 
+   pad = elm_frame_add(win);
+   evas_object_size_hint_weight_set(pad, EXPAND, 0);
+   evas_object_size_hint_align_set(pad, FILL, FILL);
+   elm_object_style_set(pad, "pad_small");
+   evas_object_show(pad);
+
    pd->thermal_pb = pb = elm_progressbar_add(win);
    evas_object_size_hint_weight_set(pb, EXPAND, 0);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    elm_progressbar_unit_format_set(pb, "%1.1f°C");
    evas_object_show(pb);
-   elm_box_pack_end(bx, pb);
+
+   elm_object_content_set(pad, pb);
+   elm_box_pack_end(bx, pad);
 
    pd->genlist = genlist = elm_genlist_add(win);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
