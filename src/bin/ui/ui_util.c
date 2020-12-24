@@ -359,7 +359,7 @@ about_anim(void *data)
 
    if (ad->pos <= -oh) ad->pos = h;
 
-   if (!(t % 20)) begin = 1;
+   if (!(t % 120)) begin = 1;
 
    if (!begin) return EINA_TRUE;
 

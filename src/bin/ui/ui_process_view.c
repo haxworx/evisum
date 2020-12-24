@@ -1132,7 +1132,7 @@ _info_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    tb = elm_entry_textblock_get(entry);
    sz = evisum_ui_textblock_font_size_get(tb);
-   evisum_ui_textblock_font_size_set(tb, sz - 2);
+   evisum_ui_textblock_font_size_set(tb, sz - 1);
 
    return fr;
 }
