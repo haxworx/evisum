@@ -96,7 +96,10 @@ _sensors_update(void *data, Ecore_Thread *thread)
         system_power_state_get(&msg->power);
 
         if (eina_lock_take_try(&_lock))
-          ecore_thread_feedback(thread, msg);
+          {
+             ecore_thread_feedback(thread, msg);
+             eina_lock_release(&_lock);
+          }
 
         if (ecore_thread_check(thread)) break;
 
@@ -135,7 +138,6 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
           elm_icon_standard_set(pd->power_ic, evisum_icon_path_get("off"));
         evas_object_show(pd->power_ic);
      }
-
    l = eina_list_nth_list(pd->batteries, 0);
    while (l && msg->power.battery_count)
      {
@@ -152,8 +154,6 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
      }
 
    system_power_state_free(&msg->power);
-
-   eina_lock_release(&_lock);
 }
 
 static void
