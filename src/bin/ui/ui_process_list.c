@@ -26,8 +26,6 @@ typedef struct
    Eina_Bool            ready;
 
    Eina_Hash           *cpu_times;
-   int64_t              ticks;
-   int64_t              ticks_prev;
 
    Ui                  *ui;
 
@@ -626,15 +624,8 @@ _process_list_search_trim(Eina_List *list, Ui_Data *pd)
             else
               {
                   if (*cpu_time)
-                    {
-                       int diff = pd->ticks - pd->ticks_prev;
-                       int diff2 = (proc->cpu_time - *cpu_time);
-                       if (diff > 0)
-                         proc->cpu_usage = (double) (diff2 / ((double) diff / 100.0));
-                      else
-                         proc->cpu_usage = (double) (proc->cpu_time - *cpu_time) /
-                                                     pd->ui->settings.poll_delay;
-                    }
+                    proc->cpu_usage = (double) (proc->cpu_time - *cpu_time) /
+                                                pd->ui->settings.poll_delay;
                  *cpu_time = proc->cpu_time;
               }
          }
@@ -662,25 +653,6 @@ _process_list_get(Ui_Data *pd)
    return list;
 }
 
-static int64_t
-_ticks_get(void)
-{
-   cpu_core_t **cores;
-   int n;
-   int64_t ticks = 0;
-
-   cores = system_cpu_state_get(&n);
-   for (int i = 0; i < n; i++)
-     {
-        if (ticks < cores[i]->total)
-          ticks = cores[i]->total;
-        free(cores[i]);
-     }
-   free(cores);
-
-   return ticks;
-}
-
 static void
 _process_list(void *data, Ecore_Thread *thread)
 {
@@ -695,9 +667,7 @@ _process_list(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
-        pd->ticks = _ticks_get();
         list = _process_list_get(pd);
-        pd->ticks_prev = pd->ticks;
 
         if (!pd->skip)
           ecore_thread_feedback(thread, list);
@@ -1312,6 +1282,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_smart_callback_add(pd->genlist, "scroll,anim,start",
                                   _genlist_scroll_start_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "scroll,anim,stop",
+                                  _genlist_scroll_end_cb, pd);
+   evas_object_smart_callback_add(pd->genlist, "scroll,drag,start",
+                                  _genlist_scroll_start_cb, pd);
+   evas_object_smart_callback_add(pd->genlist, "scroll,drag,stop",
                                   _genlist_scroll_end_cb, pd);
 
    elm_box_pack_end(bx, tbl);
