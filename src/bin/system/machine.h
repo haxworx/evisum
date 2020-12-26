@@ -94,6 +94,9 @@ system_cpu_usage_get(int *ncpu);
 cpu_core_t **
 system_cpu_usage_delayed_get(int *ncpu, int usecs);
 
+cpu_core_t **
+system_cpu_state_get(int *ncpu);
+
 int
 system_cpu_frequency_get(void);
 

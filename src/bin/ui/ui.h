@@ -32,8 +32,6 @@ typedef struct Ui
    Evas_Object     *win_about;
    Evas_Object     *main_menu;
 
-   uint8_t          cpu_usage;
-
    struct
    {
       Evas_Object  *win;
@@ -66,13 +64,6 @@ typedef struct Ui
       Evas_Object  *box;
       Ecore_Thread *thread;
    } sensors;
-
-   struct
-   {
-      Eina_Bool  skip_wait;
-      Eina_Bool  ready;
-      Eina_Bool  shutdown_now;
-   } state;
 
    struct
    {

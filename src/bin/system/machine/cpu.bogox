@@ -254,6 +254,22 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
 }
 
 cpu_core_t **
+system_cpu_state_get(int *ncpu)
+{
+   cpu_core_t **cores;
+   int i;
+
+   *ncpu = cpu_count();
+   cores = malloc((*ncpu) * sizeof(cpu_core_t *));
+   for (i = 0; i < *ncpu; i++)
+      cores[i] = calloc(1, sizeof(cpu_core_t));
+
+   _cpu_state_get(cores, *ncpu);
+
+   return cores;
+}
+
+cpu_core_t **
 system_cpu_usage_delayed_get(int *ncpu, int usecs)
 {
    cpu_core_t **cores;
