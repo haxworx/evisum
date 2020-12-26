@@ -130,7 +130,7 @@ system_sensors_thermal_get(int *sensor_count)
         void *tmp = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
         sensors = tmp;
         sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
-        sensor->name = strdup("hw.acpi.thermal.tz0");
+        sensor->name = strdup("hw.acpi.thermal.tz0.temperature");
         sensor->value = (float) (value -  2732) / 10;
      }
 
