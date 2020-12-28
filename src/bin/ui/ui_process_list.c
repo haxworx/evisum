@@ -674,7 +674,7 @@ _process_list(void *data, Ecore_Thread *thread)
                proc_info_free(proc);
           }
 
-        for (i = 0; i < delay * 4; i++)
+        for (i = 0; i < delay * 8; i++)
           {
              if (ecore_thread_check(thread)) return;
 
@@ -683,7 +683,7 @@ _process_list(void *data, Ecore_Thread *thread)
                   pd->skip_wait = 0;
                   break;
                }
-             usleep(250000);
+             usleep(125000);
           }
         pd->ready = 1;
         delay = ui->proc.poll_delay;
