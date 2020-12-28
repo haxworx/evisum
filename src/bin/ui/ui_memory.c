@@ -36,7 +36,10 @@ static Eina_Bool starting = 1;
 #define COLOR_SHARED 225, 107, 62, 255
 #define COLOR_NONE   0, 0, 0, 0
 
-static Eina_Lock _lock;
+#if !defined(__OpenBSD__)
+static
+#endif
+Eina_Lock _mlock;
 
 typedef struct
 {
@@ -46,7 +49,10 @@ typedef struct
    int        r, g, b, a;
 } Graph;
 
-static Graph graphs[4];
+#if !defined(__OpenBSD__)
+static
+#endif
+Graph graphs[4];
 
 static Evas_Object *
 _label_mem(Evas_Object *parent, const char *text)
@@ -305,7 +311,7 @@ _mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgda
 
    evas_object_geometry_get(pd->bg, NULL, NULL, &w, &h);
 
-   eina_lock_take(&_lock);
+   eina_lock_take(&_mlock);
 
    _update_graph(&graphs[GR_USED], memory->used / ratio, pd, w, h);
    _update_graph(&graphs[GR_CACHED], memory->cached / ratio, pd, w, h);
@@ -313,7 +319,7 @@ _mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgda
    _update_graph(&graphs[GR_SHARED], memory->shared / ratio, pd, w, h);
 
    if (starting) starting = 0;
-   eina_lock_release(&_lock);
+   eina_lock_release(&_mlock);
 }
 
 static void
@@ -354,7 +360,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
    evas_object_del(obj);
    ui->mem.win = NULL;
    free(pd);
-   eina_lock_free(&_lock);
+   eina_lock_free(&_mlock);
 }
 
 static void
@@ -363,20 +369,20 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
 
-   eina_lock_take(&_lock);
+   eina_lock_take(&_mlock);
 
    position_shrink_list((&graphs[GR_USED])->blocks);
    position_shrink_list((&graphs[GR_CACHED])->blocks);
    position_shrink_list((&graphs[GR_BUFFER])->blocks);
    position_shrink_list((&graphs[GR_SHARED])->blocks);
 
-   eina_lock_release(&_lock);
+   eina_lock_release(&_mlock);
 
    evisum_ui_config_save(ui);
 }
 
 void
-ui_win_memory_add(Ui *ui)
+ui_win_memory_add(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *win, *lb, *bx, *tbl, *rec, *pb;
    Evas_Object *fr;
@@ -394,7 +400,7 @@ ui_win_memory_add(Ui *ui)
    if (!pd) return;
    pd->ui = ui;
 
-   eina_lock_new(&_lock);
+   eina_lock_new(&_mlock);
 
    memset(&memory, 0, sizeof(memory));
    system_memory_usage_get(&memory);
@@ -489,7 +495,7 @@ ui_win_memory_add(Ui *ui)
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH , UI_CHILD_WIN_HEIGHT);
 
-   if (ui->win) evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   if (parent) evas_object_geometry_get(parent, &x, &y, NULL, NULL);
    if (x > 0 && y > 0)
      evas_object_move(win, x + 20, y + 20);
    else

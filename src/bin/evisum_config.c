@@ -42,7 +42,7 @@ _config_check(Evisum_Config *cfg)
    if (cfg->version > CONFIG_VERSION)
      _config_fail("version");
 
-   if (cfg->poll_delay <= 0)
+   if (cfg->proc.poll_delay <= 0)
      _config_fail("poll");
 }
 
@@ -51,8 +51,8 @@ _config_init()
 {
    Evisum_Config *cfg = calloc(1, sizeof(Evisum_Config));
    cfg->version = CONFIG_VERSION;
-   cfg->poll_delay = 3;
-   cfg->show_kthreads = 1;
+   cfg->proc.poll_delay = 3;
+   cfg->proc.show_kthreads = 1;
 
    return cfg;
 }

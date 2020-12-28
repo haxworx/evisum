@@ -29,24 +29,27 @@ evisum_ui_config_save(Ui *ui)
 
    if (!_evisum_config) return;
 
-   if (_evisum_config->poll_delay != ui->settings.poll_delay ||
-       _evisum_config->show_kthreads != ui->settings.show_kthreads)
-     notify = EINA_TRUE;
-
-   evas_object_geometry_get(ui->win, NULL, NULL, &w, &h);
-
-   _evisum_config->sort_type    = ui->settings.sort_type;
-   _evisum_config->sort_reverse = ui->settings.sort_reverse;
-   _evisum_config->width = w;
-   _evisum_config->height = h;
    _evisum_config->effects = 0;
    _evisum_config->backgrounds = evisum_ui_backgrounds_enabled_get();
-   _evisum_config->poll_delay = ui->settings.poll_delay;
-   _evisum_config->show_kthreads = ui->settings.show_kthreads;
-   _evisum_config->show_user = ui->settings.show_user;
-   _evisum_config->show_desktop = 0; //ui->settings.show_desktop;
 
-   proc_info_kthreads_show_set(ui->settings.show_kthreads);
+   if (ui->proc.win)
+     {
+        if (_evisum_config->proc.poll_delay != ui->proc.poll_delay ||
+            _evisum_config->proc.show_kthreads != ui->proc.show_kthreads)
+          {
+             notify = EINA_TRUE;
+          }
+
+        evas_object_geometry_get(ui->proc.win, NULL, NULL, &w, &h);
+        _evisum_config->proc.width = w;
+        _evisum_config->proc.height = h;
+        _evisum_config->proc.sort_type = ui->proc.sort_type;
+        _evisum_config->proc.sort_reverse = ui->proc.sort_reverse;
+        _evisum_config->proc.poll_delay = ui->proc.poll_delay;
+        _evisum_config->proc.show_kthreads = ui->proc.show_kthreads;
+        _evisum_config->proc.show_user = ui->proc.show_user;
+        proc_info_kthreads_show_set(ui->proc.show_kthreads);
+     }
 
    if (ui->cpu.win)
      {
@@ -89,16 +92,18 @@ evisum_ui_config_load(Ui *ui)
 
    _evisum_config = config_load();
 
-   ui->settings.sort_type    = _evisum_config->sort_type;
-   ui->settings.sort_reverse = _evisum_config->sort_reverse;
-   ui->settings.poll_delay   = _evisum_config->poll_delay;
+   ui->proc.sort_type    = _evisum_config->proc.sort_type;
+   ui->proc.sort_reverse = _evisum_config->proc.sort_reverse;
+   ui->proc.poll_delay   = _evisum_config->proc.poll_delay;
 
    evisum_ui_backgrounds_enabled_set(_evisum_config->backgrounds);
 
-   ui->settings.show_kthreads = _evisum_config->show_kthreads;
-   proc_info_kthreads_show_set(ui->settings.show_kthreads);
-   ui->settings.show_user = _evisum_config->show_user;
-   ui->settings.show_desktop = 0; // _evisum_config->show_desktop;
+   ui->proc.show_kthreads = _evisum_config->proc.show_kthreads;
+   proc_info_kthreads_show_set(ui->proc.show_kthreads);
+   ui->proc.show_user = _evisum_config->proc.show_user;
+
+   ui->proc.width = _evisum_config->proc.width;
+   ui->proc.height = _evisum_config->proc.height;
 
    ui->cpu.width = _evisum_config->cpu.width;
    ui->cpu.height = _evisum_config->cpu.height;
@@ -136,7 +141,7 @@ _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_memory_add(ui);
+   ui_win_memory_add(ui, ui->menu_parent);
 }
 
 static void
@@ -145,7 +150,7 @@ _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_disk_add(ui);
+   ui_win_disk_add(ui, ui->menu_parent);
 }
 
 static void
@@ -154,7 +159,7 @@ _menu_sensors_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_sensors_add(ui);
+   ui_win_sensors_add(ui, ui->menu_parent);
 }
 
 static void
@@ -163,7 +168,7 @@ _menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_cpu_add(ui);
+   ui_win_cpu_add(ui, ui->menu_parent);
 }
 
 static void
@@ -223,9 +228,9 @@ _main_menu_slider_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
 {
    Ui *ui = data;
 
-   ui->settings.poll_delay = elm_slider_value_get(obj) + 0.5;
+   ui->proc.poll_delay = elm_slider_value_get(obj) + 0.5;
 
-   if (ui->settings.poll_delay > 1)
+   if (ui->proc.poll_delay > 1)
      elm_slider_unit_format_set(obj, _("%1.0f secs"));
    else
      elm_slider_unit_format_set(obj, _("%1.0f sec"));
@@ -239,21 +244,9 @@ _main_menu_show_threads_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
 {
    Ui *ui = data;
 
-   ui->settings.show_kthreads = elm_check_state_get(obj);
+   ui->proc.show_kthreads = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
 }
-
-/*
-static void
-_main_menu_show_desktop_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
-                                   void *event_info EINA_UNUSED)
-{
-   Ui *ui = data;
-
-   ui->settings.show_desktop = elm_check_state_get(obj);
-   evisum_ui_config_save(ui);
-}
-*/
 
 static void
 _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
@@ -261,7 +254,7 @@ _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
 {
    Ui *ui = data;
 
-   ui->settings.show_user = elm_check_state_get(obj);
+   ui->proc.show_user = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
 }
 
@@ -274,14 +267,14 @@ _menu_focus_cb(void *data)
 }
 
 void
-evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
+evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
 {
    Evas_Object *o, *bx, *bx2, *hbox, *sep, *fr, *sli;
    Evas_Object *it_focus, *btn, *chk;
    Evas_Coord ox, oy, ow, oh;
 
-   evas_object_geometry_get(parent, &ox, &oy, &ow, &oh);
-   o = elm_ctxpopup_add(ui->win);
+   evas_object_geometry_get(obj, &ox, &oy, &ow, &oh);
+   o = elm_ctxpopup_add(parent);
    evas_object_size_hint_weight_set(o, EXPAND, EXPAND);
    evas_object_size_hint_align_set(o, FILL, FILL);
    elm_object_style_set(o, "noblock");
@@ -301,6 +294,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    elm_object_content_set(fr, bx);
    elm_object_content_set(o, fr);
 
+   ui->menu_parent = parent;
    hbox = elm_box_add(o);
    elm_box_horizontal_set(hbox, 1);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
@@ -363,7 +357,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    elm_slider_step_set(sli, 1 / 10.0);
    elm_slider_indicator_format_set(sli, "%1.0f");
    elm_slider_unit_format_set(sli, _("%1.0f secs"));
-   elm_slider_value_set(sli, ui->settings.poll_delay);
+   elm_slider_value_set(sli, ui->proc.poll_delay);
    evas_object_size_hint_align_set(sli, FILL, FILL);
    elm_object_tooltip_text_set(sli, _("Poll delay"));
    evas_object_smart_callback_add(sli, "slider,drag,stop",
@@ -385,7 +379,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
    evas_object_size_hint_align_set(chk, FILL, FILL);
    elm_object_text_set(chk, _("Show kernel threads?"));
-   elm_check_state_set(chk, _evisum_config->show_kthreads);
+   elm_check_state_set(chk, ui->proc.show_kthreads);
    evas_object_show(chk);
    evas_object_smart_callback_add(chk, "changed",
                                   _main_menu_show_threads_changed_cb, ui);
@@ -395,23 +389,11 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
    evas_object_size_hint_align_set(chk, FILL, FILL);
    elm_object_text_set(chk, _("User only?"));
-   elm_check_state_set(chk, _evisum_config->show_user);
+   elm_check_state_set(chk, ui->proc.show_user);
    evas_object_show(chk);
    evas_object_smart_callback_add(chk, "changed",
                                   _main_menu_show_user_changed_cb, ui);
    elm_box_pack_end(bx2, chk);
-
-   /*
-   chk = elm_check_add(bx2);
-   evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(chk, FILL, FILL);
-   elm_object_text_set(chk, _("Current desktop session only?"));
-   elm_check_state_set(chk, _evisum_config->show_desktop);
-   evas_object_show(chk);
-   evas_object_smart_callback_add(chk, "changed",
-                                  _main_menu_show_desktop_changed_cb, ui);
-   elm_box_pack_end(bx2, chk);
-   */
 
    elm_object_content_set(fr, bx2);
    elm_box_pack_end(bx, fr);
@@ -422,7 +404,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent)
                                        ELM_CTXPOPUP_DIRECTION_RIGHT);
    evas_object_move(o, ox + (ow / 2), oy + oh);
    evas_object_show(o);
-   ui->main_menu = o;
+   ui->menu = o;
    ecore_timer_add(0.5, _menu_focus_cb, it_focus);
 }
 
@@ -452,22 +434,22 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
    switch (action)
      {
        case EVISUM_ACTION_DEFAULT:
-         ui_process_list_win_add(ui);
+         ui_process_list_win_add(ui, NULL);
          break;
        case EVISUM_ACTION_PROCESS:
          _process_win_add(NULL, pid, 3);
          break;
        case EVISUM_ACTION_CPU:
-         ui_win_cpu_add(ui);
+         ui_win_cpu_add(ui, NULL);
          break;
        case EVISUM_ACTION_MEM:
-         ui_win_memory_add(ui);
+         ui_win_memory_add(ui, NULL);
          break;
        case EVISUM_ACTION_STORAGE:
-         ui_win_disk_add(ui);
+         ui_win_disk_add(ui, NULL);
          break;
        case EVISUM_ACTION_SENSORS:
-         ui_win_sensors_add(ui);
+         ui_win_sensors_add(ui, NULL);
          break;
      }
 }
@@ -486,13 +468,15 @@ evisum_ui_init(void)
    Ui *ui = calloc(1, sizeof(Ui));
    if (!ui) return NULL;
 
-   ui->settings.poll_delay = 3;
-   ui->settings.sort_reverse = EINA_FALSE;
-   ui->settings.sort_type = SORT_BY_PID;
+   ui->proc.poll_delay = 3;
+   ui->proc.sort_reverse = EINA_FALSE;
+   ui->proc.sort_type = SORT_BY_PID;
+
    ui->program_pid = getpid();
 
    EVISUM_EVENT_CONFIG_CHANGED = ecore_event_type_new();
 
+   evisum_ui_backgrounds_enabled_set(0);
    evisum_ui_config_load(ui);
 
    evisum_icon_cache_init();

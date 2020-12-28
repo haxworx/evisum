@@ -18,7 +18,7 @@ _shutdown_cb(void *data, int type, void *event EINA_UNUSED)
    if (ui->mem.win) evas_object_del(ui->mem.win);
    if (ui->disk.win) evas_object_del(ui->disk.win);
    if (ui->sensors.win) evas_object_del(ui->sensors.win);
-   if (ui->win) evas_object_del(ui->win);
+   if (ui->proc.win) evas_object_del(ui->proc.win);
 
    return EINA_FALSE;
 }
@@ -30,7 +30,7 @@ _signals(Ui *ui)
 }
 
 int
-main(int argc, char **argv)
+elm_main(int argc, char **argv)
 {
    Ui *ui;
    int i, pid = -1;
@@ -60,10 +60,6 @@ main(int argc, char **argv)
           }
      }
 
-   eina_init();
-   ecore_init();
-   config_init();
-   elm_init(argc, argv);
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
 
 #if ENABLE_NLS
@@ -90,11 +86,7 @@ main(int argc, char **argv)
    evisum_ui_shutdown(ui);
    evisum_server_shutdown();
 
-   elm_shutdown();
-   config_shutdown();
-   ecore_shutdown();
-   eina_shutdown();
-
    return 0;
 }
 
+ELM_MAIN()

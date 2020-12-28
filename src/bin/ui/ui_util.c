@@ -5,8 +5,11 @@
 
 #define ARRAY_SIZE(n) sizeof(n) / sizeof(n[0])
 
-static Eina_Bool _backgrounds_enabled = EINA_FALSE;
-static Eina_Hash *_icon_cache = NULL;
+Eina_Bool _backgrounds_enabled = EINA_FALSE;
+#if !defined(__OpenBSD__)
+static
+#endif
+Eina_Hash *_icon_cache;
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
@@ -160,6 +163,7 @@ _icon_cache_free_cb(void *data)
 void
 evisum_icon_cache_init(void)
 {
+   _icon_cache = NULL;
    _icon_cache = eina_hash_string_superfast_new(_icon_cache_free_cb);
 }
 
@@ -268,21 +272,6 @@ evisum_ui_textblock_font_size_get(Evas_Object *tb)
    free(p);
 
    return size;
-}
-
-void
-evisum_child_window_show(Evas_Object *parent, Evas_Object *win)
-{
-   Evas_Coord x, y, w, h;
-
-   evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
-   evas_object_geometry_get(parent, &x, &y, &w, &h);
-   if (x > 0 && y > 0)
-     evas_object_move(win, x + 20, y + 10);
-   else
-     elm_win_center(win, EINA_TRUE, EINA_TRUE);
-
-   evas_object_show(win);
 }
 
 typedef struct {
@@ -424,7 +413,7 @@ evisum_about_window_show(void *data)
 
    if (ui->win_about) return;
 
-   ui->win_about = win = elm_win_add(ui->win, "evisum", ELM_WIN_DIALOG_BASIC);
+   ui->win_about = win = elm_win_add(ui->menu_parent, "evisum", ELM_WIN_DIALOG_BASIC);
    elm_win_autodel_set(win, EINA_TRUE);
    elm_win_title_set(win, _("About"));
 

@@ -5,7 +5,7 @@
 #include "../system/machine.h"
 
 void
-ui_win_memory_add(Ui *ui);
+ui_win_memory_add(Ui *ui, Evas_Object *parent);
 
 
 #endif

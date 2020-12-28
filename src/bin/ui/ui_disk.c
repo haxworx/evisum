@@ -13,14 +13,12 @@ typedef struct
    Evas_Object     *btn_free;
    Evas_Object     *genlist;
    Evisum_Ui_Cache *cache;
-   Ecore_Timer     *timer;
+   Ecore_Thread    *thread;
    int             (*sort_cb)(const void *, const void *);
    Eina_Bool        sort_reverse;
 
    Ui              *ui;
 } Ui_Data;
-
-static Eina_Lock _lock;
 
 static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
@@ -234,8 +232,18 @@ _item_disk_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
    elm_panes_content_left_size_set(pd->panes, 0.5);
 }
 
-static Eina_Bool
-_disks_poll_timer_cb(void *data)
+static void
+_disks_poll(void *data, Ecore_Thread *thread)
+{
+   while (!ecore_thread_check(thread))
+     {
+        ecore_thread_feedback(thread, file_system_info_all_get());
+        usleep(1000000);
+     }
+}
+
+static void
+_disks_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 {
    Elm_Object_Item *it;
    File_System *fs;
@@ -243,10 +251,7 @@ _disks_poll_timer_cb(void *data)
    Eina_List *mounted;
 
    pd = data;
-
-   eina_lock_take(&_lock);
-
-   mounted = file_system_info_all_get();
+   mounted = msgdata;
 
    if (pd->sort_cb)
      mounted = eina_list_sort(mounted, eina_list_count(mounted), pd->sort_cb);
@@ -263,10 +268,14 @@ _disks_poll_timer_cb(void *data)
         elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
+}
 
-   eina_lock_release(&_lock);
+static void
+_disks_poll_update(Ui_Data *pd)
+{
+   Eina_List *mounted = file_system_info_all_get();
 
-   return EINA_TRUE;
+   _disks_poll_feedback_cb(pd, NULL, mounted);
 }
 
 static void
@@ -281,14 +290,12 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 
    evas_object_del(obj);
 
-   if (pd)
-     {
-        ecore_timer_del(pd->timer);
-        evisum_ui_item_cache_free(pd->cache);
-        free(pd);
-     }
+   ecore_thread_cancel(pd->thread);
+   ecore_thread_wait(pd->thread, 0.5);
 
-   eina_lock_free(&_lock);
+   evisum_ui_item_cache_free(pd->cache);
+   free(pd);
+
    ui->disk.win = NULL;
 }
 
@@ -399,7 +406,7 @@ _btn_device_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    pd->sort_cb = _sort_by_device;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
 }
 
 static void
@@ -413,7 +420,7 @@ _btn_mount_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    pd->sort_cb = _sort_by_mount;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
 }
 
 static void
@@ -427,7 +434,7 @@ _btn_fs_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    pd->sort_cb = _sort_by_type;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
 }
 
 static void
@@ -441,7 +448,7 @@ _btn_used_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    pd->sort_cb = _sort_by_used;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
 }
 
 static void
@@ -455,7 +462,7 @@ _btn_free_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    pd->sort_cb = _sort_by_free;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
 }
 
 static void
@@ -469,7 +476,7 @@ _btn_total_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    pd->sort_cb = _sort_by_total;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
 }
 
 static void
@@ -483,7 +490,7 @@ _btn_usage_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    pd->sort_cb = _sort_by_total;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
 }
 
 static void
@@ -491,12 +498,12 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd = data;
 
-   _disks_poll_timer_cb(pd);
+   _disks_poll_update(pd);
    evisum_ui_config_save(pd->ui);
 }
 
 void
-ui_win_disk_add(Ui *ui)
+ui_win_disk_add(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *win, *panes, *fr,  *bx, *tbl, *scr;
    Evas_Object *genlist, *btn;
@@ -508,8 +515,6 @@ ui_win_disk_add(Ui *ui)
         elm_win_raise(ui->disk.win);
         return;
      }
-
-   eina_lock_new(&_lock);
 
    ui->disk.win = win = elm_win_util_standard_add("evisum", _("Storage"));
    elm_win_autodel_set(win, EINA_TRUE);
@@ -637,8 +642,8 @@ ui_win_disk_add(Ui *ui)
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
 
-   if (ui->win)
-     evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   if (parent)
+     evas_object_geometry_get(parent, &x, &y, NULL, NULL);
    if (x > 0 && y > 0)
      evas_object_move(win, x + 20, y + 20);
    else
@@ -648,8 +653,8 @@ ui_win_disk_add(Ui *ui)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_show(win);
 
-   pd->timer = ecore_timer_add(3.0, _disks_poll_timer_cb, pd);
-
-   _disks_poll_timer_cb(pd);
+   pd->thread = ecore_thread_feedback_run(_disks_poll,
+                                          _disks_poll_feedback_cb,
+                                          NULL, NULL, pd, EINA_TRUE);
 }
 

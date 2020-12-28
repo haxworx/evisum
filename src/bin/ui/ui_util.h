@@ -62,9 +62,6 @@ void
 evisum_ui_textblock_font_size_set(Evas_Object *tb, int new_size);
 
 void
-evisum_child_window_show(Evas_Object *parent, Evas_Object *win);
-
-void
 evisum_about_window_show(void *data);
 
 #endif

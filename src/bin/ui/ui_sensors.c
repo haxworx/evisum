@@ -1,8 +1,6 @@
 #include "ui_sensors.h"
 #include "system/machine.h"
 
-static Eina_Lock _lock;
-
 typedef struct
 {
    Eina_List              *sensors;
@@ -82,6 +80,8 @@ _sensors_update(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
+        system_power_state_get(&msg->power);
+
         if (pd->sensor)
           {
              if (!system_sensor_thermal_get(pd->sensor))
@@ -93,13 +93,7 @@ _sensors_update(void *data, Ecore_Thread *thread)
                }
           }
 
-        system_power_state_get(&msg->power);
-
-        if (eina_lock_take_try(&_lock))
-          {
-             ecore_thread_feedback(thread, msg);
-             eina_lock_release(&_lock);
-          }
+        ecore_thread_feedback(thread, msg);
 
         if (ecore_thread_check(thread)) break;
 
@@ -152,7 +146,6 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
         l = eina_list_next(l);
         i++;
      }
-
    system_power_state_free(&msg->power);
 }
 
@@ -216,8 +209,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
 
-   eina_lock_take(&_lock);
-
    ecore_thread_cancel(ui->sensors.thread);
    ecore_thread_wait(ui->sensors.thread, 0.5);
    ui->sensors.thread = NULL;
@@ -230,9 +221,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 
    elm_genlist_item_class_free(pd->itc);
    free(pd);
-
-   eina_lock_release(&_lock);
-   eina_lock_free(&_lock);
 }
 
 static void
@@ -244,7 +232,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_sensors_add(Ui *ui)
+ui_win_sensors_add(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *win, *content, *bx, *tbl, *fr;
    Evas_Object *genlist, *pb, *pad;
@@ -262,8 +250,6 @@ ui_win_sensors_add(Ui *ui)
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    if (!pd) return;
    pd->ui = ui;
-
-   eina_lock_new(&_lock);
 
    ui->sensors.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
    elm_win_autodel_set(win, EINA_TRUE);
@@ -374,8 +360,8 @@ ui_win_sensors_add(Ui *ui)
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
 
-   if (ui->win)
-     evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   if (parent)
+     evas_object_geometry_get(parent, &x, &y, NULL, NULL);
    if (x > 0 && y > 0)
      evas_object_move(win, x + 20, y + 20);
    else

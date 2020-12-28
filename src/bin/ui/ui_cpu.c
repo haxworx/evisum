@@ -695,7 +695,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_cpu_add(Ui *ui)
+ui_win_cpu_add(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *win, *box, *scroller;
    Evas_Coord x = 0, y = 0;
@@ -739,8 +739,8 @@ ui_win_cpu_add(Ui *ui)
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
 
-   if (ui->win)
-     evas_object_geometry_get(ui->win, &x, &y, NULL, NULL);
+   if (parent)
+     evas_object_geometry_get(parent, &x, &y, NULL, NULL);
    if (x > 0 && y > 0)
      evas_object_move(win, x + 20, y + 20);
    else

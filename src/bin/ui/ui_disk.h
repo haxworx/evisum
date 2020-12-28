@@ -4,6 +4,6 @@
 #include "ui.h"
 
 void
-ui_win_disk_add(Ui *ui);
+ui_win_disk_add(Ui *ui, Evas_Object *parent);
 
 #endif

@@ -26,11 +26,18 @@ typedef struct Ui
       Evas_Object     *win;
       int              width;
       int              height;
-   } processes;
 
-   Evas_Object     *win;
+      int        poll_delay;
+      int        sort_type;
+      Eina_Bool  sort_reverse;
+      Eina_Bool  show_self;
+      Eina_Bool  show_kthreads;
+      Eina_Bool  show_user;
+   } proc;
+
    Evas_Object     *win_about;
-   Evas_Object     *main_menu;
+   Evas_Object     *menu;
+   Evas_Object     *menu_parent;
 
    struct
    {
@@ -64,17 +71,6 @@ typedef struct Ui
       Evas_Object  *box;
       Ecore_Thread *thread;
    } sensors;
-
-   struct
-   {
-      int        poll_delay;
-      int        sort_type;
-      Eina_Bool  sort_reverse;
-      Eina_Bool  show_self;
-      Eina_Bool  show_kthreads;
-      Eina_Bool  show_user;
-      Eina_Bool  show_desktop;
-   } settings;
 } Ui;
 
 Ui *
@@ -84,7 +80,7 @@ void
 evisum_ui_shutdown(Ui *ui);
 
 void
-evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent);
+evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj);
 
 void
 evisum_ui_activate(Ui *ui, Evisum_Action action, int pid);
