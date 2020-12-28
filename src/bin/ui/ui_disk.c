@@ -248,6 +248,8 @@ _disks_poll(void *data, Ecore_Thread *thread)
                   pd->skip_wait = 0;
                   break;
                }
+             if (ecore_thread_check(thread))
+               return;
              usleep(125000);
           }
      }
@@ -279,6 +281,7 @@ _disks_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
         elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
+   elm_genlist_realized_items_update(pd->genlist);
 }
 
 static void
@@ -534,6 +537,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
 
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    pd->ui = ui;
+   pd->skip_wait = 1;
 
    pd->panes = panes = elm_panes_add(win);
    evas_object_size_hint_weight_set(panes, EXPAND, EXPAND);
