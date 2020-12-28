@@ -23,6 +23,7 @@ typedef struct
    Eina_Bool            ready;
 
    Eina_Hash           *cpu_times;
+   Ecore_Timer         *resize_timer;
 
    Ui                  *ui;
 
@@ -1409,6 +1410,16 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    pd->skip_wait = 1;
 }
 
+static Eina_Bool
+_resize_timer_cb(void *data)
+{
+   Ui_Data *pd = data;
+   pd->skip_wait = 1;
+   ecore_timer_del(pd->resize_timer);
+   pd->resize_timer = NULL;
+   return EINA_FALSE;
+}
+
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
@@ -1420,6 +1431,11 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    evas_object_lower(pd->entry_pop);
    if (ui->menu)
      _main_menu_dismissed_cb(ui, NULL, NULL);
+
+   if (!pd->resize_timer)
+     pd->resize_timer = ecore_timer_add(0.1, _resize_timer_cb, pd);
+   else
+     ecore_timer_reset(pd->resize_timer);
 
    evisum_ui_config_save(ui);
 }
@@ -1473,6 +1489,9 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 
    if (pd->thread)
      ecore_thread_wait(pd->thread, 0.2);
+
+   if (pd->resize_timer)
+     ecore_timer_del(pd->resize_timer);
 
    ecore_event_handler_del(pd->handler[0]);
    ecore_event_handler_del(pd->handler[1]);
