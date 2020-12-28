@@ -16,6 +16,7 @@ typedef struct
    Ecore_Thread    *thread;
    int             (*sort_cb)(const void *, const void *);
    Eina_Bool        sort_reverse;
+   Eina_Bool        skip_wait;
 
    Ui              *ui;
 } Ui_Data;
@@ -235,10 +236,20 @@ _item_disk_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
 static void
 _disks_poll(void *data, Ecore_Thread *thread)
 {
+   Ui_Data *pd = data;
+
    while (!ecore_thread_check(thread))
      {
         ecore_thread_feedback(thread, file_system_info_all_get());
-        usleep(1000000);
+        for (int i = 0; i < 8; i++)
+          {
+             if (pd->skip_wait)
+               {
+                  pd->skip_wait = 0;
+                  break;
+               }
+             usleep(125000);
+          }
      }
 }
 
@@ -273,9 +284,7 @@ _disks_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 static void
 _disks_poll_update(Ui_Data *pd)
 {
-   Eina_List *mounted = file_system_info_all_get();
-
-   _disks_poll_feedback_cb(pd, NULL, mounted);
+   pd->skip_wait = 1;
 }
 
 static void
