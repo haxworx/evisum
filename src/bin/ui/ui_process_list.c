@@ -356,7 +356,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      }
 
    evas_object_geometry_get(pd->btn_pid, NULL, NULL, &w, NULL);
-   w += PAD_W;
    l = evas_object_data_get(it->obj, "proc_pid");
    elm_object_text_set(l, eina_slstr_printf("%d", proc->pid));
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
