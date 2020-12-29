@@ -41,8 +41,9 @@ typedef struct
    Evas_Object         *entry;
    Eina_Bool            entry_visible;
 
-   Evas_Object         *scroller;
-   Evas_Object         *genlist;
+   Evas_Object            *scroller;
+   Evas_Object            *genlist;
+   Elm_Genlist_Item_Class  itc;
 
    Evas_Object         *btn_menu;
 
@@ -472,10 +473,10 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 }
 
 static void
-_genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
+_genlist_ensure_n_items(Evas_Object *genlist, unsigned int items,
+                        Elm_Genlist_Item_Class *itc)
 {
    Elm_Object_Item *it;
-   Elm_Genlist_Item_Class *itc;
    unsigned int i, existing = elm_genlist_items_count(genlist);
 
    if (items < existing)
@@ -490,20 +491,11 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
 
    if (items == existing) return;
 
-   itc = elm_genlist_item_class_new();
-   itc->item_style = "full";
-   itc->func.text_get = NULL;
-   itc->func.content_get = _content_get;
-   itc->func.filter_get = NULL;
-   itc->func.del = _item_del;
-
    for (i = existing; i < items; i++)
      {
         elm_genlist_item_append(genlist, itc, NULL, NULL,
                                 ELM_GENLIST_ITEM_NONE, NULL, NULL);
      }
-
-   elm_genlist_item_class_free(itc);
 }
 
 static Eina_Bool
@@ -736,7 +728,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    pd = data;
    list = msg;
 
-   _genlist_ensure_n_items(pd->genlist, eina_list_count(list));
+   _genlist_ensure_n_items(pd->genlist, eina_list_count(list), &pd->itc);
 
    it = elm_genlist_first_item_get(pd->genlist);
 
@@ -818,7 +810,6 @@ _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_PID)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_PID;
-
    _btn_clicked_state_save(pd, pd->btn_pid);
 }
 
@@ -832,7 +823,6 @@ _btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_UID)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_UID;
-
    _btn_clicked_state_save(pd, pd->btn_uid);
 }
 
@@ -846,7 +836,6 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_CPU_USAGE)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_CPU_USAGE;
-
    _btn_clicked_state_save(pd, pd->btn_cpu_usage);
 }
 
@@ -860,7 +849,6 @@ _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_SIZE)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_SIZE;
-
    _btn_clicked_state_save(pd, pd->btn_size);
 }
 
@@ -874,7 +862,6 @@ _btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_RSS)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_RSS;
-
    _btn_clicked_state_save(pd, pd->btn_rss);
 }
 
@@ -888,7 +875,6 @@ _btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_CMD)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_CMD;
-
    _btn_clicked_state_save(pd, pd->btn_cmd);
 }
 
@@ -902,7 +888,6 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_STATE)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_STATE;
-
    _btn_clicked_state_save(pd, pd->btn_state);
 }
 
@@ -1164,7 +1149,7 @@ _genlist_scroll_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _genlist_scroll_end_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                     void *event_info EINA_UNUSED)
+                       void *event_info EINA_UNUSED)
 {
    Ui_Data *pd;
 
@@ -1300,12 +1285,18 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_show(glist);
    elm_table_pack(tbl, glist, 0, 2, i, 1);
 
+   pd->itc.item_style = "full";
+   pd->itc.func.text_get = NULL;
+   pd->itc.func.content_get = _content_get;
+   pd->itc.func.filter_get = NULL;
+   pd->itc.func.del = _item_del;
+
    evas_object_smart_callback_add(pd->genlist, "selected",
-                   _item_pid_clicked_cb, pd);
+                                 _item_pid_clicked_cb, pd);
    evas_object_event_callback_add(pd->genlist, EVAS_CALLBACK_MOUSE_UP,
-                   _item_pid_secondary_clicked_cb, pd);
+                                  _item_pid_secondary_clicked_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "unrealized",
-                   _item_unrealized_cb, pd);
+                                 _item_unrealized_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "scroll,anim,start",
                                   _genlist_scroll_start_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "scroll,anim,stop",
