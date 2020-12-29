@@ -61,7 +61,7 @@ typedef struct
 
 static Ui_Data *_pd = NULL;
 
-#if defined(PROGRESS_CUSTOM_FORMAT)
+#if PROGRESS_CUSTOM_FORMAT
 
 static double _cpu_usage = 0.0;
 
@@ -248,7 +248,7 @@ _item_column_add(Evas_Object *tbl, const char *text, int col)
    return lb;
 }
 
-#if defined(PROGRESS_CUSTOM_FORMAT)
+#if PROGRESS_CUSTOM_FORMAT
 static char *
 _pb_format_cb(double val)
 {
@@ -335,7 +335,8 @@ _item_create(Evas_Object *parent)
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
-#if defined(PROGRESS_CUSTOM_FORMAT)
+   elm_progressbar_unit_format_set(pb, "%1.1f %%");
+#if PROGRESS_CUSTOM_FORMAT
    elm_progressbar_unit_format_function_set(pb, _pb_format_cb, _pb_format_free_cb);
 #endif
    elm_box_pack_end(hbx, pb);
@@ -460,7 +461,9 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(lb);
 
    pb = evas_object_data_get(it->obj, "proc_cpu_usage");
+#if PROGRESS_CUSTOM_FORMAT
    _cpu_usage = proc->cpu_usage;
+#endif
    double value = proc->cpu_usage / 100.0;
    double last = elm_progressbar_value_get(pb);
    if (!EINA_DBL_EQ(value, last))
