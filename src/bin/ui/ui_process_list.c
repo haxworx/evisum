@@ -16,45 +16,42 @@ extern int EVISUM_EVENT_CONFIG_CHANGED;
 
 typedef struct
 {
-   Ecore_Thread        *thread;
-   Evisum_Ui_Cache     *cache;
-   Eina_List           *cpu_list;
-   Ecore_Event_Handler *handler[2];
-   Eina_Bool            skip;
-   Eina_Bool            skip_wait;
-   Eina_Bool            ready;
+   Ecore_Thread          *thread;
+   Evisum_Ui_Cache       *cache;
+   Ecore_Event_Handler   *handler[2];
+   Eina_Bool              skip_wait;
+   Eina_Bool              ready;
 
-   Eina_Hash           *cpu_times;
-   Ecore_Timer         *resize_timer;
+   Eina_Hash             *cpu_times;
+   Ecore_Timer           *resize_timer;
 
-   Ui                  *ui;
+   Ui                    *ui;
 
-   Evas_Object         *win;
-   Evas_Object         *menu;
+   Evas_Object           *win;
+   Evas_Object           *menu;
 
-   pid_t                selected_pid;
-   char                 search[16];
-   int                  search_len;
+   pid_t                  selected_pid;
+   char                   search[16];
+   int                    search_len;
 
-   Ecore_Timer         *timer_search;
-   Evas_Object         *entry_pop;
-   Evas_Object         *entry;
-   Eina_Bool            entry_visible;
+   Ecore_Timer           *timer_search;
+   Evas_Object           *entry_pop;
+   Evas_Object           *entry;
+   Eina_Bool              entry_visible;
 
-   Evas_Object            *scroller;
-   Evas_Object            *genlist;
-   Elm_Genlist_Item_Class  itc;
+   Evas_Object           *scroller;
+   Evas_Object           *genlist;
+   Elm_Genlist_Item_Class itc;
 
-   Evas_Object         *btn_menu;
+   Evas_Object            *btn_menu;
 
-   Evas_Object         *btn_pid;
-   Evas_Object         *btn_uid;
-   Evas_Object         *btn_cmd;
-   Evas_Object         *btn_size;
-   Evas_Object         *btn_rss;
-   Evas_Object         *btn_state;
-   Evas_Object         *btn_cpu_usage;
-
+   Evas_Object            *btn_pid;
+   Evas_Object            *btn_uid;
+   Evas_Object            *btn_cmd;
+   Evas_Object            *btn_size;
+   Evas_Object            *btn_rss;
+   Evas_Object            *btn_state;
+   Evas_Object            *btn_cpu_usage;
 } Ui_Data;
 
 #define PAD_W 2
@@ -375,7 +372,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
-       if (ow > w) evas_object_size_hint_min_set(pd->btn_pid, w, 1);
+        if (ow > w)
+          {
+             evas_object_size_hint_min_set(pd->btn_pid, w, 1);
+             pd->skip_wait = 1;
+          }
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -393,7 +394,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
-        if (ow > w) evas_object_size_hint_min_set(pd->btn_uid, w, 1);
+        if (ow > w)
+          {
+             evas_object_size_hint_min_set(pd->btn_uid, w, 1);
+             pd->skip_wait = 1;
+          }
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -407,7 +412,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
-        if (ow > w) evas_object_size_hint_min_set(pd->btn_size, w, 1);
+        if (ow > w)
+          {
+             evas_object_size_hint_min_set(pd->btn_size, w, 1);
+             pd->skip_wait = 1;
+          }
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -421,8 +430,12 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
-        if (ow > w) evas_object_size_hint_min_set(pd->btn_rss, w, 1);
-      }
+        if (ow > w)
+          {
+             evas_object_size_hint_min_set(pd->btn_rss, w, 1);
+             pd->skip_wait = 1;
+          }
+     }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
@@ -436,7 +449,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      elm_object_text_set(lb, buf);
    hbx = evas_object_data_get(lb, "hbx");
    evas_object_geometry_get(hbx, NULL, NULL, &ow, NULL);
-   if (ow > w) evas_object_size_hint_min_set(pd->btn_cmd, w, 1);
+   if (ow > w)
+     {
+        evas_object_size_hint_min_set(pd->btn_cmd, w, 1);
+        pd->skip_wait = 1;
+     }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
@@ -695,7 +712,7 @@ _process_list(void *data, Ecore_Thread *thread)
      {
         list = _process_list_get(pd);
 
-        if (!pd->skip)
+        if (!pd->skip_wait)
           ecore_thread_feedback(thread, list);
         else
           {
@@ -1147,7 +1164,7 @@ _genlist_scroll_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd = data;
 
-   pd->skip = 1;
+   pd->skip_wait = 1;
 }
 
 static void
@@ -1158,7 +1175,7 @@ _genlist_scroll_end_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd = data;
 
-   pd->skip = 0;
+   pd->skip_wait = 0;
 }
 
 static Evas_Object *
