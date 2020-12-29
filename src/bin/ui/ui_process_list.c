@@ -10,6 +10,8 @@
 #include <sys/resource.h>
 #include <pwd.h>
 
+#define PROGRESS_CUSTOM_FORMAT 0
+
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
 typedef struct
@@ -58,8 +60,11 @@ typedef struct
 
 static Ui_Data *_pd = NULL;
 
-// See pb_format_cb.
+#if defined(PROGRESS_CUSTOM_FORMAT)
+
 static double _cpu_usage = 0.0;
+
+#endif
 
 static int
 _sort_by_pid(const void *p1, const void *p2)
@@ -242,6 +247,7 @@ _item_column_add(Evas_Object *tbl, const char *text, int col)
    return lb;
 }
 
+#if defined(PROGRESS_CUSTOM_FORMAT)
 static char *
 _pb_format_cb(double val)
 {
@@ -257,6 +263,7 @@ _pb_format_free_cb(char *str)
 {
    free(str);
 }
+#endif
 
 static Evas_Object *
 _item_create(Evas_Object *parent)
@@ -327,7 +334,9 @@ _item_create(Evas_Object *parent)
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
+#if defined(PROGRESS_CUSTOM_FORMAT)
    elm_progressbar_unit_format_function_set(pb, _pb_format_cb, _pb_format_free_cb);
+#endif
    elm_box_pack_end(hbx, pb);
    evas_object_data_set(tbl, "proc_cpu_usage", pb);
 
@@ -340,6 +349,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    Proc_Info *proc;
    struct passwd *pwd_entry;
    Evas_Object *l, *r, *o, *hbx, *pb;
+   char buf[128];
    Evas_Coord w, ow;
    Ui_Data *pd = _pd;
 
@@ -358,7 +368,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(pd->btn_pid, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_pid");
-   elm_object_text_set(l, eina_slstr_printf("%d", proc->pid));
+   snprintf(buf, sizeof(buf), "%d", proc->pid);
+   elm_object_text_set(l, buf);
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_pid, w, 1);
    r = evas_object_data_get(l, "rec");
@@ -370,9 +381,10 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    l = evas_object_data_get(it->obj, "proc_uid");
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
-     elm_object_text_set(l, eina_slstr_printf("%s", pwd_entry->pw_name));
+     snprintf(buf, sizeof(buf), "%s", pwd_entry->pw_name);
    else
-     elm_object_text_set(l, eina_slstr_printf("%d", proc->uid));
+     snprintf(buf, sizeof(buf), "%i", proc->uid);
+   elm_object_text_set(l, buf);
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_uid, w, 1);
    r = evas_object_data_get(l, "rec");
@@ -382,7 +394,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(pd->btn_size, NULL, NULL, &w, NULL);
    w += PAD_W;
    l = evas_object_data_get(it->obj, "proc_size");
-   elm_object_text_set(l, eina_slstr_printf("%s", evisum_size_format(proc->mem_size)));
+   snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size));
+   elm_object_text_set(l, buf);
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_size, w, 1);
    r = evas_object_data_get(l, "rec");
@@ -392,7 +405,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(pd->btn_rss, NULL, NULL, &w, NULL);
    w += PAD_W;
    l = evas_object_data_get(it->obj, "proc_rss");
-   elm_object_text_set(l, eina_slstr_printf("%s", evisum_size_format(proc->mem_rss)));
+   snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss));
+   elm_object_text_set(l, buf);
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_rss, w, 1);
    r = evas_object_data_get(l, "rec");
@@ -403,7 +417,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
    w += ow;
    l = evas_object_data_get(it->obj, "proc_cmd");
-   elm_object_text_set(l, eina_slstr_printf("%s", proc->command));
+   snprintf(buf, sizeof(buf), "%s", proc->command);
+   elm_object_text_set(l, buf);
    hbx = evas_object_data_get(l, "hbx");
    evas_object_geometry_get(hbx, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_cmd, w, 1);
@@ -419,7 +434,9 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(pd->btn_state, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "proc_state");
-   elm_object_text_set(l, eina_slstr_printf("%s", proc->state));
+   snprintf(buf, sizeof(buf), "%s", proc->state);
+
+   elm_object_text_set(l, buf);
    evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
    r = evas_object_data_get(l, "rec");
    evas_object_size_hint_min_set(r, w, 1);
@@ -427,7 +444,10 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    pb = evas_object_data_get(it->obj, "proc_cpu_usage");
    _cpu_usage = proc->cpu_usage;
-   elm_progressbar_value_set(pb, proc->cpu_usage / 100.0);
+   double value = proc->cpu_usage / 100.0;
+   double last = elm_progressbar_value_get(pb);
+   if (!EINA_DBL_EQ(value, last))
+     elm_progressbar_value_set(pb, proc->cpu_usage / 100.0);
    evas_object_show(pb);
 
    evas_object_show(it->obj);
@@ -494,7 +514,7 @@ _bring_in(void *data)
    elm_scroller_last_page_get(pd->scroller, &h_page, &v_page);
    elm_scroller_page_bring_in(pd->scroller, h_page, v_page);
 
-   ecore_timer_add(0.5, _show_items, pd);
+   ecore_timer_add(2.0, _show_items, pd);
 
    return EINA_FALSE;
 }
@@ -1142,7 +1162,7 @@ _genlist_scroll_end_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static Evas_Object *
 _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 {
-   Evas_Object *bx, *fr, *tbl, *btn, *plist;
+   Evas_Object *bx, *fr, *tbl, *btn, *glist;
    Ui *ui = pd->ui;
    int i = 0;
 
@@ -1252,18 +1272,19 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_cpu_usage_clicked_cb, pd);
 
-   pd->scroller = pd->genlist = plist = elm_genlist_add(parent);
-   elm_genlist_homogeneous_set(plist, 1);
+   pd->scroller = pd->genlist = glist = elm_genlist_add(parent);
+   elm_genlist_homogeneous_set(glist, 1);
    elm_scroller_gravity_set(pd->scroller, 0.0, 1.0);
-   elm_object_focus_allow_set(plist, EINA_FALSE);
+   elm_object_focus_allow_set(glist, EINA_FALSE);
    elm_scroller_movement_block_set(pd->scroller,
                                    ELM_SCROLLER_MOVEMENT_BLOCK_HORIZONTAL);
    elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
                            ELM_SCROLLER_POLICY_AUTO);
-   elm_genlist_multi_select_set(plist, EINA_FALSE);
-   evas_object_size_hint_weight_set(plist, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(plist, FILL, FILL);
-   elm_table_pack(tbl, plist, 0, 2, i, 1);
+   elm_genlist_multi_select_set(glist, EINA_FALSE);
+   evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(glist, FILL, FILL);
+   evas_object_show(glist);
+   elm_table_pack(tbl, glist, 0, 2, i, 1);
 
    evas_object_smart_callback_add(pd->genlist, "selected",
                    _item_pid_clicked_cb, pd);
