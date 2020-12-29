@@ -81,7 +81,6 @@ _sensors_update(void *data, Ecore_Thread *thread)
    while (!ecore_thread_check(thread))
      {
         system_power_state_get(&msg->power);
-
         if (pd->sensor)
           {
              if (!system_sensor_thermal_get(pd->sensor))
@@ -92,14 +91,13 @@ _sensors_update(void *data, Ecore_Thread *thread)
                   msg->thermal_temp = pd->sensor->value;
                }
           }
-
         ecore_thread_feedback(thread, msg);
-
-        if (ecore_thread_check(thread)) break;
-
-        usleep(1000000);
+        for (int i = 0; i < 4; i++)
+          {
+             if (ecore_thread_check(thread)) break;
+             usleep(250000);
+          }
      }
-
    free(msg);
 }
 
@@ -212,7 +210,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    ecore_thread_cancel(ui->sensors.thread);
    ecore_thread_wait(ui->sensors.thread, 0.5);
    ui->sensors.thread = NULL;
-
    evas_object_del(obj);
    ui->sensors.win = NULL;
 
@@ -234,12 +231,12 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 ui_win_sensors_add(Ui *ui, Evas_Object *parent)
 {
-   Evas_Object *win, *content, *bx, *tbl, *fr;
-   Evas_Object *genlist, *pb, *pad;
+   Evas_Object *win, *tbl, *fr;
+   Evas_Object *genlist, *pb;
    Evas_Object *ic;
-   Elm_Genlist_Item_Class *itc;
    power_t power;
    Evas_Coord x = 0, y = 0;
+   int j = 0;
 
    if (ui->sensors.win)
      {
@@ -261,20 +258,21 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
                                   _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
 
-   content = elm_box_add(win);
-   evas_object_size_hint_weight_set(content, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(content, FILL, FILL);
-   evas_object_show(content);
-
    fr = elm_frame_add(win);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
-   elm_object_style_set(fr, "pad_small");
+   elm_object_style_set(fr, "pad_medium");
    evas_object_show(fr);
-   elm_object_content_set(fr, content);
    elm_object_content_set(win, fr);
 
    system_power_state_get(&power);
+
+   tbl = elm_table_add(win);
+   evas_object_size_hint_weight_set(tbl, EXPAND, 0);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   evas_object_show(tbl);
+   elm_table_padding_set(tbl, 0, ELM_SCALE_SIZE(5));
+   elm_object_content_set(fr, tbl);
 
    for (int i = 0; i < power.battery_count; i++)
      {
@@ -283,51 +281,24 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
         Bat *bat = calloc(1, sizeof(Bat));
         if (!bat) return;
 
-        tbl = elm_table_add(win);
-        evas_object_size_hint_weight_set(tbl, EXPAND, 0);
-        evas_object_size_hint_align_set(tbl, FILL, FILL);
-        evas_object_show(tbl);
-
-        pad = elm_frame_add(win);
-        evas_object_size_hint_weight_set(pad, EXPAND, 0);
-        evas_object_size_hint_align_set(pad, FILL, FILL);
-        elm_object_style_set(pad, "pad_small");
-        evas_object_show(pad);
-
+        if (!i)
+          {
+             pd->power_ic = ic = elm_icon_add(win);
+             evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
+             evas_object_size_hint_align_set(ic, 1.0, 0.5);
+             elm_table_pack(tbl, ic, 0, j, 1, 1);
+          }
         pb = elm_progressbar_add(win);
         evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
         evas_object_size_hint_align_set(pb, FILL, FILL);
         evas_object_show(pb);
         bat->pb = pb;
-
-        elm_table_pack(tbl, pb, 1, 0, 1, 1);
-        if (!i)
-          {
-             pd->power_ic = ic = elm_icon_add(win);
-             evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(3), ELM_SCALE_SIZE(3));
-             evas_object_size_hint_align_set(ic, 0.0, 0.5);
-             elm_table_pack(tbl, ic, 0, 0, 1, 1);
-          }
-        elm_object_content_set(pad, tbl);
-        elm_box_pack_end(content, pad);
+        elm_table_pack(tbl, pb, 1, j++, 1, 1);
 
         pd->batteries = eina_list_append(pd->batteries, bat);
      }
 
    system_power_state_free(&power);
-
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
-
-   elm_box_pack_end(content, bx);
-
-   pad = elm_frame_add(win);
-   evas_object_size_hint_weight_set(pad, EXPAND, 0);
-   evas_object_size_hint_align_set(pad, FILL, FILL);
-   elm_object_style_set(pad, "pad_small");
-   evas_object_show(pad);
 
    pd->thermal_pb = pb = elm_progressbar_add(win);
    evas_object_size_hint_weight_set(pb, EXPAND, 0);
@@ -335,8 +306,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    elm_progressbar_unit_format_set(pb, "%1.1f°C");
    evas_object_show(pb);
 
-   elm_object_content_set(pad, pb);
-   elm_box_pack_end(bx, pad);
+   elm_table_pack(tbl, pb, 1, j++, 1, 1);
 
    pd->genlist = genlist = elm_genlist_add(win);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
@@ -346,14 +316,14 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    evas_object_smart_callback_add(genlist, "selected", _genlist_item_pressed_cb, pd);
    elm_object_focus_allow_set(genlist, 0);
    evas_object_show(genlist);
-   elm_box_pack_end(bx, genlist);
+   elm_table_pack(tbl, genlist, 0, j++, 2, 1);
 
-   pd->itc = itc = elm_genlist_item_class_new();
-   itc->item_style = "full";
-   itc->func.content_get = _content_get;
-   itc->func.text_get = NULL;
-   itc->func.filter_get = NULL;
-   itc->func.del = _item_del;
+   pd->itc = elm_genlist_item_class_new();
+   pd->itc->item_style = "full";
+   pd->itc->func.content_get = _content_get;
+   pd->itc->func.text_get = NULL;
+   pd->itc->func.filter_get = NULL;
+   pd->itc->func.del = _item_del;
 
    if (ui->sensors.width > 0 && ui->sensors.height > 0)
      evas_object_resize(win, ui->sensors.width, ui->sensors.height);
