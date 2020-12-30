@@ -40,7 +40,7 @@ evisum_ui_config_save(Ui *ui)
         _evisum_config->proc.height = h;
         _evisum_config->proc.x = x;
         _evisum_config->proc.y = y;
-        _evisum_config->proc.restart = ui->cpu.restart;
+        _evisum_config->proc.restart = ui->proc.restart;
         _evisum_config->proc.sort_type = ui->proc.sort_type;
         _evisum_config->proc.sort_reverse = ui->proc.sort_reverse;
         _evisum_config->proc.poll_delay = ui->proc.poll_delay;
