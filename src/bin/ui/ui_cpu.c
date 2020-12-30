@@ -345,6 +345,21 @@ _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgd
 }
 
 static void
+_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Animate *ad;
+   Ui *ui;
+   Evas_Coord x = 0, y = 0;
+
+   ad = data;
+   ui = ad->ui;
+
+   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
+   ui->cpu.x = x;
+   ui->cpu.y = y;
+}
+
+static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Explainer *exp;
@@ -352,6 +367,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    Ui *ui = ad->ui;
 
    evisum_ui_config_save(ui);
+
    ecore_thread_cancel(ad->thread);
    ecore_thread_wait(ad->thread, 0.5);
 
@@ -694,6 +710,7 @@ _graph(Ui *ui, Evas_Object *parent)
      (obj, 100, (BAR_HEIGHT * ad->cpu_count) * elm_config_scale_get());
 
    evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_DEL, _win_del_cb, ad);
+   evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_MOVE, _win_move_cb, ad);
 
    // run a feedback thread that sends feedback to the mainloop
    ad->thread = ecore_thread_feedback_run(_core_times_main_cb,

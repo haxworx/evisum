@@ -307,6 +307,21 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
+_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd;
+   Ui *ui;
+   Evas_Coord x = 0, y = 0;
+
+   pd = data;
+   ui = pd->ui;
+
+   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
+   ui->disk.x = x;
+   ui->disk.y = y;
+}
+
+static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
@@ -683,6 +698,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
      }
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(tbl, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
    evas_object_show(win);

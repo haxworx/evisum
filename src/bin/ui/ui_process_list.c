@@ -1526,6 +1526,21 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNU
 }
 
 static void
+_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd;
+   Ui *ui;
+   Evas_Coord x = 0, y = 0;
+
+   pd = data;
+   ui = pd->ui;
+
+   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
+   ui->proc.x = x;
+   ui->proc.y = y;
+}
+
+static void
 _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
@@ -1614,6 +1629,8 @@ ui_process_list_win_add(Ui *ui, Evas_Object *parent EINA_UNUSED)
                                   _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                                   _win_resize_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE,
+                                  _win_move_cb, pd);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
                                   _win_key_down_cb, pd);
    evas_object_show(win);
