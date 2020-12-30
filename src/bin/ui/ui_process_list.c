@@ -1312,7 +1312,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    pd->itc.func.del = _item_del;
 
    evas_object_smart_callback_add(pd->genlist, "selected",
-                                 _item_pid_clicked_cb, pd);
+                                  _item_pid_clicked_cb, pd);
    evas_object_event_callback_add(pd->genlist, EVAS_CALLBACK_MOUSE_UP,
                                   _item_pid_secondary_clicked_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "unrealized",
@@ -1444,6 +1444,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
    Ui_Data *pd;
+   Evas_Coord x, y, w, h;
 
    pd = data;
    ev = event_info;
@@ -1451,8 +1452,14 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (!ev || !ev->keyname)
      return;
 
+   elm_scroller_region_get(pd->scroller, &x, &y, &w, &h);
+
    if (!strcmp(ev->keyname, "Escape") && !pd->entry_visible)
      evas_object_del(pd->win);
+   else if (!strcmp(ev->keyname, "Prior"))
+     elm_scroller_region_bring_in(pd->scroller, x, y - h, w, h);
+   else if (!strcmp(ev->keyname, "Next"))
+     elm_scroller_region_bring_in(pd->scroller, x, y + h, w, h);
    else
      _win_key_down_search(pd, ev);
 
