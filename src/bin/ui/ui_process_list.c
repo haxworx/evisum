@@ -1451,7 +1451,10 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (!ev || !ev->keyname)
      return;
 
-   _win_key_down_search(pd, ev);
+   if (!strcmp(ev->keyname, "Escape") && !pd->entry_visible)
+     evas_object_del(pd->win);
+   else
+     _win_key_down_search(pd, ev);
 
    pd->skip_wait = 1;
 }

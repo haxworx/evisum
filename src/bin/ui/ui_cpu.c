@@ -12,6 +12,7 @@ typedef struct {
 
    Ecore_Thread   *thread;
 
+   Evas_Object    *win;
    Evas_Object    *bg;
    Evas_Object    *obj;
 
@@ -416,6 +417,22 @@ _colors_fill(Evas_Object *colors)
 }
 
 static void
+_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev;
+   Animate *ad;
+
+   ad = data;
+   ev = event_info;
+
+   if (!ev || !ev->keyname)
+     return;
+
+   if (!strcmp(ev->keyname, "Escape"))
+     evas_object_del(ad->ui->cpu.win);
+}
+
+static Animate *
 _graph(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *tbl, *tbl2, *box, *obj, *ic, *lb, *rec;
@@ -424,8 +441,9 @@ _graph(Ui *ui, Evas_Object *parent)
    char buf[128];
 
    Animate *ad = calloc(1, sizeof(Animate));
-   if (!ad) return;
+   if (!ad) return NULL;
 
+   ad->win = ui->cpu.win;
    ad->cpu_count = system_cpu_count_get();
    if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
      ad->cpu_freq = EINA_TRUE;
@@ -675,8 +693,6 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_min_set
      (obj, 100, (BAR_HEIGHT * ad->cpu_count) * elm_config_scale_get());
 
-   // since win is on auto-delete, just listen for when it is deleted,
-   // whatever the cause/reason
    evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_DEL, _win_del_cb, ad);
 
    // run a feedback thread that sends feedback to the mainloop
@@ -685,6 +701,7 @@ _graph(Ui *ui, Evas_Object *parent)
                                           NULL,
                                           NULL,
                                           ad, EINA_TRUE);
+   return ad;
 }
 
  static void
@@ -698,6 +715,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 ui_win_cpu_add(Ui *ui, Evas_Object *parent)
 {
+   Animate *ad;
    Evas_Object *win, *box, *scroller;
    Evas_Coord x = 0, y = 0;
 
@@ -730,8 +748,8 @@ ui_win_cpu_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   _graph(ui, box);
-
+   ad = _graph(ui, box);
+   evas_object_event_callback_add(scroller, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ad);
    elm_object_content_set(scroller, box);
    elm_object_content_set(win, scroller);
 
@@ -751,7 +769,6 @@ ui_win_cpu_add(Ui *ui, Evas_Object *parent)
         else
          elm_win_center(win, 1, 1);
      }
-
    evas_object_show(win);
 }
 

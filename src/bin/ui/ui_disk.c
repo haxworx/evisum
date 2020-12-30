@@ -291,6 +291,22 @@ _disks_poll_update(Ui_Data *pd)
 }
 
 static void
+_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev;
+   Ui_Data *pd;
+
+   pd = data;
+   ev = event_info;
+
+   if (!ev || !ev->keyname)
+     return;
+
+   if (!strcmp(ev->keyname, "Escape"))
+     evas_object_del(pd->ui->disk.win);
+}
+
+static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
@@ -668,6 +684,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
+   evas_object_event_callback_add(tbl, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
    evas_object_show(win);
 
    pd->thread = ecore_thread_feedback_run(_disks_poll,

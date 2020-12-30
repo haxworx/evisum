@@ -201,6 +201,22 @@ _content_get(void *data, Evas_Object *obj, const char *part)
 }
 
 static void
+_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev;
+   Ui_Data *pd;
+
+   pd = data;
+   ev = event_info;
+
+   if (!ev || !ev->keyname)
+     return;
+
+   if (!strcmp(ev->keyname, "Escape"))
+     evas_object_del(pd->ui->sensors.win);
+}
+
+static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
@@ -257,6 +273,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                                   _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
 
    fr = elm_frame_add(win);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
