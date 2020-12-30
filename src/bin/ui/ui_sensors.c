@@ -3,6 +3,7 @@
 
 typedef struct
 {
+   Ecore_Thread           *thread;
    Eina_List              *sensors;
    Eina_List              *batteries;
 
@@ -207,9 +208,8 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
 
-   ecore_thread_cancel(ui->sensors.thread);
-   ecore_thread_wait(ui->sensors.thread, 0.5);
-   ui->sensors.thread = NULL;
+   ecore_thread_cancel(pd->thread);
+   ecore_thread_wait(pd->thread, 0.5);
    evas_object_del(obj);
    ui->sensors.win = NULL;
 
@@ -341,8 +341,8 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
 
    _sensors_refresh(pd);
 
-   ui->sensors.thread = ecore_thread_feedback_run(_sensors_update,
-                                                  _sensors_update_feedback_cb,
-                                                  NULL, NULL, pd, EINA_TRUE);
+   pd->thread = ecore_thread_feedback_run(_sensors_update,
+                                          _sensors_update_feedback_cb,
+                                          NULL, NULL, pd, EINA_TRUE);
 }
 

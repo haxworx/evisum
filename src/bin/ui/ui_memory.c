@@ -4,6 +4,7 @@
 #include <Elementary.h>
 
 typedef struct  {
+   Ecore_Thread *thread;
    Evas_Object  *win;
    Evas_Object  *bg;
 
@@ -354,8 +355,8 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
 
-   ecore_thread_cancel(ui->mem.thread);
-   ecore_thread_wait(ui->mem.thread, 0.5);
+   ecore_thread_cancel(pd->thread);
+   ecore_thread_wait(pd->thread, 0.5);
 
    evas_object_del(obj);
    ui->mem.win = NULL;
@@ -505,9 +506,9 @@ ui_win_memory_add(Ui *ui, Evas_Object *parent)
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_show(win);
 
-   ui->mem.thread = ecore_thread_feedback_run(_mem_usage_main_cb,
-                                              _mem_usage_feedback_cb,
-                                              NULL,
-                                              NULL,
-                                              pd, EINA_TRUE);
+   pd->thread = ecore_thread_feedback_run(_mem_usage_main_cb,
+                                          _mem_usage_feedback_cb,
+                                          NULL,
+                                          NULL,
+                                          pd, EINA_TRUE);
 }

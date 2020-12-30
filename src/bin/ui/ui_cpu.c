@@ -10,6 +10,8 @@ typedef struct {
 typedef struct {
    Ui             *ui;
 
+   Ecore_Thread   *thread;
+
    Evas_Object    *bg;
    Evas_Object    *obj;
 
@@ -350,8 +352,8 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
 
    // on deletion of window, cancel thread, free animate data and set cpu
    // dialog handle to null
-   ecore_thread_cancel(ui->cpu.thread);
-   ecore_thread_wait(ui->cpu.thread, 0.5);
+   ecore_thread_cancel(ad->thread);
+   ecore_thread_wait(ad->thread, 0.5);
 
    EINA_LIST_FREE(ad->explainers, exp)
      {
@@ -679,11 +681,11 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_DEL, _win_del_cb, ad);
 
    // run a feedback thread that sends feedback to the mainloop
-   ui->cpu.thread = ecore_thread_feedback_run(_core_times_main_cb,
-                                              _core_times_feedback_cb,
-                                              NULL,
-                                              NULL,
-                                              ad, EINA_TRUE);
+   ad->thread = ecore_thread_feedback_run(_core_times_main_cb,
+                                          _core_times_feedback_cb,
+                                          NULL,
+                                          NULL,
+                                          ad, EINA_TRUE);
 }
 
  static void

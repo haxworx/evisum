@@ -42,7 +42,6 @@ typedef struct Ui
    struct
    {
       Evas_Object  *win;
-      Ecore_Thread *thread;
       int           width;
       int           height;
    } cpu;
@@ -52,7 +51,6 @@ typedef struct Ui
       Evas_Object  *win;
       int           width;
       int           height;
-      Ecore_Thread *thread;
       Eina_Bool     zfs_mounted;
    } mem;
 
@@ -68,7 +66,6 @@ typedef struct Ui
       Evas_Object  *win;
       int           width;
       int           height;
-      Ecore_Thread *thread;
    } sensors;
 } Ui;
 
