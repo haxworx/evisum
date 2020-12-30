@@ -19,7 +19,7 @@ int EVISUM_EVENT_CONFIG_CHANGED;
 void
 evisum_ui_config_save(Ui *ui)
 {
-   Evas_Coord w, h;
+   Evas_Coord x, y, w, h;
    Eina_Bool notify = EINA_FALSE;
 
    if (!_evisum_config) return;
@@ -35,9 +35,12 @@ evisum_ui_config_save(Ui *ui)
              notify = EINA_TRUE;
           }
 
-        evas_object_geometry_get(ui->proc.win, NULL, NULL, &w, &h);
+        evas_object_geometry_get(ui->proc.win, &x, &y, &w, &h);
         _evisum_config->proc.width = w;
         _evisum_config->proc.height = h;
+        _evisum_config->proc.x = x;
+        _evisum_config->proc.y = y;
+        _evisum_config->proc.restart = ui->cpu.restart;
         _evisum_config->proc.sort_type = ui->proc.sort_type;
         _evisum_config->proc.sort_reverse = ui->proc.sort_reverse;
         _evisum_config->proc.poll_delay = ui->proc.poll_delay;
@@ -48,30 +51,42 @@ evisum_ui_config_save(Ui *ui)
 
    if (ui->cpu.win)
      {
-        evas_object_geometry_get(ui->cpu.win, NULL, NULL, &w, &h);
+        evas_object_geometry_get(ui->cpu.win, &x, &y, &w, &h);
         _evisum_config->cpu.width = ui->cpu.width = w;
         _evisum_config->cpu.height = ui->cpu.height = h;
+        _evisum_config->cpu.x = x;
+        _evisum_config->cpu.y = y;
+        _evisum_config->cpu.restart = ui->cpu.restart;
      }
 
    if (ui->mem.win)
      {
-        evas_object_geometry_get(ui->mem.win, NULL, NULL, &w, &h);
+        evas_object_geometry_get(ui->mem.win, &x, &y, &w, &h);
         _evisum_config->mem.width = ui->mem.width = w;
         _evisum_config->mem.height = ui->mem.height = h;
+        _evisum_config->mem.x = x;
+        _evisum_config->mem.y = y;
+        _evisum_config->mem.restart = ui->mem.restart;
      }
 
    if (ui->disk.win)
      {
-        evas_object_geometry_get(ui->disk.win, NULL, NULL, &w, &h);
+        evas_object_geometry_get(ui->disk.win, &x, &y, &w, &h);
         _evisum_config->disk.width = ui->disk.width = w;
         _evisum_config->disk.height = ui->disk.height = h;
+        _evisum_config->disk.x = x;
+        _evisum_config->disk.y = y;
+        _evisum_config->disk.restart = ui->disk.restart;
      }
 
    if (ui->sensors.win)
      {
-        evas_object_geometry_get(ui->sensors.win, NULL, NULL, &w, &h);
+        evas_object_geometry_get(ui->sensors.win, &x, &y, &w, &h);
         _evisum_config->sensors.width = ui->sensors.width = w;
         _evisum_config->sensors.height = ui->sensors.height = h;
+        _evisum_config->sensors.x = x;
+        _evisum_config->sensors.y = y;
+        _evisum_config->sensors.restart = ui->sensors.restart;
      }
 
    config_save(_evisum_config);
@@ -99,23 +114,45 @@ evisum_ui_config_load(Ui *ui)
 
    ui->proc.width = _evisum_config->proc.width;
    ui->proc.height = _evisum_config->proc.height;
+   ui->proc.x = _evisum_config->proc.x;
+   ui->proc.y = _evisum_config->proc.y;
+   ui->proc.restart = _evisum_config->proc.restart;
 
    ui->cpu.width = _evisum_config->cpu.width;
    ui->cpu.height = _evisum_config->cpu.height;
+   ui->cpu.x = _evisum_config->cpu.x;
+   ui->cpu.y = _evisum_config->cpu.y;
+   ui->cpu.restart = _evisum_config->cpu.restart;
 
    ui->mem.width = _evisum_config->mem.width;
    ui->mem.height = _evisum_config->mem.height;
+   ui->mem.x = _evisum_config->mem.x;
+   ui->mem.y = _evisum_config->mem.y;
+   ui->mem.restart = _evisum_config->mem.restart;
 
    ui->disk.width = _evisum_config->disk.width;
    ui->disk.height = _evisum_config->disk.height;
+   ui->disk.x = _evisum_config->disk.x;
+   ui->disk.y = _evisum_config->disk.y;
+   ui->disk.restart = _evisum_config->disk.restart;
 
    ui->sensors.width = _evisum_config->sensors.width;
    ui->sensors.height = _evisum_config->sensors.height;
+   ui->sensors.x = _evisum_config->sensors.x;
+   ui->sensors.y = _evisum_config->sensors.y;
+   ui->sensors.restart = _evisum_config->sensors.restart;
 }
 
 void
-evisum_restart(void)
+evisum_ui_restart(Ui *ui)
 {
+   if (ui->proc.win) ui->proc.restart = 1;
+   if (ui->cpu.win) ui->cpu.restart = 1;
+   if (ui->mem.win) ui->mem.restart = 1;
+   if (ui->disk.win) ui->disk.restart = 1;
+   if (ui->sensors.win) ui->sensors.restart = 1;
+
+   evisum_ui_config_save(ui);
    evisum_server_shutdown();
    ecore_app_restart();
    ecore_main_loop_quit();
@@ -181,7 +218,7 @@ _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    evisum_ui_config_save(ui);
 
-   evisum_restart();
+   evisum_ui_restart(ui);
 }
 
 static Evas_Object *
@@ -426,6 +463,47 @@ _process_win_add(Evas_Object *parent, int pid, int delay)
 void
 evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
 {
+   Eina_Bool restart = 0;
+
+   if (ui->proc.restart)
+     {
+        ui_process_list_win_add(ui, NULL);
+        restart = 1;
+     }
+
+   if (ui->cpu.restart)
+     {
+        ui_win_cpu_add(ui, NULL);
+        restart = 1;
+     }
+
+   if (ui->mem.restart)
+     {
+        ui_win_memory_add(ui, NULL);
+        restart = 1;
+     }
+
+   if (ui->disk.restart)
+     {
+        ui_win_disk_add(ui, NULL);
+        restart = 1;
+     }
+
+   if (ui->sensors.restart)
+     {
+        ui_win_sensors_add(ui, NULL);
+        restart = 1;
+     }
+
+   if (restart)
+     {
+        ui->proc.restart = ui->cpu.restart = 0;
+        ui->mem.restart = ui->disk.restart = 0;
+        ui->sensors.restart = 0;
+        evisum_ui_config_save(ui);
+        return;
+     }
+
    switch (action)
      {
        case EVISUM_ACTION_DEFAULT:

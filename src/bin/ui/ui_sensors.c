@@ -208,11 +208,11 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
 
+   evisum_ui_config_save(ui);
+
    ecore_thread_cancel(pd->thread);
    ecore_thread_wait(pd->thread, 0.5);
-   evas_object_del(obj);
    ui->sensors.win = NULL;
-
    EINA_LIST_FREE(pd->batteries, bat)
      free(bat);
 
@@ -330,12 +330,17 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
 
-   if (parent)
-     evas_object_geometry_get(parent, &x, &y, NULL, NULL);
-   if (x > 0 && y > 0)
-     evas_object_move(win, x + 20, y + 20);
+   if (ui->sensors.x > 0 && ui->sensors.y > 0)
+     evas_object_move(win, ui->sensors.x, ui->sensors.y);
    else
-     elm_win_center(win, 1, 1);
+     {
+        if (parent)
+          evas_object_geometry_get(parent, &x, &y, NULL, NULL);
+        if (x > 0 && y > 0)
+          evas_object_move(win, x + 20, y + 20);
+        else
+          elm_win_center(win, 1, 1);
+     }
 
    evas_object_show(win);
 

@@ -14,8 +14,6 @@
 
 #define UI_CHILD_WIN_WIDTH  360
 #define UI_CHILD_WIN_HEIGHT 360
-#define MISC_MAX_WIDTH      350
-#define MISC_MIN_WIDTH      340
 
 void
 evisum_icon_cache_init(void);

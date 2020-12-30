@@ -300,8 +300,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    pd = data;
    ui = pd->ui;
 
-   evas_object_del(obj);
-
+   evisum_ui_config_save(ui);;
    ecore_thread_cancel(pd->thread);
    ecore_thread_wait(pd->thread, 0.5);
 
@@ -655,12 +654,17 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
 
-   if (parent)
-     evas_object_geometry_get(parent, &x, &y, NULL, NULL);
-   if (x > 0 && y > 0)
-     evas_object_move(win, x + 20, y + 20);
+   if (ui->disk.x > 0 && ui->disk.y > 0)
+     evas_object_move(win, ui->disk.x, ui->disk.y);
    else
-     elm_win_center(win, 1, 1);
+     {
+        if (parent)
+          evas_object_geometry_get(parent, &x, &y, NULL, NULL);
+        if (x > 0 && y > 0)
+          evas_object_move(win, x + 20, y + 20);
+        else
+          elm_win_center(win, 1, 1);
+     }
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);

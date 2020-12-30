@@ -1524,7 +1524,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 
    ui = pd->ui;
 
-   evas_object_del(obj);
+   evisum_ui_config_save(ui);
 
    if (pd->timer_search)
      ecore_timer_del(pd->timer_search);
@@ -1587,7 +1587,11 @@ ui_process_list_win_add(Ui *ui, Evas_Object *parent EINA_UNUSED)
    else
      evas_object_resize(win, EVISUM_WIN_WIDTH * elm_config_scale_get(),
                         EVISUM_WIN_HEIGHT * elm_config_scale_get());
-   elm_win_center(win, 1, 1);
+
+   if (ui->proc.x > 0 && ui->proc.y > 0)
+     evas_object_move(win, ui->proc.x, ui->proc.y);
+   else
+     elm_win_center(win, 1, 1);
 
    obj = _ui_content_system_add(pd, win);
    elm_object_content_set(win, obj);

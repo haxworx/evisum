@@ -23,16 +23,18 @@ typedef struct Ui
 
    struct
    {
-      Evas_Object     *win;
-      int              width;
-      int              height;
+      Evas_Object  *win;
+      int           width;
+      int           height;
+      int           x, y;
+      Eina_Bool     restart;
 
-      int        poll_delay;
-      int        sort_type;
-      Eina_Bool  sort_reverse;
-      Eina_Bool  show_self;
-      Eina_Bool  show_kthreads;
-      Eina_Bool  show_user;
+      int           poll_delay;
+      int           sort_type;
+      Eina_Bool     sort_reverse;
+      Eina_Bool     show_self;
+      Eina_Bool     show_kthreads;
+      Eina_Bool     show_user;
    } proc;
 
    Evas_Object     *win_about;
@@ -44,6 +46,8 @@ typedef struct Ui
       Evas_Object  *win;
       int           width;
       int           height;
+      int           x, y;
+      Eina_Bool     restart;
    } cpu;
 
    struct
@@ -51,14 +55,18 @@ typedef struct Ui
       Evas_Object  *win;
       int           width;
       int           height;
+      int           x, y;
+      Eina_Bool     restart;
       Eina_Bool     zfs_mounted;
    } mem;
 
    struct
    {
-      Evas_Object *win;
-      int          width;
-      int          height;
+      Evas_Object  *win;
+      int           width;
+      int           height;
+      int           x, y;
+      Eina_Bool     restart;
    } disk;
 
    struct
@@ -66,6 +74,8 @@ typedef struct Ui
       Evas_Object  *win;
       int           width;
       int           height;
+      int           x, y;
+      Eina_Bool     restart;
    } sensors;
 } Ui;
 
@@ -89,5 +99,8 @@ evisum_ui_config_load(Ui *ui);
 
 void
 evisum_ui_config_save(Ui *ui);
+
+void
+evisum_ui_restart(Ui *ui);
 
 #endif

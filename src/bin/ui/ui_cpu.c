@@ -350,8 +350,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    Animate *ad = data;
    Ui *ui = ad->ui;
 
-   // on deletion of window, cancel thread, free animate data and set cpu
-   // dialog handle to null
+   evisum_ui_config_save(ui);
    ecore_thread_cancel(ad->thread);
    ecore_thread_wait(ad->thread, 0.5);
 
@@ -741,12 +740,17 @@ ui_win_cpu_add(Ui *ui, Evas_Object *parent)
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
 
-   if (parent)
-     evas_object_geometry_get(parent, &x, &y, NULL, NULL);
-   if (x > 0 && y > 0)
-     evas_object_move(win, x + 20, y + 20);
+   if (ui->cpu.x > 0 && ui->cpu.y > 0)
+     evas_object_move(win, ui->cpu.x, ui->cpu.y);
    else
-     elm_win_center(win, 1, 1);
+     {
+        if (parent)
+          evas_object_geometry_get(parent, &x, &y, NULL, NULL);
+        if (x > 0 && y > 0)
+          evas_object_move(win, x + 20, y + 20);
+        else
+         elm_win_center(win, 1, 1);
+     }
 
    evas_object_show(win);
 }
