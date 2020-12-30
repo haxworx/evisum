@@ -68,7 +68,6 @@ typedef struct Ui
       Evas_Object  *win;
       int           width;
       int           height;
-      Evas_Object  *box;
       Ecore_Thread *thread;
    } sensors;
 } Ui;

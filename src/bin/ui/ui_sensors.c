@@ -92,7 +92,7 @@ _sensors_update(void *data, Ecore_Thread *thread)
                }
           }
         ecore_thread_feedback(thread, msg);
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 8; i++)
           {
              if (ecore_thread_check(thread)) break;
              usleep(250000);

@@ -13,11 +13,6 @@
 #include "ui/ui_process_view.h"
 #include "ui/ui_process_list.h"
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/resource.h>
-#include <pwd.h>
-
 Evisum_Config *_evisum_config;
 int EVISUM_EVENT_CONFIG_CHANGED;
 

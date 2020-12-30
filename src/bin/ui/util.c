@@ -60,7 +60,7 @@ _evisum_docs(void)
    const char *txt =
          "<b>Congratulations you found the documentation!</b><br><br>"
          "<br>"
-         "There isn't any!.<br>";
+         "There isn't any!<br>";
 
    return txt;
 }

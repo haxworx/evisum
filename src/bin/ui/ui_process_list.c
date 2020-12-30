@@ -1164,7 +1164,7 @@ _genlist_scroll_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd = data;
 
-   pd->skip_wait = 1;
+   pd->skip_wait = 0;
 }
 
 static void
@@ -1175,7 +1175,7 @@ _genlist_scroll_end_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd = data;
 
-   pd->skip_wait = 0;
+   pd->skip_wait = 1;
 }
 
 static Evas_Object *
@@ -1491,7 +1491,6 @@ _elm_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED
 {
    Ui_Data *pd = data;
 
-   elm_genlist_clear(pd->genlist);
    _process_list_update(pd);
 
    return EINA_TRUE;

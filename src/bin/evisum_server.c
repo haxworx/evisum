@@ -146,7 +146,7 @@ evisum_server_client_add(Evisum_Action action, int pid)
    client->srv = srv;
 
    handler[0] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ADD,
-                                       _evisum_server_client_connect_cb, client);
+                                        _evisum_server_client_connect_cb, client);
    handler[1] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DEL,
                                         _evisum_server_client_done_cb, client);
    handler[2] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ERROR,
