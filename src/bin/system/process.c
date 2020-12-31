@@ -564,10 +564,9 @@ _process_list_openbsd_get(void)
 
         kp = &kps[i];
 
-        _proc_get(p, kp);
-        _cmd_get(p, kern, kp);
-
-        list = eina_list_append(list, p);
+        Proc_Info *p = proc_info_by_pid(kp->p_pid);
+        if (p)
+          list = eina_list_append(list, p);
      }
 
    kvm_close(kern);
