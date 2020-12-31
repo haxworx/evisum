@@ -133,7 +133,7 @@ evisum_size_format(unsigned long long bytes)
         --precision;
      }
 
-   s = eina_slstr_printf("%1.*f %c", precision, (double) value / powi, *unit);
+   s = eina_slstr_printf("%1.*f%c", precision, (double) value / powi, *unit);
 
    return s;
 }
@@ -283,7 +283,6 @@ typedef struct {
    Ecore_Animator *animator;
    int             pos;
    int             pos2;
-   Eina_Bool       im_upwards;
 } Animate_Data;
 
 static void
@@ -348,28 +347,20 @@ about_anim(void *data)
 
    if (ad->pos <= -oh) ad->pos = h;
 
-   if (!(t % 120)) begin = 1;
+   if (!(t % 15)) begin = 1;
 
    if (!begin) return EINA_TRUE;
 
    evas_object_geometry_get(ad->im, &ix, &iy, &iw, &ih);
 
-   if (ad->im_upwards)
-     ad->pos2 -= 1;
-   else
-     ad->pos2 += 5;
+   ad->pos2 += 7;
 
    evas_object_move(ad->im, ix, ad->pos2);
    evas_object_show(ad->im);
 
-   if (ad->pos2 < ih)
+   if (ad->pos2 > h + oh)
      {
-        ad->im_upwards = 0;
-     }
-   else if (ad->pos2 > h + ih)
-     {
-        ad->pos2 = (h + ih);
-        ad->im_upwards = 1;
+        ad->pos2 = -oh;
         srand(t);
         evas_object_move(ad->im, rand() % w, ad->pos2);
         evas_object_hide(ad->im);
@@ -407,7 +398,8 @@ evisum_about_window_show(void *data)
       "FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF <br>"
       "CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT <br>"
       "OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS <br>"
-      "SOFTWARE.<br></></>";
+      "SOFTWARE.<br><br><br><br><br><br><br><br><br><br><br>"
+      "monitor like its 1999...</></i>";
 
    ui = data;
 
@@ -425,8 +417,10 @@ evisum_about_window_show(void *data)
    elm_bg_file_set(bg, evisum_icon_path_get("ladyhand"), NULL);
    elm_win_resize_object_add(win, bg);
    evas_object_show(bg);
-   evas_object_size_hint_min_set(bg, 320 * elm_config_scale_get(),
-                   320 * elm_config_scale_get());
+   evas_object_size_hint_min_set(bg, ELM_SCALE_SIZE(320),
+		                 ELM_SCALE_SIZE(400));
+   evas_object_size_hint_max_set(bg, ELM_SCALE_SIZE(320),
+                                 ELM_SCALE_SIZE(400));
 
    tbl = elm_table_add(win);
    evas_object_show(tbl);
@@ -455,8 +449,7 @@ evisum_about_window_show(void *data)
    about->pos = elm_config_scale_get() * 320;
    about->ui = ui;
    about->im = im;
-   about->pos2 = h + ih + ih;
-   about->im_upwards = 1;
+   about->pos2 = -ih;
    about->animator = ecore_animator_add(about_anim, about);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, about);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _about_resize_cb, about);

@@ -1009,7 +1009,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    pd->btn_thread_id = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("ID"));
+   elm_object_text_set(btn, _("id"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_thread_clicked_cb, pd);
@@ -1018,7 +1018,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    pd->btn_thread_name = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("Name"));
+   elm_object_text_set(btn, _("name"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_name_clicked_cb, pd);
@@ -1027,7 +1027,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    pd->btn_thread_state = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("State"));
+   elm_object_text_set(btn, _("state"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_state_clicked_cb, pd);
@@ -1036,7 +1036,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    pd->btn_thread_cpu_id = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("CPU ID"));
+   elm_object_text_set(btn, _("cpu id"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_id_clicked_cb, pd);
@@ -1045,7 +1045,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    pd->btn_thread_cpu_usage = btn = elm_button_add(hbox);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   elm_object_text_set(btn, _("CPU %"));
+   elm_object_text_set(btn, _("cpu %"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",

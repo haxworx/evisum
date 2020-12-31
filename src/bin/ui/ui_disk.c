@@ -104,7 +104,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    Evas_Object *lb, *r, *pb;
    Evas_Coord w, ow;
    Ui_Data *pd;
-   File_System *inf =  data;
+   File_System *inf = data;
 
    if (!inf) return NULL;
    if (strcmp(source, "elm.swallow.content")) return NULL;

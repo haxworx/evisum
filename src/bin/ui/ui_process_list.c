@@ -20,7 +20,6 @@ typedef struct
    Evisum_Ui_Cache       *cache;
    Ecore_Event_Handler   *handler[2];
    Eina_Bool              skip_wait;
-   Eina_Bool              ready;
 
    Eina_Hash             *cpu_times;
    Ecore_Timer           *resize_timer;
@@ -362,7 +361,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (strcmp(source, "elm.swallow.content")) return NULL;
    if (!proc) return NULL;
-   if (!pd->ready) return NULL;
 
    Item_Cache *it = evisum_ui_item_cache_item_get(pd->cache);
    if (!it)
@@ -734,16 +732,6 @@ _process_list(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
-        list = _process_list_get(pd);
-
-        if (!pd->skip_wait)
-          ecore_thread_feedback(thread, list);
-        else
-          {
-             EINA_LIST_FREE(list, proc)
-               proc_info_free(proc);
-          }
-
         for (i = 0; i < delay * 8; i++)
           {
              if (ecore_thread_check(thread)) return;
@@ -755,7 +743,15 @@ _process_list(void *data, Ecore_Thread *thread)
                }
              usleep(125000);
           }
-        pd->ready = 1;
+        list = _process_list_get(pd);
+        if (!pd->skip_wait)
+          ecore_thread_feedback(thread, list);
+        else
+          {
+             EINA_LIST_FREE(list, proc)
+               proc_info_free(proc);
+          }
+
         delay = ui->proc.poll_delay;
      }
 }
@@ -1678,7 +1674,7 @@ ui_process_list_win_add(Ui *ui, Evas_Object *parent EINA_UNUSED)
 
    ui->proc.win = pd->win = win = elm_win_util_standard_add("evisum", "evisum");
    elm_win_autodel_set(win, EINA_TRUE);
-   elm_win_title_set(win, _("EFL System Monitor"));
+   elm_win_title_set(win, _("Process Explorer"));
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
