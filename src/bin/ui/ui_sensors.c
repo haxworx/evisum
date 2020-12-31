@@ -267,7 +267,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    Evas_Object *ic;
    power_t power;
    Evas_Coord x = 0, y = 0;
-   int j = 0;
+   int j = 0, i = 0;
 
    if (ui->sensors.win)
      {
@@ -306,7 +306,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    elm_table_padding_set(tbl, 0, ELM_SCALE_SIZE(5));
    elm_object_content_set(fr, tbl);
 
-   for (int i = 0; i < power.battery_count; i++)
+   for (i = 0; i < power.battery_count; i++)
      {
         if (!power.batteries[i]->present) continue;
 
@@ -338,7 +338,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    elm_progressbar_unit_format_set(pb, "%1.1f°C");
    evas_object_show(pb);
 
-   elm_table_pack(tbl, pb, 1, j++, 1, 1);
+   elm_table_pack(tbl, pb, (i ? 1 : 0), j++, (i ? 1 : 2), 1);
 
    pd->genlist = genlist = elm_genlist_add(win);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
