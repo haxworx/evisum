@@ -240,7 +240,6 @@ _disks_poll(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
-        ecore_thread_feedback(thread, file_system_info_all_get());
         for (int i = 0; i < 8; i++)
           {
              if (pd->skip_wait)
@@ -252,6 +251,7 @@ _disks_poll(void *data, Ecore_Thread *thread)
                return;
              usleep(125000);
           }
+        ecore_thread_feedback(thread, file_system_info_all_get());
      }
 }
 
@@ -567,7 +567,6 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
 
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    pd->ui = ui;
-   pd->skip_wait = 1;
 
    pd->panes = panes = elm_panes_add(win);
    evas_object_size_hint_weight_set(panes, EXPAND, EXPAND);
