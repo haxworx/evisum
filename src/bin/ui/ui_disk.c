@@ -595,7 +595,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("Device"));
+   elm_object_text_set(btn, _("device"));
    evas_object_smart_callback_add(btn, "clicked", _btn_device_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
@@ -604,7 +604,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("Mount"));
+   elm_object_text_set(btn, _("mount"));
    evas_object_smart_callback_add(btn, "clicked", _btn_mount_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
@@ -613,7 +613,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("Type"));
+   elm_object_text_set(btn, _("type"));
    evas_object_smart_callback_add(btn, "clicked", _btn_fs_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
@@ -622,7 +622,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("Total"));
+   elm_object_text_set(btn, _("total"));
    evas_object_smart_callback_add(btn, "clicked", _btn_total_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
@@ -631,7 +631,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("Used"));
+   elm_object_text_set(btn, _("used"));
    evas_object_smart_callback_add(btn, "clicked", _btn_used_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
@@ -640,7 +640,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("Free"));
+   elm_object_text_set(btn, _("free"));
    evas_object_smart_callback_add(btn, "clicked", _btn_free_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
@@ -649,7 +649,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
-   elm_object_text_set(btn, _("Usage"));
+   elm_object_text_set(btn, _("usage"));
    evas_object_smart_callback_add(btn, "clicked", _btn_usage_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
@@ -669,6 +669,7 @@ ui_win_disk_add(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_smart_callback_add(genlist, "unrealized", _item_unrealized_cb, pd);
    evas_object_smart_callback_add(genlist, "selected", _item_disk_clicked_cb, pd);
+   elm_genlist_homogeneous_set(genlist, 1);
    evas_object_show(genlist);
    elm_object_content_set(scr, genlist);
 

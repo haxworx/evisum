@@ -326,7 +326,7 @@ _item_create(Evas_Object *parent)
    lb = _item_column_add(tbl, "proc_cpuid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_state", i++);
-   evas_object_size_hint_align_set(lb, 0.5, FILL);
+   evas_object_size_hint_align_set(lb, 0.8, FILL);
 
    hbx = elm_box_add(tbl);
    elm_box_horizontal_set(hbx, 1);
@@ -1268,7 +1268,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_PID ?
             ui->proc.sort_reverse : EINA_FALSE),
             ui->proc.sort_type == SORT_BY_PID);
-   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("pid"));
    evas_object_show(btn);
