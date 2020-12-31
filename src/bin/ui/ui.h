@@ -38,8 +38,6 @@ typedef struct Ui
    } proc;
 
    Evas_Object     *win_about;
-   Evas_Object     *menu;
-   Evas_Object     *menu_parent;
 
    struct
    {
@@ -85,7 +83,7 @@ evisum_ui_init(void);
 void
 evisum_ui_shutdown(Ui *ui);
 
-void
+Evas_Object *
 evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj);
 
 void

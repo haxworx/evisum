@@ -403,9 +403,13 @@ evisum_about_window_show(void *data)
 
    ui = data;
 
-   if (ui->win_about) return;
+   if (ui->win_about)
+     {
+        elm_win_raise(ui->win_about);
+        return;
+     }
 
-   ui->win_about = win = elm_win_add(ui->menu_parent, "evisum", ELM_WIN_DIALOG_BASIC);
+   ui->win_about = win = elm_win_util_standard_add("evisum", "evisum");
    elm_win_autodel_set(win, EINA_TRUE);
    elm_win_title_set(win, _("About"));
 

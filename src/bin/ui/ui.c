@@ -173,7 +173,7 @@ _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_memory_add(ui, ui->menu_parent);
+   ui_win_memory_add(ui, NULL);
 }
 
 static void
@@ -182,7 +182,7 @@ _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_disk_add(ui, ui->menu_parent);
+   ui_win_disk_add(ui, NULL);
 }
 
 static void
@@ -191,7 +191,7 @@ _menu_sensors_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_sensors_add(ui, ui->menu_parent);
+   ui_win_sensors_add(ui, NULL);
 }
 
 static void
@@ -200,7 +200,7 @@ _menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_cpu_add(ui, ui->menu_parent);
+   ui_win_cpu_add(ui, NULL);
 }
 
 static void
@@ -298,7 +298,7 @@ _menu_focus_cb(void *data)
    return EINA_FALSE;
 }
 
-void
+Evas_Object *
 evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
 {
    Evas_Object *o, *bx, *bx2, *hbox, *sep, *fr, *sli;
@@ -326,7 +326,6 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_object_content_set(fr, bx);
    elm_object_content_set(o, fr);
 
-   ui->menu_parent = parent;
    hbox = elm_box_add(o);
    elm_box_horizontal_set(hbox, 1);
    evas_object_size_hint_align_set(hbox, FILL, FILL);
@@ -370,6 +369,17 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    btn = _btn_create(hbox, "evisum", _("About"), _about_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
    elm_box_pack_end(bx, hbox);
+
+
+   elm_ctxpopup_direction_priority_set(o, ELM_CTXPOPUP_DIRECTION_UP,
+                                       ELM_CTXPOPUP_DIRECTION_DOWN,
+                                       ELM_CTXPOPUP_DIRECTION_LEFT,
+                                       ELM_CTXPOPUP_DIRECTION_RIGHT);
+   evas_object_move(o, ox + (ow / 2), oy + oh);
+   evas_object_show(o);
+   ecore_timer_add(0.5, _menu_focus_cb, it_focus);
+
+   if (parent != ui->proc.win) return o;
 
    fr = elm_frame_add(o);
    elm_object_text_set(fr, _("Options"));
@@ -430,14 +440,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_object_content_set(fr, bx2);
    elm_box_pack_end(bx, fr);
 
-   elm_ctxpopup_direction_priority_set(o, ELM_CTXPOPUP_DIRECTION_UP,
-                                       ELM_CTXPOPUP_DIRECTION_DOWN,
-                                       ELM_CTXPOPUP_DIRECTION_LEFT,
-                                       ELM_CTXPOPUP_DIRECTION_RIGHT);
-   evas_object_move(o, ox + (ow / 2), oy + oh);
-   evas_object_show(o);
-   ui->menu = o;
-   ecore_timer_add(0.5, _menu_focus_cb, it_focus);
+   return o;
 }
 
 static void

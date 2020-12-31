@@ -27,6 +27,7 @@ typedef struct
    Ui                    *ui;
 
    Evas_Object           *win;
+   Evas_Object           *main_menu;
    Evas_Object           *menu;
 
    pid_t                  selected_pid;
@@ -508,8 +509,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (!EINA_DBL_EQ(value, last))
      elm_progressbar_value_set(pb, proc->cpu_usage / 100.0);
    evas_object_show(pb);
-   // Let the genlist resize but align the text.
-   elm_table_align_set(it->obj, 0, 0.5);
 
    return it->obj;
 }
@@ -1159,12 +1158,12 @@ static void
 _main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
                         void *ev EINA_UNUSED)
 {
-   Ui *ui = data;
+   Ui_Data *pd = data;
 
-   elm_ctxpopup_dismiss(ui->menu);
-   evas_object_del(ui->menu);
+   elm_ctxpopup_dismiss(pd->main_menu);
+   evas_object_del(pd->main_menu);
 
-   ui->menu = NULL;
+   pd->main_menu = NULL;
 }
 
 static Evas_Object *
@@ -1194,12 +1193,16 @@ static void
 _btn_menu_clicked_cb(void *data, Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Ui_Data *pd;
+   Ui *ui;
 
-   if (!ui->menu)
-     evisum_ui_main_menu_create(ui, ui->proc.win, obj);
+   pd = data;
+   ui = pd->ui;
+
+   if (!pd->main_menu)
+     pd->main_menu = evisum_ui_main_menu_create(ui, ui->proc.win, obj);
    else
-     _main_menu_dismissed_cb(ui, NULL, NULL);
+     _main_menu_dismissed_cb(pd, NULL, NULL);
 }
 
 static void
@@ -1243,7 +1246,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_table_padding_set(tbl, PAD_W, 0);
 
    pd->btn_menu = btn = _btn_create(tbl, "menu", _("Menu"),
-                                    _btn_menu_clicked_cb, ui);
+                                    _btn_menu_clicked_cb, pd);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
 
    pd->btn_cmd = btn = elm_button_add(parent);
@@ -1558,8 +1561,8 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    elm_genlist_realized_items_update(pd->genlist);
 
    evas_object_lower(pd->entry_pop);
-   if (ui->menu)
-     _main_menu_dismissed_cb(ui, NULL, NULL);
+   if (pd->main_menu)
+     _main_menu_dismissed_cb(pd, NULL, NULL);
 
    if (!pd->resize_timer)
      pd->resize_timer = ecore_timer_add(0.1, _resize_timer_cb, pd);

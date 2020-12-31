@@ -13,6 +13,8 @@ typedef struct {
    Ecore_Thread   *thread;
 
    Evas_Object    *win;
+   Evas_Object    *menu;
+   Evas_Object    *btn_menu;
    Evas_Object    *bg;
    Evas_Object    *obj;
 
@@ -433,6 +435,22 @@ _colors_fill(Evas_Object *colors)
 }
 
 static void
+_win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Coord w, h;
+   Evas_Event_Mouse_Move *ev;
+   Animate *ad = data;
+
+   ev = event_info;
+   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
+
+   if (ev->cur.output.x >= (w - 128) && ev->cur.output.y <= 128)
+     evas_object_show(ad->btn_menu);
+   else
+     evas_object_hide(ad->btn_menu);
+}
+
+static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
@@ -448,11 +466,28 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      evas_object_del(ad->ui->cpu.win);
 }
 
+static void
+_btn_menu_clicked_cb(void *data, Evas_Object *obj,
+                     void *event_info EINA_UNUSED)
+{
+   Ui *ui;
+   Animate *ad = data;
+
+   ui = ad->ui;
+   if (!ad->menu)
+     ad->menu = evisum_ui_main_menu_create(ui, ui->cpu.win, obj);
+   else
+     {
+        evas_object_del(ad->menu);
+        ad->menu = NULL;
+     }
+}
+
 static Animate *
 _graph(Ui *ui, Evas_Object *parent)
 {
    Evas_Object *tbl, *tbl2, *box, *obj, *ic, *lb, *rec;
-   Evas_Object *fr, *bx, *hbx, *colors, *check;
+   Evas_Object *fr, *bx, *hbx, *colors, *check, *btn;
    int i, f;
    char buf[128];
 
@@ -569,6 +604,17 @@ _graph(Ui *ui, Evas_Object *parent)
 
         ad->explainers = eina_list_append(ad->explainers, exp);
      }
+
+   ad->btn_menu = btn = elm_button_add(parent);
+   ic = elm_icon_add(btn);
+   elm_icon_standard_set(ic, evisum_icon_path_get("menu"));
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), 1);
+   evas_object_show(ic);
+   evas_object_size_hint_weight_set(btn, 1.0, 1.0);
+   evas_object_size_hint_align_set(btn, 1.0, 0);
+   evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, ad);
+   elm_table_pack(tbl, btn, 0, 0, 5, ad->cpu_count);
 
    bx = elm_box_add(box);
    evas_object_size_hint_align_set(bx, FILL, FILL);
@@ -767,6 +813,7 @@ ui_win_cpu_add(Ui *ui, Evas_Object *parent)
 
    ad = _graph(ui, box);
    evas_object_event_callback_add(scroller, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ad);
+   evas_object_event_callback_add(scroller, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, ad);
    elm_object_content_set(scroller, box);
    elm_object_content_set(win, scroller);
 
