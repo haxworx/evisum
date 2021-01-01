@@ -35,11 +35,10 @@ evisum_ui_config_save(Ui *ui)
              notify = EINA_TRUE;
           }
 
-        evas_object_geometry_get(ui->proc.win, &x, &y, &w, &h);
-        _evisum_config->proc.width = w;
-        _evisum_config->proc.height = h;
-        _evisum_config->proc.x = x;
-        _evisum_config->proc.y = y;
+        _evisum_config->proc.width = ui->proc.width;
+        _evisum_config->proc.height = ui->proc.height;
+        _evisum_config->proc.x = ui->proc.x;
+        _evisum_config->proc.y = ui->proc.y;
         _evisum_config->proc.restart = ui->proc.restart;
         _evisum_config->proc.sort_type = ui->proc.sort_type;
         _evisum_config->proc.sort_reverse = ui->proc.sort_reverse;
@@ -102,12 +101,11 @@ evisum_ui_config_load(Ui *ui)
 
    _evisum_config = config_load();
 
+   evisum_ui_backgrounds_enabled_set(_evisum_config->backgrounds);
+
    ui->proc.sort_type    = _evisum_config->proc.sort_type;
    ui->proc.sort_reverse = _evisum_config->proc.sort_reverse;
    ui->proc.poll_delay   = _evisum_config->proc.poll_delay;
-
-   evisum_ui_backgrounds_enabled_set(_evisum_config->backgrounds);
-
    ui->proc.show_kthreads = _evisum_config->proc.show_kthreads;
    proc_info_kthreads_show_set(ui->proc.show_kthreads);
    ui->proc.show_user = _evisum_config->proc.show_user;

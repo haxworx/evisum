@@ -303,7 +303,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
         fr = elm_frame_add(win);
         evas_object_size_hint_weight_set(fr, EXPAND, 0);
         evas_object_size_hint_align_set(fr, FILL, FILL);
-        elm_object_text_set(fr, _("Batteries"));
+        elm_object_text_set(fr, _("Power"));
         evas_object_show(fr);
 
         bx = elm_box_add(win);

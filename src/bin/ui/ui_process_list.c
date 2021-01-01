@@ -828,8 +828,6 @@ _btn_clicked_state_save(Ui_Data *pd, Evas_Object *btn)
 
    _btn_icon_state_update(btn, ui->proc.sort_reverse);
 
-   evisum_ui_config_save(ui);
-
    _process_list_update(pd);
 
    elm_scroller_page_bring_in(pd->scroller, 0, 0);
@@ -1201,28 +1199,6 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
      _main_menu_dismissed_cb(pd, NULL, NULL);
 }
 
-static void
-_genlist_scroll_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                         void *event_info EINA_UNUSED)
-{
-   Ui_Data *pd;
-
-   pd = data;
-
-   pd->skip_wait = 0;
-}
-
-static void
-_genlist_scroll_end_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
-{
-   Ui_Data *pd;
-
-   pd = data;
-
-   pd->skip_wait = 1;
-}
-
 static Evas_Object *
 _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 {
@@ -1387,15 +1363,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
                                   _item_pid_secondary_clicked_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "unrealized",
                                  _item_unrealized_cb, pd);
-   evas_object_smart_callback_add(pd->genlist, "scroll,anim,start",
-                                  _genlist_scroll_start_cb, pd);
-   evas_object_smart_callback_add(pd->genlist, "scroll,anim,stop",
-                                  _genlist_scroll_end_cb, pd);
-   evas_object_smart_callback_add(pd->genlist, "scroll,drag,start",
-                                  _genlist_scroll_start_cb, pd);
-   evas_object_smart_callback_add(pd->genlist, "scroll,drag,stop",
-                                  _genlist_scroll_end_cb, pd);
-
    elm_box_pack_end(bx, tbl);
 
    fr = elm_frame_add(parent);
@@ -1549,8 +1516,11 @@ _resize_timer_cb(void *data)
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Ui_Data *pd;
+   Ui *ui;
+
+   pd = data;
+   ui = pd->ui;
 
    elm_genlist_realized_items_update(pd->genlist);
 
@@ -1563,7 +1533,8 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    else
      ecore_timer_reset(pd->resize_timer);
 
-   evisum_ui_config_save(ui);
+   evas_object_geometry_get(obj, NULL, NULL,
+                            &ui->proc.width, &ui->proc.height);
 }
 
 static Eina_Bool
@@ -1600,14 +1571,11 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 {
    Ui_Data *pd;
    Ui *ui;
-   Evas_Coord x = 0, y = 0;
 
    pd = data;
    ui = pd->ui;
 
-   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
-   ui->proc.x = x;
-   ui->proc.y = y;
+   evas_object_geometry_get(obj, &ui->proc.x, &ui->proc.y, NULL, NULL);
 }
 
 static void
