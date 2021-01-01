@@ -8,6 +8,7 @@ typedef struct _Evisum_Ui_Cache {
    Eina_List   *items;
    Evas_Object *parent;
    Evas_Object *(*item_create_cb)(Evas_Object *);
+   time_t       time;
 } Evisum_Ui_Cache;
 
 typedef struct _Item_Cache {

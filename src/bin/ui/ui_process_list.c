@@ -362,6 +362,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (strcmp(source, "elm.swallow.content")) return NULL;
    if (!proc) return NULL;
+   if (pd->skip_wait) return NULL;
 
    Item_Cache *it = evisum_ui_item_cache_item_get(pd->cache);
    if (!it)
@@ -380,7 +381,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         if (ow > w)
           {
              evas_object_size_hint_min_set(pd->btn_pid, w, 1);
-             pd->skip_wait = 1;
           }
      }
    rec = evas_object_data_get(lb, "rec");
@@ -402,7 +402,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         if (ow > w)
           {
              evas_object_size_hint_min_set(pd->btn_uid, w, 1);
-             pd->skip_wait = 1;
           }
      }
    rec = evas_object_data_get(lb, "rec");
@@ -420,7 +419,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         if (ow > w)
           {
              evas_object_size_hint_min_set(pd->btn_size, w, 1);
-             pd->skip_wait = 1;
           }
      }
    rec = evas_object_data_get(lb, "rec");
@@ -438,7 +436,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         if (ow > w)
           {
              evas_object_size_hint_min_set(pd->btn_rss, w, 1);
-             pd->skip_wait = 1;
           }
      }
    rec = evas_object_data_get(lb, "rec");
@@ -457,7 +454,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w)
      {
         evas_object_size_hint_min_set(pd->btn_cmd, w, 1);
-        pd->skip_wait = 1;
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
