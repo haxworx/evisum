@@ -262,7 +262,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 ui_win_sensors_add(Ui *ui, Evas_Object *parent)
 {
-   Evas_Object *win, *tbl, *fr;
+   Evas_Object *win, *content, *tbl, *bx, *fr;
    Evas_Object *genlist, *pb;
    Evas_Object *ic;
    power_t power;
@@ -290,22 +290,35 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
 
-   fr = elm_frame_add(win);
-   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(fr, FILL, FILL);
-   elm_object_style_set(fr, "pad_medium");
-   evas_object_show(fr);
-   elm_object_content_set(win, fr);
+   content = elm_box_add(win);
+   evas_object_size_hint_weight_set(content, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(content, FILL, FILL);
+   evas_object_show(content);
+   elm_object_content_set(win, content);
 
    system_power_state_get(&power);
 
-   tbl = elm_table_add(win);
-   evas_object_size_hint_weight_set(tbl, EXPAND, 0);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_show(tbl);
-   elm_table_padding_set(tbl, 0, ELM_SCALE_SIZE(5));
-   elm_object_content_set(fr, tbl);
+   if (power.battery_count)
+     {
+        fr = elm_frame_add(win);
+        evas_object_size_hint_weight_set(fr, EXPAND, 0);
+        evas_object_size_hint_align_set(fr, FILL, FILL);
+        elm_object_text_set(fr, _("Batteries"));
+        evas_object_show(fr);
 
+        bx = elm_box_add(win);
+        evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(bx, FILL, FILL);
+        evas_object_show(bx);
+
+        tbl = elm_table_add(win);
+        evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(tbl, FILL, FILL);
+        evas_object_show(tbl);
+        elm_box_pack_end(bx, tbl);
+        elm_object_content_set(fr, bx);
+        elm_box_pack_end(content, fr);
+     }
    for (i = 0; i < power.battery_count; i++)
      {
         if (!power.batteries[i]->present) continue;
@@ -316,12 +329,12 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
         if (!i)
           {
              pd->power_ic = ic = elm_icon_add(win);
-             evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
+             evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
              evas_object_size_hint_align_set(ic, 1.0, 0.5);
              elm_table_pack(tbl, ic, 0, j, 1, 1);
           }
         pb = elm_progressbar_add(win);
-        evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+        evas_object_size_hint_weight_set(pb, EXPAND, 0);
         evas_object_size_hint_align_set(pb, FILL, FILL);
         evas_object_show(pb);
         bat->pb = pb;
@@ -338,7 +351,10 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    elm_progressbar_unit_format_set(pb, "%1.1f°C");
    evas_object_show(pb);
 
-   elm_table_pack(tbl, pb, (i ? 1 : 0), j++, (i ? 1 : 2), 1);
+   bx = elm_box_add(win);
+   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   evas_object_show(bx);
 
    pd->genlist = genlist = elm_genlist_add(win);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
@@ -348,7 +364,18 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    evas_object_smart_callback_add(genlist, "selected", _genlist_item_pressed_cb, pd);
    elm_object_focus_allow_set(genlist, 0);
    evas_object_show(genlist);
-   elm_table_pack(tbl, genlist, 0, j++, 2, 1);
+
+   elm_box_pack_end(bx, genlist);
+   elm_box_pack_end(bx, pb);
+
+   fr = elm_frame_add(win);
+   elm_object_text_set(fr, _("Thermal"));
+   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(fr, FILL, FILL);
+   evas_object_show(fr);
+   elm_object_content_set(fr, bx);
+
+   elm_box_pack_end(content, fr);
 
    pd->itc = elm_genlist_item_class_new();
    pd->itc->item_style = "full";
@@ -380,6 +407,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
 
    pd->thread = ecore_thread_feedback_run(_sensors_update,
                                           _sensors_update_feedback_cb,
-                                          NULL, NULL, pd, EINA_TRUE);
+                                          NULL,
+                                          NULL, pd, EINA_TRUE);
 }
 
