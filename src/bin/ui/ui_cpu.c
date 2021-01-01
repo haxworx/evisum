@@ -444,7 +444,7 @@ _win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    ev = event_info;
    evas_object_geometry_get(obj, NULL, NULL, &w, &h);
 
-   if (ev->cur.output.x >= (w - 128) && ev->cur.output.y <= 128)
+   if (ev->cur.canvas.x >= (w - 128) && ev->cur.canvas.y <= 128)
      evas_object_show(ad->btn_menu);
    else
      evas_object_hide(ad->btn_menu);
@@ -612,7 +612,8 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), 1);
    evas_object_show(ic);
    evas_object_size_hint_weight_set(btn, 1.0, 1.0);
-   evas_object_size_hint_align_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, 0.99, 0.01);
+   elm_object_focus_allow_set(btn, 0);
    evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, ad);
    elm_table_pack(tbl, btn, 0, 0, 5, ad->cpu_count);
 

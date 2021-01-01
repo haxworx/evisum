@@ -133,7 +133,7 @@ evisum_size_format(unsigned long long bytes)
         --precision;
      }
 
-   s = eina_slstr_printf("%1.*f%c", precision, (double) value / powi, *unit);
+   s = eina_slstr_printf("%1.*f %c", precision, (double) value / powi, *unit);
 
    return s;
 }
@@ -330,30 +330,29 @@ static Eina_Bool
 about_anim(void *data)
 {
    Animate_Data *ad;
-   Evas_Coord w, h, ow, oh, x;
-   Evas_Coord ix, iy, iw, ih;
+   Evas_Coord w, h, oh;
    static Eina_Bool begin = 0;
-   time_t t = time(NULL);
-
+   static Evas_Coord ix = 0;
    ad = data;
 
    evas_object_geometry_get(ad->bg, NULL, NULL,  &w, &h);
+   if (!ix) ix = w / 3;
    if (w <= 0 || h <= 0) return EINA_TRUE;
-   evas_object_geometry_get(ad->lb, &x, NULL, &ow, &oh);
-   evas_object_move(ad->lb, x, ad->pos);
+   evas_object_geometry_get(ad->lb, NULL, NULL, NULL, &oh);
+   evas_object_move(ad->lb, 0, ad->pos);
    evas_object_show(ad->lb);
 
    ad->pos--;
 
-   if (ad->pos <= -oh) ad->pos = h;
-
-   if (!(t % 15)) begin = 1;
+   if (ad->pos <= -oh)
+     {
+        ad->pos =  h;
+        begin = 1;
+     }
 
    if (!begin) return EINA_TRUE;
 
-   evas_object_geometry_get(ad->im, &ix, &iy, &iw, &ih);
-
-   ad->pos2 += 7;
+   ad->pos2 += 10;
 
    evas_object_move(ad->im, ix, ad->pos2);
    evas_object_show(ad->im);
@@ -361,8 +360,10 @@ about_anim(void *data)
    if (ad->pos2 > h + oh)
      {
         ad->pos2 = -oh;
+        time_t t = time(NULL);
         srand(t);
-        evas_object_move(ad->im, rand() % w, ad->pos2);
+        ix = rand() % w;
+        evas_object_move(ad->im, ix, ad->pos2);
         evas_object_hide(ad->im);
         begin = 0;
      }
@@ -379,6 +380,13 @@ evisum_about_window_show(void *data)
    Evas_Object *hbx, *rec, *br;
    Evas_Coord x, y, w, h;
    Evas_Coord iw, ih;
+   const char *msg[] = {
+      "monitor like it's 1999...",
+      "works for me!",
+      "killed by a Turtle!",
+      "logged in, base gone!",
+      "pancakes!",
+   };
    const char *copyright =
       "<font color=#ffffff>"
       "<b>"
@@ -399,7 +407,7 @@ evisum_about_window_show(void *data)
       "CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT <br>"
       "OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS <br>"
       "SOFTWARE.<br><br><br><br><br><br><br><br><br><br><br>"
-      "monitor like its 1999...</></i>";
+      "%s</></i>";
 
    ui = data;
 
@@ -411,6 +419,7 @@ evisum_about_window_show(void *data)
 
    ui->win_about = win = elm_win_util_standard_add("evisum", "evisum");
    elm_win_autodel_set(win, EINA_TRUE);
+   elm_win_center(win, 1, 1);
    elm_win_title_set(win, _("About"));
 
    /* All that moves */
@@ -422,7 +431,7 @@ evisum_about_window_show(void *data)
    elm_win_resize_object_add(win, bg);
    evas_object_show(bg);
    evas_object_size_hint_min_set(bg, ELM_SCALE_SIZE(320),
-		                 ELM_SCALE_SIZE(400));
+                                 ELM_SCALE_SIZE(400));
    evas_object_size_hint_max_set(bg, ELM_SCALE_SIZE(320),
                                  ELM_SCALE_SIZE(400));
 
@@ -434,7 +443,9 @@ evisum_about_window_show(void *data)
    lb = elm_label_add(win);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, 0);
-   elm_object_text_set(lb, copyright);
+   srand(time(NULL));
+   elm_object_text_set(lb, eina_slstr_printf(copyright,
+                                             msg[rand() % ARRAY_SIZE(msg)]));
 
    evas_object_geometry_get(win, &x, &y, &w, &h);
 
@@ -450,7 +461,7 @@ evisum_about_window_show(void *data)
    about->win = win;
    about->bg = bg;
    about->lb = lb;
-   about->pos = elm_config_scale_get() * 320;
+   about->pos = ELM_SCALE_SIZE(400);
    about->ui = ui;
    about->im = im;
    about->pos2 = -ih;
