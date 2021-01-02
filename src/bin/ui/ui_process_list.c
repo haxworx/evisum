@@ -328,13 +328,6 @@ _item_create(Evas_Object *parent)
    lb = _item_column_add(tbl, "proc_state", i++);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
 
-   hbx = elm_box_add(tbl);
-   elm_box_horizontal_set(hbx, 1);
-   evas_object_size_hint_align_set(hbx, FILL, FILL);
-   evas_object_size_hint_weight_set(hbx, EXPAND, EXPAND);
-   evas_object_show(hbx);
-   elm_table_pack(tbl, hbx, i++, 0, 1, 1);
-
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
@@ -342,7 +335,7 @@ _item_create(Evas_Object *parent)
 #if PROGRESS_CUSTOM_FORMAT
    elm_progressbar_unit_format_function_set(pb, _pb_format_cb, _pb_format_free_cb);
 #endif
-   elm_box_pack_end(hbx, pb);
+   elm_table_pack(tbl, pb, i++, 0, 1, 1);
    evas_object_data_set(tbl, "proc_cpu_usage", pb);
 
    return tbl;
@@ -457,6 +450,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
+   elm_box_recalculate(hbx);
 
    o = evas_object_data_get(it->obj, "icon");
    const char *new = evisum_icon_path_get(evisum_icon_cache_find(proc));

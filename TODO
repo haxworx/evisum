@@ -1,0 +1,31 @@
+Memory:
+
+Something pretty for memory usage over time. Work in progress might need to
+comment out the code for release.
+
+CPU:
+
+Something for 16 cores+ I have some ideas. Anything pretty. Suggestions.
+
+Process List:
+
+Maybe the genlist/buttons widget can be a widget with other features also.
+Some issue with scrolling CPU after some time. Not the cache.
+
+Process View:
+
+Some stats over time visually (pretty). Fix the keyboard focus tree.
+Add some stats, process CPU time etc. Needs plugged in.
+This whole UI bit can be much simpler and better.  Cool to check a process
+in the list and pop up some live informative stats...
+
+ICONz:
+
+A flat icon. ApBBB's original icon is better than I currently can do but it's
+not quite right.
+
+Engine:
+
+Have one process polling and writing to disk and mapping to memory some IPC
+for real-time stats for a UI.
+

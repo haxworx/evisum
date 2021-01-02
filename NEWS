@@ -2,6 +2,22 @@
 Evisum 0.5.9
 ============
 
+  * Search "dialogue" added to process list.
+  * Remember window sizing and location.
+  * Simplify the process list view. One job, processes. Memory, CPU
+    and other stats have their own windows.
+  * Introduce the menu to other windows. No feature takes
+    presedence (potentially).
+  * Improved keyboard support. PgUp/PgDown focus. All windows
+    close on Escape. You can quickly check some stat then close it.
+  * Rewrite the sensors UI. Some OS don't cache when reading
+    sensors. It makes better use of screen also.
+  * Add a basic indicator for power supply.
+  * Improve behaviour on OpenBSD amd64 and arm64.
+  * Remove lots of horrible code.
+  * Fix bug (CPU).
+  * Purge an overly complicated storage API.
+  * Internally things are much better. Much simpler.
   * ...
 
 ============
