@@ -326,7 +326,7 @@ _item_create(Evas_Object *parent)
    lb = _item_column_add(tbl, "proc_cpuid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_state", i++);
-   evas_object_size_hint_align_set(lb, 0.8, FILL);
+   evas_object_size_hint_align_set(lb, 0.5, FILL);
 
    hbx = elm_box_add(tbl);
    elm_box_horizontal_set(hbx, 1);
@@ -362,7 +362,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (strcmp(source, "elm.swallow.content")) return NULL;
    if (!proc) return NULL;
-   if (pd->skip_wait) return NULL;
 
    Item_Cache *it = evisum_ui_item_cache_item_get(pd->cache);
    if (!it)
@@ -784,6 +783,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
      }
 
    elm_genlist_realized_items_update(pd->genlist);
+   evas_object_smart_calculate(pd->scroller);
 }
 
 static void
@@ -1507,7 +1507,7 @@ static Eina_Bool
 _resize_timer_cb(void *data)
 {
    Ui_Data *pd = data;
-   pd->skip_wait = 1;
+   pd->skip_wait = 0;
    ecore_timer_del(pd->resize_timer);
    pd->resize_timer = NULL;
    return EINA_FALSE;
@@ -1522,6 +1522,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    pd = data;
    ui = pd->ui;
 
+   pd->skip_wait = 1;
    elm_genlist_realized_items_update(pd->genlist);
 
    evas_object_lower(pd->entry_pop);
@@ -1535,16 +1536,6 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    evas_object_geometry_get(obj, NULL, NULL,
                             &ui->proc.width, &ui->proc.height);
-}
-
-static Eina_Bool
-_elm_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
-{
-   Ui_Data *pd = data;
-
-   _process_list_update(pd);
-
-   return EINA_TRUE;
 }
 
 static Eina_Bool
@@ -1602,7 +1593,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
      ecore_timer_del(pd->resize_timer);
 
    ecore_event_handler_del(pd->handler[0]);
-   ecore_event_handler_del(pd->handler[1]);
 
    pd->thread = NULL;
    ui->proc.win = NULL;
@@ -1632,9 +1622,7 @@ ui_process_list_win_add(Ui *ui, Evas_Object *parent EINA_UNUSED)
 
    pd->selected_pid = -1;
    pd->ui = ui;
-   pd->handler[0] = ecore_event_handler_add(ELM_EVENT_CONFIG_ALL_CHANGED,
-                                            _elm_config_changed_cb, pd);
-   pd->handler[1] = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
+   pd->handler[0] = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
                                             _evisum_config_changed_cb, pd);
 
    ui->proc.win = pd->win = win = elm_win_util_standard_add("evisum", "evisum");
