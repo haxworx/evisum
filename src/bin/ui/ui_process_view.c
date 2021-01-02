@@ -726,7 +726,6 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_show(tbl);
    elm_object_content_set(fr, tbl);
 
-
    rec = evas_object_rectangle_add(evas_object_evas_get(tbl));
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(64), ELM_SCALE_SIZE(64));
    evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(64), ELM_SCALE_SIZE(64));
@@ -1347,6 +1346,22 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    elm_genlist_realized_items_update(pd->genlist_threads);
 }
 
+static void
+_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev;
+   Ui_Data *pd;
+
+   pd = data;
+   ev = event_info;
+
+   if (!ev || !ev->keyname)
+     return;
+
+   if (!strcmp(ev->keyname, "Escape"))
+     evas_object_del(pd->win);
+}
+
 void
 ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_delay)
 {
@@ -1395,8 +1410,8 @@ ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_d
    elm_box_pack_end(box, pd->content);
    elm_object_content_set(win, box);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
-                   _win_resize_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
+   evas_object_event_callback_add(box, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
 
    evas_object_resize(win, 480 * elm_config_scale_get(), -1);
    if (parent_win)

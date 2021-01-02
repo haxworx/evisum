@@ -1342,7 +1342,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    pd->scroller = pd->genlist = glist = elm_genlist_add(parent);
    elm_genlist_homogeneous_set(glist, 1);
    elm_scroller_gravity_set(pd->scroller, 0.0, 1.0);
-   elm_object_focus_allow_set(glist, EINA_FALSE);
+   elm_object_focus_allow_set(glist, 1);
    elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
                            ELM_SCROLLER_POLICY_OFF);
    elm_genlist_multi_select_set(glist, EINA_FALSE);
