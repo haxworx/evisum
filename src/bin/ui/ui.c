@@ -202,6 +202,15 @@ _menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
+_menu_process_view_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                              void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui_process_list_win_add(ui, NULL);
+}
+
+static void
 _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
@@ -330,7 +339,11 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
    evas_object_show(hbox);
 
-   it_focus = btn = _btn_create(hbox, "cpu", _("CPU"),
+   it_focus = btn = _btn_create(hbox, "proc", _("Processes"),
+                     _menu_process_view_clicked_cb, ui);
+   elm_box_pack_end(hbox, btn);
+
+   btn = _btn_create(hbox, "cpu", _("CPU"),
                      _menu_cpu_activity_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
