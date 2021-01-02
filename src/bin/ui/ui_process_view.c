@@ -724,6 +724,7 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
    evas_object_size_hint_align_set(tbl, FILL, FILL);
    evas_object_show(tbl);
+   elm_object_focus_allow_set(tbl, 1);
    elm_object_content_set(fr, tbl);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tbl));
