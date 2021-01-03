@@ -17,6 +17,8 @@ typedef enum
    SORT_BY_CMD,
    SORT_BY_STATE,
    SORT_BY_CPU_USAGE,
+
+   SORT_BY_MAX,
 } Sort_Type;
 
 void

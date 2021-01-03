@@ -16,11 +16,18 @@ extern int EVISUM_EVENT_CONFIG_CHANGED;
 
 typedef struct
 {
+   Sort_Type type;
+   int       (*sort_cb)(const void *p1, const void *p2);
+} Sorter;
+
+typedef struct
+{
    Ecore_Thread          *thread;
    Evisum_Ui_Cache       *cache;
    Ecore_Event_Handler   *handler[2];
    Eina_Bool              skip_wait;
 
+   Sorter                sorters[SORT_BY_MAX - 1];
    Eina_Hash             *cpu_times;
    Ecore_Timer           *resize_timer;
 
@@ -563,63 +570,23 @@ _process_list_cancel_cb(void *data, Ecore_Thread *thread)
    (void) pd;
 }
 
-
 static Eina_List *
-_process_list_sort(Ui *ui, Eina_List *list)
+_process_list_sort(Eina_List *list, Ui_Data *pd)
 {
-   switch (ui->proc.sort_type)
-     {
-      case SORT_BY_NONE:
-      case SORT_BY_PID:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_pid);
-        break;
+   Ui *ui;
+   Sorter s;
+   ui = pd->ui;
 
-      case SORT_BY_UID:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_uid);
-        break;
+   s = pd->sorters[ui->proc.sort_type];
 
-      case SORT_BY_NICE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_nice);
-        break;
-
-      case SORT_BY_PRI:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_pri);
-        break;
-
-      case SORT_BY_CPU:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_cpu);
-        break;
-
-      case SORT_BY_THREADS:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_threads);
-        break;
-
-      case SORT_BY_SIZE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_size);
-        break;
-
-      case SORT_BY_RSS:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_rss);
-        break;
-
-      case SORT_BY_CMD:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_cmd);
-        break;
-
-      case SORT_BY_STATE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_state);
-        break;
-
-      case SORT_BY_CPU_USAGE:
-        list = eina_list_sort(list, eina_list_count(list), _sort_by_cpu_usage);
-        break;
-     }
+   list = eina_list_sort(list, eina_list_count(list), s.sort_cb);
 
    if (ui->proc.sort_reverse)
      list = eina_list_reverse(list);
 
    return list;
 }
+
 static Eina_List *
 _process_list_uid_trim(Eina_List *list, uid_t uid)
 {
@@ -701,7 +668,7 @@ _process_list_get(Ui_Data *pd)
      list = _process_list_uid_trim(list, getuid());
 
    list = _process_list_search_trim(list, pd);
-   list = _process_list_sort(ui, list);
+   list = _process_list_sort(list, pd);
 
    return list;
 }
@@ -907,7 +874,7 @@ _btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _btn_cpu_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                      void *event_info EINA_UNUSED)
+                    void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
@@ -920,7 +887,7 @@ _btn_cpu_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                      void *event_info EINA_UNUSED)
+                        void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
@@ -990,7 +957,7 @@ _item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                   void *event_info EINA_UNUSED)
+                    void *event_info EINA_UNUSED)
 {
    Proc_Info *proc;
    const char *terminal = "xterm";
@@ -1306,7 +1273,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_cpu_clicked_cb, pd);
 
-
    pd->btn_state = btn = elm_button_add(parent);
    _btn_icon_state_init(btn,
             (ui->proc.sort_type == SORT_BY_STATE ?
@@ -1356,7 +1322,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_event_callback_add(pd->genlist, EVAS_CALLBACK_MOUSE_UP,
                                   _item_pid_secondary_clicked_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "unrealized",
-                                 _item_unrealized_cb, pd);
+                                  _item_unrealized_cb, pd);
    elm_box_pack_end(bx, tbl);
 
    fr = elm_frame_add(parent);
@@ -1581,7 +1547,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
      ecore_thread_cancel(pd->thread);
 
    if (pd->thread)
-     ecore_thread_wait(pd->thread, 0.2);
+     ecore_thread_wait(pd->thread, 0.5);
 
    if (pd->resize_timer)
      ecore_timer_del(pd->resize_timer);
@@ -1597,6 +1563,23 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
    eina_hash_free(pd->cpu_times);
 
    free(pd);
+}
+
+static void
+_init(Ui_Data *pd)
+{
+   pd->sorters[SORT_BY_NONE].sort_cb = _sort_by_pid;
+   pd->sorters[SORT_BY_PID].sort_cb = _sort_by_pid;
+   pd->sorters[SORT_BY_UID].sort_cb = _sort_by_uid;
+   pd->sorters[SORT_BY_NICE].sort_cb = _sort_by_nice;
+   pd->sorters[SORT_BY_PRI].sort_cb = _sort_by_pri;
+   pd->sorters[SORT_BY_CPU].sort_cb = _sort_by_cpu;
+   pd->sorters[SORT_BY_THREADS].sort_cb = _sort_by_threads;
+   pd->sorters[SORT_BY_SIZE].sort_cb = _sort_by_size;
+   pd->sorters[SORT_BY_RSS].sort_cb = _sort_by_rss;
+   pd->sorters[SORT_BY_CMD].sort_cb = _sort_by_cmd;
+   pd->sorters[SORT_BY_STATE].sort_cb = _sort_by_state;
+   pd->sorters[SORT_BY_CPU_USAGE].sort_cb = _sort_by_cpu_usage;
 }
 
 void
@@ -1618,6 +1601,7 @@ ui_process_list_win_add(Ui *ui)
    pd->ui = ui;
    pd->handler[0] = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
                                             _evisum_config_changed_cb, pd);
+   _init(pd);
 
    ui->proc.win = pd->win = win = elm_win_util_standard_add("evisum", "evisum");
    elm_win_autodel_set(win, EINA_TRUE);
