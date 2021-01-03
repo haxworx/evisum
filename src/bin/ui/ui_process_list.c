@@ -708,6 +708,7 @@ _process_list(void *data, Ecore_Thread *thread)
           }
 
         delay = ui->proc.poll_delay;
+        eina_slstr_local_clear();
      }
 }
 
