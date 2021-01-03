@@ -163,13 +163,14 @@ static void
 _mem_size(Proc_Info *proc)
 {
    FILE *f;
-   char buf[1024];
+   char buf[4096];
    unsigned int dummy, size, shared, resident, data, text;
    static int pagesize = 0;
 
    if (!pagesize) pagesize = getpagesize();
 
-   f = fopen(eina_slstr_printf("/proc/%d/statm", proc->pid), "r");
+   snprintf(buf, sizeof(buf), "/proc/%d/statm", proc->pid);
+   f = fopen(buf, "r");
    if (!f) return;
 
    if (fgets(buf, sizeof(buf), f))
@@ -191,35 +192,37 @@ _mem_size(Proc_Info *proc)
 static void
 _cmd_args(Proc_Info *p, char *name, size_t len)
 {
-   char line[4096];
+   char buf[4096];
    int pid = p->pid;
 
-   char *link = ecore_file_readlink(eina_slstr_printf("/proc/%d/exe", pid));
+   snprintf(buf, sizeof(buf), "/proc/%d/exe", pid);
+   char *link = ecore_file_readlink(buf);
    if (link)
      {
         snprintf(name, len, "%s", ecore_file_file_get(link));
         free(link);
      }
 
-   FILE *f = fopen(eina_slstr_printf("/proc/%d/cmdline", pid), "r");
+   snprintf(buf, sizeof(buf), "/proc/%d/cmdline", pid);
+   FILE *f = fopen(buf, "r");
    if (f)
      {
-        if (fgets(line, sizeof(line), f))
+        if (fgets(buf, sizeof(buf), f))
           {
-             Eina_Strbuf *buf = eina_strbuf_new();
+             Eina_Strbuf *b = eina_strbuf_new();
              const char *n;
 
-             if (ecore_file_exists(line))
-               snprintf(name, len, "%s", ecore_file_file_get(line));
+             if (ecore_file_exists(buf))
+               snprintf(name, len, "%s", ecore_file_file_get(buf));
 
-             n = line;
+             n = buf;
              while (*n && (*n + 1))
                {
-                  eina_strbuf_append(buf, n);
+                  eina_strbuf_append(b, n);
                   n = strchr(n, '\0') + 1;
-                  if (*n && (*n + 1)) eina_strbuf_append(buf, " ");
+                  if (*n && (*n + 1)) eina_strbuf_append(b, " ");
                }
-             p->arguments = eina_strbuf_release(buf);
+             p->arguments = eina_strbuf_release(b);
           }
         fclose(f);
      }
@@ -234,17 +237,18 @@ static int
 _uid(int pid)
 {
    FILE *f;
-   char line[1024];
+   char buf[4096];
    int uid = 0;
 
-   f = fopen(eina_slstr_printf("/proc/%d/status", pid), "r");
+   snprintf(buf, sizeof(buf),"/proc/%d/status", pid);
+   f = fopen(buf, "r");
    if (!f) return -1;
 
-   while ((fgets(line, sizeof(line), f)) != NULL)
+   while ((fgets(buf, sizeof(buf), f)) != NULL)
      {
-        if (!strncmp(line, "Uid:", 4))
+        if (!strncmp(buf, "Uid:", 4))
           {
-             uid = _parse_line(line);
+             uid = _parse_line(buf);
              break;
           }
      }
@@ -334,6 +338,7 @@ _process_list_linux_get(void)
 {
    Eina_List *files, *list;
    char *n;
+   char buf[4096];
    Stat st;
 
    list = NULL;
@@ -346,7 +351,8 @@ _process_list_linux_get(void)
 
         if (!pid) continue;
 
-        if (!_stat(eina_slstr_printf("/proc/%d/stat", pid), &st))
+        snprintf(buf, sizeof(buf), "/proc/%d/stat", pid);
+        if (!_stat(buf, &st))
           continue;
 
         if (st.flags & PF_KTHREAD && !proc_info_kthreads_show_get())
@@ -381,14 +387,17 @@ _proc_thread_info(Proc_Info *p)
 {
    Eina_List *files;
    char *n;
+   char buf[4096];
    Stat st;
 
-   files = ecore_file_ls(eina_slstr_printf("/proc/%d/task", p->pid));
+   snprintf(buf, sizeof(buf), "/proc/%d/task", p->pid);
+   files = ecore_file_ls(buf);
    EINA_LIST_FREE(files, n)
      {
         int tid = atoi(n);
         free(n);
-        if (!_stat(eina_slstr_printf("/proc/%d/task/%d/stat", p->pid, tid), &st))
+        snprintf(buf, sizeof(buf), "/proc/%d/task/%d/stat", p->pid, tid);
+        if (!_stat(buf, &st))
           continue;
 
         Proc_Info *t = calloc(1, sizeof(Proc_Info));
@@ -413,8 +422,10 @@ Proc_Info *
 proc_info_by_pid(int pid)
 {
    Stat st;
+   char buf[4096];
 
-   if (!_stat(eina_slstr_printf("/proc/%d/stat", pid), &st))
+   snprintf(buf, sizeof(buf), "/proc/%d/stat", pid);
+   if (!_stat(buf, &st))
      return NULL;
 
    Proc_Info *p = calloc(1, sizeof(Proc_Info));
@@ -469,7 +480,7 @@ static void
 _cmd_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
 {
    char **args;
-   char name[1024];
+   char name[4096];
 
    if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
      {
@@ -847,7 +858,7 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
 {
    kvm_t * kern;
    char **args;
-   char name[1024];
+   char name[4096];
    Eina_Bool have_command = EINA_FALSE;
 
    kern = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
