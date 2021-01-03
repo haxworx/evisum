@@ -1600,7 +1600,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 }
 
 void
-ui_process_list_win_add(Ui *ui, Evas_Object *parent EINA_UNUSED)
+ui_process_list_win_add(Ui *ui)
 {
    Evas_Object *win, *icon;
    Evas_Object *obj;

@@ -260,13 +260,12 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_sensors_add(Ui *ui, Evas_Object *parent)
+ui_win_sensors_add(Ui *ui)
 {
    Evas_Object *win, *content, *tbl, *bx, *fr;
    Evas_Object *genlist, *pb;
    Evas_Object *ic;
    power_t power;
-   Evas_Coord x = 0, y = 0;
    int j = 0, i = 0;
 
    if (ui->sensors.win)
@@ -392,14 +391,7 @@ ui_win_sensors_add(Ui *ui, Evas_Object *parent)
    if (ui->sensors.x > 0 && ui->sensors.y > 0)
      evas_object_move(win, ui->sensors.x, ui->sensors.y);
    else
-     {
-        if (parent)
-          evas_object_geometry_get(parent, &x, &y, NULL, NULL);
-        if (x > 0 && y > 0)
-          evas_object_move(win, x + 20, y + 20);
-        else
-          elm_win_center(win, 1, 1);
-     }
+     elm_win_center(win, 1, 1);
 
    evas_object_show(win);
 

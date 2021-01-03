@@ -415,12 +415,11 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_memory_add(Ui *ui, Evas_Object *parent)
+ui_win_memory_add(Ui *ui)
 {
    Evas_Object *win, *lb, *bx, *tbl, *rec, *pb;
    Evas_Object *fr;
    int i;
-   Evas_Coord x = 0, y = 0;
    meminfo_t memory;
 
    if (ui->mem.win)
@@ -531,14 +530,7 @@ ui_win_memory_add(Ui *ui, Evas_Object *parent)
    if (ui->mem.x > 0 && ui->mem.y > 0)
      evas_object_move(win, ui->mem.x, ui->mem.y);
    else
-     {
-        if (parent)
-          evas_object_geometry_get(parent, &x, &y, NULL, NULL);
-        if (x > 0 && y > 0)
-          evas_object_move(win, x + 20, y + 20);
-        else
-          elm_win_center(win, 1, 1);
-     }
+     elm_win_center(win, 1, 1);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);

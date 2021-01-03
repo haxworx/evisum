@@ -20,6 +20,6 @@ typedef enum
 } Sort_Type;
 
 void
-ui_process_list_win_add(Ui *ui, Evas_Object *parent);
+ui_process_list_win_add(Ui *ui);
 
 #endif

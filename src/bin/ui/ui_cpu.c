@@ -777,11 +777,10 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_cpu_add(Ui *ui, Evas_Object *parent)
+ui_win_cpu_add(Ui *ui)
 {
    Animate *ad;
    Evas_Object *win, *box, *scroller;
-   Evas_Coord x = 0, y = 0;
 
    if (ui->cpu.win)
      {
@@ -826,14 +825,8 @@ ui_win_cpu_add(Ui *ui, Evas_Object *parent)
    if (ui->cpu.x > 0 && ui->cpu.y > 0)
      evas_object_move(win, ui->cpu.x, ui->cpu.y);
    else
-     {
-        if (parent)
-          evas_object_geometry_get(parent, &x, &y, NULL, NULL);
-        if (x > 0 && y > 0)
-          evas_object_move(win, x + 20, y + 20);
-        else
-         elm_win_center(win, 1, 1);
-     }
+     elm_win_center(win, 1, 1);
+
    evas_object_show(win);
 }
 
