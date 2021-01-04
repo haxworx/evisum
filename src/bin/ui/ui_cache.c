@@ -18,7 +18,7 @@ evisum_ui_item_cache_new(Evas_Object *parent,
         if (it)
           {
              it->obj = cache->item_create_cb(parent);
-             cache->inactive = eina_list_append(cache->inactive, it);
+             cache->inactive = eina_list_prepend(cache->inactive, it);
           }
      }
 
@@ -47,7 +47,7 @@ evisum_ui_item_cache_item_get(Evisum_Ui_Cache *cache)
              if (it)
                {
                   it->obj = cache->item_create_cb(cache->parent);
-                  cache->inactive = eina_list_append(cache->inactive, it);
+                  cache->inactive = eina_list_prepend(cache->inactive, it);
                }
           }
 
