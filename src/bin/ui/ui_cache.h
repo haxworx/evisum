@@ -5,7 +5,8 @@
 #include <Evas.h>
 
 typedef struct _Evisum_Ui_Cache {
-   Eina_List   *items;
+   Eina_List   *inactive;
+   Eina_List   *active;
    Evas_Object *parent;
    Evas_Object *(*item_create_cb)(Evas_Object *);
    time_t       time;
@@ -13,7 +14,6 @@ typedef struct _Evisum_Ui_Cache {
 
 typedef struct _Item_Cache {
    Evas_Object *obj;
-   Eina_Bool    used;
 } Item_Cache;
 
 Evisum_Ui_Cache *

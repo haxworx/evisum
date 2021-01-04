@@ -732,6 +732,8 @@ _process_list(void *data, Ecore_Thread *thread)
           }
 
         delay = ui->proc.poll_delay;
+	printf("active %d and inactive %d\n", eina_list_count(pd->cache->active),
+			eina_list_count(pd->cache->inactive));
      }
 }
 
