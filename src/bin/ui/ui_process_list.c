@@ -55,6 +55,8 @@ typedef struct
    Evas_Object            *btn_pid;
    Evas_Object            *btn_uid;
    Evas_Object            *btn_cmd;
+   Evas_Object            *btn_pri;
+   Evas_Object            *btn_nice;
    Evas_Object            *btn_size;
    Evas_Object            *btn_rss;
    Evas_Object            *btn_state;
@@ -322,6 +324,10 @@ _item_create(Evas_Object *parent)
 
    lb = _item_column_add(tbl, "proc_pid", i++);
    evas_object_size_hint_align_set(lb, 0.0, FILL);
+   lb = _item_column_add(tbl, "proc_prio", i++);
+   evas_object_size_hint_align_set(lb, 1.0, FILL);
+   lb = _item_column_add(tbl, "proc_nice", i++);
+   evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb =_item_column_add(tbl, "proc_uid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_size", i++);
@@ -382,6 +388,24 @@ _content_get(void *data, Evas_Object *obj, const char *source)
              evas_object_size_hint_min_set(pd->btn_pid, w, 1);
           }
      }
+   rec = evas_object_data_get(lb, "rec");
+   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_show(lb);
+
+   evas_object_geometry_get(pd->btn_pri, NULL, NULL, &w, NULL);
+   lb = evas_object_data_get(it->obj, "proc_prio");
+   snprintf(buf, sizeof(buf), "%d", proc->priority);
+   if (strcmp(buf, elm_object_text_get(lb)))
+     elm_object_text_set(lb, buf);
+   rec = evas_object_data_get(lb, "rec");
+   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_show(lb);
+
+   evas_object_geometry_get(pd->btn_nice, NULL, NULL, &w, NULL);
+   lb = evas_object_data_get(it->obj, "proc_nice");
+   snprintf(buf, sizeof(buf), "%d", proc->nice);
+   if (strcmp(buf, elm_object_text_get(lb)))
+     elm_object_text_set(lb, buf);
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
@@ -847,6 +871,32 @@ _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
+_btn_pri_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+   Ui *ui = pd->ui;
+
+   if (ui->proc.sort_type == SORT_BY_PRI)
+     ui->proc.sort_reverse = !ui->proc.sort_reverse;
+   ui->proc.sort_type = SORT_BY_PRI;
+   _btn_clicked_state_save(pd, pd->btn_pri);
+}
+
+static void
+_btn_nice_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+   Ui *ui = pd->ui;
+
+   if (ui->proc.sort_type == SORT_BY_NICE)
+     ui->proc.sort_reverse = !ui->proc.sort_reverse;
+   ui->proc.sort_type = SORT_BY_NICE;
+   _btn_clicked_state_save(pd, pd->btn_nice);
+}
+
+static void
 _btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
@@ -1207,6 +1257,32 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_pid_clicked_cb, pd);
+
+   pd->btn_pri = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            (ui->proc.sort_type == SORT_BY_PRI ?
+            ui->proc.sort_reverse : EINA_FALSE),
+            ui->proc.sort_type == SORT_BY_PRI);
+   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("prio"));
+   evas_object_show(btn);
+   elm_table_pack(tbl, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_pri_clicked_cb, pd);
+
+   pd->btn_nice = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            (ui->proc.sort_type == SORT_BY_NICE ?
+            ui->proc.sort_reverse : EINA_FALSE),
+            ui->proc.sort_type == SORT_BY_NICE);
+   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("nice"));
+   evas_object_show(btn);
+   elm_table_pack(tbl, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_nice_clicked_cb, pd);
 
    pd->btn_uid = btn = elm_button_add(parent);
    _btn_icon_state_init(btn,
