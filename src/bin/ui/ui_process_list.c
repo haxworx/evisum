@@ -227,7 +227,10 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    EINA_LIST_FREE(contents, o)
      {
-        evisum_ui_item_cache_item_release(pd->cache, o);
+        if (!evisum_ui_item_cache_item_release(pd->cache, o))
+          {
+             evas_object_del(o);
+          }
      }
 }
 
@@ -548,7 +551,9 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items,
            {
               it = elm_genlist_last_item_get(genlist);
               if (it)
-                elm_object_item_del(it);
+                {
+                   elm_object_item_del(it);
+                }
            }
       }
 
@@ -775,8 +780,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    int n = eina_list_count(pd->cache->active);
    if (n > eina_list_count(real) * 2)
      {
-        elm_genlist_clear(pd->genlist);
-        evisum_ui_item_cache_reset(pd->cache);
+        evisum_ui_item_cache_steal(pd->cache, real);
         pd->skip_wait = 1;
      }
    eina_list_free(real);

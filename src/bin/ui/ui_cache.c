@@ -14,7 +14,7 @@ evisum_ui_item_cache_new(Evas_Object *parent,
 
    for (int i = 0; i < size; i++)
      {
-        Item_Cache *it = calloc(1, sizeof(Item_Cache));
+        Item_Cache *it = malloc(sizeof(Item_Cache));
         if (it)
           {
              it->obj = cache->item_create_cb(parent);
@@ -23,6 +23,43 @@ evisum_ui_item_cache_new(Evas_Object *parent,
      }
 
    return cache;
+}
+
+void
+evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs)
+{
+   Eina_List *l, *l_next, *l2;
+   Item_Cache *it;
+   Evas_Object *o;
+
+   EINA_LIST_FOREACH_SAFE(cache->active, l, l_next, it)
+     {
+        int found = 0;
+        EINA_LIST_FOREACH(objs, l2, o)
+          {
+             if (it->obj == o)
+               {
+                  found = 1;
+                  break;
+               }
+          }
+        if (!found)
+          {
+             cache->active = eina_list_remove_list(cache->active, l);
+             evas_object_del(it->obj);
+             free(it);
+          }
+     }
+   if (eina_list_count(cache->inactive)) return;
+   for (int i = 0; i < cache->size; i++)
+     {
+        Item_Cache *it = malloc(sizeof(Item_Cache));
+        if (it)
+          {
+             it->obj = cache->item_create_cb(cache->parent);
+             cache->inactive = eina_list_prepend(cache->inactive, it);
+          }
+     }
 }
 
 Item_Cache *
@@ -79,6 +116,7 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj)
    Eina_List *l, *l_next;
    Eina_Bool released = EINA_FALSE;
 
+   if (!cache->active) return EINA_FALSE;
    int n = eina_list_count(cache->inactive);
 
    EINA_LIST_FOREACH_SAFE(cache->active, l, l_next, it)

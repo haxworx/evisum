@@ -31,5 +31,8 @@ evisum_ui_item_cache_free(Evisum_Ui_Cache *cache);
 void
 evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache);
 
+void
+evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs);
+
 
 #endif
