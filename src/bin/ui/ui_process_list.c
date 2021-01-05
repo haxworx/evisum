@@ -11,6 +11,7 @@
 #include <pwd.h>
 
 #define PROGRESS_CUSTOM_FORMAT 0
+#define DIRTY_GENLIST_HACK     1
 
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
@@ -27,9 +28,8 @@ typedef struct
    Ecore_Event_Handler   *handler[2];
    Eina_Bool              skip_wait;
 
-   Sorter                sorters[SORT_BY_MAX - 1];
+   Sorter                sorters[SORT_BY_MAX];
    Eina_Hash             *cpu_times;
-   Ecore_Timer           *resize_timer;
 
    Ui                    *ui;
 
@@ -564,8 +564,8 @@ _show_items(void *data)
 {
    Ui_Data *pd = data;
 
-   elm_genlist_realized_items_update(pd->genlist);
    evas_object_show(pd->genlist);
+   elm_genlist_realized_items_update(pd->genlist);
 
    return EINA_FALSE;
 }
@@ -732,8 +732,6 @@ _process_list(void *data, Ecore_Thread *thread)
           }
 
         delay = ui->proc.poll_delay;
-	printf("active %d and inactive %d\n", eina_list_count(pd->cache->active),
-			eina_list_count(pd->cache->inactive));
      }
 }
 
@@ -752,7 +750,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    _genlist_ensure_n_items(pd->genlist, eina_list_count(list), &pd->itc);
 
    it = elm_genlist_first_item_get(pd->genlist);
-
    EINA_LIST_FREE(list, proc)
      {
         if (!it)
@@ -770,7 +767,24 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
      }
 
    elm_genlist_realized_items_update(pd->genlist);
-   evas_object_smart_calculate(pd->scroller);
+
+#if DIRTY_GENLIST_HACK
+   Eina_List *real = elm_genlist_realized_items_get(pd->genlist);
+   int n = eina_list_count(pd->cache->active);
+   if (n > eina_list_count(real) * 2)
+     {
+        elm_genlist_clear(pd->genlist);
+        evisum_ui_item_cache_reset(pd->cache);
+        pd->skip_wait = 1;
+     }
+   eina_list_free(real);
+#endif
+
+#if 0
+   printf("active %d and inactive %d\n",
+           eina_list_count(pd->cache->active),
+           eina_list_count(pd->cache->inactive));
+#endif
 }
 
 static void
@@ -1541,16 +1555,6 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    pd->skip_wait = 1;
 }
 
-static Eina_Bool
-_resize_timer_cb(void *data)
-{
-   Ui_Data *pd = data;
-   pd->skip_wait = 0;
-   ecore_timer_del(pd->resize_timer);
-   pd->resize_timer = NULL;
-   return EINA_FALSE;
-}
-
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
@@ -1560,17 +1564,12 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    pd = data;
    ui = pd->ui;
 
-   pd->skip_wait = 1;
    elm_genlist_realized_items_update(pd->genlist);
 
    evas_object_lower(pd->entry_pop);
    if (pd->main_menu)
      _main_menu_dismissed_cb(pd, NULL, NULL);
 
-   if (!pd->resize_timer)
-     pd->resize_timer = ecore_timer_add(0.1, _resize_timer_cb, pd);
-   else
-     ecore_timer_reset(pd->resize_timer);
 
    evas_object_geometry_get(obj, NULL, NULL,
                             &ui->proc.width, &ui->proc.height);
@@ -1626,9 +1625,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 
    if (pd->thread)
      ecore_thread_wait(pd->thread, 0.5);
-
-   if (pd->resize_timer)
-     ecore_timer_del(pd->resize_timer);
 
    ecore_event_handler_del(pd->handler[0]);
 

@@ -10,7 +10,7 @@ evisum_ui_item_cache_new(Evas_Object *parent,
    cache->parent = parent;
    cache->item_create_cb = create_cb;
    cache->inactive = cache->active = NULL;
-   cache->time = time(NULL);
+   cache->size = size;
 
    for (int i = 0; i < size; i++)
      {
@@ -41,21 +41,35 @@ evisum_ui_item_cache_item_get(Evisum_Ui_Cache *cache)
    it = calloc(1, sizeof(Item_Cache));
    if (it)
      {
-        for (int i = 0; i < 10; i++)
-          {
-             Item_Cache *it = calloc(1, sizeof(Item_Cache));
-             if (it)
-               {
-                  it->obj = cache->item_create_cb(cache->parent);
-                  cache->inactive = eina_list_prepend(cache->inactive, it);
-               }
-          }
-
         it->obj = cache->item_create_cb(cache->parent);
         cache->active = eina_list_prepend(cache->active, it);
      }
 
    return it;
+}
+
+void
+evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache)
+{
+   Item_Cache *it;
+
+   EINA_LIST_FREE(cache->active, it)
+     {
+        free(it);
+     }
+   EINA_LIST_FREE(cache->inactive, it)
+     {
+        free(it);
+     }
+   for (int i = 0; i < cache->size; i++)
+     {
+        it = calloc(1, sizeof(Item_Cache));
+        if (it)
+          {
+             it->obj = cache->item_create_cb(cache->parent);
+             cache->inactive = eina_list_prepend(cache->inactive, it);
+          }
+     }
 }
 
 Eina_Bool
