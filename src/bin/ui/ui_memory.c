@@ -6,7 +6,6 @@
 typedef struct  {
    Ecore_Thread *thread;
    Evas_Object  *win;
-   Evas_Object  *bg;
 
    Evas_Object  *used;
    Evas_Object  *cached;
@@ -15,45 +14,8 @@ typedef struct  {
    Evas_Object  *swap;
    Evas_Object  *video[MEM_VIDEO_CARD_MAX];
 
-   int           pos;
-
    Ui           *ui;
 } Ui_Data;
-
-static Eina_Bool starting = 1;
-
-#define STEP      1
-#define MAX_HIST  2048
-#define UPOLLTIME 250000
-
-#define GR_USED   0
-#define GR_CACHED 1
-#define GR_BUFFER 2
-#define GR_SHARED 3
-
-#define COLOR_USED   206, 70, 93, 255
-#define COLOR_CACHED 135, 190, 85, 255
-#define COLOR_BUFFER 100, 177, 242, 255
-#define COLOR_SHARED 225, 107, 62, 255
-#define COLOR_NONE   0, 0, 0, 0
-
-#if !defined(__OpenBSD__)
-static
-#endif
-Eina_Lock _mlock;
-
-typedef struct
-{
-   Eina_List *blocks;
-   int        pos;
-   double     history[MAX_HIST];
-   int        r, g, b, a;
-} Graph;
-
-#if !defined(__OpenBSD__)
-static
-#endif
-Graph graphs[4];
 
 static Evas_Object *
 _label_mem(Evas_Object *parent, const char *text)
@@ -79,89 +41,6 @@ _progress_add(Evas_Object *parent)
    return pb;
 }
 
-static Evas_Object *
-vg_add(Evas_Object *w)
-{
-   Evas_Object *o;
-   Evas_Vg_Container *con;
-   Evas_Vg_Shape *sh;
-
-   o = evas_object_vg_add(evas_object_evas_get(w));
-   con = evas_vg_container_add(o);
-   sh = evas_vg_shape_add(con);
-   evas_object_show(o);
-   evas_object_vg_root_node_set(o, con);
-   evas_object_data_set(o, "con", con);
-   evas_object_data_set(o, "shape", sh);
-   return o;
-}
-
-static void
-vg_fill(Evas_Object *o, Ui_Data *pd, int w, int h, double *pt, int r, int g, int b, int a)
-{
-   Evas_Vg_Shape *sh;
-   int i;
-   double v;
-   Evas_Vg_Node *n;
-
-   evas_object_resize(o, w, h);
-   sh = evas_object_data_get(o, "shape");
-   evas_vg_shape_reset(sh);
-   evas_vg_shape_append_move_to(sh, 0, h);
-   for (i = 0; i < w; i++)
-     {
-        v = (h / 100) * pt[i];
-        if      (v < -h) v = -h;
-        else if (v >  h) v = h;
-        evas_vg_shape_append_line_to(sh, i, h - v);
-     }
-   evas_vg_shape_append_line_to(sh, pd->pos, h);
-   n = evas_object_data_get(sh, "shape");
-   evas_vg_shape_fill_set(sh, n);
-   evas_vg_node_color_set(sh, r, g, b, a);
-   evas_vg_node_origin_set(n, 0, 0);
-}
-
-static void
-position_shrink_list(Eina_List *list)
-{
-   Evas_Object *o;
-   Eina_List *l, *ll;
-   int i = 0;
-
-   EINA_LIST_FOREACH_SAFE(list, l, ll, o)
-     {
-        if (i++ > 0)
-          {
-             evas_object_del(o);
-             list = eina_list_remove_list(list, l);
-          }
-     }
-}
-
-static void
-position_gr_list(Eina_List *list, int w, int h, int offset)
-{
-   Evas_Object *o;
-   Eina_List *l, *ll;
-   int x = w - offset;
-
-   EINA_LIST_FOREACH_SAFE(list, l, ll, o)
-     {
-        if (x + w < 0)
-          {
-             evas_object_del(o);
-             list = eina_list_remove_list(list, l);
-          }
-        else
-          {
-             evas_object_move(o, x, 0);
-             evas_object_resize(o, w, h);
-          }
-        x -= (w - STEP);
-     }
-}
-
 static void
 _mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
 {
@@ -175,7 +54,7 @@ _mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
           memory.used += memory.zfs_arc_used;
 
         ecore_thread_feedback(thread, &memory);
-        usleep(UPOLLTIME);
+        usleep(1000000);
      }
 }
 
@@ -253,99 +132,17 @@ _update_widgets(Ui_Data *pd, meminfo_t *memory)
 }
 
 static void
-_reverse(double *arr, int n)
-{
-   for (int i = 0, j = n - 1; i < j; i++, j--)
-     {
-        double tmp = arr[i];
-        arr[i] = arr[j];
-        arr[j] = tmp;
-     }
-}
-
-static void
-_update_graph(Graph *graph, double perc, Ui_Data *pd, Evas_Coord w, Evas_Coord h)
-{
-   int i, r, g, b, a;
-   Evas_Object *o;
-
-   r = graph->r; g = graph->g; b = graph->b; a = graph->a;
-
-   if (graph->pos == 0)
-     {
-        if (starting)
-          for (i = 0; i < MAX_HIST; i++)
-            graph->history[i] = 0;
-        else
-          _reverse(graph->history, MAX_HIST);
-
-        o = vg_add(pd->bg);
-        graph->blocks = eina_list_prepend(graph->blocks, o);
-     }
-   o = graph->blocks->data;
-   graph->history[graph->pos] = perc;
-   pd->pos = graph->pos;
-   vg_fill(o, pd, w, h, graph->history, r, g, b, a);
-   position_gr_list(graph->blocks, w, h, graph->pos);
-
-   graph->pos += STEP;
-   if (graph->pos >= w) graph->pos = 0;
-}
-
-static void
 _mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
 {
-   Evas_Coord w, h;
    Ui_Data *pd;
    meminfo_t *memory;
-   double ratio;
 
    pd = data;
    memory = msgdata;
 
    if (ecore_thread_check(thread)) return;
 
-   ratio = memory->total / 100.0;
-   if (ratio == 0.0) return;
-
    _update_widgets(pd, memory);
-
-   evas_object_geometry_get(pd->bg, NULL, NULL, &w, &h);
-
-   eina_lock_take(&_mlock);
-
-   _update_graph(&graphs[GR_USED], memory->used / ratio, pd, w, h);
-   _update_graph(&graphs[GR_CACHED], memory->cached / ratio, pd, w, h);
-   _update_graph(&graphs[GR_BUFFER], memory->buffered / ratio, pd, w, h);
-   _update_graph(&graphs[GR_SHARED], memory->shared / ratio, pd, w, h);
-
-   if (starting) starting = 0;
-   eina_lock_release(&_mlock);
-}
-
-static void
-_graph_init(Graph *graph, int r, int g, int b, int a)
-{
-   memset(graph, 0, sizeof(Graph));
-   graph->r = r; graph->g = g; graph->b = b, graph->a = a;
-}
-
-static Evas_Object *
-_graph_guide(Evas_Object *parent, int r, int g, int b, int a)
-{
-   Evas_Object *btn, *rec;;
-
-   btn = elm_button_add(parent);
-   evas_object_show(btn);
-
-   rec = evas_object_rectangle_add(parent);
-   evas_object_color_set(rec, r, g, b, a);
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
-   evas_object_show(rec);
-   elm_object_part_content_set(btn, "elm.swallow.content", rec);
-
-   return btn;
 }
 
 static void
@@ -369,22 +166,21 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 {
    Ui_Data *pd;
    Ui *ui;
-   Evas_Coord x = 0, y = 0;
 
    pd = data;
    ui = pd->ui;
 
-   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
-   ui->mem.x = x;
-   ui->mem.y = y;
+   evas_object_geometry_get(obj, &ui->mem.x, &ui->mem.y, NULL, NULL);
 }
 
 static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
             void *event_info EINA_UNUSED)
 {
+   Ui *ui;
    Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+
+   ui = pd->ui;
 
    evisum_ui_config_save(ui);
    ecore_thread_cancel(pd->thread);
@@ -393,31 +189,20 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
    evas_object_del(obj);
    ui->mem.win = NULL;
    free(pd);
-   eina_lock_free(&_mlock);
 }
 
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd = data;
-   Ui *ui = pd->ui;
 
-   eina_lock_take(&_mlock);
-
-   position_shrink_list((&graphs[GR_USED])->blocks);
-   position_shrink_list((&graphs[GR_CACHED])->blocks);
-   position_shrink_list((&graphs[GR_BUFFER])->blocks);
-   position_shrink_list((&graphs[GR_SHARED])->blocks);
-
-   eina_lock_release(&_mlock);
-
-   evisum_ui_config_save(ui);
+   evisum_ui_config_save(pd->ui);
 }
 
 void
 ui_win_memory_add(Ui *ui)
 {
-   Evas_Object *win, *lb, *bx, *tbl, *rec, *pb;
+   Evas_Object *win, *lb, *bx, *tbl, *pb;
    Evas_Object *fr;
    int i;
    meminfo_t memory;
@@ -432,8 +217,6 @@ ui_win_memory_add(Ui *ui)
    if (!pd) return;
    pd->ui = ui;
 
-   eina_lock_new(&_mlock);
-
    memset(&memory, 0, sizeof(memory));
    system_memory_usage_get(&memory);
 
@@ -445,26 +228,11 @@ ui_win_memory_add(Ui *ui)
    evisum_ui_background_random_add(win,
                                    evisum_ui_backgrounds_enabled_get());
 
-   _graph_init(&graphs[GR_USED],   COLOR_USED);
-   _graph_init(&graphs[GR_CACHED], COLOR_CACHED);
-   _graph_init(&graphs[GR_BUFFER], COLOR_BUFFER);
-   _graph_init(&graphs[GR_SHARED], COLOR_SHARED);
-
    bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, EXPAND, 0);
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_show(bx);
    elm_object_content_set(win, bx);
-
-   pd->bg = rec = evas_object_rectangle_add(evas_object_evas_get(win));
-   evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(rec, FILL, FILL);
-   evas_object_color_set(rec, 32, 32, 32, 255);
-   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(200));
-   evas_object_size_hint_max_set(rec, MAX_HIST, ELM_SCALE_SIZE(480));
-   evas_object_show(rec);
-
-   elm_box_pack_end(bx, rec);
 
    fr = elm_frame_add(win);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
@@ -483,29 +251,21 @@ ui_win_memory_add(Ui *ui)
 
    lb = _label_mem(tbl, _("Used"));
    pd->used = pb = _progress_add(tbl);
-   rec = _graph_guide(tbl, COLOR_USED);
-   elm_table_pack(tbl, rec, 0, 1, 1, 1);
    elm_table_pack(tbl, lb, 1, 1, 1, 1);
    elm_table_pack(tbl, pb, 2, 1, 1, 1);
 
    lb = _label_mem(tbl, _("Cached"));
    pd->cached = pb = _progress_add(tbl);
-   rec = _graph_guide(tbl, COLOR_CACHED);
-   elm_table_pack(tbl, rec, 0, 2, 1, 1);
    elm_table_pack(tbl, lb, 1, 2, 1, 1);
    elm_table_pack(tbl, pb, 2, 2, 1, 1);
 
    lb = _label_mem(tbl, _("Buffered"));
    pd->buffered = pb = _progress_add(tbl);
-   rec = _graph_guide(tbl, COLOR_BUFFER);
-   elm_table_pack(tbl, rec, 0, 3, 1, 1);
    elm_table_pack(tbl, lb, 1, 3, 1, 1);
    elm_table_pack(tbl, pb, 2, 3, 1, 1);
 
    lb = _label_mem(tbl, _("Shared"));
    pd->shared = pb = _progress_add(tbl);
-   rec = _graph_guide(tbl, COLOR_SHARED);
-   elm_table_pack(tbl, rec, 0, 4, 1, 1);
    elm_table_pack(tbl, lb, 1, 4, 1, 1);
    elm_table_pack(tbl, pb, 2, 4, 1, 1);
 
