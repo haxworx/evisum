@@ -33,6 +33,8 @@ typedef struct
 
    Ui                    *ui;
 
+   Ecore_Timer           *resize_timer;
+
    Evas_Object           *win;
    Evas_Object           *main_menu;
    Evas_Object           *menu;
@@ -1555,6 +1557,17 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    pd->skip_wait = 1;
 }
 
+static Eina_Bool
+_resize_cb(void *data)
+{
+   Ui_Data *pd = data;
+
+   pd->skip_wait = 0;
+   pd->resize_timer = NULL;
+
+   return EINA_FALSE;
+}
+
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
@@ -1566,10 +1579,15 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    elm_genlist_realized_items_update(pd->genlist);
 
+   pd->skip_wait = 1;
+
+   if (pd->resize_timer)
+     ecore_timer_reset(pd->resize_timer);
+   else pd->resize_timer = ecore_timer_add(0.2, _resize_cb, pd);
+
    evas_object_lower(pd->entry_pop);
    if (pd->main_menu)
      _main_menu_dismissed_cb(pd, NULL, NULL);
-
 
    evas_object_geometry_get(obj, NULL, NULL,
                             &ui->proc.width, &ui->proc.height);
