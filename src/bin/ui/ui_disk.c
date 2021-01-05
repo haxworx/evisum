@@ -50,17 +50,17 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 static Evas_Object *
 _item_column_add(Evas_Object *tbl, const char *text, int col)
 {
-   Evas_Object *rect, *lb;
+   Evas_Object *rec, *lb;
 
    lb = elm_label_add(tbl);
    evas_object_data_set(tbl, text, lb);
    evas_object_show(lb);
 
-   rect = evas_object_rectangle_add(tbl);
-   evas_object_data_set(lb, "rect", rect);
+   rec = evas_object_rectangle_add(tbl);
+   evas_object_data_set(lb, "rect", rec);
 
    elm_table_pack(tbl, lb, col, 0, 1, 1);
-   elm_table_pack(tbl, rect, col, 0, 1, 1);
+   elm_table_pack(tbl, rec, col, 0, 1, 1);
 
    return lb;
 }
@@ -68,7 +68,7 @@ _item_column_add(Evas_Object *tbl, const char *text, int col)
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *tbl, *lb, *pb;
+   Evas_Object *tbl, *lb, *pb, *rec;
 
    tbl = elm_table_add(parent);
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
@@ -92,8 +92,11 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_data_set(tbl, "usage", pb);
-
    elm_table_pack(tbl, pb, 6, 0, 1, 1);
+
+   rec = evas_object_rectangle_add(tbl);
+   evas_object_data_set(pb, "rect", rec);
+   elm_table_pack(tbl, rec, 6, 0, 1, 1);
 
    return tbl;
 }
@@ -173,7 +176,10 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(lb);
 
+   evas_object_geometry_get(pd->btn_usage, NULL, NULL, &w, NULL);
    pb = evas_object_data_get(it->obj, "usage");
+   r = evas_object_data_get(pb, "rect");
+   evas_object_size_hint_min_set(r, w, 1);
    elm_progressbar_value_set(pb, (double) (inf->usage.used / (inf->usage.total / 100.0) / 100.0));
    evas_object_show(pb);
 
@@ -566,6 +572,7 @@ ui_win_disk_add(Ui *ui)
 
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    pd->ui = ui;
+   pd->skip_wait = 1;
 
    pd->panes = panes = elm_panes_add(win);
    evas_object_size_hint_weight_set(panes, EXPAND, EXPAND);
