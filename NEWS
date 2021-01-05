@@ -18,7 +18,9 @@ Evisum 0.5.9
   * Fix bug (CPU).
   * Purge an overly complicated storage API.
   * Internally things are much better. Much simpler.
-  * ...
+  * Remove lots of blocking code.
+  * Some improvement on genlist cache (WIP).
+  * Flat icon for a "flat" theme.
 
 ============
 Evisum 0.5.8

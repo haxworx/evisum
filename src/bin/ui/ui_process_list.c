@@ -28,7 +28,7 @@ typedef struct
    Ecore_Event_Handler   *handler[2];
    Eina_Bool              skip_wait;
 
-   Sorter                sorters[SORT_BY_MAX];
+   Sorter                 sorters[SORT_BY_MAX];
    Eina_Hash             *cpu_times;
 
    Ui                    *ui;
