@@ -68,7 +68,7 @@ _item_column_add(Evas_Object *tbl, const char *text, int col)
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *tbl, *lb, *pb, *rec;
+   Evas_Object *tbl, *lb, *pb;
 
    tbl = elm_table_add(parent);
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
@@ -76,7 +76,8 @@ _item_create(Evas_Object *parent)
    evas_object_show(tbl);
 
    lb = _item_column_add(tbl, "device", 0);
-   evas_object_size_hint_align_set(lb, 0.1, FILL);
+   evas_object_size_hint_weight_set(lb, EXPAND, 0);
+   evas_object_size_hint_align_set(lb, 0, FILL);
    lb = _item_column_add(tbl, "mount", 1);
    evas_object_size_hint_align_set(lb, 0, FILL);
    lb = _item_column_add(tbl, "fs", 2);
@@ -93,10 +94,6 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_data_set(tbl, "usage", pb);
    elm_table_pack(tbl, pb, 6, 0, 1, 1);
-
-   rec = evas_object_rectangle_add(tbl);
-   evas_object_data_set(pb, "rect", rec);
-   elm_table_pack(tbl, rec, 6, 0, 1, 1);
 
    return tbl;
 }
@@ -178,8 +175,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(pd->btn_usage, NULL, NULL, &w, NULL);
    pb = evas_object_data_get(it->obj, "usage");
-   r = evas_object_data_get(pb, "rect");
-   evas_object_size_hint_min_set(r, w, 1);
    elm_progressbar_value_set(pb, (double) (inf->usage.used / (inf->usage.total / 100.0) / 100.0));
    evas_object_show(pb);
 
