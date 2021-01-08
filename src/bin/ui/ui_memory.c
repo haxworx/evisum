@@ -54,7 +54,12 @@ _mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
           memory.used += memory.zfs_arc_used;
 
         ecore_thread_feedback(thread, &memory);
-        usleep(1000000);
+        for (int i = 0; i < 8; i++)
+           {
+              if (ecore_thread_check(thread))
+                break;
+              usleep(125000);
+           }
      }
 }
 
@@ -186,7 +191,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
    ecore_thread_cancel(pd->thread);
    ecore_thread_wait(pd->thread, 0.5);
 
-   evas_object_del(obj);
    ui->mem.win = NULL;
    free(pd);
 }
@@ -295,7 +299,7 @@ ui_win_memory_add(Ui *ui)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
-   evas_object_event_callback_add(tbl, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
    evas_object_show(win);
 
    pd->thread = ecore_thread_feedback_run(_mem_usage_main_cb,

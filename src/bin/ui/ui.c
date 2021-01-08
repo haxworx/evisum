@@ -296,12 +296,33 @@ _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
    ui->proc.show_user = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
 }
+typedef struct
+{
+   Ecore_Timer *timer;
+   Evas_Object *it_focus;
+} Menu_Inst;
+
+static void
+_main_menu_deleted_cb(void *data EINA_UNUSED, Evas_Object *obj, Evas *e,
+                        void *event_info EINA_UNUSED)
+{
+   Menu_Inst *inst = data;
+
+   inst->it_focus = NULL;
+   if (inst->timer)
+     ecore_timer_del(inst->timer);
+   inst->timer = NULL;
+   free(inst);
+}
 
 static Eina_Bool
-_menu_focus_cb(void *data)
+_main_menu_focus_timer_cb(void *data)
 {
-   Evas_Object *o = data;
-   elm_object_focus_set(o, 1);
+   Menu_Inst *inst = data;
+   if (inst->it_focus)
+     elm_object_focus_set(inst->it_focus, 1);
+   inst->timer = NULL;
+
    return EINA_FALSE;
 }
 
@@ -382,13 +403,20 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_box_pack_end(bx, hbox);
 
 
+   Menu_Inst *inst = calloc(1, sizeof(Menu_Inst));
+   if (!inst) return NULL;
+   inst->timer = ecore_timer_add(0.5, _main_menu_focus_timer_cb, inst);
+   inst->it_focus = it_focus;
+   evas_object_event_callback_add(o, EVAS_CALLBACK_DEL,
+                                  _main_menu_deleted_cb, inst);
+
    elm_ctxpopup_direction_priority_set(o, ELM_CTXPOPUP_DIRECTION_UP,
                                        ELM_CTXPOPUP_DIRECTION_DOWN,
                                        ELM_CTXPOPUP_DIRECTION_LEFT,
                                        ELM_CTXPOPUP_DIRECTION_RIGHT);
    evas_object_move(o, ox + (ow / 2), oy + oh);
    evas_object_show(o);
-   ecore_timer_add(0.5, _menu_focus_cb, it_focus);
+
 
    if (parent != ui->proc.win) return o;
 

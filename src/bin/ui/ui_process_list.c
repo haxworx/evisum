@@ -1550,7 +1550,10 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    elm_scroller_region_get(pd->scroller, &x, &y, &w, &h);
 
    if (!strcmp(ev->keyname, "Escape") && !pd->entry_visible)
-     evas_object_del(pd->win);
+     {
+        evas_object_del(pd->win);
+        return;
+     }
    else if (!strcmp(ev->keyname, "Prior"))
      elm_scroller_region_bring_in(pd->scroller, x, y - h, w, h);
    else if (!strcmp(ev->keyname, "Next"))
