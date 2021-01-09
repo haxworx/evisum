@@ -333,7 +333,7 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_nice", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
-   lb =_item_column_add(tbl, "proc_uid", i++);
+   lb = _item_column_add(tbl, "proc_uid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_size", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
@@ -588,17 +588,9 @@ _bring_in(void *data)
    elm_scroller_last_page_get(pd->scroller, &h_page, &v_page);
    elm_scroller_page_bring_in(pd->scroller, h_page, v_page);
 
-   ecore_timer_add(2.0, _show_items, pd);
+   ecore_timer_add(3.0, _show_items, pd);
 
    return EINA_FALSE;
-}
-
-static void
-_process_list_cancel_cb(void *data, Ecore_Thread *thread)
-{
-   Ui_Data *pd = data;
-
-   (void) pd;
 }
 
 static Eina_List *
@@ -1547,6 +1539,8 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    if (!ev || !ev->keyname)
      return;
 
+   if (!pd) return;
+
    elm_scroller_region_get(pd->scroller, &x, &y, &w, &h);
 
    if (!strcmp(ev->keyname, "Escape") && !pd->entry_visible)
@@ -1662,6 +1656,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
    eina_hash_free(pd->cpu_times);
 
    free(pd);
+   pd = NULL;
 }
 
 static void
@@ -1725,7 +1720,7 @@ ui_process_list_win_add(Ui *ui)
    elm_object_content_set(win, obj);
    _search_add(pd);
 
-   pd->cache = evisum_ui_item_cache_new(pd->genlist, _item_create, 50);
+   pd->cache = evisum_ui_item_cache_new(pd->genlist, _item_create, 40);
    pd->cpu_times = eina_hash_int64_new(_cpu_times_free_cb);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL,
@@ -1740,7 +1735,7 @@ ui_process_list_win_add(Ui *ui)
 
    pd->thread = ecore_thread_feedback_run(_process_list,
                                           _process_list_feedback_cb,
-                                          _process_list_cancel_cb,
+                                          NULL,
                                           NULL, pd, EINA_FALSE);
 }
 
