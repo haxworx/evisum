@@ -390,6 +390,25 @@ _sort_by_used(const void *p1, const void *p2)
 }
 
 static int
+_sort_by_cpu_usage(const void *p1, const void *p2)
+{
+   const File_System *fs1, *fs2;
+   int64_t used1 = 0, used2 = 0;
+
+   fs1 = p1; fs2 = p2;
+
+   if (fs1->usage.used && fs1->usage.total)
+     used1 = fs1->usage.used / (fs1->usage.total / 100);
+   if (fs2->usage.used && fs2->usage.total)
+     used2 = fs2->usage.used / (fs2->usage.total / 100);
+
+   if (used1 > used2) return 1;
+   if (used1 < used2) return -1;
+
+   return 0;
+}
+
+static int
 _sort_by_free(const void *p1, const void *p2)
 {
    const File_System *fs1, *fs2;
@@ -528,10 +547,10 @@ _btn_usage_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 {
    Ui_Data *pd = data;
 
-   if (pd->sort_cb == _sort_by_total)
+   if (pd->sort_cb == _sort_by_cpu_usage)
      pd->sort_reverse = !pd->sort_reverse;
 
-   pd->sort_cb = _sort_by_total;
+   pd->sort_cb = _sort_by_cpu_usage;
    _btn_icon_state_set(obj, pd->sort_reverse);
    _disks_poll_update(pd);
 }

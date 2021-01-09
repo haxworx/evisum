@@ -402,7 +402,6 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_box_pack_end(hbox, btn);
    elm_box_pack_end(bx, hbox);
 
-
    Menu_Inst *inst = calloc(1, sizeof(Menu_Inst));
    if (!inst) return NULL;
    inst->timer = ecore_timer_add(0.5, _main_menu_focus_timer_cb, inst);
