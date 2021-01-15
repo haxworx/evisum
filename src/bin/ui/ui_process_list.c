@@ -1052,10 +1052,7 @@ static void
 _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
-   Ui *ui;
    Ui_Data *pd = data;
-
-   ui = pd->ui;
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
@@ -1141,12 +1138,10 @@ _item_pid_secondary_clicked_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
 static void
 _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
-   Ui *ui;
    Elm_Object_Item *it;
    Proc_Info *proc;
    Ui_Data *pd = data;
 
-   ui = pd->ui;
    it = event_info;
 
    elm_genlist_item_selected_set(it, EINA_FALSE);

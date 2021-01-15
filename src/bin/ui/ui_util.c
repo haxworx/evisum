@@ -242,6 +242,8 @@ evisum_ui_textblock_font_size_set(Evas_Object *tb, int new_size)
    evas_textblock_style_set(ts,
                  eina_slstr_printf("font='monospace' DEFAULT='font_size=%d'", new_size));
    evas_object_textblock_style_user_push(tb, ts);
+
+   evas_textblock_style_free(ts);
 }
 
 int

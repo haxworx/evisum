@@ -437,11 +437,9 @@ static void
 _item_tree_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info)
 {
-   Ui_Data *pd;
    Elm_Object_Item *it;
    Proc_Info *proc;
 
-   pd = data;
    it = event_info;
 
    elm_genlist_item_selected_set(it, EINA_FALSE);
