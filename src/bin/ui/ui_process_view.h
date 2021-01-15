@@ -4,6 +4,6 @@
 #include "ui.h"
 
 void
-ui_process_win_add(Evas_Object *parent_win, int pid, const char *cmd, int poll_delay);
+ui_process_win_add(int pid);
 
 #endif

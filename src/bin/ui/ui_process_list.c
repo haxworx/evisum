@@ -1049,19 +1049,6 @@ _item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui_Data *pd)
 }
 
 static void
-_process_win_add(Evas_Object *parent, int pid, int delay)
-{
-   Proc_Info *proc;
-
-   proc = proc_info_by_pid(pid);
-   if (!proc) return;
-
-   ui_process_win_add(parent, proc->pid, proc->command, delay);
-
-   proc_info_free(proc);
-}
-
-static void
 _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
@@ -1072,7 +1059,7 @@ _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
-   _process_win_add(pd->win, pd->selected_pid, ui->proc.poll_delay);
+   ui_process_win_add(pd->selected_pid);
 }
 
 static Evas_Object *
@@ -1169,8 +1156,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    pd->selected_pid = proc->pid;
-   ui_process_win_add(pd->win, proc->pid, proc->command,
-                      ui->proc.poll_delay);
+   ui_process_win_add(proc->pid);
 }
 
 static void
