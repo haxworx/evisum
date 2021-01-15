@@ -219,6 +219,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(pd->btn_thread_id, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "tid");
    elm_object_text_set(l, eina_slstr_printf("%d", th->tid));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_thread_id, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
@@ -233,12 +235,16 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(pd->btn_thread_state, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "state");
    elm_object_text_set(l, eina_slstr_printf("%s", th->state));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_thread_state, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
    evas_object_geometry_get(pd->btn_thread_cpu_id, NULL, NULL, &w, NULL);
    l = evas_object_data_get(it->obj, "cpu_id");
    elm_object_text_set(l, eina_slstr_printf("%d", th->cpu_id));
+   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_thread_cpu_id, w, 1);
    r = evas_object_data_get(l, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
@@ -246,6 +252,8 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    pb = evas_object_data_get(it->obj, "cpu_usage");
    elm_progressbar_value_set(pb, th->cpu_usage / 100.0);
    evas_object_show(pb);
+   evas_object_geometry_get(pb, NULL, NULL, &ow, NULL);
+   if (ow > w) evas_object_size_hint_min_set(pd->btn_thread_cpu_usage, w, 1);
    r = evas_object_data_get(pb, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
@@ -609,7 +617,7 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    pd = data;
    proc = msg;
 
-   if (!proc)// || (pd->start && (proc->start != pd->start)))
+   if (!proc || (pd->start && (proc->start != pd->start)))
      {
         _proc_gone(pd);
         return;
@@ -949,10 +957,7 @@ _btn_icon_state_set(Evas_Object *btn, Eina_Bool reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
-
    elm_object_part_content_set(btn, "icon", icon);
-   evas_object_color_set(icon, 255, 255, 255, 255);
-
    evas_object_show(icon);
 }
 
