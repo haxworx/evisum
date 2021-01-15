@@ -565,7 +565,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_disk_add(Ui *ui)
+ui_disk_win_add(Ui *ui)
 {
    Evas_Object *win, *panes, *fr,  *bx, *tbl, *scr;
    Evas_Object *genlist, *btn;

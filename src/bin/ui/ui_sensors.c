@@ -260,7 +260,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_sensors_add(Ui *ui)
+ui_sensors_win_add(Ui *ui)
 {
    Evas_Object *win, *content, *tbl, *bx, *fr;
    Evas_Object *genlist, *pb;

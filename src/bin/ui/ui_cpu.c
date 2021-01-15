@@ -777,7 +777,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_cpu_add(Ui *ui)
+ui_cpu_win_add(Ui *ui)
 {
    Animate *ad;
    Evas_Object *win, *box, *scroller;

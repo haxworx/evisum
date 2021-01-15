@@ -5,6 +5,6 @@
 #include "../system/machine.h"
 
 void
-ui_win_cpu_add(Ui *ui);
+ui_cpu_win_add(Ui *ui);
 
 #endif

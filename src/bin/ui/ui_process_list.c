@@ -1056,7 +1056,7 @@ _item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
-   ui_process_win_add(pd->selected_pid);
+   ui_process_view_win_add(pd->selected_pid);
 }
 
 static Evas_Object *
@@ -1151,7 +1151,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    pd->selected_pid = proc->pid;
-   ui_process_win_add(proc->pid);
+   ui_process_view_win_add(proc->pid);
 }
 
 static void

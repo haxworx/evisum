@@ -171,7 +171,7 @@ _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_memory_add(ui);
+   ui_mem_win_add(ui);
 }
 
 static void
@@ -180,7 +180,7 @@ _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_disk_add(ui);
+   ui_disk_win_add(ui);
 }
 
 static void
@@ -189,7 +189,7 @@ _menu_sensors_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_sensors_add(ui);
+   ui_sensors_win_add(ui);
 }
 
 static void
@@ -198,7 +198,7 @@ _menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui *ui = data;
 
-   ui_win_cpu_add(ui);
+   ui_cpu_win_add(ui);
 }
 
 static void
@@ -500,25 +500,25 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
 
    if (ui->cpu.restart)
      {
-        ui_win_cpu_add(ui);
+        ui_cpu_win_add(ui);
         restart = 1;
      }
 
    if (ui->mem.restart)
      {
-        ui_win_memory_add(ui);
+        ui_mem_win_add(ui);
         restart = 1;
      }
 
    if (ui->disk.restart)
      {
-        ui_win_disk_add(ui);
+        ui_disk_win_add(ui);
         restart = 1;
      }
 
    if (ui->sensors.restart)
      {
-        ui_win_sensors_add(ui);
+        ui_sensors_win_add(ui);
         restart = 1;
      }
 
@@ -537,19 +537,19 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
          ui_process_list_win_add(ui);
          break;
        case EVISUM_ACTION_PROCESS:
-         ui_process_win_add(pid);
+         ui_process_view_win_add(pid);
          break;
        case EVISUM_ACTION_CPU:
-         ui_win_cpu_add(ui);
+         ui_cpu_win_add(ui);
          break;
        case EVISUM_ACTION_MEM:
-         ui_win_memory_add(ui);
+         ui_mem_win_add(ui);
          break;
        case EVISUM_ACTION_STORAGE:
-         ui_win_disk_add(ui);
+         ui_disk_win_add(ui);
          break;
        case EVISUM_ACTION_SENSORS:
-         ui_win_sensors_add(ui);
+         ui_sensors_win_add(ui);
          break;
      }
 }

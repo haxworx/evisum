@@ -447,7 +447,7 @@ _item_tree_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    proc = elm_object_item_data_get(it);
    if (!proc) return;
 
-   ui_process_win_add(proc->pid);
+   ui_process_view_win_add(proc->pid);
 }
 
 static char *
@@ -1408,7 +1408,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_process_win_add(int pid)
+ui_process_view_win_add(int pid)
 {
    Evas_Object *win, *ic, *bx, *tabs;
    Proc_Info *proc;

@@ -4,6 +4,6 @@
 #include "ui.h"
 
 void
-ui_win_disk_add(Ui *ui);
+ui_disk_win_add(Ui *ui);
 
 #endif

@@ -4,6 +4,6 @@
 #include "ui.h"
 
 void
-ui_process_win_add(int pid);
+ui_process_view_win_add(int pid);
 
 #endif

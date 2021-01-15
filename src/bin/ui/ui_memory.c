@@ -204,7 +204,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_win_memory_add(Ui *ui)
+ui_mem_win_add(Ui *ui)
 {
    Evas_Object *win, *lb, *bx, *tbl, *pb;
    Evas_Object *fr;
