@@ -252,8 +252,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    pb = evas_object_data_get(it->obj, "cpu_usage");
    elm_progressbar_value_set(pb, th->cpu_usage / 100.0);
    evas_object_show(pb);
-   evas_object_geometry_get(pb, NULL, NULL, &ow, NULL);
-   if (ow > w) evas_object_size_hint_min_set(pd->btn_thread_cpu_usage, w, 1);
    r = evas_object_data_get(pb, "rect");
    evas_object_size_hint_min_set(r, w, 1);
 
