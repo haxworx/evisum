@@ -9,7 +9,7 @@
 
 #define TAB_BTN_WIDTH  74
 #define TAB_BTN_HEIGHT 2
-#define BTN_WIDTH      54
+#define BTN_WIDTH      64
 #define BTN_HEIGHT     1
 
 #define UI_CHILD_WIN_WIDTH  360

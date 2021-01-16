@@ -52,8 +52,8 @@ evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
 }
 
 Evas_Object *
-evisum_ui_btn_add(Evas_Object *parent, Evas_Object **alias, const char *text,
-                  const char *icon, Evas_Smart_Cb clicked_cb, void *data)
+evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
+                     const char *icon, Evas_Smart_Cb clicked_cb, void *data)
 {
    Evas_Object *tbl, *rect, *btn, *lb, *hbx, *ic;
 
@@ -62,11 +62,8 @@ evisum_ui_btn_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    evas_object_size_hint_align_set(tbl, FILL, FILL);
 
    rect = evas_object_rectangle_add(tbl);
-   evas_object_size_hint_weight_set(rect, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(rect, FILL, FILL);
-   evas_object_size_hint_min_set(rect,
-                   BTN_WIDTH * elm_config_scale_get(),
-                   BTN_HEIGHT * elm_config_scale_get());
+   evas_object_size_hint_min_set(rect, ELM_SCALE_SIZE(BTN_WIDTH),
+                                 ELM_SCALE_SIZE(BTN_HEIGHT));
 
    btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
