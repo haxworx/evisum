@@ -537,7 +537,7 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
          ui_process_list_win_add(ui);
          break;
        case EVISUM_ACTION_PROCESS:
-         ui_process_view_win_add(pid);
+         ui_process_view_win_add(pid, PROC_VIEW_DEFAULT);
          break;
        case EVISUM_ACTION_CPU:
          ui_cpu_win_add(ui);

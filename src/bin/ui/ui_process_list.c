@@ -1049,14 +1049,60 @@ _item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui_Data *pd)
 }
 
 static void
-_item_menu_properties_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                         void *event_info EINA_UNUSED)
+_item_menu_manual_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
-   ui_process_view_win_add(pd->selected_pid);
+   ui_process_view_win_add(pd->selected_pid, PROC_VIEW_MANUAL);
+}
+
+static void
+_item_menu_threads_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+
+   _item_menu_cancel_cb(pd, NULL, NULL);
+
+   ui_process_view_win_add(pd->selected_pid, PROC_VIEW_THREADS);
+}
+
+static void
+_item_menu_children_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                       void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+
+   _item_menu_cancel_cb(pd, NULL, NULL);
+
+   ui_process_view_win_add(pd->selected_pid, PROC_VIEW_CHILDREN);
+}
+
+static void
+_item_menu_general_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                      void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+
+   _item_menu_cancel_cb(pd, NULL, NULL);
+
+   ui_process_view_win_add(pd->selected_pid, PROC_VIEW_DEFAULT);
+}
+
+static void
+_item_menu_info_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui_Data *pd)
+{
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("info"),
+                     _("General"), _item_menu_general_cb, pd);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("process"),
+                     _("Children"), _item_menu_children_cb, pd);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("process"),
+                     _("Threads"), _item_menu_threads_cb, pd);
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("manual"),
+                     _("Manual"), _item_menu_manual_cb, pd);
 }
 
 static Evas_Object *
@@ -1100,7 +1146,8 @@ _item_menu_create(Ui_Data *pd, Proc_Info *proc)
 
    elm_menu_item_separator_add(menu, menu_it);
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("info"),
-                                _("Properties"), _item_menu_properties_cb, pd);
+                                _("Info"), NULL, pd);
+   _item_menu_info_add(menu, menu_it2, pd);
 
    elm_menu_item_separator_add(menu, menu_it);
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("cancel"),
@@ -1151,7 +1198,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    pd->selected_pid = proc->pid;
-   ui_process_view_win_add(proc->pid);
+   ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
 }
 
 static void
