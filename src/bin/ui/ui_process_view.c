@@ -97,7 +97,7 @@ _exe_response(const char *command)
 {
    FILE *p;
    Eina_List *lines;
-   char buf[8192];
+   char buf[1024];
 
    p = popen(command, "r");
    if (!p)
@@ -201,7 +201,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Ui_Data *pd;
    Thread_Info *th;
-   Evas_Object *l, *r, *pb;
+   Evas_Object *lb, *rec, *pb;
    Evas_Coord w, ow;
 
    th = (void *) data;
@@ -219,43 +219,43 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      }
 
    evas_object_geometry_get(pd->tab_thread_id, NULL, NULL, &w, NULL);
-   l = evas_object_data_get(it->obj, "tid");
-   elm_object_text_set(l, eina_slstr_printf("%d", th->tid));
-   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   lb = evas_object_data_get(it->obj, "tid");
+   elm_object_text_set(lb, eina_slstr_printf("%d", th->tid));
+   evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->tab_thread_id, w, 1);
-   r = evas_object_data_get(l, "rect");
-   evas_object_size_hint_min_set(r, w, 1);
+   rec = evas_object_data_get(lb, "rect");
+   evas_object_size_hint_min_set(rec, w, 1);
 
    evas_object_geometry_get(pd->tab_thread_name, NULL, NULL, &w, NULL);
-   l = evas_object_data_get(it->obj, "name");
-   elm_object_text_set(l, eina_slstr_printf("%s", th->name));
-   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   lb = evas_object_data_get(it->obj, "name");
+   elm_object_text_set(lb, eina_slstr_printf("%s", th->name));
+   evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->tab_thread_name, w, 1);
-   r = evas_object_data_get(l, "rect");
-   evas_object_size_hint_min_set(r, w, 1);
+   rec = evas_object_data_get(lb, "rect");
+   evas_object_size_hint_min_set(rec, w, 1);
 
    evas_object_geometry_get(pd->tab_thread_state, NULL, NULL, &w, NULL);
-   l = evas_object_data_get(it->obj, "state");
-   elm_object_text_set(l, eina_slstr_printf("%s", th->state));
-   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   lb = evas_object_data_get(it->obj, "state");
+   elm_object_text_set(lb, eina_slstr_printf("%s", th->state));
+   evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->tab_thread_state, w, 1);
-   r = evas_object_data_get(l, "rect");
-   evas_object_size_hint_min_set(r, w, 1);
+   rec = evas_object_data_get(lb, "rect");
+   evas_object_size_hint_min_set(rec, w, 1);
 
    evas_object_geometry_get(pd->tab_thread_cpu_id, NULL, NULL, &w, NULL);
-   l = evas_object_data_get(it->obj, "cpu_id");
-   elm_object_text_set(l, eina_slstr_printf("%d", th->cpu_id));
-   evas_object_geometry_get(l, NULL, NULL, &ow, NULL);
+   lb = evas_object_data_get(it->obj, "cpu_id");
+   elm_object_text_set(lb, eina_slstr_printf("%d", th->cpu_id));
+   evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->tab_thread_cpu_id, w, 1);
-   r = evas_object_data_get(l, "rect");
-   evas_object_size_hint_min_set(r, w, 1);
+   rec = evas_object_data_get(lb, "rect");
+   evas_object_size_hint_min_set(rec, w, 1);
 
    evas_object_geometry_get(pd->tab_thread_cpu_usage, NULL, NULL, &w, NULL);
    pb = evas_object_data_get(it->obj, "cpu_usage");
    elm_progressbar_value_set(pb, th->cpu_usage / 100.0);
    evas_object_show(pb);
-   r = evas_object_data_get(pb, "rect");
-   evas_object_size_hint_min_set(r, w, 1);
+   rec = evas_object_data_get(pb, "rect");
+   evas_object_size_hint_min_set(rec, w, 1);
 
    return it->obj;
 }
@@ -500,7 +500,7 @@ _sort_by_age(const void *p1, const void *p2)
 
 static void
 _children_populate(Evas_Object *genlist_children, Elm_Object_Item *parent,
-               Eina_List *children)
+                   Eina_List *children)
 {
    Elm_Genlist_Item_Class *itc;
    Eina_List *l;
@@ -645,17 +645,17 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    elm_object_text_set(pd->entry_pid_pid, eina_slstr_printf("%d", proc->pid));
    elm_object_text_set(pd->entry_pid_uid, eina_slstr_printf("%d", proc->uid));
    elm_object_text_set(pd->entry_pid_cpu,
-                   eina_slstr_printf("%d", proc->cpu_id));
+                       eina_slstr_printf("%d", proc->cpu_id));
    elm_object_text_set(pd->entry_pid_ppid, eina_slstr_printf("%d", proc->ppid));
    elm_object_text_set(pd->entry_pid_threads,
-                   eina_slstr_printf("%d", proc->numthreads));
+                       eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(pd->entry_pid_virt, evisum_size_format(proc->mem_virt));
    elm_object_text_set(pd->entry_pid_rss, evisum_size_format(proc->mem_rss));
 #if !defined(__linux__)
    elm_object_text_set(pd->entry_pid_shared, "N/A");
 #else
    elm_object_text_set(pd->entry_pid_shared,
-                   evisum_size_format(proc->mem_shared));
+                       evisum_size_format(proc->mem_shared));
 #endif
    elm_object_text_set(pd->entry_pid_size, evisum_size_format(proc->mem_size));
 
@@ -667,14 +667,14 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
      }
    elm_object_text_set(pd->entry_pid_nice, eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(pd->entry_pid_pri,
-                   eina_slstr_printf("%d", proc->priority));
+                       eina_slstr_printf("%d", proc->priority));
    elm_object_text_set(pd->entry_pid_state, proc->state);
 
    if (pd->pid_cpu_time && proc->cpu_time >= pd->pid_cpu_time)
      cpu_usage = (double)(proc->cpu_time - pd->pid_cpu_time) / pd->poll_delay;
 
    elm_object_text_set(pd->entry_pid_cpu_usage,
-                   eina_slstr_printf("%.1f%%", cpu_usage));
+                       eina_slstr_printf("%.1f%%", cpu_usage));
 
    pd->pid_cpu_time = proc->cpu_time;
 
@@ -1155,7 +1155,7 @@ _tab_change(Ui_Data *pd, Evas_Object *view)
    trans = elm_transit_add();
    elm_transit_object_add(trans, pd->current_view);
    elm_transit_object_add(trans, view);
-   elm_transit_duration_set(trans, 0.25);
+   elm_transit_duration_set(trans, 0.15);
    elm_transit_effect_blend_add(trans);
 
    elm_object_disabled_set(pd->tab_main, EINA_FALSE);
