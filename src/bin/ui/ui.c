@@ -376,7 +376,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
                      _menu_disk_activity_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 
-   btn = _btn_create(hbox, "misc", _("Sensors"),
+   btn = _btn_create(hbox, "sensor", _("Sensors"),
                      _menu_sensors_activity_clicked_cb, ui);
    elm_box_pack_end(hbox, btn);
 

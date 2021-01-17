@@ -1097,9 +1097,9 @@ _item_menu_info_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui_Data *pd)
 {
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("info"),
                      _("General"), _item_menu_general_cb, pd);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("process"),
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("proc"),
                      _("Children"), _item_menu_children_cb, pd);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("process"),
+   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("threads"),
                      _("Threads"), _item_menu_threads_cb, pd);
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("manual"),
                      _("Manual"), _item_menu_manual_cb, pd);
@@ -1128,7 +1128,7 @@ _item_menu_create(Ui_Data *pd, Proc_Info *proc)
                                evisum_icon_path_get(evisum_icon_cache_find(proc)),
                                proc->command, NULL, NULL);
 
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("window"),
+   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("actions"),
                                 _("Actions"), NULL, NULL);
    _item_menu_actions_add(menu, menu_it2, pd);
    elm_menu_item_separator_add(menu, menu_it);
