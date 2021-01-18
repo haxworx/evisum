@@ -31,6 +31,8 @@ typedef struct
    Sorter                 sorters[SORT_BY_MAX];
    Eina_Hash             *cpu_times;
 
+   int                   poll_count;
+
    Ui                    *ui;
 
    Ecore_Timer           *resize_timer;
@@ -430,6 +432,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         if (ow > w)
           {
              evas_object_size_hint_min_set(pd->btn_uid, w, 1);
+             pd->skip_wait = 1;
           }
      }
    rec = evas_object_data_get(lb, "rec");
@@ -482,6 +485,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w)
      {
         evas_object_size_hint_min_set(pd->btn_cmd, w, 1);
+        pd->skip_wait = 1;
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -567,17 +571,6 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items,
 }
 
 static Eina_Bool
-_show_items(void *data)
-{
-   Ui_Data *pd = data;
-
-   evas_object_show(pd->genlist);
-   elm_genlist_realized_items_update(pd->genlist);
-
-   return EINA_FALSE;
-}
-
-static Eina_Bool
 _bring_in(void *data)
 {
    Ui_Data *pd;
@@ -587,8 +580,8 @@ _bring_in(void *data)
    elm_scroller_gravity_set(pd->scroller, 0.0, 0.0);
    elm_scroller_last_page_get(pd->scroller, &h_page, &v_page);
    elm_scroller_page_bring_in(pd->scroller, h_page, v_page);
-
-   ecore_timer_add(3.0, _show_items, pd);
+   elm_genlist_realized_items_update(pd->genlist);
+   evas_object_show(pd->genlist);
 
    return EINA_FALSE;
 }
@@ -783,6 +776,9 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
            eina_list_count(pd->cache->active),
            eina_list_count(pd->cache->inactive));
 #endif
+   if (!pd->poll_count)
+     ecore_timer_add(1.0, _bring_in, pd);
+   pd->poll_count++;
 }
 
 static void
@@ -1426,7 +1422,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_genlist_multi_select_set(glist, EINA_FALSE);
    evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(glist, FILL, FILL);
-   evas_object_show(glist);
    elm_table_pack(tbl, glist, 0, 2, i, 1);
 
    pd->itc.item_style = "full";
@@ -1449,8 +1444,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_object_style_set(fr, "pad_small");
    evas_object_show(fr);
    elm_object_content_set(fr, bx);
-
-   ecore_timer_add(2.0, _bring_in, pd);
 
    return fr;
 }
