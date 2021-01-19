@@ -192,7 +192,7 @@ _mem_size(Proc_Info *proc)
 static void
 _cmd_args(Proc_Info *p, char *name, size_t len)
 {
-   char buf[4096];
+   char buf[8192];
    int pid = p->pid;
 
    snprintf(buf, sizeof(buf), "/proc/%d/exe", pid);
@@ -216,11 +216,11 @@ _cmd_args(Proc_Info *p, char *name, size_t len)
                snprintf(name, len, "%s", ecore_file_file_get(buf));
 
              n = buf;
-             while (*n && (*n + 1))
+             while (n && *n && (*n + 1))
                {
                   eina_strbuf_append(b, n);
                   n = strchr(n, '\0') + 1;
-                  if (*n && (*n + 1)) eina_strbuf_append(b, " ");
+                  if (n && *n && (*n + 1)) eina_strbuf_append(b, " ");
                }
              p->arguments = eina_strbuf_release(b);
           }
