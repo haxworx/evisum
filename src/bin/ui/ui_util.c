@@ -280,8 +280,8 @@ typedef struct {
    Evas_Object    *bg;
    Evas_Object    *im;
    Ecore_Animator *animator;
-   int             pos;
-   int             pos2;
+   double          pos;
+   double          pos2;
 } Animate_Data;
 
 static void
@@ -341,7 +341,7 @@ about_anim(void *data)
    evas_object_move(ad->lb, 0, ad->pos);
    evas_object_show(ad->lb);
 
-   ad->pos--;
+   ad->pos -= 0.5;
 
    if (ad->pos <= -oh)
      {
