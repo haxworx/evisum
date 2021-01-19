@@ -1152,12 +1152,6 @@ _tab_change(Ui_Data *pd, Evas_Object *view)
 {
    Elm_Transit *trans;
 
-   trans = elm_transit_add();
-   elm_transit_object_add(trans, pd->current_view);
-   elm_transit_object_add(trans, view);
-   elm_transit_duration_set(trans, 0.15);
-   elm_transit_effect_blend_add(trans);
-
    elm_object_disabled_set(pd->tab_main, EINA_FALSE);
    elm_object_disabled_set(pd->tab_manual, EINA_FALSE);
    elm_object_disabled_set(pd->tab_thread, EINA_FALSE);
@@ -1166,6 +1160,13 @@ _tab_change(Ui_Data *pd, Evas_Object *view)
    evas_object_hide(pd->children_view);
    evas_object_hide(pd->manual_view);
    evas_object_hide(pd->thread_view);
+
+   trans = elm_transit_add();
+   elm_transit_object_add(trans, pd->current_view);
+   elm_transit_object_add(trans, view);
+   elm_transit_duration_set(trans, 0.15);
+   elm_transit_effect_blend_add(trans);
+
    pd->current_view = view;
    evas_object_show(view);
    elm_transit_go(trans);
@@ -1454,10 +1455,10 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    evas_object_size_hint_align_set(pd->content, FILL, 0.0);
    evas_object_show(pd->content);
 
-   pd->main_view = _process_tab_add(win, pd);
-   pd->children_view = _children_tab_add(win, pd);
-   pd->thread_view = _threads_tab_add(win, pd);
-   pd->manual_view = _manual_tab_add(win, pd);
+   pd->main_view = _process_tab_add(tabs, pd);
+   pd->children_view = _children_tab_add(tabs, pd);
+   pd->thread_view = _threads_tab_add(tabs, pd);
+   pd->manual_view = _manual_tab_add(tabs, pd);
 
    elm_table_pack(pd->content, pd->manual_view, 0, 0, 1, 1);
    elm_table_pack(pd->content, pd->children_view, 0, 0, 1, 1);
