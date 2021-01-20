@@ -1418,7 +1418,9 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_scroller_gravity_set(pd->scroller, 0.0, 1.0);
    elm_object_focus_allow_set(glist, 1);
    elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
-                           ELM_SCROLLER_POLICY_OFF);
+                           (ui->proc.show_scroller ?
+                            ELM_SCROLLER_POLICY_ON :
+                            ELM_SCROLLER_POLICY_OFF));
    elm_genlist_multi_select_set(glist, EINA_FALSE);
    evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(glist, FILL, FILL);
@@ -1619,8 +1621,11 @@ static Eina_Bool
 _evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
 {
    Eina_Iterator *it;
+   Ui *ui;
    Ui_Data *pd = data;
    void *d = NULL;
+
+   ui = pd->ui;
 
    it = eina_hash_iterator_data_new(pd->cpu_times);
    while (eina_iterator_next(it, &d))
@@ -1630,6 +1635,11 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNU
      }
 
    eina_iterator_free(it);
+
+   elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
+                           (ui->proc.show_scroller ?
+                            ELM_SCROLLER_POLICY_ON :
+                            ELM_SCROLLER_POLICY_OFF));
 
    return EINA_TRUE;
 }

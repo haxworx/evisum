@@ -29,8 +29,10 @@ evisum_ui_config_save(Ui *ui)
 
    if (ui->proc.win)
      {
-        if (_evisum_config->proc.poll_delay != ui->proc.poll_delay ||
-            _evisum_config->proc.show_kthreads != ui->proc.show_kthreads)
+        if ((_evisum_config->proc.poll_delay != ui->proc.poll_delay) ||
+            (_evisum_config->proc.show_kthreads != ui->proc.show_kthreads) ||
+            (_evisum_config->proc.show_scroller != ui->proc.show_scroller)
+	   )
           {
              notify = EINA_TRUE;
           }
@@ -45,6 +47,7 @@ evisum_ui_config_save(Ui *ui)
         _evisum_config->proc.poll_delay = ui->proc.poll_delay;
         _evisum_config->proc.show_kthreads = ui->proc.show_kthreads;
         _evisum_config->proc.show_user = ui->proc.show_user;
+        _evisum_config->proc.show_scroller = ui->proc.show_scroller;
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
      }
 
@@ -109,6 +112,7 @@ evisum_ui_config_load(Ui *ui)
    ui->proc.show_kthreads = _evisum_config->proc.show_kthreads;
    proc_info_kthreads_show_set(ui->proc.show_kthreads);
    ui->proc.show_user = _evisum_config->proc.show_user;
+   ui->proc.show_scroller = _evisum_config->proc.show_scroller;
 
    ui->proc.width = _evisum_config->proc.width;
    ui->proc.height = _evisum_config->proc.height;
@@ -288,6 +292,16 @@ _main_menu_show_threads_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
 }
 
 static void
+_main_menu_show_scroller_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
+                                    void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui->proc.show_scroller = elm_check_state_get(obj);
+   evisum_ui_config_save(ui);
+}
+
+static void
 _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                                 void *event_info EINA_UNUSED)
 {
@@ -296,6 +310,7 @@ _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
    ui->proc.show_user = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
 }
+
 typedef struct
 {
    Ecore_Timer *timer;
@@ -304,7 +319,7 @@ typedef struct
 
 static void
 _main_menu_deleted_cb(void *data EINA_UNUSED, Evas_Object *obj, Evas *e,
-                        void *event_info EINA_UNUSED)
+                      void *event_info EINA_UNUSED)
 {
    Menu_Inst *inst = data;
 
@@ -474,6 +489,24 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_smart_callback_add(chk, "changed",
                                   _main_menu_show_user_changed_cb, ui);
    elm_box_pack_end(bx2, chk);
+
+   sep = elm_separator_add(bx2);
+   evas_object_size_hint_align_set(sep, FILL, FILL);
+   evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
+   elm_separator_horizontal_set(sep, 1);
+   evas_object_show(sep);
+   elm_box_pack_end(bx2, sep);
+
+   chk = elm_check_add(bx2);
+   evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(chk, FILL, FILL);
+   elm_object_text_set(chk, _("Display scroll bar?"));
+   elm_check_state_set(chk, ui->proc.show_scroller);
+   evas_object_show(chk);
+   evas_object_smart_callback_add(chk, "changed",
+                                  _main_menu_show_scroller_changed_cb, ui);
+   elm_box_pack_end(bx2, chk);
+
 
    elm_object_content_set(fr, bx2);
    elm_box_pack_end(bx, fr);

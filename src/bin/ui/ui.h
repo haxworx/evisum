@@ -35,6 +35,8 @@ typedef struct Ui
       Eina_Bool     show_self;
       Eina_Bool     show_kthreads;
       Eina_Bool     show_user;
+
+      Eina_Bool     show_scroller;
    } proc;
 
    Evas_Object     *win_about;
