@@ -275,7 +275,7 @@ evisum_ui_textblock_font_size_get(Evas_Object *tb)
 
 typedef struct {
    Ui             *ui;
-   Evas_Object    *lb;
+   Evas_Object    *obj;
    Evas_Object    *win;
    Evas_Object    *bg;
    Evas_Object    *im;
@@ -322,7 +322,7 @@ _about_resize_cb(void *data, Evas *e, Evas_Object *obj EINA_UNUSED,
 {
    Animate_Data *ad = data;
 
-   evas_object_hide(ad->lb);
+   evas_object_hide(ad->obj);
 }
 
 static Eina_Bool
@@ -337,9 +337,9 @@ about_anim(void *data)
    evas_object_geometry_get(ad->bg, NULL, NULL,  &w, &h);
    if (!ix) ix = w / 3;
    if (w <= 0 || h <= 0) return EINA_TRUE;
-   evas_object_geometry_get(ad->lb, NULL, NULL, NULL, &oh);
-   evas_object_move(ad->lb, 0, ad->pos);
-   evas_object_show(ad->lb);
+   evas_object_geometry_get(ad->obj, NULL, NULL, NULL, &oh);
+   evas_object_move(ad->obj, 0, ad->pos);
+   evas_object_show(ad->obj);
 
    ad->pos -= 0.5;
 
@@ -376,7 +376,7 @@ evisum_about_window_show(void *data)
    Ui *ui;
    Animate_Data *about;
    Evas_Object *win, *bg, *tbl, *version, *lb, *btn, *im;
-   Evas_Object *hbx, *rec, *br;
+   Evas_Object *hbx, *rec, *pad, *br;
    Evas_Coord x, y, w, h;
    Evas_Coord iw, ih;
    const char *msg[] = {
@@ -441,6 +441,11 @@ evisum_about_window_show(void *data)
    elm_win_resize_object_add(win, tbl);
    elm_table_align_set(tbl, 0, 0);
 
+   pad = elm_frame_add(win);
+   evas_object_size_hint_weight_set(pad, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(pad, FILL, FILL);
+   elm_object_style_set(pad, "pad_medium");
+
    lb = elm_entry_add(win);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(lb, FILL, FILL);
@@ -452,6 +457,9 @@ evisum_about_window_show(void *data)
    srand(time(NULL));
    elm_object_text_set(lb, eina_slstr_printf(copyright,
                                              msg[rand() % ARRAY_SIZE(msg)]));
+   evas_object_show(lb);
+   elm_object_content_set(pad, lb);
+
    evas_object_geometry_get(win, &x, &y, &w, &h);
 
    im = evas_object_image_filled_add(evas_object_evas_get(bg));
@@ -465,7 +473,7 @@ evisum_about_window_show(void *data)
    about = malloc(sizeof(Animate_Data));
    about->win = win;
    about->bg = bg;
-   about->lb = lb;
+   about->obj = pad;
    about->pos = ELM_SCALE_SIZE(400);
    about->ui = ui;
    about->im = im;
@@ -524,7 +532,7 @@ evisum_about_window_show(void *data)
 
    evas_object_smart_callback_add(btn, "clicked", _btn_close_cb, about);
 
-   elm_object_part_content_set(bg, "elm.swallow.content", lb);
+   elm_object_part_content_set(bg, "elm.swallow.content", pad);
    elm_table_pack(tbl, im, 0, 1, 1, 1);
    elm_table_pack(tbl, rec, 0, 0, 1, 1);
    elm_table_pack(tbl, hbx, 0, 0, 1, 1);
