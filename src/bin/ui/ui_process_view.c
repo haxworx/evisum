@@ -46,6 +46,13 @@ typedef struct
    Evas_Object     *genlist_threads;
    Eina_Hash       *hash_cpu_times;
    Evisum_Ui_Cache *cache;
+   struct
+   {
+      int           cpu_count;
+      unsigned int  cpu_colormap[256];
+      unsigned int  cores[256];
+      Evas_Object   *obj;
+   } graph;
 
    Evas_Object     *tab_thread_id;
    Evas_Object     *tab_thread_name;
@@ -61,12 +68,77 @@ typedef struct
    int64_t          start;
    char            *selected_cmd;
    int              selected_pid;
+   uint32_t         poll_count;
 
    int              (*sort_cb)(const void *p1, const void *p2);
 
    Ecore_Thread     *thread;
 
 } Ui_Data;
+
+typedef struct _Color_Point {
+   unsigned int val;
+   unsigned int color;
+} Color_Point;
+
+#define COLOR_CPU_NUM 5
+static const Color_Point cpu_colormap_in[] = {
+   {   0, 0xff202020 },
+   {  25, 0xff2030a0 },
+   {  50, 0xffa040a0 },
+   {  75, 0xffff9040 },
+   { 100, 0xffffffff },
+   { 256, 0xffffffff }
+};
+
+#define AVAL(x) (((x) >> 24) & 0xff)
+#define RVAL(x) (((x) >> 16) & 0xff)
+#define GVAL(x) (((x) >>  8) & 0xff)
+#define BVAL(x) (((x)      ) & 0xff)
+#define ARGB(a, r, g, b) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
+
+#define BAR_HEIGHT 16
+static void
+_color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
+{
+   unsigned int pos, interp, val, dist, d;
+   unsigned int a, r, g, b;
+   unsigned int a1, r1, g1, b1, v1;
+   unsigned int a2, r2, g2, b2, v2;
+
+   // wal colormap_in until colormap table is full
+   for (pos = 0, val = 0; pos < n; pos++)
+     {
+        // get first color and value position
+        v1 = col_in[pos].val;
+        a1 = AVAL(col_in[pos].color);
+        r1 = RVAL(col_in[pos].color);
+        g1 = GVAL(col_in[pos].color);
+        b1 = BVAL(col_in[pos].color);
+        // get second color and valuje position
+        v2 = col_in[pos + 1].val;
+        a2 = AVAL(col_in[pos + 1].color);
+        r2 = RVAL(col_in[pos + 1].color);
+        g2 = GVAL(col_in[pos + 1].color);
+        b2 = BVAL(col_in[pos + 1].color);
+        // get distance between values (how many entires to fill)
+        dist = v2 - v1;
+        // walk over the span of colors from point a to point b
+        for (interp = v1; interp < v2; interp++)
+          {
+             // distance from starting point
+             d = interp - v1;
+             // calculate linear interpolation between start and given d
+             a = ((d * a2) + ((dist - d) * a1)) / dist;
+             r = ((d * r2) + ((dist - d) * r1)) / dist;
+             g = ((d * g2) + ((dist - d) * g1)) / dist;
+             b = ((d * b2) + ((dist - d) * b1)) / dist;
+             // write out resulting color value
+             col[val] = ARGB(a, r, g, b);
+             val++;
+          }
+     }
+}
 
 typedef struct
 {
@@ -374,24 +446,7 @@ _thread_info_set(Ui_Data *pd, Proc_Info *proc)
 
    EINA_LIST_FOREACH(proc->threads, l, p)
      {
-        long *cpu_time, *cpu_time_prev;
-        double cpu_usage = 0.0;
-        const char *key = eina_slstr_printf("%s:%d", p->thread_name, p->tid);
-
-        if ((cpu_time_prev = eina_hash_find(pd->hash_cpu_times, key)) == NULL)
-          {
-             cpu_time = malloc(sizeof(long));
-             *cpu_time = p->cpu_time;
-             eina_hash_add(pd->hash_cpu_times, key, cpu_time);
-          }
-        else
-          {
-             cpu_usage = (double) (p->cpu_time - *cpu_time_prev)
-                       / pd->poll_delay;
-             *cpu_time_prev = p->cpu_time;
-          }
-
-        t = _thread_info_new(p, cpu_usage);
+        t = _thread_info_new(p, p->cpu_usage);
         if (t)
           threads = eina_list_append(threads, t);
      }
@@ -573,14 +628,99 @@ _proc_info_main(void *data, Ecore_Thread *thread)
      {
         Proc_Info *proc = proc_info_by_pid(pd->selected_pid);
         ecore_thread_feedback(thread, proc);
-        for (int i = 0; i < (8 * pd->poll_delay); i++)
-          {
-             if (ecore_thread_check(thread))
-               return;
 
-             usleep(125000);
-          }
+        if (ecore_thread_check(thread))
+          return;
+
+        usleep(100000);
      }
+}
+
+static void
+_graph_update(Ui_Data *pd, Proc_Info *proc)
+{
+   Evas_Object *obj = pd->graph.obj;
+   unsigned int *pixels, *pix;
+   Evas_Coord x, y, w, h;
+   int iw, stride;
+   Eina_Bool clear = EINA_FALSE;
+
+   evas_object_geometry_get(obj, &x, &y, &w, &h);
+   evas_object_image_size_get(obj, &iw, NULL);
+
+   if (iw != w)
+     {
+        evas_object_image_size_set(obj, w, pd->graph.cpu_count);
+        clear = EINA_TRUE;
+     }
+
+   pixels = evas_object_image_data_get(obj, EINA_TRUE);
+   if (!pixels) return;
+
+   stride = evas_object_image_stride_get(obj);
+
+   for (y = 0; y < pd->graph.cpu_count; y++)
+     {
+        if (clear)
+          {
+             pix = &(pixels[y * (stride / 4)]);
+             for (x = 0; x < (w - 1); x++)
+               pix[x] = pd->graph.cpu_colormap[0];
+          }
+	else
+          {
+             pix = &(pixels[y * (stride / 4)]);
+	     for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
+          }
+	unsigned int c1;
+	c1 = pd->graph.cpu_colormap[pd->graph.cores[y] & 0xff];
+	pix = &(pixels[y * (stride / 4)]);
+	pix[x] = c1;
+
+     }
+
+   evas_object_image_data_set(obj, pixels);
+   evas_object_image_data_update_add(obj, 0, 0, w, pd->graph.cpu_count);
+   memset(pd->graph.cores, 0, 255 * sizeof(unsigned int));
+}
+
+static Evas_Object *
+_graph(Evas_Object *parent, Ui_Data *pd)
+{
+   Evas_Object *tbl, *obj;
+   Evas_Object *scr;
+
+   pd->graph.cpu_count = system_cpu_count_get();
+
+   tbl = elm_table_add(parent);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
+   evas_object_show(tbl);
+
+   scr = elm_scroller_add(parent);
+   evas_object_size_hint_align_set(scr, FILL, FILL);
+   evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
+   evas_object_show(scr);
+
+   pd->graph.obj = obj = evas_object_image_add(evas_object_evas_get(parent));
+   evas_object_size_hint_align_set(obj, FILL, FILL);
+   evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
+   evas_object_image_smooth_scale_set(obj, EINA_FALSE);
+   evas_object_image_filled_set(obj, EINA_TRUE);
+   evas_object_image_alpha_set(obj, EINA_FALSE);
+   evas_object_show(obj);
+
+   evas_object_size_hint_min_set(obj, 100,
+                                 (BAR_HEIGHT * pd->graph.cpu_count)
+                                  * elm_config_scale_get());
+
+   elm_object_content_set(scr, obj);
+
+   _color_init(cpu_colormap_in, COLOR_CPU_NUM, pd->graph.cpu_colormap);
+
+   elm_table_pack(tbl, scr, 0, 0, 1, 1);
+
+   return tbl;
 }
 
 static void
@@ -603,6 +743,34 @@ _proc_gone(Ui_Data *pd)
 }
 
 static void
+_threads_cpu_usage(Ui_Data *pd, Proc_Info *proc)
+{
+   Eina_List *l;
+   Proc_Info *p;
+
+   EINA_LIST_FOREACH(proc->threads, l, p)
+     {
+        long *cpu_time, *cpu_time_prev;
+        double cpu_usage = 0.0;
+        const char *key = eina_slstr_printf("%s:%d", p->thread_name, p->tid);
+
+        if ((cpu_time_prev = eina_hash_find(pd->hash_cpu_times, key)) == NULL)
+          {
+             cpu_time = malloc(sizeof(long));
+             *cpu_time = p->cpu_time;
+             eina_hash_add(pd->hash_cpu_times, key, cpu_time);
+          }
+        else
+          {
+             cpu_usage = (double) (p->cpu_time - *cpu_time_prev) * 10;
+             *cpu_time_prev = p->cpu_time;
+          }
+	p->cpu_usage = cpu_usage;
+	pd->graph.cores[p->cpu_id] += cpu_usage;
+     }
+}
+
+static void
 _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
    Ui_Data *pd;
@@ -619,6 +787,19 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
         return;
      }
 
+   _threads_cpu_usage(pd, proc);
+
+   if (pd->poll_count != 0 && (pd->poll_count % 10))
+     {
+	_graph_update(pd, proc);
+        proc_info_free(proc);
+	pd->poll_count++;
+        return;
+     }
+
+   _graph_update(pd, proc);
+
+   pd->poll_count++;
    if (!strcmp(proc->state, "stop"))
      {
         elm_object_disabled_set(pd->btn_stop, EINA_TRUE);
@@ -1000,6 +1181,7 @@ static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
    Evas_Object *fr, *bx, *hbx, *btn, *genlist;
+   Evas_Object *graph;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
@@ -1011,6 +1193,9 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_show(bx);
    elm_object_content_set(fr, bx);
+
+   graph = _graph(parent, pd);
+   elm_box_pack_end(bx, graph);
 
    hbx = elm_box_add(bx);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
@@ -1074,7 +1259,6 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    evas_object_smart_callback_add(pd->genlist_threads, "unrealized",
                                   _item_unrealized_cb, pd);
-
    elm_box_pack_end(bx, hbx);
    elm_box_pack_end(bx, genlist);
 
