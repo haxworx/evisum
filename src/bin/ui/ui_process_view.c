@@ -1365,7 +1365,7 @@ _tab_change(Ui_Data *pd, Evas_Object *view)
 
 static void
 _tab_main_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                        void *event_info EINA_UNUSED)
+                     void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
 
@@ -1375,7 +1375,7 @@ _tab_main_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _tab_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                     void *event_info EINA_UNUSED)
+                         void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
 
@@ -1641,7 +1641,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    elm_box_pack_end(bx, tabs);
 
    pd->content = elm_table_add(bx);
-   evas_object_size_hint_weight_set(pd->content, 0.5, EXPAND);
+   evas_object_size_hint_weight_set(pd->content, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pd->content, FILL, 0.0);
    evas_object_show(pd->content);
 
