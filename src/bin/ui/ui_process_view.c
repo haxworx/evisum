@@ -439,9 +439,6 @@ _thread_info_set(Ui_Data *pd, Proc_Info *proc)
    Elm_Object_Item *it;
    Eina_List *l, *threads = NULL;
 
-   if (!pd->hash_cpu_times)
-     pd->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
-
    _genlist_ensure_n_items(pd->genlist_threads, eina_list_count(proc->threads));
 
    EINA_LIST_FOREACH(proc->threads, l, p)
@@ -748,6 +745,9 @@ _threads_cpu_usage(Ui_Data *pd, Proc_Info *proc)
    Eina_List *l;
    Proc_Info *p;
 
+   if (!pd->hash_cpu_times)
+     pd->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
+
    EINA_LIST_FOREACH(proc->threads, l, p)
      {
         long *cpu_time, *cpu_time_prev;
@@ -786,6 +786,8 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
         _proc_gone(pd);
         return;
      }
+
+   if (ecore_thread_check(thread)) return;
 
    _threads_cpu_usage(pd, proc);
 
@@ -1526,15 +1528,14 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    pd  = data;
    win = obj;
 
-   if (pd->hash_cpu_times)
-     eina_hash_free(pd->hash_cpu_times);
-
    if (pd->thread)
      {
         ecore_thread_cancel(pd->thread);
         ecore_thread_wait(pd->thread, 0.5);
      }
 
+   if (pd->hash_cpu_times)
+     eina_hash_free(pd->hash_cpu_times);
    if (pd->selected_cmd)
      free(pd->selected_cmd);
    if (pd->cache)
