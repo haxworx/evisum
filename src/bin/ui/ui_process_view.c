@@ -1125,10 +1125,11 @@ _btn_name_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _btn_icon_state_set(obj, pd->sort_reverse);
    pd->sort_cb = _sort_by_name;
+   pd->poll_count = 0;
 }
 
 static void
-_tab_thread_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_btn_thread_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                        void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
@@ -1138,6 +1139,7 @@ _tab_thread_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _btn_icon_state_set(obj, pd->sort_reverse);
    pd->sort_cb = _sort_by_tid;
+   pd->poll_count = 0;
 }
 
 static void
@@ -1151,6 +1153,7 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _btn_icon_state_set(obj, pd->sort_reverse);
    pd->sort_cb = _sort_by_state;
+   pd->poll_count = 0;
 }
 
 static void
@@ -1164,6 +1167,7 @@ _btn_cpu_id_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd->sort_cb = _sort_by_cpu_id;
    _btn_icon_state_set(obj, pd->sort_reverse);
+   pd->poll_count = 0;
 }
 
 static void
@@ -1177,6 +1181,7 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd->sort_cb = _sort_by_cpu_usage;
    _btn_icon_state_set(obj, pd->sort_reverse);
+   pd->poll_count = 0;
 }
 
 static Evas_Object *
@@ -1211,7 +1216,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    elm_object_text_set(btn, _("id"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
-   evas_object_smart_callback_add(btn, "clicked", _tab_thread_clicked_cb, pd);
+   evas_object_smart_callback_add(btn, "clicked", _btn_thread_clicked_cb, pd);
    elm_box_pack_end(hbx, btn);
 
    pd->tab_thread_name = btn = elm_button_add(hbx);
@@ -1645,10 +1650,10 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    pd->thread_view = _threads_tab_add(tabs, pd);
    pd->manual_view = _manual_tab_add(tabs, pd);
 
-   elm_table_pack(pd->content, pd->manual_view, 0, 0, 1, 1);
-   elm_table_pack(pd->content, pd->children_view, 0, 0, 1, 1);
    elm_table_pack(pd->content, pd->main_view, 0, 0, 1, 1);
+   elm_table_pack(pd->content, pd->children_view, 0, 0, 1, 1);
    elm_table_pack(pd->content, pd->thread_view, 0, 0, 1, 1);
+   elm_table_pack(pd->content, pd->manual_view, 0, 0, 1, 1);
 
    elm_box_pack_end(bx, pd->content);
    elm_object_content_set(win, bx);
