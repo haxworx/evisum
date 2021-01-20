@@ -388,25 +388,27 @@ evisum_about_window_show(void *data)
    };
    const char *copyright =
       "<font color=#ffffff>"
+      "<align=center>"
       "<b>"
       "Copyright &copy; 2019-2020 Alastair Poole &lt;netstar@gmail.com&gt;<br>"
       "<br>"
       "</b>"
-      "Permission to use, copy, modify, and distribute this software <br>"
-      "for any purpose with or without fee is hereby granted, provided <br>"
-      "that the above copyright notice and this permission notice appear <br>"
-      "in all copies. <br>"
+      "</>"
+      "Permission to use, copy, modify, and distribute this software "
+      "for any purpose with or without fee is hereby granted, provided "
+      "that the above copyright notice and this permission notice appear "
+      "in all copies.<br>"
       "<br>"
-      "THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL <br>"
-      "WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED <br>"
-      "WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL <br>"
-      "THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR <br>"
-      "CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING <br>"
-      "FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF <br>"
-      "CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT <br>"
-      "OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS <br>"
+      "THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL "
+      "WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED "
+      "WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL "
+      "THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR "
+      "CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING "
+      "FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF "
+      "CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT "
+      "OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS "
       "SOFTWARE.<br><br><br><br><br><br><br><br><br><br><br>"
-      "%s</></i>";
+      "<align=center>%s</></></>";
 
    ui = data;
 
@@ -436,16 +438,20 @@ evisum_about_window_show(void *data)
 
    tbl = elm_table_add(win);
    evas_object_show(tbl);
-   elm_win_resize_object_add(tbl, win);
+   elm_win_resize_object_add(win, tbl);
    elm_table_align_set(tbl, 0, 0);
 
-   lb = elm_label_add(win);
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, 0);
+   lb = elm_entry_add(win);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(lb, FILL, FILL);
+   elm_entry_single_line_set(lb, 0);
+   elm_entry_scrollable_set(lb, 0);
+   elm_entry_editable_set(lb, 0);
+   elm_entry_select_allow_set(lb, 0);
+   evas_object_size_hint_weight_set(lb, 0, 0);
    srand(time(NULL));
    elm_object_text_set(lb, eina_slstr_printf(copyright,
                                              msg[rand() % ARRAY_SIZE(msg)]));
-
    evas_object_geometry_get(win, &x, &y, &w, &h);
 
    im = evas_object_image_filled_add(evas_object_evas_get(bg));
@@ -518,7 +524,7 @@ evisum_about_window_show(void *data)
 
    evas_object_smart_callback_add(btn, "clicked", _btn_close_cb, about);
 
-   elm_table_pack(tbl, lb, 0, 1, 1, 1);
+   elm_object_part_content_set(bg, "elm.swallow.content", lb);
    elm_table_pack(tbl, im, 0, 1, 1, 1);
    elm_table_pack(tbl, rec, 0, 0, 1, 1);
    elm_table_pack(tbl, hbx, 0, 0, 1, 1);
