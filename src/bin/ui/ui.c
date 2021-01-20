@@ -31,6 +31,7 @@ evisum_ui_config_save(Ui *ui)
      {
         if ((_evisum_config->proc.poll_delay != ui->proc.poll_delay) ||
             (_evisum_config->proc.show_kthreads != ui->proc.show_kthreads) ||
+            (_evisum_config->proc.show_user != ui->proc.show_user) ||
             (_evisum_config->proc.show_scroller != ui->proc.show_scroller)
 	   )
           {

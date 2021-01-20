@@ -1640,6 +1640,7 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNU
                            (ui->proc.show_scroller ?
                             ELM_SCROLLER_POLICY_ON :
                             ELM_SCROLLER_POLICY_OFF));
+   pd->skip_wait = 1;
 
    return EINA_TRUE;
 }
