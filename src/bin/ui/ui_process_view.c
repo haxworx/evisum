@@ -98,6 +98,7 @@ static const Color_Point cpu_colormap_in[] = {
 #define ARGB(a, r, g, b) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
 
 #define BAR_HEIGHT 16
+
 static void
 _color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
 {
@@ -106,7 +107,7 @@ _color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
    unsigned int a1, r1, g1, b1, v1;
    unsigned int a2, r2, g2, b2, v2;
 
-   // wal colormap_in until colormap table is full
+   // walk colormap_in until colormap table is full
    for (pos = 0, val = 0; pos < n; pos++)
      {
         // get first color and value position
@@ -142,10 +143,17 @@ _color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
 
 typedef struct
 {
+   long cpu_time;
+   long cpu_time_prev;
+} Thread_Cpu_Info;
+
+typedef struct
+{
    int     tid;
    char   *name;
    char   *state;
    int     cpu_id;
+   long    cpu_time;
    double  cpu_usage;
 } Thread_Info;
 
@@ -157,6 +165,7 @@ _thread_info_new(Proc_Info *thr, double cpu_usage)
 
    t->tid = thr->tid;
    t->name = strdup(thr->thread_name);
+   t->cpu_time = thr->cpu_time;
    t->state = strdup(thr->state);
    t->cpu_id = thr->cpu_id;
    t->cpu_usage = cpu_usage;
@@ -237,6 +246,14 @@ _item_column_add(Evas_Object *tbl, const char *text, int col)
    return lb;
 }
 
+static void
+_hash_free_cb(void *data)
+{
+   Thread_Cpu_Info *inf = data;
+   if (inf)
+     free(inf);
+}
+
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
@@ -258,7 +275,7 @@ _item_create(Evas_Object *parent)
    pb = elm_progressbar_add(parent);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-   elm_progressbar_unit_format_set(pb, "%1.1f %%");
+   elm_progressbar_unit_format_set(pb, "%1.0f %%");
    evas_object_data_set(tbl, "cpu_usage", pb);
    rec = evas_object_rectangle_add(tbl);
    evas_object_data_set(pb, "rect", rec);
@@ -322,9 +339,19 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    rec = evas_object_data_get(lb, "rect");
    evas_object_size_hint_min_set(rec, w, 1);
 
-   evas_object_geometry_get(pd->tab_thread_cpu_usage, NULL, NULL, &w, NULL);
+   Thread_Cpu_Info *inf;
    pb = evas_object_data_get(it->obj, "cpu_usage");
-   elm_progressbar_value_set(pb, th->cpu_usage / 100.0);
+   const char *key = eina_slstr_printf("%s:%d", th->name, th->tid);
+   if ((inf = eina_hash_find(pd->hash_cpu_times, key)))
+     {
+        if (inf->cpu_time_prev)
+          {
+             double val = (inf->cpu_time - inf->cpu_time_prev) / 100.0;
+             elm_progressbar_value_set(pb, val);
+          }
+        inf->cpu_time_prev = th->cpu_time;
+     }
+   evas_object_geometry_get(pd->tab_thread_cpu_usage, NULL, NULL, &w, NULL);
    evas_object_show(pb);
    rec = evas_object_data_get(pb, "rect");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -424,14 +451,6 @@ _sort_by_tid(const void *p1, const void *p2)
 }
 
 static void
-_hash_free_cb(void *data)
-{
-   long *cpu_time = data;
-   if (cpu_time)
-     free(cpu_time);
-}
-
-static void
 _thread_info_set(Ui_Data *pd, Proc_Info *proc)
 {
    Proc_Info *p;
@@ -468,6 +487,36 @@ _thread_info_set(Ui_Data *pd, Proc_Info *proc)
              elm_genlist_item_update(it);
              it = elm_genlist_item_next_get(it);
           }
+     }
+}
+
+static void
+_threads_cpu_usage(Ui_Data *pd, Proc_Info *proc)
+{
+   Eina_List *l;
+   Proc_Info *p;
+
+   if (!pd->hash_cpu_times)
+     pd->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
+
+   EINA_LIST_FOREACH(proc->threads, l, p)
+     {
+        Thread_Cpu_Info *inf;
+        double cpu_usage = 0.0;
+        const char *key = eina_slstr_printf("%s:%d", p->thread_name, p->tid);
+
+        if ((inf = eina_hash_find(pd->hash_cpu_times, key)) == NULL)
+          {
+             inf = calloc(1, sizeof(Thread_Cpu_Info));
+             inf->cpu_time = p->cpu_time;
+             eina_hash_add(pd->hash_cpu_times, key, inf);
+          }
+        else
+          {
+             cpu_usage = (double) (p->cpu_time - inf->cpu_time) * 10;
+             inf->cpu_time = p->cpu_time;
+          }
+        pd->graph.cores[p->cpu_id] += cpu_usage;
      }
 }
 
@@ -664,16 +713,15 @@ _graph_update(Ui_Data *pd, Proc_Info *proc)
              for (x = 0; x < (w - 1); x++)
                pix[x] = pd->graph.cpu_colormap[0];
           }
-	else
+        else
           {
              pix = &(pixels[y * (stride / 4)]);
-	     for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
+             for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
           }
-	unsigned int c1;
-	c1 = pd->graph.cpu_colormap[pd->graph.cores[y] & 0xff];
-	pix = &(pixels[y * (stride / 4)]);
-	pix[x] = c1;
-
+        unsigned int c1;
+        c1 = pd->graph.cpu_colormap[pd->graph.cores[y] & 0xff];
+        pix = &(pixels[y * (stride / 4)]);
+        pix[x] = c1;
      }
 
    evas_object_image_data_set(obj, pixels);
@@ -740,37 +788,6 @@ _proc_gone(Ui_Data *pd)
 }
 
 static void
-_threads_cpu_usage(Ui_Data *pd, Proc_Info *proc)
-{
-   Eina_List *l;
-   Proc_Info *p;
-
-   if (!pd->hash_cpu_times)
-     pd->hash_cpu_times = eina_hash_string_superfast_new(_hash_free_cb);
-
-   EINA_LIST_FOREACH(proc->threads, l, p)
-     {
-        long *cpu_time, *cpu_time_prev;
-        double cpu_usage = 0.0;
-        const char *key = eina_slstr_printf("%s:%d", p->thread_name, p->tid);
-
-        if ((cpu_time_prev = eina_hash_find(pd->hash_cpu_times, key)) == NULL)
-          {
-             cpu_time = malloc(sizeof(long));
-             *cpu_time = p->cpu_time;
-             eina_hash_add(pd->hash_cpu_times, key, cpu_time);
-          }
-        else
-          {
-             cpu_usage = (double) (p->cpu_time - *cpu_time_prev) * 10;
-             *cpu_time_prev = p->cpu_time;
-          }
-	p->cpu_usage = cpu_usage;
-	pd->graph.cores[p->cpu_id] += cpu_usage;
-     }
-}
-
-static void
 _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 {
    Ui_Data *pd;
@@ -793,9 +810,9 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    if (pd->poll_count != 0 && (pd->poll_count % 10))
      {
-	_graph_update(pd, proc);
+        _graph_update(pd, proc);
         proc_info_free(proc);
-	pd->poll_count++;
+        pd->poll_count++;
         return;
      }
 

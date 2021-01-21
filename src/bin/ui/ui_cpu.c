@@ -74,7 +74,7 @@ static const Color_Point temp_colormap_in[] = {
    { 256, 0xffdd776e }
 };
 #define BAR_HEIGHT 2
-#define COLORS_HEIGHT 60
+#define COLORS_HEIGHT 32
 
 // stored colormap tables
 static unsigned int cpu_colormap[256];
