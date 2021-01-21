@@ -774,7 +774,7 @@ _graph(Evas_Object *parent, Ui_Data *pd)
    evas_object_show(fr);
 
    tbl2 = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl2, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(tbl2, EXPAND, 0);
    evas_object_size_hint_align_set(tbl2, 0.0, 0.0);
    evas_object_show(tbl2);
 
@@ -1251,7 +1251,7 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *fr, *bx, *hbx, *btn, *genlist;
+   Evas_Object *fr, *bx, *bx2, *hbx, *btn, *genlist;
    Evas_Object *graph;
 
    fr = elm_frame_add(parent);
@@ -1263,16 +1263,23 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_show(bx);
+   elm_box_homogeneous_set(bx, 1);
    elm_object_content_set(fr, bx);
 
    graph = _graph(parent, pd);
    elm_box_pack_end(bx, graph);
 
-   hbx = elm_box_add(bx);
+   bx2 = elm_box_add(parent);
+   evas_object_size_hint_weight_set(bx2, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx2, FILL, FILL);
+   evas_object_show(bx2);
+
+   hbx = elm_box_add(bx2);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
    evas_object_size_hint_align_set(hbx, FILL, FILL);
    elm_box_horizontal_set(hbx, EINA_TRUE);
    evas_object_show(hbx);
+   elm_box_pack_end(bx2, hbx);
 
    pd->tab_thread_id = btn = elm_button_add(hbx);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
@@ -1330,8 +1337,8 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    evas_object_smart_callback_add(pd->genlist_threads, "unrealized",
                                   _item_unrealized_cb, pd);
-   elm_box_pack_end(bx, hbx);
-   elm_box_pack_end(bx, genlist);
+   elm_box_pack_end(bx2, genlist);
+   elm_box_pack_end(bx, bx2);
 
    return fr;
 }
