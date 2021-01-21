@@ -1471,18 +1471,13 @@ _search_empty_cb(void *data)
 static void
 _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Evas_Event_Key_Down *ev;
    const char *text;
    Ui_Data *pd;
    size_t len;
 
    pd = data;
-   ev = event_info;
-
-   if (!ev || !ev->keyname)
-     return;
-
    text = elm_object_text_get(obj);
+
    if (text)
      {
         len = strlen(text);
@@ -1546,10 +1541,11 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
    else if (ev->string)
      {
         size_t len = strlen(ev->string);
-	if (len)
+        if (len)
           {
-            elm_entry_entry_append(pd->search_entry, ev->string);
-            elm_entry_cursor_pos_set(pd->search_entry, len);
+             elm_entry_entry_append(pd->search_entry, ev->string);
+             elm_entry_cursor_pos_set(pd->search_entry, len);
+             _search_key_down_cb(pd, NULL, pd->search_entry, NULL);
 	  }
         evas_object_geometry_get(pd->win, NULL, NULL, &w, &h);
         evas_object_move(pd->search_pop, w / 2, h / 2);
