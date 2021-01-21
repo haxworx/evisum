@@ -52,6 +52,7 @@ typedef struct
       unsigned int  cpu_colormap[256];
       unsigned int  cores[256];
       Evas_Object   *obj;
+      Evas_Object   *lb;
    } graph;
 
    Evas_Object     *tab_thread_id;
@@ -158,16 +159,29 @@ typedef struct
 } Thread_Info;
 
 static Thread_Info *
-_thread_info_new(Proc_Info *thr, double cpu_usage)
+_thread_info_new(Ui_Data *pd, Proc_Info *th)
 {
-   Thread_Info *t = calloc(1, sizeof(Thread_Info));
+   Thread_Info *t;
+   Thread_Cpu_Info *inf;
+   const char *key;
+   double cpu_usage = 0.0;
+
+   t = calloc(1, sizeof(Thread_Info));
    if (!t) return NULL;
 
-   t->tid = thr->tid;
-   t->name = strdup(thr->thread_name);
-   t->cpu_time = thr->cpu_time;
-   t->state = strdup(thr->state);
-   t->cpu_id = thr->cpu_id;
+   key = eina_slstr_printf("%s:%d", th->thread_name, th->tid);
+   if ((inf = eina_hash_find(pd->hash_cpu_times, key)))
+     {
+        if (inf->cpu_time_prev)
+          cpu_usage = (inf->cpu_time - inf->cpu_time_prev);
+        inf->cpu_time_prev = th->cpu_time;
+     }
+
+   t->tid = th->tid;
+   t->name = strdup(th->thread_name);
+   t->cpu_time = th->cpu_time;
+   t->state = strdup(th->state);
+   t->cpu_id = th->cpu_id;
    t->cpu_usage = cpu_usage;
 
    return t;
@@ -339,20 +353,10 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    rec = evas_object_data_get(lb, "rect");
    evas_object_size_hint_min_set(rec, w, 1);
 
-   Thread_Cpu_Info *inf;
    pb = evas_object_data_get(it->obj, "cpu_usage");
-   const char *key = eina_slstr_printf("%s:%d", th->name, th->tid);
-   if ((inf = eina_hash_find(pd->hash_cpu_times, key)))
-     {
-        if (inf->cpu_time_prev)
-          {
-             double val = (inf->cpu_time - inf->cpu_time_prev) / 100.0;
-             elm_progressbar_value_set(pb, val);
-          }
-        inf->cpu_time_prev = th->cpu_time;
-     }
-   evas_object_geometry_get(pd->tab_thread_cpu_usage, NULL, NULL, &w, NULL);
+   elm_progressbar_value_set(pb, th->cpu_usage > 0 ? th->cpu_usage / 100.0 : 0);
    evas_object_show(pb);
+   evas_object_geometry_get(pd->tab_thread_cpu_usage, NULL, NULL, &w, NULL);
    rec = evas_object_data_get(pb, "rect");
    evas_object_size_hint_min_set(rec, w, 1);
 
@@ -462,7 +466,7 @@ _thread_info_set(Ui_Data *pd, Proc_Info *proc)
 
    EINA_LIST_FOREACH(proc->threads, l, p)
      {
-        t = _thread_info_new(p, p->cpu_usage);
+        t = _thread_info_new(pd, p);
         if (t)
           threads = eina_list_append(threads, t);
      }
@@ -732,8 +736,7 @@ _graph_update(Ui_Data *pd, Proc_Info *proc)
 static Evas_Object *
 _graph(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *tbl, *obj;
-   Evas_Object *scr;
+   Evas_Object *tbl, *obj, *tbl2, *lb, *scr, *fr, *rec;
 
    pd->graph.cpu_count = system_cpu_count_get();
 
@@ -763,7 +766,35 @@ _graph(Evas_Object *parent, Ui_Data *pd)
 
    _color_init(cpu_colormap_in, COLOR_CPU_NUM, pd->graph.cpu_colormap);
 
+   // Overlay
+   fr = elm_frame_add(parent);
+   elm_object_style_set(fr, "pad_small");
+   evas_object_size_hint_align_set(fr, 0.03, 0.05);
+   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+   evas_object_show(fr);
+
+   tbl2 = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tbl2, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tbl2, 0.0, 0.0);
+   evas_object_show(tbl2);
+
+   rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+   evas_object_color_set(rec, 0, 0, 0, 64);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(128), ELM_SCALE_SIZE(92));
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(128), ELM_SCALE_SIZE(92));
+   evas_object_show(rec);
+
+   pd->graph.lb = lb = elm_label_add(parent);
+   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(lb, 0.5, 0.5);
+   evas_object_show(lb);
+
+   elm_table_pack(tbl2, rec, 0, 0, 1, 1);
+   elm_table_pack(tbl2, lb, 0, 0, 1, 1);
+   elm_object_content_set(fr, tbl2);
+
    elm_table_pack(tbl, scr, 0, 0, 1, 1);
+   elm_table_pack(tbl, fr, 0, 0, 1, 1);
 
    return tbl;
 }
@@ -816,7 +847,21 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
         return;
      }
 
+   if (pd->pid_cpu_time && proc->cpu_time >= pd->pid_cpu_time)
+     cpu_usage = (double)(proc->cpu_time - pd->pid_cpu_time) / pd->poll_delay;
+
    _graph_update(pd, proc);
+   elm_object_text_set(pd->graph.lb, eina_slstr_printf(
+                       "<small><b>"
+                       "CPU: %.0f%%<br>"
+                       "Size: %s<br>"
+                       "Reserved: %s<br>"
+                       "Virtual: %s"
+                       "</></>",
+                       cpu_usage,
+                       evisum_size_format(proc->mem_size),
+                       evisum_size_format(proc->mem_rss),
+                       evisum_size_format(proc->mem_virt)));
 
    pd->poll_count++;
    if (!strcmp(proc->state, "stop"))
@@ -870,11 +915,8 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
                        eina_slstr_printf("%d", proc->priority));
    elm_object_text_set(pd->entry_pid_state, proc->state);
 
-   if (pd->pid_cpu_time && proc->cpu_time >= pd->pid_cpu_time)
-     cpu_usage = (double)(proc->cpu_time - pd->pid_cpu_time) / pd->poll_delay;
-
    elm_object_text_set(pd->entry_pid_cpu_usage,
-                       eina_slstr_printf("%.1f%%", cpu_usage));
+                       eina_slstr_printf("%.0f%%", cpu_usage));
 
    pd->pid_cpu_time = proc->cpu_time;
 
@@ -954,7 +996,7 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    int i = 0;
 
    fr = elm_frame_add(parent);
-   elm_object_style_set(fr, "pad_small");
+   elm_object_style_set(fr, "pad_medium");
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
 
