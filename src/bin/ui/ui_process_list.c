@@ -1420,7 +1420,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_object_focus_allow_set(glist, 1);
    elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
                            (ui->proc.show_scroller ?
-                            ELM_SCROLLER_POLICY_ON :
+                            ELM_SCROLLER_POLICY_AUTO :
                             ELM_SCROLLER_POLICY_OFF));
    elm_genlist_multi_select_set(glist, EINA_FALSE);
    evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
@@ -1647,7 +1647,7 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNU
 
    elm_scroller_policy_set(pd->scroller, ELM_SCROLLER_POLICY_OFF,
                            (ui->proc.show_scroller ?
-                            ELM_SCROLLER_POLICY_ON :
+                            ELM_SCROLLER_POLICY_AUTO :
                             ELM_SCROLLER_POLICY_OFF));
    pd->skip_wait = 1;
 
