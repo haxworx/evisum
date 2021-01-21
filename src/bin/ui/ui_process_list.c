@@ -1491,7 +1491,7 @@ _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
         pd->search_text = strdup(text);
         pd->search_len = len;
         if (!len && !pd->search_timer)
-          pd->search_timer = ecore_timer_add(1.0, _search_empty_cb, pd);
+          pd->search_timer = ecore_timer_add(0.5, _search_empty_cb, pd);
      }
    pd->skip_wait = 1;
 }
@@ -1533,7 +1533,6 @@ _search_add(Ui_Data *pd)
 static void
 _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
 {
-   Evas_Object *entry;
    Evas_Coord w, h;
 
    if (!strcmp(ev->keyname, "Escape"))
