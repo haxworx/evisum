@@ -857,12 +857,12 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    _graph_update(pd, proc);
    elm_object_text_set(pd->graph.lb, eina_slstr_printf(
-                       "<small><b>"
+                       _("<small><b>"
                        "CPU: %.0f%%<br>"
                        "Size: %s<br>"
                        "Reserved: %s<br>"
                        "Virtual: %s"
-                       "</></>",
+                       "</></>"),
                        cpu_usage,
                        evisum_size_format(proc->mem_size),
                        evisum_size_format(proc->mem_rss),
