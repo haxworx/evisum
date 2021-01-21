@@ -246,7 +246,7 @@ _item_column_add(Evas_Object *tbl, const char *text, int col)
    Evas_Object *rec, *lb;
 
    lb = elm_label_add(tbl);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(lb, 0, EXPAND);
    evas_object_size_hint_align_set(lb, 0.0, FILL);
    evas_object_data_set(tbl, text, lb);
    evas_object_show(lb);
@@ -271,7 +271,7 @@ _hash_free_cb(void *data)
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *tbl, *rec, *lb, *pb;
+   Evas_Object *tbl, *lb, *pb;
 
    tbl = elm_table_add(parent);
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
@@ -291,10 +291,7 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    elm_progressbar_unit_format_set(pb, "%1.0f %%");
    evas_object_data_set(tbl, "cpu_usage", pb);
-   rec = evas_object_rectangle_add(tbl);
-   evas_object_data_set(pb, "rect", rec);
    elm_table_pack(tbl, pb, 4, 0, 1, 1);
-   elm_table_pack(tbl, rec, 4, 0, 1, 1);
 
    return tbl;
 }
@@ -356,9 +353,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    pb = evas_object_data_get(it->obj, "cpu_usage");
    elm_progressbar_value_set(pb, th->cpu_usage > 0 ? th->cpu_usage / 100.0 : 0);
    evas_object_show(pb);
-   evas_object_geometry_get(pd->tab_thread_cpu_usage, NULL, NULL, &w, NULL);
-   rec = evas_object_data_get(pb, "rect");
-   evas_object_size_hint_min_set(rec, w, 1);
 
    return it->obj;
 }
@@ -1331,6 +1325,8 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    elm_object_focus_allow_set(genlist, EINA_FALSE);
    elm_genlist_homogeneous_set(genlist, EINA_TRUE);
    elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
+   elm_scroller_policy_set(genlist, ELM_SCROLLER_POLICY_OFF,
+                           ELM_SCROLLER_POLICY_AUTO);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_show(genlist);

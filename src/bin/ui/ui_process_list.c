@@ -42,13 +42,13 @@ typedef struct
    Evas_Object           *menu;
 
    pid_t                  selected_pid;
-   char                   search[16];
-   int                    search_len;
 
-   Ecore_Timer           *timer_search;
-   Evas_Object           *entry_pop;
-   Evas_Object           *entry;
-   Eina_Bool              entry_visible;
+   char                  *search_text;
+   size_t                 search_len;
+   Ecore_Timer           *search_timer;
+   Evas_Object           *search_pop;
+   Evas_Object           *search_entry;
+   Eina_Bool              search_visible;
 
    Evas_Object           *scroller;
    Evas_Object           *genlist;
@@ -640,7 +640,8 @@ _process_list_search_trim(Eina_List *list, Ui_Data *pd)
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if ((pd->search_len && (strncasecmp(proc->command, pd->search, pd->search_len))) ||
+        if ((pd->search_len &&
+            (strncasecmp(proc->command, pd->search_text, pd->search_len))) ||
             (proc->pid == ui->program_pid))
          {
             proc_info_free(proc);
@@ -1451,15 +1452,16 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 }
 
 static Eina_Bool
-_search_empty(void *data)
+_search_empty_cb(void *data)
 {
    Ui_Data *pd = data;
 
-   if (!pd->search_len)
+   if (!strlen(elm_object_text_get(pd->search_entry)))
      {
-        evas_object_lower(pd->entry_pop);
-        pd->entry_visible = 0;
-        pd->timer_search = NULL;
+        evas_object_lower(pd->search_pop);
+        elm_object_focus_allow_set(pd->search_entry, 0);
+        pd->search_visible = 0;
+        pd->search_timer = NULL;
         return EINA_FALSE;
      }
 
@@ -1467,39 +1469,65 @@ _search_empty(void *data)
 }
 
 static void
+_search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev;
+   const char *text;
+   Ui_Data *pd;
+   size_t len;
+
+   pd = data;
+   ev = event_info;
+
+   if (!ev || !ev->keyname)
+     return;
+
+   text = elm_object_text_get(obj);
+   if (text)
+     {
+        len = strlen(text);
+        if (pd->search_text)
+          free(pd->search_text);
+        pd->search_text = strdup(text);
+        pd->search_len = len;
+        if (!len && !pd->search_timer)
+          pd->search_timer = ecore_timer_add(1.0, _search_empty_cb, pd);
+     }
+   pd->skip_wait = 1;
+}
+
+static void
 _search_add(Ui_Data *pd)
 {
-   Evas_Object *tbl, *tbl2, *rec, *entry;
+   Evas_Object *tbl, *fr, *rec, *entry;
 
-   pd->entry_pop = tbl = elm_table_add(pd->win);
+   pd->search_pop = tbl = elm_table_add(pd->win);
    evas_object_lower(tbl);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(pd->win));
-   evas_object_color_set(rec, 0, 0, 0, 128);
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(220), ELM_SCALE_SIZE(128));
    evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(220), ELM_SCALE_SIZE(128));
-   evas_object_show(rec);
    elm_table_pack(tbl, rec, 0, 0, 1, 1);
 
-   tbl2 = elm_table_add(pd->win);
-   evas_object_show(tbl2);
+   fr = elm_frame_add(pd->win);
+   elm_object_text_set(fr, _("Search"));
+   evas_object_size_hint_weight_set(fr, 0, 0);
+   evas_object_size_hint_align_set(fr, FILL, 0.5);
+   evas_object_show(fr);
 
-   pd->entry = entry = elm_entry_add(tbl2);
-   evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(entry, 0, FILL);
+   pd->search_entry = entry = elm_entry_add(fr);
+   evas_object_size_hint_weight_set(entry, 0, 0);
+   evas_object_size_hint_align_set(entry, 0.5, 0.5);
    elm_entry_single_line_set(entry, 1);
-   elm_entry_scrollable_set(entry, 0);
+   elm_entry_scrollable_set(entry, 1);
    elm_entry_editable_set(entry, 1);
    elm_object_focus_allow_set(entry, 0);
    evas_object_show(entry);
+   elm_object_content_set(fr, entry);
+   elm_table_pack(tbl, fr, 0, 0, 1, 1);
 
-   rec = evas_object_rectangle_add(evas_object_evas_get(tbl2));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(192), 1);
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(192), -1);
-   elm_table_pack(tbl2, rec, 0, 0, 1, 1);
-   elm_table_pack(tbl2, entry, 0, 0, 1, 1);
-
-   elm_table_pack(tbl, tbl2, 0, 0, 1, 1);
+   evas_object_event_callback_add(entry, EVAS_CALLBACK_KEY_DOWN,
+                                  _search_key_down_cb, pd);
 }
 
 static void
@@ -1508,44 +1536,29 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
    Evas_Object *entry;
    Evas_Coord w, h;
 
-   entry = pd->entry;
-
    if (!strcmp(ev->keyname, "Escape"))
      {
-        elm_object_text_set(entry, "");
+        elm_object_text_set(pd->search_entry, "");
         pd->skip_wait = 0;
-        evas_object_lower(pd->entry_pop);
-        pd->search_len = 0;
-        for (int i = 0; i < sizeof(pd->search); i++)
-          pd->search[i] = '\0';
-        pd->entry_visible = 0;
-     }
-   else if (!strcmp(ev->keyname, "BackSpace"))
-     {
-         if (pd->search_len)
-           {
-              pd->search[--pd->search_len] = '\0';
-              elm_object_text_set(entry, pd->search);
-              elm_entry_cursor_pos_set(entry, pd->search_len - 1);
-           }
-
-         if (pd->search_len == 0 && !pd->timer_search)
-           pd->timer_search = ecore_timer_add(2.0, _search_empty, pd);
+        elm_object_focus_allow_set(pd->search_entry, 0);
+        evas_object_lower(pd->search_pop);
+        pd->search_visible = 0;
      }
    else if (ev->string)
      {
         size_t len = strlen(ev->string);
-        if (pd->search_len + len > (sizeof(pd->search) - 1)) return;
-        if (isspace(ev->string[0])) return;
-
-        for (int i = 0; i < len; i++)
-          pd->search[pd->search_len++] = ev->string[i];
-        elm_object_text_set(entry, pd->search);
+	if (len)
+          {
+            elm_entry_entry_append(pd->search_entry, ev->string);
+            elm_entry_cursor_pos_set(pd->search_entry, len);
+	  }
         evas_object_geometry_get(pd->win, NULL, NULL, &w, &h);
-        evas_object_move(pd->entry_pop, w / 2, h / 2);
-        evas_object_raise(pd->entry_pop);
-        evas_object_show(pd->entry_pop);
-        pd->entry_visible = 1;
+        evas_object_move(pd->search_pop, w / 2, h / 2);
+        evas_object_raise(pd->search_pop);
+        elm_object_focus_allow_set(pd->search_entry, 1);
+        elm_object_focus_set(pd->search_entry, 1);
+        evas_object_show(pd->search_pop);
+        pd->search_visible = 1;
      }
 }
 
@@ -1566,7 +1579,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    elm_scroller_region_get(pd->scroller, &x, &y, &w, &h);
 
-   if (!strcmp(ev->keyname, "Escape") && !pd->entry_visible)
+   if (!strcmp(ev->keyname, "Escape") && !pd->search_visible)
      {
         evas_object_del(pd->win);
         return;
@@ -1609,7 +1622,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      ecore_timer_reset(pd->resize_timer);
    else pd->resize_timer = ecore_timer_add(0.2, _resize_cb, pd);
 
-   evas_object_lower(pd->entry_pop);
+   evas_object_lower(pd->search_pop);
    if (pd->main_menu)
      _main_menu_dismissed_cb(pd, NULL, NULL);
 
@@ -1668,8 +1681,8 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 
    evisum_ui_config_save(ui);
 
-   if (pd->timer_search)
-     ecore_timer_del(pd->timer_search);
+   if (pd->search_timer)
+     ecore_timer_del(pd->search_timer);
 
    if (pd->thread)
      ecore_thread_cancel(pd->thread);
@@ -1681,6 +1694,9 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_U
 
    pd->thread = NULL;
    ui->proc.win = NULL;
+
+   if (pd->search_text)
+     free(pd->search_text);
 
    if (pd->cache)
      evisum_ui_item_cache_free(pd->cache);
