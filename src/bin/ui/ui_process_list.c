@@ -1540,6 +1540,7 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
      }
    else if (ev->string)
      {
+        if (isspace(ev->string[0])) return;
         size_t len = strlen(ev->string);
         if (len)
           {
