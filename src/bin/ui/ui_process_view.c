@@ -831,11 +831,16 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    if (!proc || (pd->start && (proc->start != pd->start)))
      {
+        if (proc) proc_info_free(proc);
         _proc_gone(pd);
         return;
      }
 
-   if (ecore_thread_check(thread)) return;
+   if (ecore_thread_check(thread))
+     {
+        proc_info_free(proc);
+        return;
+     }
 
    _threads_cpu_usage(pd, proc);
 
