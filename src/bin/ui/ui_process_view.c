@@ -98,7 +98,7 @@ static const Color_Point cpu_colormap_in[] = {
 #define BVAL(x) (((x)      ) & 0xff)
 #define ARGB(a, r, g, b) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
 
-#define BAR_HEIGHT 16
+#define BAR_HEIGHT 2
 
 static void
 _color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)

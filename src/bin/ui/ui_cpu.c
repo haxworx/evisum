@@ -66,15 +66,17 @@ static const Color_Point freq_colormap_in[] = {
 
 #define COLOR_TEMP_NUM 5
 static const Color_Point temp_colormap_in[] = {
-   {  0,  0xff57bb8a }, // 0
+   {  0,  0xff57bb8a },
    {  25, 0xffa4c073 },
    {  50, 0xfff5ce62 },
    {  75, 0xffe9a268 },
    { 100, 0xffdd776e },
    { 256, 0xffdd776e }
 };
-#define BAR_HEIGHT 2
+
+#define BAR_HEIGHT    3
 #define COLORS_HEIGHT 32
+#define CORES_MANY    16
 
 // stored colormap tables
 static unsigned int cpu_colormap[256];
@@ -133,14 +135,9 @@ _color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
 static void
 _core_times_main_cb(void *data, Ecore_Thread *thread)
 {
-   // this runs in a dedicated thread in the bg sleeping, collecting info
-   // on usage then sending as feedback to mainloop
    Animate *ad = data;
    int ncpu;
 
-   // when we begin to run - get min and max freq. note - no locks so
-   // not that great... writing to data in thread that mainloop thread
-   // will read
    if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
      ad->cpu_freq = EINA_TRUE;
 
@@ -148,19 +145,15 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
    if ((system_cpu_n_temperature_get(0)) != -1)
      ad->cpu_temp = EINA_TRUE;
 
-   // while this thread has not been canceled
    while (!ecore_thread_check(thread))
      {
         cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 100000);
         Core *cores_out = calloc(ncpu, sizeof(Core));
 
-        // producer-consumer moduel. this thread produces data and sends as
-        // feedback to mainloop to consume
         if (cores_out)
           {
              for (int n = 0; n < ncpu; n++)
                {
-                  // Copy our core state data to mainloop
                   int id = ad->cpu_order[n];
                   Core *core = &(cores_out[n]);
                   core->id = id;
@@ -202,7 +195,6 @@ _update(Animate *ad, Core *cores)
    // get stride (# of bytes per line)
    stride = evas_object_image_stride_get(obj);
 
-   // go throuhg al the cpu cores
    for (y = 0; y < ad->cpu_count; y++)
      {
         Core *core = &(cores[y]);
@@ -294,12 +286,15 @@ _explain(Animate *ad, Core *cores)
    Explainer *exp;
    Evas_Object *lb, *rec;
 
+   if (!ad->explainers) return;
+
    buf = eina_strbuf_new();
 
    for (int i = 0; i < ad->cpu_count; i++)
      {
         Core *core = &(cores[i]);
         exp = eina_list_nth(ad->explainers, i);
+
         lb = exp->lb;
         rec = exp->rec;
         if (!ad->confused)
@@ -490,6 +485,7 @@ _graph(Ui *ui, Evas_Object *parent)
    Evas_Object *fr, *bx, *hbx, *colors, *check, *btn;
    int i, f;
    char buf[128];
+   Eina_Bool show_icons = 1;
 
    Animate *ad = calloc(1, sizeof(Animate));
    if (!ad) return NULL;
@@ -530,14 +526,20 @@ _graph(Ui *ui, Evas_Object *parent)
 
    elm_table_pack(tbl, obj, 0, 0, 5, ad->cpu_count);
 
-   rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-   evas_object_size_hint_align_set(rec, FILL, FILL);
-   evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-   evas_object_color_set(rec, 0, 0, 0, 64);
-   evas_object_show(rec);
-   elm_table_pack(tbl, rec, 0, 0, 4, ad->cpu_count);
+   if (ad->cpu_count > CORES_MANY)
+     show_icons = 0;
 
-   for (i = 0; i < ad->cpu_count; i++)
+   if (show_icons)
+     {
+        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+        evas_object_size_hint_align_set(rec, FILL, FILL);
+        evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+        evas_object_color_set(rec, 0, 0, 0, 64);
+        evas_object_show(rec);
+        elm_table_pack(tbl, rec, 0, 0, 4, ad->cpu_count);
+     }
+
+   for (i = 0; show_icons && (i < ad->cpu_count); i++)
      {
         rec = evas_object_rectangle_add(evas_object_evas_get(parent));
         evas_object_color_set(rec, 0, 0, 0, 0);
