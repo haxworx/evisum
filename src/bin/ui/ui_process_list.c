@@ -1474,20 +1474,33 @@ _search_empty_cb(void *data)
 }
 
 static void
+_search_clear(Ui_Data *pd)
+{
+   if (pd->search_text)
+     free(pd->search_text);
+   pd->search_text = NULL;
+}
+
+static void
 _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
+   Evas_Event_Key_Down *ev;
    const char *text;
    Ui_Data *pd;
    size_t len;
 
    pd = data;
+   ev = event_info;
+
+   if (ev && !strcmp(ev->keyname, "Escape"))
+     elm_object_text_set(pd->search_entry, "");
+
    text = elm_object_text_get(obj);
 
    if (text)
      {
+        _search_clear(pd);
         len = strlen(text);
-        if (pd->search_text)
-          free(pd->search_text);
         pd->search_text = strdup(text);
         pd->search_len = len;
         if (!len && !pd->search_timer)
