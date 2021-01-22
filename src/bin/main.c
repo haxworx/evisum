@@ -41,8 +41,21 @@ elm_main(int argc, char **argv)
         if ((!strcmp(argv[i], "-h")) || (!strcmp(argv[i], "-help")) ||
             (!strcmp(argv[i], "--help") || !strcasecmp(argv[i], "-v")))
           {
-             printf("(c) 2018-2020 Alastair Roy Poole <netstar@gmail.com>\n");
-             printf("Evisum version: %s\n", PACKAGE_VERSION);
+             printf("Usage: evisum [OPTIONS]\n"
+                    "   Where OPTIONS can be one of\n"
+                    "      -c\n"
+                    "        Launch CPU view.\n"
+                    "      -m\n"
+                    "        Launch memory view.\n"
+                    "      -d\n"
+                    "        Launch storage view.\n"
+                    "      -s\n"
+                    "        Launch sensors view.\n"
+                    "      -p <pid>\n"
+                    "        Launch process view for pid.\n"
+                    "      -h | -help | --help\n"
+                    "        This menu.\n"
+                    "   No arguments will launch the process explorer.\n");
              exit(0);
           }
         else if (!strcmp(argv[i], "-c"))
