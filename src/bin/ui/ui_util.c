@@ -370,6 +370,22 @@ about_anim(void *data)
    return EINA_TRUE;
 }
 
+static void
+_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev;
+   Animate_Data *ad;
+
+   ad = data;
+   ev = event_info;
+
+   if (!ev || !ev->keyname)
+     return;
+
+   if (!strcmp(ev->keyname, "Escape"))
+     evas_object_del(ad->ui->win_about);
+}
+
 void
 evisum_about_window_show(void *data)
 {
@@ -537,6 +553,7 @@ evisum_about_window_show(void *data)
    elm_table_pack(tbl, rec, 0, 0, 1, 1);
    elm_table_pack(tbl, hbx, 0, 0, 1, 1);
    elm_object_content_set(win, tbl);
+   evas_object_event_callback_add(tbl, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, about);
 
    evas_object_show(win);
 }
