@@ -353,7 +353,9 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(pb, FILL, FILL);
    elm_progressbar_unit_format_set(pb, "%1.1f %%");
 #if PROGRESS_CUSTOM_FORMAT
-   elm_progressbar_unit_format_function_set(pb, _pb_format_cb, _pb_format_free_cb);
+   elm_progressbar_unit_format_function_set(pb,
+                                            _pb_format_cb,
+                                            _pb_format_free_cb);
 #endif
    elm_table_pack(tbl, pb, i++, 0, 1, 1);
    evas_object_data_set(tbl, "proc_cpu_usage", pb);
@@ -640,9 +642,12 @@ _process_list_search_trim(Eina_List *list, Ui_Data *pd)
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if ((pd->search_len &&
-            (strncasecmp(proc->command, pd->search_text, pd->search_len))) ||
-            (proc->pid == ui->program_pid))
+        if ((proc->pid == ui->program_pid) ||
+            (pd->search_len &&
+             (strncasecmp(proc->command, pd->search_text, pd->search_len) &&
+             (!strstr(proc->command, pd->search_text)))
+            )
+           )
          {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
@@ -1547,7 +1552,7 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
              elm_entry_entry_append(pd->search_entry, ev->string);
              elm_entry_cursor_pos_set(pd->search_entry, len);
              _search_key_down_cb(pd, NULL, pd->search_entry, NULL);
-	  }
+          }
         evas_object_geometry_get(pd->win, NULL, NULL, &w, &h);
         evas_object_move(pd->search_pop, w / 2, h / 2);
         evas_object_raise(pd->search_pop);
@@ -1627,7 +1632,8 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static Eina_Bool
-_evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
+_evisum_config_changed_cb(void *data, int type EINA_UNUSED,
+                          void *event EINA_UNUSED)
 {
    Eina_Iterator *it;
    Ui *ui;
@@ -1655,7 +1661,8 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNU
 }
 
 static void
-_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
+             void *event_info EINA_UNUSED)
 {
    Ui_Data *pd;
    Ui *ui;
@@ -1667,8 +1674,8 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 }
 
 static void
-_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-            void *event_info EINA_UNUSED)
+_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
+            Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui *ui;
    Ui_Data *pd = data;
