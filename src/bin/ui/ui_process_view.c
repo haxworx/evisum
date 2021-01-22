@@ -763,7 +763,7 @@ _graph(Evas_Object *parent, Ui_Data *pd)
    // Overlay
    fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
-   evas_object_size_hint_align_set(fr, 0.03, 0.05);
+   evas_object_size_hint_align_set(fr, 0.01, 0.03);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_show(fr);
 
@@ -774,11 +774,15 @@ _graph(Evas_Object *parent, Ui_Data *pd)
 
    rec = evas_object_rectangle_add(evas_object_evas_get(parent));
    evas_object_color_set(rec, 0, 0, 0, 64);
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(128), ELM_SCALE_SIZE(92));
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(128), ELM_SCALE_SIZE(92));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(92), ELM_SCALE_SIZE(64));
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(92), ELM_SCALE_SIZE(64));
    evas_object_show(rec);
 
-   pd->graph.lb = lb = elm_label_add(parent);
+   pd->graph.lb = lb = elm_entry_add(parent);
+   elm_entry_single_line_set(lb, 1);
+   elm_entry_select_allow_set(lb, 1);
+   elm_entry_editable_set(lb, 0);
+   elm_object_focus_allow_set(lb, 0);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(lb, 0.5, 0.5);
    evas_object_show(lb);
@@ -1173,6 +1177,13 @@ _btn_icon_state_set(Evas_Object *btn, Eina_Bool reverse)
 }
 
 static void
+_threads_list_reorder(Ui_Data *pd)
+{
+   pd->poll_count = 0;
+   elm_scroller_page_bring_in(pd->genlist_threads, 0, 0);
+}
+
+static void
 _btn_name_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
@@ -1180,10 +1191,9 @@ _btn_name_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (pd->sort_cb == _sort_by_name)
      pd->sort_reverse = !pd->sort_reverse;
-
    _btn_icon_state_set(obj, pd->sort_reverse);
    pd->sort_cb = _sort_by_name;
-   pd->poll_count = 0;
+   _threads_list_reorder(pd);
 }
 
 static void
@@ -1194,10 +1204,9 @@ _btn_thread_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (pd->sort_cb == _sort_by_tid)
      pd->sort_reverse = !pd->sort_reverse;
-
    _btn_icon_state_set(obj, pd->sort_reverse);
    pd->sort_cb = _sort_by_tid;
-   pd->poll_count = 0;
+   _threads_list_reorder(pd);
 }
 
 static void
@@ -1208,10 +1217,9 @@ _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (pd->sort_cb == _sort_by_state)
      pd->sort_reverse = !pd->sort_reverse;
-
    _btn_icon_state_set(obj, pd->sort_reverse);
    pd->sort_cb = _sort_by_state;
-   pd->poll_count = 0;
+   _threads_list_reorder(pd);
 }
 
 static void
@@ -1222,10 +1230,9 @@ _btn_cpu_id_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (pd->sort_cb == _sort_by_cpu_id)
      pd->sort_reverse = !pd->sort_reverse;
-
    pd->sort_cb = _sort_by_cpu_id;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   pd->poll_count = 0;
+   _threads_list_reorder(pd);
 }
 
 static void
@@ -1239,7 +1246,7 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd->sort_cb = _sort_by_cpu_usage;
    _btn_icon_state_set(obj, pd->sort_reverse);
-   pd->poll_count = 0;
+   _threads_list_reorder(pd);
 }
 
 static Evas_Object *
