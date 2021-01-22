@@ -29,6 +29,8 @@ typedef struct Ui
       int           x, y;
       Eina_Bool     restart;
 
+      Eina_Bool     has_kthreads;
+
       int           poll_delay;
       int           sort_type;
       Eina_Bool     sort_reverse;

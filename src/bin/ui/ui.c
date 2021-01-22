@@ -33,7 +33,7 @@ evisum_ui_config_save(Ui *ui)
             (_evisum_config->proc.show_kthreads != ui->proc.show_kthreads) ||
             (_evisum_config->proc.show_user != ui->proc.show_user) ||
             (_evisum_config->proc.show_scroller != ui->proc.show_scroller)
-	   )
+           )
           {
              notify = EINA_TRUE;
           }
@@ -471,15 +471,18 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_show(sep);
    elm_box_pack_end(bx2, sep);
 
-   chk = elm_check_add(bx2);
-   evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(chk, FILL, FILL);
-   elm_object_text_set(chk, _("Show kernel threads?"));
-   elm_check_state_set(chk, ui->proc.show_kthreads);
-   evas_object_show(chk);
-   evas_object_smart_callback_add(chk, "changed",
-                                  _main_menu_show_threads_changed_cb, ui);
-   elm_box_pack_end(bx2, chk);
+   if (ui->proc.has_kthreads)
+     {
+        chk = elm_check_add(bx2);
+        evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(chk, FILL, FILL);
+        elm_object_text_set(chk, _("Show kernel threads?"));
+        elm_check_state_set(chk, ui->proc.show_kthreads);
+        evas_object_show(chk);
+        evas_object_smart_callback_add(chk, "changed",
+                                       _main_menu_show_threads_changed_cb, ui);
+        elm_box_pack_end(bx2, chk);
+    }
 
    chk = elm_check_add(bx2);
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
@@ -515,10 +518,18 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    return o;
 }
 
+// Any OS specific feature checks.
 static void
 _ui_init_system_probe(Ui *ui)
 {
+#if defined(__OpenBSD__)
+   ui->proc.has_kthreads = 0;
+#else
+   ui->proc.has_kthreads = 1;
+#endif
+#if defined(__FreeBSD__) || defined(__DragonFly__)
    ui->mem.zfs_mounted = file_system_in_use("ZFS");
+#endif
 }
 
 void
