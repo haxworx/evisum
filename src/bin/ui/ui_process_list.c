@@ -1562,7 +1562,7 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
         evas_object_lower(pd->search_pop);
         pd->search_visible = 0;
      }
-   else if (ev->string)
+   else if (ev->string && strcmp(ev->keyname, "BackSpace"))
      {
         if (isspace(ev->string[0])) return;
         size_t len = strlen(ev->string);
