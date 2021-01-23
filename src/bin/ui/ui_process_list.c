@@ -1462,7 +1462,7 @@ _search_empty_cb(void *data)
 {
    Ui_Data *pd = data;
 
-   if (!strlen(elm_object_text_get(pd->search_entry)))
+   if (!pd->search_len)
      {
         evas_object_lower(pd->search_pop);
         elm_object_focus_allow_set(pd->search_entry, 0);
