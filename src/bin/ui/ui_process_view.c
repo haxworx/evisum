@@ -1413,14 +1413,14 @@ _manual_tab_add(Evas_Object *parent, Ui_Data *pd)
 }
 
 static void
-_tab_change(Ui_Data *pd, Evas_Object *view)
+_tab_change(Ui_Data *pd, Evas_Object *view, Evas_Object *obj)
 {
    Elm_Transit *trans;
 
    elm_object_disabled_set(pd->tab_main, EINA_FALSE);
-   elm_object_disabled_set(pd->tab_manual, EINA_FALSE);
-   elm_object_disabled_set(pd->tab_thread, EINA_FALSE);
    elm_object_disabled_set(pd->tab_children, EINA_FALSE);
+   elm_object_disabled_set(pd->tab_thread, EINA_FALSE);
+   elm_object_disabled_set(pd->tab_manual, EINA_FALSE);
    evas_object_hide(pd->main_view);
    evas_object_hide(pd->children_view);
    evas_object_hide(pd->manual_view);
@@ -1435,6 +1435,8 @@ _tab_change(Ui_Data *pd, Evas_Object *view)
    pd->current_view = view;
    evas_object_show(view);
    elm_transit_go(trans);
+
+   elm_object_disabled_set(obj, EINA_TRUE);
 }
 
 static void
@@ -1443,8 +1445,8 @@ _tab_main_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui_Data *pd = data;
 
-   _tab_change(pd, pd->main_view);
-   elm_object_disabled_set(obj, 1);
+   _tab_change(pd, pd->main_view, obj);
+   elm_object_focus_set(pd->tab_children, 1);
 }
 
 static void
@@ -1454,8 +1456,8 @@ _tab_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    Ui_Data *pd = data;
 
    _children_view_update(pd);
-   _tab_change(pd, pd->children_view);
-   elm_object_disabled_set(obj, 1);
+   _tab_change(pd, pd->children_view, obj);
+   elm_object_focus_set(pd->tab_thread, 1);
 }
 
 static void
@@ -1464,8 +1466,8 @@ _tab_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Ui_Data *pd = data;
 
-   _tab_change(pd, pd->thread_view);
-   elm_object_disabled_set(obj, 1);
+   _tab_change(pd, pd->thread_view, obj);
+   elm_object_focus_set(pd->tab_manual, 1);
 }
 
 static void
@@ -1477,8 +1479,8 @@ _tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd = data;
 
-   _tab_change(pd, pd->manual_view);
-   elm_object_disabled_set(obj, 1);
+   _tab_change(pd, pd->manual_view, obj);
+   elm_object_focus_set(pd->tab_main, 1);
 
    if (pd->manual_init) return;
 
@@ -1550,7 +1552,6 @@ _tabs_add(Evas_Object *parent, Ui_Data *pd)
 
    btn = evisum_ui_tab_add(parent, &pd->tab_main, _("Process"),
                            _tab_main_clicked_cb, pd);
-   elm_object_disabled_set(pd->tab_main, EINA_TRUE);
    elm_object_content_set(pad, btn);
    elm_box_pack_end(hbx, pad);
 
