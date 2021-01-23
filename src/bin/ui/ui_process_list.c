@@ -1504,7 +1504,6 @@ _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
      elm_object_text_set(pd->search_entry, "");
 
    text = elm_object_text_get(obj);
-
    if (text)
      {
         pd->search_keytime = ecore_loop_time_get();
