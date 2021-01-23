@@ -49,6 +49,7 @@ typedef struct
    Evas_Object           *search_pop;
    Evas_Object           *search_entry;
    Eina_Bool              search_visible;
+   double                 search_keytime;
 
    Evas_Object           *scroller;
    Evas_Object           *genlist;
@@ -1467,7 +1468,15 @@ _search_empty_cb(void *data)
         elm_object_focus_allow_set(pd->search_entry, 0);
         pd->search_visible = 0;
         pd->search_timer = NULL;
+        pd->skip_wait = 1;
         return EINA_FALSE;
+     }
+
+   if (pd->search_keytime &&
+       ((ecore_loop_time_get() - pd->search_keytime) > 0.05))
+     {
+        pd->skip_wait = 1;
+        pd->search_keytime = 0;
      }
 
    return EINA_TRUE;
@@ -1487,7 +1496,6 @@ _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    Evas_Event_Key_Down *ev;
    const char *text;
    Ui_Data *pd;
-   size_t len;
 
    pd = data;
    ev = event_info;
@@ -1499,14 +1507,13 @@ _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    if (text)
      {
+        pd->search_keytime = ecore_loop_time_get();
         _search_clear(pd);
-        len = strlen(text);
         pd->search_text = strdup(text);
-        pd->search_len = len;
-        if (!len && !pd->search_timer)
-          pd->search_timer = ecore_timer_add(0.5, _search_empty_cb, pd);
+        pd->search_len = strlen(text);
+        if (!pd->search_timer)
+          pd->search_timer = ecore_timer_add(0.05, _search_empty_cb, pd);
      }
-   pd->skip_wait = 1;
 }
 
 static void
