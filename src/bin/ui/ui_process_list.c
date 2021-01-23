@@ -1806,6 +1806,7 @@ ui_process_list_win_add(Ui *ui)
    pd->thread = ecore_thread_feedback_run(_process_list,
                                           _process_list_feedback_cb,
                                           NULL,
-                                          NULL, pd, EINA_FALSE);
+                                          NULL,
+                                          pd, EINA_FALSE);
 }
 

@@ -400,6 +400,7 @@ ui_sensors_win_add(Ui *ui)
    pd->thread = ecore_thread_feedback_run(_sensors_update,
                                           _sensors_update_feedback_cb,
                                           NULL,
-                                          NULL, pd, EINA_TRUE);
+                                          NULL,
+                                          pd, EINA_TRUE);
 }
 

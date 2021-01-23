@@ -511,7 +511,6 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
                                   _main_menu_show_scroller_changed_cb, ui);
    elm_box_pack_end(bx2, chk);
 
-
    elm_object_content_set(fr, bx2);
    elm_box_pack_end(bx, fr);
 

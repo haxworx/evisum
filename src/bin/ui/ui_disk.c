@@ -718,6 +718,8 @@ ui_disk_win_add(Ui *ui)
 
    pd->thread = ecore_thread_feedback_run(_disks_poll,
                                           _disks_poll_feedback_cb,
-                                          NULL, NULL, pd, EINA_TRUE);
+                                          NULL,
+                                          NULL,
+                                          pd, EINA_TRUE);
 }
 
