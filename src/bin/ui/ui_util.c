@@ -406,7 +406,7 @@ evisum_about_window_show(void *data)
       "<font color=#ffffff>"
       "<align=center>"
       "<b>"
-      "Copyright &copy; 2019-2020 Alastair Poole &lt;netstar@gmail.com&gt;<br>"
+      "Copyright &copy; 2019-2021 Alastair Poole &lt;netstar@gmail.com&gt;<br>"
       "<br>"
       "</b>"
       "</>"

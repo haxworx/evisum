@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019. Alastair Roy Poole <netstar@gmail.com>
+ * Copyright 2018-2021. Alastair Roy Poole <netstar@gmail.com>
  *
  * See COPYING file for details.
  */
