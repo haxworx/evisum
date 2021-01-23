@@ -1,14 +1,22 @@
-============
-Evisum 0.6.0
-============
-
-  * ...
-
 =============
 Evisum 0.5.10
 =============
 
-  * Fix a bug ?
+  * Launch individual process viewer elements from the process
+    explorer (general, children, threads and manual).
+  * Do the "About" Evisum properly (not hacky).
+  * Option to enable/disable scroller on the process explorer.
+  * Alignment improvements (process explorer).
+  * Add some prettier transitions between tabs in process viewer.
+  * Add a basic graph per-process of CPU core usage.
+  * Cleanup of process viewer.
+  * Fix sorting issue for storage (CPU %).
+  * "Improve" the search in process explorer.
+  * Add simple help from command-line.
+  * Handle > 16 cores better until a better design for many-core
+    machines can be conceptualised.
+  * Close the memory view responsively.
+  * Fix a bug in earlier versions of EFL.
 
 ============
 Evisum 0.5.9
