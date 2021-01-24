@@ -1364,7 +1364,7 @@ _children_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    pd->genlist_children = genlist = elm_genlist_add(parent);
    evas_object_data_set(genlist, "ui", pd);
-   elm_object_focus_allow_set(genlist, EINA_FALSE);
+   elm_object_focus_allow_set(genlist, EINA_TRUE);
    elm_genlist_homogeneous_set(genlist, EINA_TRUE);
    elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_DEFAULT);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
