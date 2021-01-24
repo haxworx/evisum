@@ -1473,7 +1473,7 @@ _search_empty_cb(void *data)
      }
 
    if (pd->search_keytime &&
-       ((ecore_loop_time_get() - pd->search_keytime) > 0.05))
+       ((ecore_loop_time_get() - pd->search_keytime) > 0.1))
      {
         pd->skip_wait = 1;
         pd->search_keytime = 0;
