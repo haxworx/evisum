@@ -173,32 +173,19 @@ _genlist_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
    elm_object_text_set(obj, buf);
 }
 
-static Evas_Object *
-_content_get(void *data, Evas_Object *obj, const char *part)
+static char *
+_text_get(void *data, Evas_Object *obj, const char *part)
 {
-   Evas_Object *bx, *lb;
    sensor_t *s;
    char buf[64];
 
-   if (strcmp(part, "elm.swallow.content")) return NULL;
+   if (strcmp(part, "elm.text")) return NULL;
 
    s = data;
 
-   bx = elm_box_add(obj);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
-
-   lb = elm_label_add(obj);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(lb, 0.0, FILL);
    _name_set(buf, sizeof(buf), s);
-   elm_object_text_set(lb, buf);
-   evas_object_show(lb);
 
-   elm_box_pack_end(bx, lb);
-
-   return bx;
+   return strdup(buf);
 }
 
 static void
@@ -375,9 +362,9 @@ ui_sensors_win_add(Ui *ui)
    elm_box_pack_end(content, fr);
 
    pd->itc = elm_genlist_item_class_new();
-   pd->itc->item_style = "full";
-   pd->itc->func.content_get = _content_get;
-   pd->itc->func.text_get = NULL;
+   pd->itc->item_style = "no_icon";
+   pd->itc->func.content_get = NULL;
+   pd->itc->func.text_get = _text_get;
    pd->itc->func.filter_get = NULL;
    pd->itc->func.del = _item_del;
 
