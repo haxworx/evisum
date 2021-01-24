@@ -139,11 +139,11 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
    int ncpu;
 
    if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
-     ad->cpu_freq = EINA_TRUE;
+     ad->cpu_freq = 1;
 
    system_cpu_temperature_min_max_get(&ad->temp_min, &ad->temp_max);
    if ((system_cpu_n_temperature_get(0)) != -1)
-     ad->cpu_temp = EINA_TRUE;
+     ad->cpu_temp = 1;
 
    while (!ecore_thread_check(thread))
      {
@@ -177,7 +177,7 @@ _update(Animate *ad, Core *cores)
    unsigned int *pixels, *pix;
    Evas_Coord x, y, w, h;
    int iw, stride;
-   Eina_Bool clear = EINA_FALSE;
+   Eina_Bool clear = 0;
 
    evas_object_geometry_get(obj, &x, &y, &w, &h);
    evas_object_image_size_get(obj, &iw, NULL);
@@ -186,11 +186,11 @@ _update(Animate *ad, Core *cores)
    if (iw != w)
      {
         evas_object_image_size_set(obj, w, ad->cpu_count * 3);
-        clear = EINA_TRUE;
+        clear = 1;
      }
 
    // get pixel data ptr
-   pixels = evas_object_image_data_get(obj, EINA_TRUE);
+   pixels = evas_object_image_data_get(obj, 1);
    if (!pixels) return;
    // get stride (# of bytes per line)
    stride = evas_object_image_stride_get(obj);
@@ -415,7 +415,7 @@ _colors_fill(Evas_Object *colors)
    unsigned int *pixels;
 
    evas_object_image_size_set(colors, 101, 3);
-   pixels = evas_object_image_data_get(colors, EINA_TRUE);
+   pixels = evas_object_image_data_get(colors, 1);
    if (!pixels) return;
    stride = evas_object_image_stride_get(colors);
    // cpu percent (first row)
@@ -493,11 +493,11 @@ _graph(Ui *ui, Evas_Object *parent)
    ad->win = ui->cpu.win;
    ad->cpu_count = system_cpu_count_get();
    if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
-     ad->cpu_freq = EINA_TRUE;
+     ad->cpu_freq = 1;
 
    system_cpu_temperature_min_max_get(&ad->temp_min, &ad->temp_max);
    if ((system_cpu_n_temperature_get(0)) != -1)
-     ad->cpu_temp = EINA_TRUE;
+     ad->cpu_temp = 1;
 
    ad->cpu_order = malloc((ad->cpu_count) * sizeof(int));
    for (i = 0; i < ad->cpu_count; i++)
@@ -519,9 +519,9 @@ _graph(Ui *ui, Evas_Object *parent)
    obj = evas_object_image_add(evas_object_evas_get(parent));
    evas_object_size_hint_align_set(obj, FILL, FILL);
    evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
-   evas_object_image_smooth_scale_set(obj, EINA_FALSE);
-   evas_object_image_filled_set(obj, EINA_TRUE);
-   evas_object_image_alpha_set(obj, EINA_FALSE);
+   evas_object_image_smooth_scale_set(obj, 0);
+   evas_object_image_filled_set(obj, 1);
+   evas_object_image_alpha_set(obj, 0);
    evas_object_show(obj);
 
    elm_table_pack(tbl, obj, 0, 0, 5, ad->cpu_count);
@@ -645,9 +645,9 @@ _graph(Ui *ui, Evas_Object *parent)
      (colors, 100, COLORS_HEIGHT * elm_config_scale_get());
    evas_object_size_hint_align_set(colors, FILL, FILL);
    evas_object_size_hint_weight_set(colors, EXPAND, EXPAND);
-   evas_object_image_smooth_scale_set(colors, EINA_FALSE);
-   evas_object_image_filled_set(colors, EINA_TRUE);
-   evas_object_image_alpha_set(colors, EINA_FALSE);
+   evas_object_image_smooth_scale_set(colors, 0);
+   evas_object_image_filled_set(colors, 1);
+   evas_object_image_alpha_set(colors, 0);
    _colors_fill(colors);
    elm_table_pack(tbl, colors, 0, 0, 2, 3);
    evas_object_show(colors);
@@ -709,11 +709,11 @@ _graph(Ui *ui, Evas_Object *parent)
    elm_box_pack_end(box, fr);
 
    fr = elm_frame_add(box);
-   elm_frame_autocollapse_set(fr, EINA_TRUE);
+   elm_frame_autocollapse_set(fr, 1);
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_size_hint_weight_set(fr, EXPAND, 0);
    evas_object_show(fr);
-   elm_frame_collapse_set(fr, EINA_TRUE);
+   elm_frame_collapse_set(fr, 1);
    elm_object_text_set(fr, _("Options"));
    elm_box_pack_end(box, fr);
 
@@ -766,7 +766,7 @@ _graph(Ui *ui, Evas_Object *parent)
                                           _core_times_feedback_cb,
                                           NULL,
                                           NULL,
-                                          ad, EINA_TRUE);
+                                          ad, 1);
    return ad;
 }
 
@@ -792,7 +792,7 @@ ui_cpu_win_add(Ui *ui)
 
    ui->cpu.win = win = elm_win_util_standard_add("evisum",
                    _("CPU Activity"));
-   elm_win_autodel_set(win, EINA_TRUE);
+   elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win,

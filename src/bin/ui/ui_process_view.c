@@ -541,7 +541,7 @@ _item_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    it = event_info;
 
-   elm_genlist_item_selected_set(it, EINA_FALSE);
+   elm_genlist_item_selected_set(it, 0);
 
    proc = elm_object_item_data_get(it);
    if (!proc) return;
@@ -641,7 +641,7 @@ _children_view_update(void *data)
 
    elm_genlist_clear(pd->genlist_children);
 
-   if (pd->selected_pid == 0) return EINA_FALSE;
+   if (pd->selected_pid == 0) return 0;
 
    children = proc_info_pid_children_get(pd->selected_pid);
    EINA_LIST_FOREACH(children, l, child)
@@ -660,7 +660,7 @@ _children_view_update(void *data)
    if (child)
      proc_info_free(child);
 
-   return EINA_TRUE;
+   return 1;
 }
 
 static void
@@ -687,7 +687,7 @@ _graph_update(Ui_Data *pd, Proc_Info *proc)
    unsigned int *pixels, *pix;
    Evas_Coord x, y, w, h;
    int iw, stride;
-   Eina_Bool clear = EINA_FALSE;
+   Eina_Bool clear = 0;
 
    evas_object_geometry_get(obj, &x, &y, &w, &h);
    evas_object_image_size_get(obj, &iw, NULL);
@@ -695,10 +695,10 @@ _graph_update(Ui_Data *pd, Proc_Info *proc)
    if (iw != w)
      {
         evas_object_image_size_set(obj, w, pd->graph.cpu_count);
-        clear = EINA_TRUE;
+        clear = 1;
      }
 
-   pixels = evas_object_image_data_get(obj, EINA_TRUE);
+   pixels = evas_object_image_data_get(obj, 1);
    if (!pixels) return;
 
    stride = evas_object_image_stride_get(obj);
@@ -747,9 +747,9 @@ _graph(Evas_Object *parent, Ui_Data *pd)
    pd->graph.obj = obj = evas_object_image_add(evas_object_evas_get(parent));
    evas_object_size_hint_align_set(obj, FILL, FILL);
    evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
-   evas_object_image_smooth_scale_set(obj, EINA_FALSE);
-   evas_object_image_filled_set(obj, EINA_TRUE);
-   evas_object_image_alpha_set(obj, EINA_FALSE);
+   evas_object_image_smooth_scale_set(obj, 0);
+   evas_object_image_filled_set(obj, 1);
+   evas_object_image_alpha_set(obj, 0);
    evas_object_show(obj);
 
    evas_object_size_hint_min_set(obj, 100,
@@ -807,9 +807,9 @@ _proc_gone(Ui_Data *pd)
                                         pd->selected_cmd,
                                         pd->selected_pid));
 
-   elm_object_disabled_set(pd->btn_start, EINA_TRUE);
-   elm_object_disabled_set(pd->btn_stop, EINA_TRUE);
-   elm_object_disabled_set(pd->btn_kill, EINA_TRUE);
+   elm_object_disabled_set(pd->btn_start, 1);
+   elm_object_disabled_set(pd->btn_stop, 1);
+   elm_object_disabled_set(pd->btn_kill, 1);
 
    if (!ecore_thread_check(pd->thread))
      ecore_thread_cancel(pd->thread);
@@ -850,6 +850,11 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
         return;
      }
 
+   if (proc->children)
+     elm_object_focus_allow_set(pd->genlist_children, 1);
+   else
+     elm_object_focus_allow_set(pd->genlist_children, 0);
+
    if (pd->pid_cpu_time && proc->cpu_time >= pd->pid_cpu_time)
      cpu_usage = (double)(proc->cpu_time - pd->pid_cpu_time) / pd->poll_delay;
 
@@ -869,13 +874,13 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
    pd->poll_count++;
    if (!strcmp(proc->state, "stop"))
      {
-        elm_object_disabled_set(pd->btn_stop, EINA_TRUE);
-        elm_object_disabled_set(pd->btn_start, EINA_FALSE);
+        elm_object_disabled_set(pd->btn_stop, 1);
+        elm_object_disabled_set(pd->btn_start, 0);
      }
    else
      {
-        elm_object_disabled_set(pd->btn_stop, EINA_FALSE);
-        elm_object_disabled_set(pd->btn_start, EINA_TRUE);
+        elm_object_disabled_set(pd->btn_stop, 0);
+        elm_object_disabled_set(pd->btn_start, 1);
      }
 
    elm_object_text_set(pd->entry_pid_cmd,
@@ -970,9 +975,9 @@ _entry_add(Evas_Object *parent)
    Evas_Object *entry = elm_entry_add(parent);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, FILL, FILL);
-   elm_entry_single_line_set(entry, EINA_TRUE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
-   elm_entry_editable_set(entry, EINA_FALSE);
+   elm_entry_single_line_set(entry, 1);
+   elm_entry_scrollable_set(entry, 1);
+   elm_entry_editable_set(entry, 0);
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    evas_object_show(entry);
 
@@ -1126,8 +1131,8 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    hbx = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
    evas_object_size_hint_align_set(hbx, 1.0, FILL);
-   elm_box_horizontal_set(hbx, EINA_TRUE);
-   elm_box_homogeneous_set(hbx, EINA_TRUE);
+   elm_box_horizontal_set(hbx, 1);
+   elm_box_homogeneous_set(hbx, 1);
    evas_object_show(hbx);
    elm_table_pack(tbl, hbx, 1, i, 1, 1);
 
@@ -1278,7 +1283,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    hbx = elm_box_add(bx2);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
    evas_object_size_hint_align_set(hbx, FILL, FILL);
-   elm_box_horizontal_set(hbx, EINA_TRUE);
+   elm_box_horizontal_set(hbx, 1);
    evas_object_show(hbx);
    elm_box_pack_end(bx2, hbx);
 
@@ -1329,8 +1334,8 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    pd->genlist_threads = genlist = elm_genlist_add(parent);
    evas_object_data_set(genlist, "ui", pd);
-   elm_object_focus_allow_set(genlist, EINA_FALSE);
-   elm_genlist_homogeneous_set(genlist, EINA_TRUE);
+   elm_object_focus_allow_set(genlist, 0);
+   elm_genlist_homogeneous_set(genlist, 1);
    elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
    elm_scroller_policy_set(genlist, ELM_SCROLLER_POLICY_OFF,
                            ELM_SCROLLER_POLICY_AUTO);
@@ -1364,8 +1369,8 @@ _children_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    pd->genlist_children = genlist = elm_genlist_add(parent);
    evas_object_data_set(genlist, "ui", pd);
-   elm_object_focus_allow_set(genlist, EINA_TRUE);
-   elm_genlist_homogeneous_set(genlist, EINA_TRUE);
+   elm_object_focus_allow_set(genlist, 1);
+   elm_genlist_homogeneous_set(genlist, 1);
    elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_DEFAULT);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
@@ -1398,10 +1403,10 @@ _manual_tab_add(Evas_Object *parent, Ui_Data *pd)
    pd->entry_manual = entry = elm_entry_add(bx);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, FILL, FILL);
-   elm_entry_single_line_set(entry, EINA_FALSE);
+   elm_entry_single_line_set(entry, 0);
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
-   elm_entry_editable_set(entry, EINA_FALSE);
-   elm_entry_scrollable_set(entry, EINA_TRUE);
+   elm_entry_editable_set(entry, 0);
+   elm_entry_scrollable_set(entry, 1);
    evas_object_show(entry);
    elm_box_pack_end(bx, entry);
 
@@ -1417,10 +1422,10 @@ _tab_change(Ui_Data *pd, Evas_Object *view, Evas_Object *obj)
 {
    Elm_Transit *trans;
 
-   elm_object_disabled_set(pd->tab_main, EINA_FALSE);
-   elm_object_disabled_set(pd->tab_children, EINA_FALSE);
-   elm_object_disabled_set(pd->tab_thread, EINA_FALSE);
-   elm_object_disabled_set(pd->tab_manual, EINA_FALSE);
+   elm_object_disabled_set(pd->tab_main, 0);
+   elm_object_disabled_set(pd->tab_children, 0);
+   elm_object_disabled_set(pd->tab_thread, 0);
+   elm_object_disabled_set(pd->tab_manual, 0);
    evas_object_hide(pd->main_view);
    evas_object_hide(pd->children_view);
    evas_object_hide(pd->manual_view);
@@ -1436,7 +1441,7 @@ _tab_change(Ui_Data *pd, Evas_Object *view, Evas_Object *obj)
    evas_object_show(view);
    elm_transit_go(trans);
 
-   elm_object_disabled_set(obj, EINA_TRUE);
+   elm_object_disabled_set(obj, 1);
 }
 
 static void
@@ -1520,7 +1525,7 @@ _tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    unsetenv("MANWIDTH");
 
-   pd->manual_init = EINA_TRUE;
+   pd->manual_init = 1;
 }
 
 static Evas_Object *
@@ -1534,7 +1539,7 @@ _tabs_add(Evas_Object *parent, Ui_Data *pd)
    hbx = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
    evas_object_size_hint_align_set(hbx, FILL, 0.5);
-   elm_box_horizontal_set(hbx, EINA_TRUE);
+   elm_box_horizontal_set(hbx, 1);
    evas_object_show(hbx);
 
    pad = elm_frame_add(parent);
@@ -1685,7 +1690,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    pd->selected_pid = pid;
    pd->poll_delay = 1;
    pd->cache = NULL;
-   pd->sort_reverse = EINA_TRUE;
+   pd->sort_reverse = 1;
    pd->sort_cb = _sort_by_cpu_usage;
 
    proc = proc_info_by_pid(pid);
@@ -1699,7 +1704,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
      }
 
    pd->win = win = elm_win_util_standard_add("evisum", "evisum");
-   elm_win_autodel_set(win, EINA_TRUE);
+   elm_win_autodel_set(win, 1);
    ic = elm_icon_add(win);
    elm_icon_standard_set(ic, "evisum");
    elm_win_icon_object_set(win, ic);
@@ -1748,6 +1753,6 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
                                           _proc_info_feedback_cb,
                                           NULL,
                                           NULL,
-                                          pd, EINA_FALSE);
+                                          pd, 0);
 }
 

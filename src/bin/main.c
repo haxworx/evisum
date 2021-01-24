@@ -20,7 +20,7 @@ _shutdown_cb(void *data, int type, void *event EINA_UNUSED)
    if (ui->sensors.win) evas_object_del(ui->sensors.win);
    if (ui->proc.win) evas_object_del(ui->proc.win);
 
-   return EINA_FALSE;
+   return 0;
 }
 
 static void

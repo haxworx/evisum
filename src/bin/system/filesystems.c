@@ -111,15 +111,15 @@ file_system_in_use(const char *name)
 {
    Eina_List *list;
    File_System *fs;
-   Eina_Bool mounted = EINA_FALSE;
+   Eina_Bool mounted = 0;
 
-   if (!name) return EINA_FALSE;
+   if (!name) return 0;
 
    list = file_system_info_all_get();
    EINA_LIST_FREE(list, fs)
      {
         if (fs->type_name && (!strcasecmp(fs->type_name, name)))
-          mounted = EINA_TRUE;
+          mounted = 1;
 
         file_system_info_free(fs);
      }

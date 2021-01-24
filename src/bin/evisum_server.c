@@ -56,15 +56,15 @@ evisum_server_init(void *data)
 {
    Ui *ui = data;
    Evisum_Server *server = calloc(1, sizeof(Evisum_Server));
-   if (!server) return EINA_FALSE;
+   if (!server) return 0;
 
    server->srv = ecore_con_server_add(ECORE_CON_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
-   if (!server->srv) return EINA_FALSE;
+   if (!server->srv) return 0;
 
    server->handler = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DATA, _evisum_server_server_client_connect_cb, ui);
    _evisum_server = server;
 
-   return EINA_TRUE;
+   return 1;
 }
 
 typedef struct _Evisum_Server_Client {
@@ -136,10 +136,10 @@ evisum_server_client_add(Evisum_Action action, int pid)
 
    Ecore_Con_Server *srv = ecore_con_server_connect(ECORE_CON_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
    if (!srv)
-     return EINA_FALSE;
+     return 0;
 
    client = calloc(1, sizeof(Evisum_Server_Client));
-   if (!client) return EINA_FALSE;
+   if (!client) return 0;
 
    client->action = action;
    client->pid = pid;

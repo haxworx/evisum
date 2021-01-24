@@ -105,5 +105,5 @@ config_save(Evisum_Config *cfg)
    eet_write(f, "Config", cfg, sizeof(Evisum_Config), 0);
    eet_close(f);
 
-   return EINA_TRUE;
+   return 1;
 }

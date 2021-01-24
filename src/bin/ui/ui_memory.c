@@ -104,13 +104,13 @@ _update_widgets(Ui_Data *pd, meminfo_t *memory)
    pb = pd->swap;
    if (memory->swap_total)
      {
-        elm_object_disabled_set(pb, EINA_FALSE);
+        elm_object_disabled_set(pb, 0);
         ratio = memory->swap_total / 100.0;
         value = memory->swap_used / ratio;
      }
    else
      {
-        elm_object_disabled_set(pb, EINA_TRUE);
+        elm_object_disabled_set(pb, 1);
         value = 0.0;
      }
 
@@ -124,8 +124,8 @@ _update_widgets(Ui_Data *pd, meminfo_t *memory)
      {
         pb = pd->video[i];
         if (!pb) break;
-        if (memory->video[i].total) elm_object_disabled_set(pb, EINA_FALSE);
-        else elm_object_disabled_set(pb, EINA_TRUE);
+        if (memory->video[i].total) elm_object_disabled_set(pb, 0);
+        else elm_object_disabled_set(pb, 1);
         ratio = memory->video[i].total / 100.0;
         value = memory->video[i].used / ratio;
         elm_progressbar_value_set(pb, value / 100);
@@ -226,7 +226,7 @@ ui_mem_win_add(Ui *ui)
 
    ui->mem.win = win = elm_win_util_standard_add("evisum", _("Memory Usage"));
    pd->win = win;
-   elm_win_autodel_set(win, EINA_TRUE);
+   elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win,
@@ -306,5 +306,5 @@ ui_mem_win_add(Ui *ui)
                                           _mem_usage_feedback_cb,
                                           NULL,
                                           NULL,
-                                          pd, EINA_TRUE);
+                                          pd, 1);
 }

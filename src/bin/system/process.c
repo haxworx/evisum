@@ -44,7 +44,7 @@
 
 #include "macros.h"
 
-static Eina_Bool _show_kthreads = EINA_TRUE;
+static Eina_Bool _show_kthreads = 1;
 
 void
 proc_info_kthreads_show_set(Eina_Bool enabled)
@@ -304,7 +304,7 @@ _stat(const char *path, Stat *st)
    memset(st, 0, sizeof(Stat));
 
    f = fopen(path, "r");
-   if (!f) return EINA_FALSE;
+   if (!f) return 0;
 
    if (fgets(line, sizeof(line), f))
      {
@@ -325,12 +325,12 @@ _stat(const char *path, Stat *st)
      }
    fclose(f);
 
-   if (res != 42) return EINA_FALSE;
+   if (res != 42) return 0;
 
    st->start_time /= sysconf(_SC_CLK_TCK);
    st->start_time += boot_time;
 
-   return EINA_TRUE;
+   return 1;
 }
 
 static Eina_List *
@@ -859,7 +859,7 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
    kvm_t * kern;
    char **args;
    char name[4096];
-   Eina_Bool have_command = EINA_FALSE;
+   Eina_Bool have_command = 0;
 
    kern = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
    if (kern)
@@ -875,7 +875,7 @@ _cmd_get(Proc_Info *p, struct kinfo_proc *kp)
                   if (ecore_file_exists(base))
                     {
                        snprintf(name, sizeof(name), "%s", basename(base));
-                       have_command = EINA_TRUE;
+                       have_command = 1;
                     }
                   free(base);
                }
@@ -970,7 +970,7 @@ _process_list_freebsd_fallback_get(void)
         if (kp.ki_flag & P_KPROC && !proc_info_kthreads_show_get())
           continue;
 
-        Proc_Info *p = _proc_thread_info(&kp, EINA_FALSE);
+        Proc_Info *p = _proc_thread_info(&kp, 0);
         if (p)
           list = eina_list_append(list, p);
      }
@@ -1005,7 +1005,7 @@ _process_list_freebsd_get(void)
 
         kp = &kps[i];
 
-        Proc_Info *p = _proc_thread_info(kp, EINA_FALSE);
+        Proc_Info *p = _proc_thread_info(kp, 0);
         if (p)
           list = eina_list_append(list, p);
      }
@@ -1032,7 +1032,7 @@ _proc_info_by_pid_fallback(int pid)
    if (sysctl(mib, 4, &kp, &len, NULL, 0) == -1)
      return NULL;
 
-   Proc_Info *p = _proc_thread_info(&kp, EINA_FALSE);
+   Proc_Info *p = _proc_thread_info(&kp, 0);
 
    return p;
 }
@@ -1066,10 +1066,10 @@ proc_info_by_pid(int pid)
           continue;
 
         kp = &kps[i];
-        Proc_Info *t = _proc_thread_info(kp, EINA_TRUE);
+        Proc_Info *t = _proc_thread_info(kp, 1);
         if (!p)
           {
-             p = _proc_thread_info(kp, EINA_FALSE);
+             p = _proc_thread_info(kp, 0);
              p->cpu_time = 0;
           }
 

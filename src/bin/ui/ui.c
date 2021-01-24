@@ -20,7 +20,7 @@ void
 evisum_ui_config_save(Ui *ui)
 {
    Evas_Coord x, y, w, h;
-   Eina_Bool notify = EINA_FALSE;
+   Eina_Bool notify = 0;
 
    if (!_evisum_config) return;
 
@@ -35,7 +35,7 @@ evisum_ui_config_save(Ui *ui)
             (_evisum_config->proc.show_scroller != ui->proc.show_scroller)
            )
           {
-             notify = EINA_TRUE;
+             notify = 1;
           }
 
         _evisum_config->proc.width = ui->proc.width;
@@ -339,7 +339,7 @@ _main_menu_focus_timer_cb(void *data)
      elm_object_focus_set(inst->it_focus, 1);
    inst->timer = NULL;
 
-   return EINA_FALSE;
+   return 0;
 }
 
 Evas_Object *
@@ -613,7 +613,7 @@ evisum_ui_init(void)
    if (!ui) return NULL;
 
    ui->proc.poll_delay = 3;
-   ui->proc.sort_reverse = EINA_FALSE;
+   ui->proc.sort_reverse = 0;
    ui->proc.sort_type = SORT_BY_PID;
 
    ui->program_pid = getpid();

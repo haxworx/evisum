@@ -578,7 +578,7 @@ ui_disk_win_add(Ui *ui)
      }
 
    ui->disk.win = win = elm_win_util_standard_add("evisum", _("Storage"));
-   elm_win_autodel_set(win, EINA_TRUE);
+   elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
    evisum_ui_background_random_add(win,
@@ -720,6 +720,6 @@ ui_disk_win_add(Ui *ui)
                                           _disks_poll_feedback_cb,
                                           NULL,
                                           NULL,
-                                          pd, EINA_TRUE);
+                                          pd, 1);
 }
 

@@ -5,7 +5,7 @@
 
 #define ARRAY_SIZE(n) sizeof(n) / sizeof(n[0])
 
-Eina_Bool _backgrounds_enabled = EINA_FALSE;
+Eina_Bool _backgrounds_enabled = 0;
 #if !defined(__OpenBSD__)
 static
 #endif
@@ -72,7 +72,7 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    evas_object_smart_callback_add(btn, "clicked", clicked_cb, data);
 
    hbx = elm_box_add(parent);
-   elm_box_horizontal_set(hbx, EINA_TRUE);
+   elm_box_horizontal_set(hbx, 1);
    evas_object_size_hint_weight_set(hbx, 0.0, EXPAND);
    evas_object_size_hint_align_set(hbx, FILL, FILL);
    evas_object_show(hbx);
@@ -336,7 +336,7 @@ about_anim(void *data)
 
    evas_object_geometry_get(ad->bg, NULL, NULL,  &w, &h);
    if (!ix) ix = w / 3;
-   if (w <= 0 || h <= 0) return EINA_TRUE;
+   if (w <= 0 || h <= 0) return 1;
    evas_object_geometry_get(ad->obj, NULL, NULL, NULL, &oh);
    evas_object_move(ad->obj, 0, ad->pos);
    evas_object_show(ad->obj);
@@ -349,7 +349,7 @@ about_anim(void *data)
         begin = 1;
      }
 
-   if (!begin) return EINA_TRUE;
+   if (!begin) return 1;
 
    ad->pos2 += 10;
 
@@ -367,7 +367,7 @@ about_anim(void *data)
         begin = 0;
      }
 
-   return EINA_TRUE;
+   return 1;
 }
 
 static void
@@ -435,7 +435,7 @@ evisum_about_window_show(void *data)
      }
 
    ui->win_about = win = elm_win_util_standard_add("evisum", "evisum");
-   elm_win_autodel_set(win, EINA_TRUE);
+   elm_win_autodel_set(win, 1);
    elm_win_center(win, 1, 1);
    elm_win_title_set(win, _("About"));
 

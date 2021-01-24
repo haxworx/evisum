@@ -113,9 +113,9 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj)
 {
    Item_Cache *it;
    Eina_List *l, *l_next;
-   Eina_Bool released = EINA_FALSE;
+   Eina_Bool released = 0;
 
-   if (!cache->active) return EINA_FALSE;
+   if (!cache->active) return 0;
    int n = eina_list_count(cache->inactive);
 
    EINA_LIST_FOREACH_SAFE(cache->active, l, l_next, it)
@@ -133,7 +133,7 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj)
                   evas_object_hide(it->obj);
                   cache->inactive = eina_list_prepend(cache->inactive, it);
                }
-             released = EINA_TRUE;
+             released = 1;
              break;
           }
      }
