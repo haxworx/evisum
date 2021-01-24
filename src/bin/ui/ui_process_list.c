@@ -1061,7 +1061,7 @@ _item_menu_manual_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
 static void
 _item_menu_threads_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
+                      void *event_info EINA_UNUSED)
 {
    Ui_Data *pd = data;
 
