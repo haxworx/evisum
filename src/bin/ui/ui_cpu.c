@@ -346,14 +346,11 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 {
    Animate *ad;
    Ui *ui;
-   Evas_Coord x = 0, y = 0;
 
    ad = data;
    ui = ad->ui;
 
-   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
-   ui->cpu.x = x;
-   ui->cpu.y = y;
+   evas_object_geometry_get(obj, &ui->cpu.x, &ui->cpu.y, NULL, NULL);
 }
 
 static void

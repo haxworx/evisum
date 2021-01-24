@@ -56,15 +56,16 @@ _sort_cb(const void *p1, const void *p2)
 static void
 _sensors_refresh(Ui_Data *pd)
 {
-   sensor_t **ss;
+   sensor_t **sensors;
    int n;
 
-   ss = system_sensors_thermal_get(&n);
+   sensors = system_sensors_thermal_get(&n);
+   if (!sensors) return;
 
    for (int i = 0; i < n; i++)
-     pd->sensors = eina_list_append(pd->sensors, ss[i]);
+     pd->sensors = eina_list_append(pd->sensors, sensors[i]);
 
-   free(ss);
+   free(sensors);
 
    pd->sensors = eina_list_sort(pd->sensors, n, _sort_cb);
 
@@ -221,14 +222,11 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 {
    Ui_Data *pd;
    Ui *ui;
-   Evas_Coord x = 0, y = 0;
 
    pd = data;
    ui = pd->ui;
 
-   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
-   ui->sensors.x = x;
-   ui->sensors.y = y;
+   evas_object_geometry_get(obj, &ui->sensors.x, &ui->sensors.y, NULL, NULL);
 }
 
 static void

@@ -397,9 +397,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
         if (ow > w)
-          {
-             evas_object_size_hint_min_set(pd->btn_pid, w, 1);
-          }
+          evas_object_size_hint_min_set(pd->btn_pid, w, 1);
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -454,7 +452,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
         if (ow > w)
-           evas_object_size_hint_min_set(pd->btn_size, w, 1);
+          evas_object_size_hint_min_set(pd->btn_size, w, 1);
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);

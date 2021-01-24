@@ -312,14 +312,11 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 {
    Ui_Data *pd;
    Ui *ui;
-   Evas_Coord x = 0, y = 0;
 
    pd = data;
    ui = pd->ui;
 
-   evas_object_geometry_get(obj, &x, &y, NULL, NULL);
-   ui->disk.x = x;
-   ui->disk.y = y;
+   evas_object_geometry_get(obj, &ui->disk.x, &ui->disk.y, NULL, NULL);
 }
 
 static void
@@ -453,7 +450,6 @@ _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
      elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
 
    elm_object_part_content_set(button, "icon", icon);
-   evas_object_color_set(icon, 255, 255, 255, 255);
    evas_object_show(icon);
 }
 
