@@ -346,6 +346,9 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_cpuid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
+   rec = evas_object_rectangle_add(tbl);
+   evas_object_size_hint_min_set(rec, 8, 1);
+   elm_table_pack(tbl, rec, i++, 0, 1, 1);
    lb = _item_column_add(tbl, "proc_state", i++);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
 
@@ -451,9 +454,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
         if (ow > w)
-          {
-             evas_object_size_hint_min_set(pd->btn_size, w, 1);
-          }
+           evas_object_size_hint_min_set(pd->btn_size, w, 1);
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -468,9 +469,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         elm_object_text_set(lb, buf);
         evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
         if (ow > w)
-          {
-             evas_object_size_hint_min_set(pd->btn_rss, w, 1);
-          }
+          evas_object_size_hint_min_set(pd->btn_rss, w, 1);
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
