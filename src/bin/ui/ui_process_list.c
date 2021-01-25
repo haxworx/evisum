@@ -70,7 +70,7 @@ typedef struct
    Evas_Object            *btn_cpu_usage;
 } Ui_Data;
 
-#define PAD_W 2
+#define PAD_W 4
 
 static Ui_Data *_pd = NULL;
 
@@ -331,13 +331,19 @@ _item_create(Evas_Object *parent)
    elm_box_pack_end(hbx, rec);
 
    lb = _item_column_add(tbl, "proc_pid", i++);
-   evas_object_size_hint_align_set(lb, 0.0, FILL);
+   evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_prio", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_nice", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
+   rec = evas_object_rectangle_add(tbl);
+   evas_object_size_hint_min_set(rec, PAD_W, 1);
+   elm_table_pack(tbl, rec, i++, 0, 1, 1);
    lb = _item_column_add(tbl, "proc_uid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
+   rec = evas_object_rectangle_add(tbl);
+   evas_object_size_hint_min_set(rec, PAD_W, 1);
+   elm_table_pack(tbl, rec, i++, 0, 1, 1);
    lb = _item_column_add(tbl, "proc_size", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_rss", i++);
@@ -422,7 +428,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(lb);
 
    evas_object_geometry_get(pd->btn_uid, NULL, NULL, &w, NULL);
-   w += PAD_W;
    lb = evas_object_data_get(it->obj, "proc_uid");
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
@@ -444,7 +449,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(lb);
 
    evas_object_geometry_get(pd->btn_size, NULL, NULL, &w, NULL);
-   w += PAD_W;
    lb = evas_object_data_get(it->obj, "proc_size");
    snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size));
    if (strcmp(buf, elm_object_text_get(lb)))
@@ -459,7 +463,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(lb);
 
    evas_object_geometry_get(pd->btn_rss, NULL, NULL, &w, NULL);
-   w += PAD_W;
    lb = evas_object_data_get(it->obj, "proc_rss");
    snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss));
    if (strcmp(buf, elm_object_text_get(lb)))
@@ -475,7 +478,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(pd->btn_menu, NULL, NULL, &ow, NULL);
    evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
-   w += ow;
+   w += (ow - PAD_W);
    lb = evas_object_data_get(it->obj, "proc_cmd");
    snprintf(buf, sizeof(buf), "%s", proc->command);
    if (strcmp(buf, elm_object_text_get(lb)))
