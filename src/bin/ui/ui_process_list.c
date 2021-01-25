@@ -70,8 +70,6 @@ typedef struct
    Evas_Object            *btn_cpu_usage;
 } Ui_Data;
 
-#define PAD_W 4
-
 static Ui_Data *_pd = NULL;
 
 #if PROGRESS_CUSTOM_FORMAT
@@ -326,24 +324,14 @@ _item_create(Evas_Object *parent)
    evas_object_show(lb);
    elm_box_pack_end(hbx, lb);
 
-   rec = evas_object_rectangle_add(tbl);
-   evas_object_size_hint_min_set(rec, 4, 1);
-   elm_box_pack_end(hbx, rec);
-
    lb = _item_column_add(tbl, "proc_pid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_prio", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_nice", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
-   rec = evas_object_rectangle_add(tbl);
-   evas_object_size_hint_min_set(rec, PAD_W, 1);
-   elm_table_pack(tbl, rec, i++, 0, 1, 1);
    lb = _item_column_add(tbl, "proc_uid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
-   rec = evas_object_rectangle_add(tbl);
-   evas_object_size_hint_min_set(rec, PAD_W, 1);
-   elm_table_pack(tbl, rec, i++, 0, 1, 1);
    lb = _item_column_add(tbl, "proc_size", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_rss", i++);
@@ -352,9 +340,6 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_cpuid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
-   rec = evas_object_rectangle_add(tbl);
-   evas_object_size_hint_min_set(rec, 8, 1);
-   elm_table_pack(tbl, rec, i++, 0, 1, 1);
    lb = _item_column_add(tbl, "proc_state", i++);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
 
@@ -478,7 +463,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(pd->btn_menu, NULL, NULL, &ow, NULL);
    evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
-   w += (ow - PAD_W);
+   w += (ow - 8);
    lb = evas_object_data_get(it->obj, "proc_cmd");
    snprintf(buf, sizeof(buf), "%s", proc->command);
    if (strcmp(buf, elm_object_text_get(lb)))
@@ -1271,7 +1256,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
    evas_object_size_hint_align_set(tbl, FILL, FILL);
    evas_object_show(tbl);
-   elm_table_padding_set(tbl, PAD_W, 0);
 
    pd->btn_menu = btn = _btn_create(tbl, "menu", _("Menu"),
                                     _btn_menu_clicked_cb, pd);
