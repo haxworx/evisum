@@ -11,21 +11,20 @@ typedef struct
    Elm_Genlist_Item_Class *itc;
 
    sensor_t               *sensor;
-
    Evas_Object            *thermal_pb;
-
    Evas_Object            *power_ic;
+   Eina_Bool               skip_wait;
    Ui                     *ui;
 } Ui_Data;
 
-typedef struct {
+typedef struct
+{
    Evas_Object *pb;
 } Bat;
 
 typedef struct
 {
    power_t   power;
-
    double    thermal_temp;
    Eina_Bool thermal_valid;
 } Data;
@@ -96,9 +95,10 @@ _sensors_update(void *data, Ecore_Thread *thread)
         ecore_thread_feedback(thread, msg);
         for (int i = 0; i < 8; i++)
           {
-             if (ecore_thread_check(thread)) break;
+             if (pd->skip_wait || ecore_thread_check(thread)) break;
              usleep(250000);
           }
+	pd->skip_wait = 0;
      }
    free(msg);
 }
@@ -171,6 +171,7 @@ _genlist_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
    pd->sensor = s = elm_object_item_data_get(it);
    _name_set(buf, sizeof(buf), s);
    elm_object_text_set(obj, buf);
+   pd->skip_wait = 1;
 }
 
 static char *
