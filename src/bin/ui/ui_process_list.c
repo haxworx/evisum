@@ -1243,14 +1243,10 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
 static Evas_Object *
 _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 {
-   Evas_Object *bx, *fr, *tbl, *btn, *glist;
+   Evas_Object *tbl, *btn, *glist;
    Ui *ui = pd->ui;
    int i = 0;
 
-   bx = elm_box_add(parent);
-   evas_object_size_hint_weight_set(bx, EXPAND, 0);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
 
    tbl = elm_table_add(parent);
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
@@ -1429,16 +1425,8 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
                                   _item_pid_secondary_clicked_cb, pd);
    evas_object_smart_callback_add(pd->genlist, "unrealized",
                                   _item_unrealized_cb, pd);
-   elm_box_pack_end(bx, tbl);
 
-   fr = elm_frame_add(parent);
-   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(fr, FILL, FILL);
-   elm_object_style_set(fr, "pad_small");
-   evas_object_show(fr);
-   elm_object_content_set(fr, bx);
-
-   return fr;
+   return tbl;
 }
 
 static Eina_Bool
