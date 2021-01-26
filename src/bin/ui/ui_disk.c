@@ -3,7 +3,6 @@
 
 typedef struct
 {
-   Evas_Object     *panes;
    Evas_Object     *btn_device;
    Evas_Object     *btn_mount;
    Evas_Object     *btn_fs;
@@ -216,6 +215,7 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
    elm_genlist_item_class_free(itc);
 }
 
+/*
 static void
 _item_disk_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
@@ -228,11 +228,8 @@ _item_disk_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info
    elm_genlist_item_selected_set(it, 0);
    fs = elm_object_item_data_get(it);
    if (!fs) return;
-
-   return;
-   elm_panes_content_right_size_set(pd->panes, 0.5);
-   elm_panes_content_left_size_set(pd->panes, 0.5);
 }
+*/
 
 static void
 _disks_poll(void *data, Ecore_Thread *thread)
@@ -563,7 +560,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 ui_disk_win_add(Ui *ui)
 {
-   Evas_Object *win, *panes, *fr,  *bx, *tbl, *scr;
+   Evas_Object *win, *bx, *tbl, *scr;
    Evas_Object *genlist, *btn;
    int i = 0;
 
@@ -583,18 +580,6 @@ ui_disk_win_add(Ui *ui)
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
    pd->ui = ui;
    pd->skip_wait = 1;
-
-   pd->panes = panes = elm_panes_add(win);
-   evas_object_size_hint_weight_set(panes, EXPAND, EXPAND);
-   elm_panes_horizontal_set(panes, 1);
-   evas_object_show(panes);
-   elm_object_content_set(win, panes);
-
-   fr = elm_frame_add(win);
-   elm_object_style_set(fr, "pad_small");
-   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(fr, FILL, FILL);
-   evas_object_show(fr);
 
    bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
@@ -680,11 +665,11 @@ ui_disk_win_add(Ui *ui)
    pd->genlist = genlist = elm_genlist_add(win);
    elm_object_focus_allow_set(genlist, 0);
    evas_object_data_set(genlist, "private", pd);
-   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_DEFAULT);
+   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_smart_callback_add(genlist, "unrealized", _item_unrealized_cb, pd);
-   evas_object_smart_callback_add(genlist, "selected", _item_disk_clicked_cb, pd);
+   //evas_object_smart_callback_add(genlist, "selected", _item_disk_clicked_cb, pd);
    elm_genlist_homogeneous_set(genlist, 1);
    evas_object_show(genlist);
    elm_object_content_set(scr, genlist);
@@ -692,9 +677,7 @@ ui_disk_win_add(Ui *ui)
    pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 
    elm_box_pack_end(bx, scr);
-   elm_object_content_set(fr, bx);
-   elm_object_part_content_set(panes, "left", fr);
-   elm_panes_content_left_size_set(panes, 1.0);
+   elm_object_content_set(win, bx);
 
    if (ui->disk.width > 0 && ui->disk.height > 0)
      evas_object_resize(win, ui->disk.width, ui->disk.height);

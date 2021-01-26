@@ -1748,7 +1748,6 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    _action_do(pd, action);
 
    pd->cache = evisum_ui_item_cache_new(pd->genlist_threads, _item_create, 10);
-
    pd->thread = ecore_thread_feedback_run(_proc_info_main,
                                           _proc_info_feedback_cb,
                                           NULL,
