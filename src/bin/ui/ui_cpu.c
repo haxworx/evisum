@@ -710,7 +710,7 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_size_hint_weight_set(fr, EXPAND, 0);
    evas_object_show(fr);
-   elm_frame_collapse_set(fr, 1);
+   elm_frame_collapse_set(fr, 0);
    elm_object_text_set(fr, _("Options"));
    elm_box_pack_end(box, fr);
 
