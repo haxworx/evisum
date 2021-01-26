@@ -281,13 +281,11 @@ _pb_format_free_cb(char *str)
 #endif
 
 static Evas_Object *
-_item_create(Evas_Object *parent)
+_item_create(Evas_Object *obj)
 {
-   Evas_Object *obj, *tbl, *lb, *ic, *rec;
+   Evas_Object *tbl, *lb, *ic, *rec;
    Evas_Object *hbx, *pb;
    int i = 0;
-
-   obj = parent;
 
    tbl = elm_table_add(obj);
    evas_object_size_hint_align_set(tbl, FILL, 0);
@@ -1246,7 +1244,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    Evas_Object *tbl, *btn, *glist;
    Ui *ui = pd->ui;
    int i = 0;
-
 
    tbl = elm_table_add(parent);
    evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);

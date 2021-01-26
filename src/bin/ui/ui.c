@@ -432,7 +432,6 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_move(o, ox + (ow / 2), oy + oh);
    evas_object_show(o);
 
-
    if (parent != ui->proc.win) return o;
 
    fr = elm_frame_add(o);

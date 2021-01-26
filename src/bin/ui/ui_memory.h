@@ -7,5 +7,4 @@
 void
 ui_mem_win_add(Ui *ui);
 
-
 #endif
