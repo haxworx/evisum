@@ -202,9 +202,14 @@ system_sensors_thermal_get(int *sensor_count)
 
                   snprintf(buf, sizeof(buf), "%s/name", link);
                   sensor->name = file_contents(buf);
+                  if (sensor->name)
+                    strimmer(sensor->name);
 
                   snprintf(buf, sizeof(buf), "%s/temp%d_label", link, id);
                   sensor->child_name = file_contents(buf);
+                  if (sensor->child_name)
+                    strimmer(sensor->name);
+
                   snprintf(buf, sizeof(buf), "%s/temp%d_input", link, id);
                   sensor->path = strdup(buf);
                   char *d = file_contents(buf);

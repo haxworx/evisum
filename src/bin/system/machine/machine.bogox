@@ -64,6 +64,22 @@ strsli_printf(const char *fmt, ...)
    return buf;
 }
 
+void
+strimmer(char *s)
+{
+   char *cp = s;
+
+   while (*cp)
+     {
+        if ((*cp == '\r') || (*cp == '\n'))
+          {
+             *cp = '\0';
+             return;
+          }
+        cp++;
+     }
+}
+
 #if defined(__FreeBSD__) || defined(__DragonFly__)
 static long int
 _sysctlfromname(const char *name, void *mib, int depth, size_t *len)
