@@ -215,22 +215,6 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
    elm_genlist_item_class_free(itc);
 }
 
-/*
-static void
-_item_disk_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
-{
-   Elm_Object_Item *it;
-   File_System *fs;
-   Ui_Data *pd = data;
-
-   it = event_info;
-
-   elm_genlist_item_selected_set(it, 0);
-   fs = elm_object_item_data_get(it);
-   if (!fs) return;
-}
-*/
-
 static void
 _disks_poll(void *data, Ecore_Thread *thread)
 {
@@ -669,7 +653,6 @@ ui_disk_win_add(Ui *ui)
    evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(genlist, FILL, FILL);
    evas_object_smart_callback_add(genlist, "unrealized", _item_unrealized_cb, pd);
-   //evas_object_smart_callback_add(genlist, "selected", _item_disk_clicked_cb, pd);
    elm_genlist_homogeneous_set(genlist, 1);
    evas_object_show(genlist);
    elm_object_content_set(scr, genlist);
