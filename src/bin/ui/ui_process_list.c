@@ -1457,6 +1457,7 @@ _search_clear(Ui_Data *pd)
    if (pd->search_text)
      free(pd->search_text);
    pd->search_text = NULL;
+   pd->search_len = 0;
 }
 
 static void
@@ -1526,6 +1527,7 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
    if (!strcmp(ev->keyname, "Escape"))
      {
         elm_object_text_set(pd->search_entry, "");
+	_search_clear(pd);
         pd->skip_wait = 0;
         elm_object_focus_allow_set(pd->search_entry, 0);
         evas_object_lower(pd->search_pop);
