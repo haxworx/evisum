@@ -627,10 +627,9 @@ _process_list_search_trim(Eina_List *list, Ui_Data *pd)
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
         if ((proc->pid == ui->program_pid) ||
-            (pd->search_len &&
+            ((pd->search_len) &&
              (strncasecmp(proc->command, pd->search_text, pd->search_len) &&
-             (!strstr(proc->command, pd->search_text)))
-            )
+             (!strstr(proc->command, pd->search_text))))
            )
          {
             proc_info_free(proc);
