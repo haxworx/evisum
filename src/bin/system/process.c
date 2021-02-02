@@ -58,90 +58,47 @@ proc_info_kthreads_show_get(void)
    return _show_kthreads;
 }
 
+typedef struct _States States;
+struct _States
+{
+   int         id;
+   const char *name;
+};
+
+static const States _states[] =
+{
+#if defined(__linux__)
+   { 'd', "dsleep" },
+   { 'i', "idle" },
+   { 'r', "run" },
+   { 's', "sleep" },
+   { 't', "stop" },
+   { 'x', "dead" },
+   { 'z', "zombie" },
+#else
+   { SIDL, "idle"},
+   { SRUN,  "run" },
+   { SSLEEP, "sleep" },
+   { SSTOP, "stop" },
+#if !defined(__MacOS__)
+#if !defined(__OpenBSD__)
+   { SWAIT, "wait" },
+   { SLOCK, "lock" },
+   { SZOMB, "zombie" },
+#endif
+#if defined(__OpenBSD__)
+   { SDEAD, "dead" },
+   { SONPROC, "onproc"},
+#endif
+#endif
+#endif
+};
+
+
 static const char *
 _process_state_name(char state)
 {
-   const char *statename = NULL;
-#if defined(__linux__)
-
-   switch (state)
-     {
-      case 'D':
-        statename = "dsleep";
-        break;
-
-      case 'I':
-        statename = "idle";
-        break;
-
-      case 'R':
-        statename = "run";
-        break;
-
-      case 'S':
-        statename = "sleep";
-        break;
-
-      case 'T':
-      case 't':
-        statename = "stop";
-        break;
-
-      case 'X':
-        statename = "dead";
-        break;
-
-      case 'Z':
-        statename = "zomb";
-        break;
-     }
-#else
-   switch (state)
-     {
-      case SIDL:
-        statename = "idle";
-        break;
-
-      case SRUN:
-        statename = "run";
-        break;
-
-      case SSLEEP:
-        statename = "sleep";
-        break;
-
-      case SSTOP:
-        statename = "stop";
-        break;
-
-#if !defined(__MacOS__)
-#if !defined(__OpenBSD__)
-      case SWAIT:
-        statename = "wait";
-        break;
-
-      case SLOCK:
-        statename = "lock";
-        break;
-
-#endif
-      case SZOMB:
-        statename = "zomb";
-        break;
-
-#endif
-#if defined(__OpenBSD__)
-      case SDEAD:
-        statename = "dead";
-        break;
-
-      case SONPROC:
-        statename = "onproc";
-        break;
-#endif
-     }
-#endif
-   return statename;
+   return _states[tolower(state)].name;
 }
 
 #if defined(__linux__)
@@ -371,7 +328,8 @@ _process_list_linux_get(void)
         p->cpu_id = st.psr;
         p->start = st.start_time;
         p->run_time = st.run_time;
-        p->state = _process_state_name(st.state);
+        state = _process_state_name(kp->ki_stat);
+        snprintf(p->state, sizeof(p->state), "%s", state);
         p->cpu_time = st.utime + st.stime;
         p->nice = st.nice;
         p->priority = st.pri;
@@ -426,6 +384,7 @@ _proc_thread_info(Proc_Info *p)
 Proc_Info *
 proc_info_by_pid(int pid)
 {
+   const char *state;
    Stat st;
    char buf[4096];
 
@@ -442,7 +401,8 @@ proc_info_by_pid(int pid)
    p->cpu_id = st.psr;
    p->start = st.start_time;
    p->run_time = st.run_time;
-   p->state = _process_state_name(st.state);
+   state = _process_state_name(st.state);
+   snprintf(p->state, sizeof(p->state), "%s", state);
    p->cpu_time = st.utime + st.stime;
    p->priority = st.pri;
    p->nice = st.nice;
@@ -726,6 +686,7 @@ _cmd_get(Proc_Info *p, int pid)
 static Proc_Info *
 _proc_pidinfo(size_t pid)
 {
+   const char *state;
    struct proc_taskallinfo taskinfo;
    int size = proc_pidinfo(pid, PROC_PIDTASKALLINFO, 0, &taskinfo, sizeof(taskinfo));
    if (size != sizeof(taskinfo)) return NULL;
@@ -741,7 +702,8 @@ _proc_pidinfo(size_t pid)
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
    p->start = taskinfo.pbsd.pbi_start_tvsec;
-   p->state = _process_state_name(taskinfo.pbsd.pbi_status);
+   state = _process_state_name(taskinfo.pbsd.pbi_status);
+   snprintf(p->state, sizeof(p->state), "%s", state);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
    p->priority = taskinfo.ptinfo.pti_priority;
@@ -805,6 +767,7 @@ _process_list_macos_get(void)
 Proc_Info *
 proc_info_by_pid(int pid)
 {
+   const char *state;
    struct proc_taskallinfo taskinfo;
    struct proc_workqueueinfo workqueue;
    size_t size;
@@ -828,7 +791,8 @@ proc_info_by_pid(int pid)
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
    p->start = taskinfo.pbsd.pbi_start_tvsec;
-   p->state = _process_state_name(taskinfo.pbsd.pbi_status);
+   state = _process_state_name(taskinfo.pbsd.pbi_status);
+   snprintf(p->state, sizeof(p->state), "%s", state);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
    p->mem_rss = taskinfo.ptinfo.pti_resident_size;
    p->priority = taskinfo.ptinfo.pti_priority;
@@ -915,6 +879,7 @@ static Proc_Info *
 _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
 {
    struct rusage *usage;
+   const char *state;
    Proc_Info *p;
    static int pagesize = 0;
 
@@ -939,7 +904,11 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->cpu_time = ((usage->ru_utime.tv_sec * 1000000) + usage->ru_utime.tv_usec +
        (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec) / 10000;
    p->run_time = (kp->ki_runtime + 500000) / 1000000;
-   p->state = _process_state_name(kp->ki_stat);
+   if (kp->ki_stat == SSLEEP)
+     state = kp->ki_wmesg;
+   else
+     state = _process_state_name(kp->ki_stat);
+   snprintf(p->state, sizeof(p->state), "%s", state);
    p->mem_virt = kp->ki_size;
    p->mem_rss = MEMSZ(kp->ki_rssize) * MEMSZ(pagesize);
    p->start = kp->ki_start.tv_sec;
