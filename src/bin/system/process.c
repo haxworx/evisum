@@ -58,13 +58,6 @@ proc_info_kthreads_show_get(void)
    return _show_kthreads;
 }
 
-typedef struct _States States;
-struct _States
-{
-   int         id;
-   const char *name;
-};
-
 static const char * _states[255];
 
 static void
@@ -80,18 +73,18 @@ _states_init(void)
    _states['Z']     = "zombie";
 #else
    _states[SIDL]    = "idle";
-   _states[SRUN]    = "run";,
+   _states[SRUN]    = "run";
    _states[SSLEEP]  = "sleep";
    _states[SSTOP]   = "stop";
 #if !defined(__MacOS__)
 #if !defined(__OpenBSD__)
    _states[SWAIT]   = "wait";
-   _states[SLOCK]   = "lock";,
+   _states[SLOCK]   = "lock";
    _states[SZOMB]   = "zombie";
 #endif
 #if defined(__OpenBSD__)
    _states[SDEAD]   = "dead";
-   _states[SONPROC] = "onproc"};
+   _states[SONPROC] = "onproc";
 #endif
 #endif
 #endif
