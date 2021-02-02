@@ -464,6 +464,7 @@ static void
 _proc_get(Proc_Info *p, struct kinfo_proc *kp)
 {
    static int pagesize = 0;
+   const char *state;
 
    if (!pagesize) pagesize = getpagesize();
 
@@ -472,7 +473,13 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    p->uid = kp->p_uid;
    p->cpu_id = kp->p_cpuid;
    p->start = kp->p_ustart_sec;
-   p->state = _process_state_name(kp->p_stat);
+   p->run_time = kp->p_uutime_sec + kp->p_ustime_sec +
+                 (kp->p_uutime_usec / 1000000) + (kp->p_ustime_usec / 1000000);
+   if (kp->p_stat == SSLEEP)
+     state = kp->p_wmesg;
+   else
+     state = _process_state_name(kp->p_stat);
+   snprintf(p->state, sizeof(p->state), "%s", state);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
    p->mem_virt = p->mem_size = (MEMSZ(kp->p_vm_tsize) * MEMSZ(pagesize)) +
       (MEMSZ(kp->p_vm_dsize) * MEMSZ(pagesize)) + (MEMSZ(kp->p_vm_ssize) * MEMSZ(pagesize));
