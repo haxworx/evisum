@@ -65,40 +65,48 @@ struct _States
    const char *name;
 };
 
-static const States _states[] =
+static const char * _states[255];
+
+static void
+_states_init(void)
 {
 #if defined(__linux__)
-   { 'd', "dsleep" },
-   { 'i', "idle" },
-   { 'r', "run" },
-   { 's', "sleep" },
-   { 't', "stop" },
-   { 'x', "dead" },
-   { 'z', "zombie" },
+   _states['D']     = "dsleep";
+   _states['I']     = "idle";
+   _states['R']     = "run";
+   _states['S']     = "sleep";
+   _states['T']     = "stop";
+   _states['X']     = "dead";
+   _states['Z']     = "zombie";
 #else
-   { SIDL, "idle"},
-   { SRUN,  "run" },
-   { SSLEEP, "sleep" },
-   { SSTOP, "stop" },
+   _states[SIDL]    = "idle";
+   _states[SRUN]    = "run";,
+   _states[SSLEEP]  = "sleep";
+   _states[SSTOP]   = "stop";
 #if !defined(__MacOS__)
 #if !defined(__OpenBSD__)
-   { SWAIT, "wait" },
-   { SLOCK, "lock" },
-   { SZOMB, "zombie" },
+   _states[SWAIT]   = "wait";
+   _states[SLOCK]   = "lock";,
+   _states[SZOMB]   = "zombie";
 #endif
 #if defined(__OpenBSD__)
-   { SDEAD, "dead" },
-   { SONPROC, "onproc"},
+   _states[SDEAD]   = "dead";
+   _states[SONPROC] = "onproc"};
 #endif
 #endif
 #endif
-};
-
+}
 
 static const char *
 _process_state_name(char state)
 {
-   return _states[tolower(state)].name;
+   static int init = 0;
+   if (!init)
+     {
+        _states_init();
+        init = 1;
+     }
+   return _states[toupper(state)];
 }
 
 #if defined(__linux__)
@@ -298,6 +306,7 @@ static Eina_List *
 _process_list_linux_get(void)
 {
    Eina_List *files, *list;
+   const char *state;
    char *n;
    char buf[4096];
    Stat st;
@@ -328,7 +337,7 @@ _process_list_linux_get(void)
         p->cpu_id = st.psr;
         p->start = st.start_time;
         p->run_time = st.run_time;
-        state = _process_state_name(kp->ki_stat);
+        state = _process_state_name(st.state);
         snprintf(p->state, sizeof(p->state), "%s", state);
         p->cpu_time = st.utime + st.stime;
         p->nice = st.nice;
@@ -349,6 +358,7 @@ static void
 _proc_thread_info(Proc_Info *p)
 {
    Eina_List *files;
+   const char *state;
    char *n;
    char buf[4096];
    Stat st;
@@ -366,7 +376,8 @@ _proc_thread_info(Proc_Info *p)
         Proc_Info *t = calloc(1, sizeof(Proc_Info));
         if (!t) continue;
         t->cpu_id = st.psr;
-        t->state = _process_state_name(st.state);
+        state = _process_state_name(st.state);
+        snprintf(t->state, sizeof(t->state), "%s", state);
         t->cpu_time = st.utime + st.stime;
         t->nice = st.nice;
         t->priority = st.pri;
