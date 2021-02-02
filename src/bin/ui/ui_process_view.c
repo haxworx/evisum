@@ -32,6 +32,7 @@ typedef struct
    Evas_Object     *entry_pid_shared;
    Evas_Object     *entry_pid_size;
    Evas_Object     *entry_pid_started;
+   Evas_Object     *entry_pid_run_time;
    Evas_Object     *entry_pid_nice;
    Evas_Object     *entry_pid_pri;
    Evas_Object     *entry_pid_state;
@@ -518,20 +519,6 @@ _threads_cpu_usage(Ui_Data *pd, Proc_Info *proc)
      }
 }
 
-static char *
-_time_string(int64_t epoch)
-{
-   struct tm *info;
-   time_t rawtime;
-   char buf[256];
-
-   rawtime = (time_t) epoch;
-   info = localtime(&rawtime);
-   strftime(buf, sizeof(buf), "%F %T", info);
-
-   return strdup(buf);
-}
-
 static void
 _item_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info)
@@ -797,6 +784,28 @@ _graph(Evas_Object *parent, Ui_Data *pd)
    return tbl;
 }
 
+static char *
+_time_string(int64_t epoch)
+{
+   struct tm *info;
+   time_t rawtime;
+   char buf[256];
+
+   rawtime = (time_t) epoch;
+   info = localtime(&rawtime);
+   strftime(buf, sizeof(buf), "%F %T", info);
+
+   return strdup(buf);
+}
+
+static char *
+_run_time_string(int64_t secs)
+{
+   char buf[256];
+   snprintf(buf, sizeof(buf), "%ld:%02ld", secs / 60, secs % 60);
+   return strdup(buf);
+}
+
 static void
 _proc_gone(Ui_Data *pd)
 {
@@ -911,8 +920,13 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
                        evisum_size_format(proc->mem_shared));
 #endif
    elm_object_text_set(pd->entry_pid_size, evisum_size_format(proc->mem_size));
-
-   char *t = _time_string(proc->start);
+   char *t = _run_time_string(proc->run_time);
+   if (t)
+     {
+        elm_object_text_set(pd->entry_pid_run_time, t);
+        free(t);
+     }
+   t = _time_string(proc->start);
    if (t)
      {
         elm_object_text_set(pd->entry_pid_started, t);
@@ -1106,6 +1120,11 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    lb = _lb_add(parent, _(" Start time:"));
    elm_table_pack(tbl, lb, 0, i, 1, 1);
    pd->entry_pid_started = entry = _entry_add(parent);
+   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+
+   lb = _lb_add(parent, _(" Run time:"));
+   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   pd->entry_pid_run_time = entry = _entry_add(parent);
    elm_table_pack(tbl, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Nice:"));

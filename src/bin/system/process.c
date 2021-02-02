@@ -284,7 +284,7 @@ _boot_time(void)
 typedef struct {
    int pid, ppid, utime, stime, cutime, cstime;
    int psr, pri, nice, numthreads;
-   long long int start_time;
+   long long int start_time, run_time;
    char state;
    unsigned int mem_rss, flags;
    unsigned long mem_virt;
@@ -297,6 +297,7 @@ _stat(const char *path, Stat *st)
    FILE *f;
    char line[4096];
    int dummy, res = 0;
+   static long tck = 0;
    static int64_t boot_time = 0;
 
    if (!boot_time) boot_time = _boot_time();
@@ -327,8 +328,11 @@ _stat(const char *path, Stat *st)
 
    if (res != 42) return 0;
 
-   st->start_time /= sysconf(_SC_CLK_TCK);
+   if (!tck) tck = sysconf(_SC_CLK_TCK);
+
+   st->start_time /= tck;
    st->start_time += boot_time;
+   st->run_time = (st->utime + st->stime) / tck;
 
    return 1;
 }
@@ -366,6 +370,7 @@ _process_list_linux_get(void)
         p->uid = _uid(pid);
         p->cpu_id = st.psr;
         p->start = st.start_time;
+        p->run_time = st.run_time;
         p->state = _process_state_name(st.state);
         p->cpu_time = st.utime + st.stime;
         p->nice = st.nice;
@@ -436,6 +441,7 @@ proc_info_by_pid(int pid)
    p->uid = _uid(pid);
    p->cpu_id = st.psr;
    p->start = st.start_time;
+   p->run_time = st.run_time;
    p->state = _process_state_name(st.state);
    p->cpu_time = st.utime + st.stime;
    p->priority = st.pri;
