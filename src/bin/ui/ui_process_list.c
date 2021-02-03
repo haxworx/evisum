@@ -360,12 +360,9 @@ _item_create(Evas_Object *obj)
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_time", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
+
    lb = _item_column_add(tbl, "proc_state", i++);
-   evas_object_size_hint_align_set(lb, 1.0, FILL);
-   rec = evas_object_rectangle_add(evas_object_evas_get(obj));
-   evas_object_size_hint_min_set(rec, 4, 1);
-   evas_object_size_hint_max_set(rec, 4, -1);
-   elm_table_pack(tbl, rec, i++, 0, 1, 1);
+   evas_object_size_hint_align_set(lb, 0.5, FILL);
 
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
@@ -1335,7 +1332,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_PID ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_PID);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("pid"));
    evas_object_show(btn);
@@ -1436,10 +1433,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 
    pd->btn_time = btn = elm_button_add(parent);
    _btn_icon_state_init(btn,
-            (ui->proc.sort_type == SORT_BY_CPU ?
+            (ui->proc.sort_type == SORT_BY_TIME ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == SORT_BY_CPU);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+            ui->proc.sort_type == SORT_BY_TIME);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("time"));
    evas_object_show(btn);
@@ -1452,7 +1449,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_STATE ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_STATE);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("state"));
    evas_object_show(btn);
