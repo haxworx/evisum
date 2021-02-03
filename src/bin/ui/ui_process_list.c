@@ -343,7 +343,7 @@ _item_create(Evas_Object *obj)
    elm_box_pack_end(hbx, lb);
 
    lb = _item_column_add(tbl, "proc_pid", i++);
-   evas_object_size_hint_align_set(lb, 0.0, FILL);
+   evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_prio", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_nice", i++);
