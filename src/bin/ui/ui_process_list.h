@@ -15,6 +15,7 @@ typedef enum
    SORT_BY_SIZE,
    SORT_BY_RSS,
    SORT_BY_CMD,
+   SORT_BY_TIME,
    SORT_BY_STATE,
    SORT_BY_CPU_USAGE,
 

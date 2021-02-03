@@ -802,7 +802,8 @@ static char *
 _run_time_string(int64_t secs)
 {
    char buf[256];
-   snprintf(buf, sizeof(buf), "%ld:%02ld", secs / 60, secs % 60);
+   int s = secs % 3600;
+   snprintf(buf, sizeof(buf), "%02ld:%02d:%02d", secs / 3600, s / 60, s % 60);
    return strdup(buf);
 }
 

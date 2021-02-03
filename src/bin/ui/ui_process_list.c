@@ -64,9 +64,10 @@ typedef struct
    Evas_Object            *btn_nice;
    Evas_Object            *btn_size;
    Evas_Object            *btn_rss;
-   Evas_Object            *btn_state;
    Evas_Object            *btn_threads;
    Evas_Object            *btn_cpu_n;
+   Evas_Object            *btn_time;
+   Evas_Object            *btn_state;
    Evas_Object            *btn_cpu_usage;
 } Ui_Data;
 
@@ -171,6 +172,25 @@ _sort_by_rss(const void *p1, const void *p2)
    if (size1 > size2)
      return 1;
    if (size1 < size2)
+     return -1;
+
+   return 0;
+}
+
+static int
+_sort_by_time(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+   int64_t t1, t2;
+
+   inf1 = p1; inf2 = p2;
+
+   t1 = inf1->run_time;
+   t2 = inf2->run_time;
+
+   if (t1 > t2)
+     return 1;
+   if (t1 < t2)
      return -1;
 
    return 0;
@@ -338,8 +358,14 @@ _item_create(Evas_Object *obj)
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_cpuid", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
+   lb = _item_column_add(tbl, "proc_time", i++);
+   evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_state", i++);
-   evas_object_size_hint_align_set(lb, 0.5, FILL);
+   evas_object_size_hint_align_set(lb, 1.0, FILL);
+   rec = evas_object_rectangle_add(evas_object_evas_get(obj));
+   evas_object_size_hint_min_set(rec, 4, 1);
+   evas_object_size_hint_max_set(rec, 4, -1);
+   elm_table_pack(tbl, rec, i++, 0, 1, 1);
 
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
@@ -354,6 +380,20 @@ _item_create(Evas_Object *obj)
    evas_object_data_set(tbl, "proc_cpu_usage", pb);
 
    return tbl;
+}
+
+static void
+_run_time_set(char *buf, size_t n, int64_t secs)
+{
+   int rem;
+
+   if (secs < 86400)
+     snprintf(buf, n, "%02ld:%02ld", secs / 60, secs % 60);
+   else
+     {
+        rem = secs % 3600;
+        snprintf(buf, n, "%02ld:%02d:%02d", secs / 3600, rem / 60, rem % 60);
+     }
 }
 
 static Evas_Object *
@@ -506,6 +546,17 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
 
+   evas_object_geometry_get(pd->btn_time, NULL, NULL, &w, NULL);
+   lb = evas_object_data_get(it->obj, "proc_time");
+
+   _run_time_set(buf, sizeof(buf), proc->run_time);
+   if (strcmp(buf, elm_object_text_get(lb)))
+     elm_object_text_set(lb, buf);
+   rec = evas_object_data_get(lb, "rec");
+   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_show(lb);
+
+   pb = evas_object_data_get(it->obj, "proc_cpu_usage");
    evas_object_geometry_get(pd->btn_state, NULL, NULL, &w, NULL);
    lb = evas_object_data_get(it->obj, "proc_state");
    snprintf(buf, sizeof(buf), "%s", proc->state);
@@ -948,6 +999,19 @@ _btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
+_btn_time_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                     void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+   Ui *ui = pd->ui;
+
+   if (ui->proc.sort_type == SORT_BY_TIME)
+     ui->proc.sort_reverse = !ui->proc.sort_reverse;
+   ui->proc.sort_type = SORT_BY_TIME;
+   _btn_clicked_state_save(pd, pd->btn_state);
+}
+
+static void
 _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info EINA_UNUSED)
 {
@@ -1370,6 +1434,19 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_cpu_clicked_cb, pd);
 
+   pd->btn_time = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            (ui->proc.sort_type == SORT_BY_CPU ?
+            ui->proc.sort_reverse : 0),
+            ui->proc.sort_type == SORT_BY_CPU);
+   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("time"));
+   evas_object_show(btn);
+   elm_table_pack(tbl, btn, i++, 1, 1, 1);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_time_clicked_cb, pd);
+
    pd->btn_state = btn = elm_button_add(parent);
    _btn_icon_state_init(btn,
             (ui->proc.sort_type == SORT_BY_STATE ?
@@ -1526,7 +1603,7 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
    if (!strcmp(ev->keyname, "Escape"))
      {
         elm_object_text_set(pd->search_entry, "");
-	_search_clear(pd);
+        _search_clear(pd);
         pd->skip_wait = 0;
         elm_object_focus_allow_set(pd->search_entry, 0);
         evas_object_lower(pd->search_pop);
@@ -1713,6 +1790,7 @@ _init(Ui_Data *pd)
    pd->sorters[SORT_BY_RSS].sort_cb = _sort_by_rss;
    pd->sorters[SORT_BY_CMD].sort_cb = _sort_by_cmd;
    pd->sorters[SORT_BY_STATE].sort_cb = _sort_by_state;
+   pd->sorters[SORT_BY_TIME].sort_cb = _sort_by_time;
    pd->sorters[SORT_BY_CPU_USAGE].sort_cb = _sort_by_cpu_usage;
 }
 

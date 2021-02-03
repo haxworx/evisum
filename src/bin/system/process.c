@@ -1043,6 +1043,8 @@ proc_info_by_pid(int pid)
 
    Proc_Info *p = NULL;
 
+   // XXX: run_time does not include interrupts.
+
    for (int i = 0; i < pid_count; i++)
      {
         if (kps[i].ki_flag & P_KPROC && !proc_info_kthreads_show_get())
