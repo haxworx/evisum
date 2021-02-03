@@ -1005,7 +1005,7 @@ _btn_time_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (ui->proc.sort_type == SORT_BY_TIME)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = SORT_BY_TIME;
-   _btn_clicked_state_save(pd, pd->btn_state);
+   _btn_clicked_state_save(pd, pd->btn_time);
 }
 
 static void
