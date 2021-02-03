@@ -4,9 +4,8 @@
 #include <Evas.h>
 #include "system/process.h"
 
-#define FILL   EVAS_HINT_FILL
+#define FILL EVAS_HINT_FILL
 #define EXPAND EVAS_HINT_EXPAND
-#define GROW    0.00001
 
 #define TAB_BTN_WIDTH  74
 #define TAB_BTN_HEIGHT 2
