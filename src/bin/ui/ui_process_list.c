@@ -360,7 +360,6 @@ _item_create(Evas_Object *obj)
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_time", i++);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
-
    lb = _item_column_add(tbl, "proc_state", i++);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
 
@@ -426,7 +425,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
           evas_object_size_hint_min_set(pd->btn_pid, w, 1);
      }
    rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_size_hint_min_set(rec, w + 1, 1);
    evas_object_show(lb);
 
    evas_object_geometry_get(pd->btn_pri, NULL, NULL, &w, NULL);
@@ -435,7 +434,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (strcmp(buf, elm_object_text_get(lb)))
      elm_object_text_set(lb, buf);
    rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_size_hint_min_set(rec, w + 1, 1);
    evas_object_show(lb);
 
    evas_object_geometry_get(pd->btn_nice, NULL, NULL, &w, NULL);
@@ -511,7 +510,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         pd->skip_wait = 1;
      }
    rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_size_hint_min_set(rec, w + 1, 1);
    evas_object_show(lb);
    elm_box_recalculate(hbx);
 
@@ -540,7 +539,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (strcmp(buf, elm_object_text_get(lb)))
      elm_object_text_set(lb, buf);
    rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_size_hint_min_set(rec, w + 1, 1);
    evas_object_show(lb);
 
    evas_object_geometry_get(pd->btn_time, NULL, NULL, &w, NULL);
@@ -550,17 +549,16 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (strcmp(buf, elm_object_text_get(lb)))
      elm_object_text_set(lb, buf);
    rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_size_hint_min_set(rec, w + 1, 1);
    evas_object_show(lb);
 
-   pb = evas_object_data_get(it->obj, "proc_cpu_usage");
    evas_object_geometry_get(pd->btn_state, NULL, NULL, &w, NULL);
    lb = evas_object_data_get(it->obj, "proc_state");
    snprintf(buf, sizeof(buf), "%s", proc->state);
    if (strcmp(buf, elm_object_text_get(lb)))
      elm_object_text_set(lb, buf);
    rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_size_hint_min_set(rec, w + 1, 1);
    evas_object_show(lb);
 
    pb = evas_object_data_get(it->obj, "proc_cpu_usage");
@@ -1407,9 +1405,9 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 
    pd->btn_threads = btn = elm_button_add(parent);
    _btn_icon_state_init(btn,
-            (ui->proc.sort_type == SORT_BY_STATE ?
+            (ui->proc.sort_type == SORT_BY_THREADS ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == SORT_BY_STATE);
+            ui->proc.sort_type == SORT_BY_THREADS);
    evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("thr"));
@@ -1449,7 +1447,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_STATE ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_STATE);
-   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("state"));
    evas_object_show(btn);
