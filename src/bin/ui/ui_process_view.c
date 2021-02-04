@@ -283,7 +283,7 @@ _item_create(Evas_Object *parent)
    evas_object_size_hint_align_set(lb, 0.5, FILL);
    _item_column_add(tbl, "name", 1);
    lb = _item_column_add(tbl, "state", 2);
-   evas_object_size_hint_align_set(lb, 0.5, FILL);
+   evas_object_size_hint_align_set(lb, 0.0, FILL);
    lb = _item_column_add(tbl, "cpu_id", 3);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
 
