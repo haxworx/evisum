@@ -57,7 +57,6 @@ typedef struct
 
    Evas_Object            *btn_menu;
 
-   Eina_List              *btn_list;
    Evas_Object            *btn_pid;
    Evas_Object            *btn_uid;
    Evas_Object            *btn_cmd;
@@ -448,6 +447,27 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(o);
 
+   evas_object_geometry_get(pd->btn_uid, NULL, NULL, &w, NULL);
+   lb = evas_object_data_get(it->obj, "proc_uid");
+   pwd_entry = getpwuid(proc->uid);
+   if (pwd_entry)
+     snprintf(buf, sizeof(buf), "%s", pwd_entry->pw_name);
+   else
+     snprintf(buf, sizeof(buf), "%i", proc->uid);
+   if (strcmp(buf, elm_object_text_get(lb)))
+     {
+        elm_object_text_set(lb, buf);
+        evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
+        if (ow > w)
+          {
+             evas_object_size_hint_min_set(pd->btn_uid, w, 1);
+             pd->skip_wait = 1;
+          }
+     }
+   rec = evas_object_data_get(lb, "rec");
+   evas_object_size_hint_min_set(rec, w, 1);
+   evas_object_show(lb);
+
    evas_object_geometry_get(pd->btn_pid, NULL, NULL, &w, NULL);
    lb = evas_object_data_get(it->obj, "proc_pid");
    snprintf(buf, sizeof(buf), "%d", proc->pid);
@@ -471,27 +491,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    snprintf(buf, sizeof(buf), "%d", proc->nice);
    if (strcmp(buf, elm_object_text_get(lb)))
      elm_object_text_set(lb, buf);
-   rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
-   evas_object_show(lb);
-
-   evas_object_geometry_get(pd->btn_uid, NULL, NULL, &w, NULL);
-   lb = evas_object_data_get(it->obj, "proc_uid");
-   pwd_entry = getpwuid(proc->uid);
-   if (pwd_entry)
-     snprintf(buf, sizeof(buf), "%s", pwd_entry->pw_name);
-   else
-     snprintf(buf, sizeof(buf), "%i", proc->uid);
-   if (strcmp(buf, elm_object_text_get(lb)))
-     {
-        elm_object_text_set(lb, buf);
-        evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
-        if (ow > w)
-          {
-             evas_object_size_hint_min_set(pd->btn_uid, w, 1);
-             pd->skip_wait = 1;
-          }
-     }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
@@ -1286,17 +1285,6 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
 }
 
 static Evas_Object *
-_pad(Ui_Data *pd, int w)
-{
-   Evas_Object *rec, *parent = pd->win;
-   rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(w), 1); 
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(w), -1);
-   pd->btn_list = eina_list_append(pd->btn_list, rec);
-   return rec;
-}
-
-static Evas_Object *
 _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 {
    Evas_Object *tbl, *btn, *glist, *rec;
@@ -1335,12 +1323,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_UID ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_UID);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("user"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_uid_clicked_cb, pd);
@@ -1350,12 +1336,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_PID ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_PID);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("pid"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_pid_clicked_cb, pd);
@@ -1365,12 +1349,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_PRI ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_PRI);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("prio"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_pri_clicked_cb, pd);
@@ -1380,12 +1362,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_NICE ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_NICE);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("nice"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_nice_clicked_cb, pd);
@@ -1395,12 +1375,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_SIZE ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_SIZE);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("size"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_size_clicked_cb, pd);
@@ -1414,8 +1392,6 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("res"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_rss_clicked_cb, pd);
@@ -1425,11 +1401,9 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_THREADS ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_THREADS);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("thr"));
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    evas_object_show(btn);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
@@ -1440,12 +1414,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_CPU ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_CPU);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_cpu_clicked_cb, pd);
@@ -1455,12 +1427,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_TIME ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_TIME);
-   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("time"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_time_clicked_cb, pd);
@@ -1470,12 +1440,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_STATE ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_STATE);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("state"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_state_clicked_cb, pd);
@@ -1485,12 +1453,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
             (ui->proc.sort_type == SORT_BY_CPU_USAGE ?
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == SORT_BY_CPU_USAGE);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu %"));
    evas_object_show(btn);
-   rec = _pad(pd, 1);
-   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_cpu_usage_clicked_cb, pd);
@@ -1717,15 +1683,8 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    evas_object_geometry_get(obj, NULL, NULL,
                             &ui->proc.width, &ui->proc.height);
-
-   Eina_List *l; int w = 72;
-   Evas_Object *o;
-   EINA_LIST_FOREACH(pd->btn_list, l, o)
-     {
-        evas_object_size_hint_min_set(o, ELM_SCALE_SIZE(w), 1);
-	evas_object_size_hint_max_set(o, ELM_SCALE_SIZE(w), -1);
-     }
 }
+
 
 static Eina_Bool
 _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
@@ -1789,7 +1748,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
    if (pd->thread)
      ecore_thread_wait(pd->thread, 0.5);
 
-   eina_list_free(pd->btn_list);
    ecore_event_handler_del(pd->handler[0]);
 
    pd->thread = NULL;
