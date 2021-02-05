@@ -1437,7 +1437,7 @@ _manual_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    tb = elm_entry_textblock_get(entry);
    sz = evisum_ui_textblock_font_size_get(tb);
-   evisum_ui_textblock_font_size_set(tb, sz - 1);
+   evisum_ui_textblock_font_size_set(tb, sz - ELM_SCALE_SIZE(1));
 
    return fr;
 }
