@@ -6,6 +6,8 @@
 #include "ui/ui_process_view.h"
 
 #include <stdio.h>
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/resource.h>
 #include <pwd.h>
@@ -385,11 +387,11 @@ _run_time_set(char *buf, size_t n, int64_t secs)
    int rem;
 
    if (secs < 86400)
-     snprintf(buf, n, "%02lld:%02lld", secs / 60, secs % 60);
+     snprintf(buf, n, "%02" PRIi64 ":%02"PRIi64, secs / 60, secs % 60);
    else
      {
         rem = secs % 3600;
-        snprintf(buf, n, "%02lld:%02d:%02d", secs / 3600, rem / 60, rem % 60);
+        snprintf(buf, n, "%02" PRIi64 ":%02d:%02d", secs / 3600, rem / 60, rem % 60);
      }
 }
 

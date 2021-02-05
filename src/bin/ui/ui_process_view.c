@@ -1,6 +1,8 @@
 #include "ui_process_view.h"
 #include "../system/process.h"
 #include "util.c"
+#define __STDC_FORMAT_MACROS
+#include <inttypes.h>
 
 typedef struct
 {
@@ -803,7 +805,7 @@ _run_time_string(int64_t secs)
 {
    char buf[256];
    int s = secs % 3600;
-   snprintf(buf, sizeof(buf), "%02lld:%02d:%02d", secs / 3600, s / 60, s % 60);
+   snprintf(buf, sizeof(buf), "%02"PRIi64"%02d:%02d", secs / 3600, s / 60, s % 60);
    return strdup(buf);
 }
 
