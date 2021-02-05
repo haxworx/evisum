@@ -522,7 +522,7 @@ evisum_about_window_show(void *data)
    rec = evas_object_rectangle_add(evas_object_evas_get(win));
    evas_object_size_hint_align_set(rec, FILL, FILL);
    evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-   evas_object_size_hint_min_set(rec, 92, 1);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_WIDTH), 1);
 
    btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, 0);

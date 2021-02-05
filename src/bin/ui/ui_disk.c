@@ -541,11 +541,20 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    evisum_ui_config_save(pd->ui);
 }
 
+static Evas_Object *
+_btn_min_size(Evas_Object *parent)
+{
+   Evas_Object *rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_WIDTH), 1);
+
+   return rec;
+}
+
 void
 ui_disk_win_add(Ui *ui)
 {
-   Evas_Object *win, *bx, *tbl, *scr;
-   Evas_Object *genlist, *btn;
+   Evas_Object *win, *tbl, *scr;
+   Evas_Object *genlist, *rec, *btn;
    int i = 0;
 
    if (ui->disk.win)
@@ -565,19 +574,13 @@ ui_disk_win_add(Ui *ui)
    pd->ui = ui;
    pd->skip_wait = 1;
 
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
-
    tbl = elm_table_add(win);
-   evas_object_size_hint_weight_set(tbl, EXPAND, 0);
+   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
    evas_object_size_hint_align_set(tbl, FILL, FILL);
    evas_object_show(tbl);
-   elm_box_pack_end(bx, tbl);
 
    pd->btn_device = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("device"));
@@ -586,7 +589,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
    pd->btn_mount = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("mount"));
@@ -595,7 +598,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
    pd->btn_fs = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(btn, EXPAND, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("type"));
@@ -604,30 +607,36 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
    pd->btn_total = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, 0, EXPAND);
+   evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("total"));
    evas_object_smart_callback_add(btn, "clicked", _btn_total_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
+   rec = _btn_min_size(btn);
+   elm_table_pack(tbl, rec, i, i, 1, 1);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
    pd->btn_used = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, 0, EXPAND);
+   evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("used"));
    evas_object_smart_callback_add(btn, "clicked", _btn_used_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
+   rec = _btn_min_size(btn);
+   elm_table_pack(tbl, rec, i, i, 1, 1);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
    pd->btn_free = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, 0, EXPAND);
+   evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("free"));
    evas_object_smart_callback_add(btn, "clicked", _btn_free_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
+   rec = _btn_min_size(btn);
+   elm_table_pack(tbl, rec, i, i, 1, 1);
    elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
    pd->btn_usage = btn = elm_button_add(win);
@@ -659,8 +668,8 @@ ui_disk_win_add(Ui *ui)
 
    pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 
-   elm_box_pack_end(bx, scr);
-   elm_object_content_set(win, bx);
+   elm_table_pack(tbl, scr, 0, 1, 7, 2);
+   elm_object_content_set(win, tbl);
 
    if (ui->disk.width > 0 && ui->disk.height > 0)
      evas_object_resize(win, ui->disk.width, ui->disk.height);

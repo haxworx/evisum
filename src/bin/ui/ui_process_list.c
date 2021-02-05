@@ -1293,7 +1293,7 @@ static Evas_Object
 *_btn_min_size(Ui_Data *pd, Evas_Object *btn)
 {
    Evas_Object *rec = evas_object_rectangle_add(evas_object_evas_get(btn));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(68), 1);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_size_hint_weight_set(rec, EXPAND, 0);
 
    List_Header *hdr = malloc(sizeof(List_Header));
