@@ -1292,6 +1292,7 @@ static Evas_Object
 {
    Evas_Object *rec = evas_object_rectangle_add(evas_object_evas_get(btn));
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(64), 1);
+   evas_object_size_hint_weight_set(rec, EXPAND, 0);
 
    List_Header *hdr = malloc(sizeof(List_Header));
    hdr->rec = rec;
@@ -1344,6 +1345,9 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("user"));
    evas_object_show(btn);
+   rec = _btn_min_size(pd, btn);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(90), 1);
+   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_uid_clicked_cb, pd);
@@ -1694,33 +1698,6 @@ _resize_cb(void *data)
    pd->skip_wait = 0;
    pd->resize_timer = NULL;
 
-   int ww, w;
-   ww = pd->ui->proc.width;
-   evas_object_geometry_get(pd->btn_menu, NULL, NULL, &w, NULL);
-   ww -= w;
-   evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
-   ww -= w;
-   evas_object_geometry_get(pd->btn_uid, NULL, NULL, &w, NULL);
-   ww -= w;
-   w = ww / eina_list_count(pd->headers);
-   Eina_List *l; List_Header *h;
-
-   int expand = w > 72 ? 1 : 0;
-   EINA_LIST_FOREACH(pd->headers, l, h)
-     {
-        if (expand)
-          {
-             evas_object_size_hint_min_set(h->rec, -1, 1);
-             evas_object_size_hint_max_set(h->rec, -1, -1);
-             evas_object_size_hint_weight_set(h->rec, EXPAND, 0);
-          }
-        else
-          {
-             evas_object_size_hint_weight_set(h->rec, EXPAND, 0);
-             evas_object_size_hint_min_set(h->rec, 72, 1);
-             evas_object_size_hint_max_set(h->rec, 72, -1);
-          }
-     }
    return 0;
 }
 
