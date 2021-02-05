@@ -790,10 +790,9 @@ static char *
 _time_string(int64_t epoch)
 {
    struct tm *info;
-   time_t rawtime;
    char buf[256];
+   time_t rawtime = (time_t) epoch;
 
-   rawtime = (time_t) epoch;
    info = localtime(&rawtime);
    strftime(buf, sizeof(buf), "%F %T", info);
 
@@ -804,8 +803,15 @@ static char *
 _run_time_string(int64_t secs)
 {
    char buf[256];
-   int s = secs % 3600;
-   snprintf(buf, sizeof(buf), "%02"PRIi64"%02d:%02d", secs / 3600, s / 60, s % 60);
+   int rem;
+
+   if (secs < 86400)
+     snprintf(buf, sizeof(buf), "%02"PRIi64":%02"PRIi64, secs / 60, secs % 60);
+   else
+     {
+        rem = secs % 3600;
+        snprintf(buf, sizeof(buf), "%02"PRIi64":%02d:%02d", secs / 3600, rem / 60, rem % 60);
+     }
    return strdup(buf);
 }
 
