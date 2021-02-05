@@ -360,11 +360,10 @@ _item_create(Evas_Object *obj)
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tbl, "proc_time", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
+   rec = evas_object_rectangle_add(evas_object_evas_get(tbl));
+   elm_table_pack(tbl, rec, i++, 0, 1, 1);
    lb = _item_column_add(tbl, "proc_state", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
-   rec = evas_object_rectangle_add(evas_object_evas_get(tbl));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(4), 1);
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(4), 1);
    elm_table_pack(tbl, rec, i++, 0, 1, 1);
 
    pb = elm_progressbar_add(hbx);
@@ -388,11 +387,11 @@ _run_time_set(char *buf, size_t n, int64_t secs)
    int rem;
 
    if (secs < 86400)
-     snprintf(buf, n, "%02ld:%02ld", secs / 60, secs % 60);
+     snprintf(buf, n, "%02lld:%02lld", secs / 60, secs % 60);
    else
      {
         rem = secs % 3600;
-        snprintf(buf, n, "%02ld:%02d:%02d", secs / 3600, rem / 60, rem % 60);
+        snprintf(buf, n, "%02lld:%02d:%02d", secs / 3600, rem / 60, rem % 60);
      }
 }
 
