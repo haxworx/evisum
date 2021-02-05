@@ -1279,8 +1279,9 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *fr, *bx, *bx2, *hbx, *btn, *genlist;
+   Evas_Object *fr, *bx, *bx2, *tbl, *rec, *btn, *genlist;
    Evas_Object *graph;
+   int i = 0;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
@@ -1302,57 +1303,59 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_align_set(bx2, FILL, FILL);
    evas_object_show(bx2);
 
-   hbx = elm_box_add(bx2);
-   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
-   evas_object_size_hint_align_set(hbx, FILL, FILL);
-   elm_box_horizontal_set(hbx, 1);
-   evas_object_show(hbx);
-   elm_box_pack_end(bx2, hbx);
+   tbl = elm_table_add(bx2);
+   evas_object_size_hint_weight_set(tbl, EXPAND, 0);
+   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   evas_object_show(tbl);
+   elm_box_pack_end(bx2, tbl);
 
-   pd->tab_thread_id = btn = elm_button_add(hbx);
+   pd->tab_thread_id = btn = elm_button_add(tbl);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("id"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_thread_clicked_cb, pd);
-   elm_box_pack_end(hbx, btn);
+   elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_name = btn = elm_button_add(hbx);
+   pd->tab_thread_name = btn = elm_button_add(tbl);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("name"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_name_clicked_cb, pd);
-   elm_box_pack_end(hbx, btn);
+   elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_state = btn = elm_button_add(hbx);
+   pd->tab_thread_state = btn = elm_button_add(tbl);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("state"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_state_clicked_cb, pd);
-   elm_box_pack_end(hbx, btn);
+   elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_cpu_id = btn = elm_button_add(hbx);
+   pd->tab_thread_cpu_id = btn = elm_button_add(tbl);
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu id"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_id_clicked_cb, pd);
-   elm_box_pack_end(hbx, btn);
+   rec = evas_object_rectangle_add(evas_object_evas_get(tbl));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_WIDTH), 1);
+   elm_table_pack(tbl, rec, i, 0, 1, 1);
+   elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_cpu_usage = btn = elm_button_add(hbx);
+   pd->tab_thread_cpu_usage = btn = elm_button_add(tbl);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu %"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_usage_clicked_cb, pd);
-   elm_box_pack_end(hbx, btn);
+   elm_table_pack(tbl, btn, i++, 0, 1, 1);
 
    pd->genlist_threads = genlist = elm_genlist_add(parent);
    evas_object_data_set(genlist, "ui", pd);
