@@ -1321,6 +1321,10 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
 
    pd->btn_menu = btn = _btn_create(tbl, "menu", _("Menu"),
                                     _btn_menu_clicked_cb, pd);
+   rec = evas_object_rectangle_add(evas_object_evas_get(parent));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(20),  1);
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(20), -1);
+   elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
 
    pd->btn_cmd = btn = elm_button_add(parent);
