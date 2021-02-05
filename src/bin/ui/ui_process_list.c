@@ -1291,7 +1291,7 @@ static Evas_Object
 *_btn_min_size(Ui_Data *pd, Evas_Object *btn)
 {
    Evas_Object *rec = evas_object_rectangle_add(evas_object_evas_get(btn));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(64), 1);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(68), 1);
    evas_object_size_hint_weight_set(rec, EXPAND, 0);
 
    List_Header *hdr = malloc(sizeof(List_Header));
@@ -1497,6 +1497,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    elm_object_text_set(btn, _("cpu %"));
    evas_object_show(btn);
    rec = _btn_min_size(pd, btn);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(80), 1);
    elm_table_pack(tbl, rec, i, 1, 1, 1);
    elm_table_pack(tbl, btn, i++, 1, 1, 1);
    evas_object_smart_callback_add(btn, "clicked",
