@@ -11,6 +11,7 @@
 #define TAB_BTN_HEIGHT 2
 #define BTN_WIDTH      68
 #define BTN_HEIGHT     1
+#define ICON_SIZE      14
 
 #define UI_CHILD_WIN_WIDTH  360
 #define UI_CHILD_WIN_HEIGHT 360
@@ -31,6 +32,9 @@ evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
 Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                      const char *icon, Evas_Smart_Cb clicked_cb, void *data);
+
+void
+evisum_ui_icon_size_set(Evas_Object *ic, int size);
 
 const char *
 evisum_size_format(unsigned long long bytes);

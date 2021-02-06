@@ -1191,14 +1191,16 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
 static void
 _btn_icon_state_set(Evas_Object *btn, Eina_Bool reverse)
 {
-   Evas_Object *icon = elm_icon_add(btn);
+   Evas_Object *ic = elm_icon_add(btn);
 
    if (reverse)
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
    else
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
-   elm_object_part_content_set(btn, "icon", icon);
-   evas_object_show(icon);
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
+
+   evisum_ui_icon_size_set(ic, ELM_SCALE_SIZE(ICON_SIZE));
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
 }
 
 static void

@@ -640,30 +640,32 @@ _process_list_update(Ui_Data *pd)
 static void
 _btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse)
 {
-   Evas_Object *icon = elm_icon_add(btn);
+   Evas_Object *ic = elm_icon_add(btn);
 
    if (reverse)
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
    else
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
 
-   elm_object_part_content_set(btn, "icon", icon);
-   evas_object_show(icon);
+   evisum_ui_icon_size_set(ic, ELM_SCALE_SIZE(ICON_SIZE));
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
 }
 
 static void
 _btn_icon_state_init(Evas_Object *btn, Eina_Bool reverse,
                      Eina_Bool selected EINA_UNUSED)
 {
-   Evas_Object *icon = elm_icon_add(btn);
+   Evas_Object *ic = elm_icon_add(btn);
 
    if (reverse)
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
    else
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
 
-   elm_object_part_content_set(btn, "icon", icon);
-   evas_object_show(icon);
+   evisum_ui_icon_size_set(ic, ELM_SCALE_SIZE(ICON_SIZE));
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
 }
 
 static void
@@ -1139,8 +1141,8 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    pd->btn_menu = btn = _btn_create(tb, "menu", _("Menu"),
                                     _btn_menu_clicked_cb, pd);
    rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(20),  1);
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(20), -1);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24),  ELM_SCALE_SIZE(22));
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(22));
    elm_table_pack(tb, rec, i, 1, 1, 1);
    elm_table_pack(tb, btn, i++, 1, 1, 1);
 

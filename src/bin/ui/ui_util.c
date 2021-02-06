@@ -628,3 +628,9 @@ evisum_ui_backgrounds_enabled_set(Eina_Bool enabled)
    _backgrounds_enabled = enabled;
 }
 
+void
+evisum_ui_icon_size_set(Evas_Object *ic, int size)
+{
+   evas_object_size_hint_min_set(ic, size, size);
+   evas_object_size_hint_max_set(ic, size, size);
+}

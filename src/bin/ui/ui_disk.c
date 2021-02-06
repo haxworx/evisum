@@ -423,15 +423,16 @@ _sort_by_total(const void *p1, const void *p2)
 static void
 _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
 {
-   Evas_Object *icon = elm_icon_add(button);
+   Evas_Object *ic = elm_icon_add(button);
 
    if (reverse)
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-down"));
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
    else
-     elm_icon_standard_set(icon, evisum_icon_path_get("go-up"));
+     elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
 
-   elm_object_part_content_set(button, "icon", icon);
-   evas_object_show(icon);
+   evisum_ui_icon_size_set(ic, ELM_SCALE_SIZE(ICON_SIZE));
+   elm_object_part_content_set(button, "icon", ic);
+   evas_object_show(ic);
 }
 
 static void

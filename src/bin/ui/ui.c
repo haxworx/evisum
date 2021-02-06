@@ -237,13 +237,7 @@ static Evas_Object *
 _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb,
             void *data)
 {
-   Evas_Object *ot, *or, *btn, *ic;
-
-   ot = elm_table_add(parent);
-   evas_object_show(ot);
-
-   or = evas_object_rectangle_add(evas_object_evas_get(parent));
-   elm_table_pack(ot, or, 0, 0, 1, 1);
+   Evas_Object *btn, *ic;
 
    btn = elm_button_add(parent);
    evas_object_size_hint_weight_set(btn, 0, 0);
@@ -252,18 +246,14 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb,
 
    ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get(icon));
-   elm_object_part_content_set(btn, "icon", ic);
-   evas_object_size_hint_min_set(or,
-                                 24 * elm_config_scale_get(),
-                                 24 * elm_config_scale_get());
+   evisum_ui_icon_size_set(ic, ELM_SCALE_SIZE(ICON_SIZE));
    evas_object_show(ic);
 
+   elm_object_part_content_set(btn, "icon", ic);
    elm_object_tooltip_text_set(btn, text);
    evas_object_smart_callback_add(btn, "clicked", cb, data);
 
-   elm_table_pack(ot, btn, 0, 0, 1, 1);
-
-   return ot;
+   return btn;
 }
 
 static void
