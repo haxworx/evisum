@@ -203,7 +203,7 @@ _item_create(Evas_Object *obj)
    lb = _item_column_add(tb, "proc_state", i++);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
    lb = _item_column_add(tb, "proc_time", i++);
-   evas_object_size_hint_align_set(lb, 1.0, FILL);
+   evas_object_size_hint_align_set(lb, 0.5, FILL);
 
    pb = elm_progressbar_add(hbx);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
