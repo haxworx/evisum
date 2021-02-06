@@ -206,7 +206,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 ui_mem_win_add(Ui *ui)
 {
-   Evas_Object *win, *lb, *bx, *tbl, *pb;
+   Evas_Object *win, *lb, *bx, *tb, *pb;
    Evas_Object *fr;
    int i;
    meminfo_t memory;
@@ -244,46 +244,46 @@ ui_mem_win_add(Ui *ui)
    elm_object_style_set(fr, "pad_medium");
    evas_object_show(fr);
 
-   tbl = elm_table_add(win);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   elm_table_padding_set(tbl, 8, 2);
-   evas_object_show(tbl);
+   tb = elm_table_add(win);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   elm_table_padding_set(tb, 8, 2);
+   evas_object_show(tb);
 
-   elm_object_content_set(fr, tbl);
+   elm_object_content_set(fr, tb);
    elm_box_pack_end(bx, fr);
 
-   lb = _label_mem(tbl, _("Used"));
-   pd->used = pb = _progress_add(tbl);
-   elm_table_pack(tbl, lb, 1, 1, 1, 1);
-   elm_table_pack(tbl, pb, 2, 1, 1, 1);
+   lb = _label_mem(tb, _("Used"));
+   pd->used = pb = _progress_add(tb);
+   elm_table_pack(tb, lb, 1, 1, 1, 1);
+   elm_table_pack(tb, pb, 2, 1, 1, 1);
 
-   lb = _label_mem(tbl, _("Cached"));
-   pd->cached = pb = _progress_add(tbl);
-   elm_table_pack(tbl, lb, 1, 2, 1, 1);
-   elm_table_pack(tbl, pb, 2, 2, 1, 1);
+   lb = _label_mem(tb, _("Cached"));
+   pd->cached = pb = _progress_add(tb);
+   elm_table_pack(tb, lb, 1, 2, 1, 1);
+   elm_table_pack(tb, pb, 2, 2, 1, 1);
 
-   lb = _label_mem(tbl, _("Buffered"));
-   pd->buffered = pb = _progress_add(tbl);
-   elm_table_pack(tbl, lb, 1, 3, 1, 1);
-   elm_table_pack(tbl, pb, 2, 3, 1, 1);
+   lb = _label_mem(tb, _("Buffered"));
+   pd->buffered = pb = _progress_add(tb);
+   elm_table_pack(tb, lb, 1, 3, 1, 1);
+   elm_table_pack(tb, pb, 2, 3, 1, 1);
 
-   lb = _label_mem(tbl, _("Shared"));
-   pd->shared = pb = _progress_add(tbl);
-   elm_table_pack(tbl, lb, 1, 4, 1, 1);
-   elm_table_pack(tbl, pb, 2, 4, 1, 1);
+   lb = _label_mem(tb, _("Shared"));
+   pd->shared = pb = _progress_add(tb);
+   elm_table_pack(tb, lb, 1, 4, 1, 1);
+   elm_table_pack(tb, pb, 2, 4, 1, 1);
 
-   lb = _label_mem(tbl, _("Swapped"));
-   pd->swap = pb = _progress_add(tbl);
-   elm_table_pack(tbl, lb, 1, 5, 1, 1);
-   elm_table_pack(tbl, pb, 2, 5, 1, 1);
+   lb = _label_mem(tb, _("Swapped"));
+   pd->swap = pb = _progress_add(tb);
+   elm_table_pack(tb, lb, 1, 5, 1, 1);
+   elm_table_pack(tb, pb, 2, 5, 1, 1);
 
    for (i = 0; i < memory.video_count; i++)
      {
-        lb = _label_mem(tbl, _("Video"));
-        pd->video[i] = pb = _progress_add(tbl);
-        elm_table_pack(tbl, lb, 1, 6 + i, 1, 1);
-        elm_table_pack(tbl, pb, 2, 6 + i, 1, 1);
+        lb = _label_mem(tb, _("Video"));
+        pd->video[i] = pb = _progress_add(tb);
+        elm_table_pack(tb, lb, 1, 6 + i, 1, 1);
+        elm_table_pack(tb, pb, 2, 6 + i, 1, 1);
      }
 
    if (ui->mem.width > 0 && ui->mem.height > 0)

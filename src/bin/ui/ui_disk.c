@@ -47,19 +47,19 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 }
 
 static Evas_Object *
-_item_column_add(Evas_Object *tbl, const char *text, int col)
+_item_column_add(Evas_Object *tb, const char *text, int col)
 {
    Evas_Object *rec, *lb;
 
-   lb = elm_label_add(tbl);
-   evas_object_data_set(tbl, text, lb);
+   lb = elm_label_add(tb);
+   evas_object_data_set(tb, text, lb);
    evas_object_show(lb);
 
-   rec = evas_object_rectangle_add(tbl);
+   rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_data_set(lb, "rect", rec);
 
-   elm_table_pack(tbl, lb, col, 0, 1, 1);
-   elm_table_pack(tbl, rec, col, 0, 1, 1);
+   elm_table_pack(tb, lb, col, 0, 1, 1);
+   elm_table_pack(tb, rec, col, 0, 1, 1);
 
    return lb;
 }
@@ -67,34 +67,34 @@ _item_column_add(Evas_Object *tbl, const char *text, int col)
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *tbl, *lb, *pb;
+   Evas_Object *tb, *lb, *pb;
 
-   tbl = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_show(tbl);
+   tb = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_show(tb);
 
-   lb = _item_column_add(tbl, "device", 0);
+   lb = _item_column_add(tb, "device", 0);
    evas_object_size_hint_weight_set(lb, EXPAND, 0);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(tbl, "mount", 1);
+   lb = _item_column_add(tb, "mount", 1);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(tbl, "fs", 2);
+   lb = _item_column_add(tb, "fs", 2);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(tbl, "total", 3);
+   lb = _item_column_add(tb, "total", 3);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(tbl, "used", 4);
+   lb = _item_column_add(tb, "used", 4);
    evas_object_size_hint_align_set(lb, 0, FILL);
-   lb = _item_column_add(tbl, "free", 5);
+   lb = _item_column_add(tb, "free", 5);
    evas_object_size_hint_align_set(lb, 0, FILL);
 
-   pb = elm_progressbar_add(tbl);
+   pb = elm_progressbar_add(tb);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(pb, FILL, FILL);
-   evas_object_data_set(tbl, "usage", pb);
-   elm_table_pack(tbl, pb, 6, 0, 1, 1);
+   evas_object_data_set(tb, "usage", pb);
+   elm_table_pack(tb, pb, 6, 0, 1, 1);
 
-   return tbl;
+   return tb;
 }
 
 static Evas_Object *
@@ -553,7 +553,7 @@ _btn_min_size(Evas_Object *parent)
 void
 ui_disk_win_add(Ui *ui)
 {
-   Evas_Object *win, *tbl, *scr;
+   Evas_Object *win, *tb, *scr;
    Evas_Object *genlist, *rec, *btn;
    int i = 0;
 
@@ -574,10 +574,10 @@ ui_disk_win_add(Ui *ui)
    pd->ui = ui;
    pd->skip_wait = 1;
 
-   tbl = elm_table_add(win);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_show(tbl);
+   tb = elm_table_add(win);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_show(tb);
 
    pd->btn_device = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, 0);
@@ -586,7 +586,7 @@ ui_disk_win_add(Ui *ui)
    elm_object_text_set(btn, _("device"));
    evas_object_smart_callback_add(btn, "clicked", _btn_device_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_mount = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, 0);
@@ -595,7 +595,7 @@ ui_disk_win_add(Ui *ui)
    elm_object_text_set(btn, _("mount"));
    evas_object_smart_callback_add(btn, "clicked", _btn_mount_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_fs = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, 0);
@@ -604,7 +604,7 @@ ui_disk_win_add(Ui *ui)
    elm_object_text_set(btn, _("type"));
    evas_object_smart_callback_add(btn, "clicked", _btn_fs_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_total = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, 0, 0);
@@ -614,8 +614,8 @@ ui_disk_win_add(Ui *ui)
    evas_object_smart_callback_add(btn, "clicked", _btn_total_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    rec = _btn_min_size(btn);
-   elm_table_pack(tbl, rec, i, i, 1, 1);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, rec, i, i, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_used = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, 0, 0);
@@ -625,8 +625,8 @@ ui_disk_win_add(Ui *ui)
    evas_object_smart_callback_add(btn, "clicked", _btn_used_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    rec = _btn_min_size(btn);
-   elm_table_pack(tbl, rec, i, i, 1, 1);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, rec, i, i, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_free = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, 0, 0);
@@ -636,8 +636,8 @@ ui_disk_win_add(Ui *ui)
    evas_object_smart_callback_add(btn, "clicked", _btn_free_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    rec = _btn_min_size(btn);
-   elm_table_pack(tbl, rec, i, i, 1, 1);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, rec, i, i, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_usage = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
@@ -646,7 +646,7 @@ ui_disk_win_add(Ui *ui)
    elm_object_text_set(btn, _("usage"));
    evas_object_smart_callback_add(btn, "clicked", _btn_usage_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    scr = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
@@ -668,8 +668,8 @@ ui_disk_win_add(Ui *ui)
 
    pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 
-   elm_table_pack(tbl, scr, 0, 1, 7, 2);
-   elm_object_content_set(win, tbl);
+   elm_table_pack(tb, scr, 0, 1, 7, 2);
+   elm_object_content_set(win, tb);
 
    if (ui->disk.width > 0 && ui->disk.height > 0)
      evas_object_resize(win, ui->disk.width, ui->disk.height);
@@ -684,7 +684,7 @@ ui_disk_win_add(Ui *ui)
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
-   evas_object_event_callback_add(tbl, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
+   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
    evas_object_show(win);
 
    pd->thread = ecore_thread_feedback_run(_disks_poll,

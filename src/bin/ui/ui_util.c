@@ -15,13 +15,13 @@ Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                   Evas_Smart_Cb clicked_cb, void *data)
 {
-   Evas_Object *tbl, *rect, *btn, *lb;
+   Evas_Object *tb, *rect, *btn, *lb;
 
-   tbl = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   tb = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
 
-   rect = evas_object_rectangle_add(tbl);
+   rect = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_size_hint_weight_set(rect, EXPAND, EXPAND);
    evas_object_size_hint_align_set(rect, FILL, FILL);
    evas_object_size_hint_min_set(rect,
@@ -42,26 +42,26 @@ evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                    eina_slstr_printf("%s", text));
    elm_layout_content_set(btn, "elm.swallow.content", lb);
 
-   elm_table_pack(tbl, rect, 0, 0, 1, 1);
-   elm_table_pack(tbl, btn, 0, 0, 1, 1);
+   elm_table_pack(tb, rect, 0, 0, 1, 1);
+   elm_table_pack(tb, btn, 0, 0, 1, 1);
 
    if (alias)
      *alias = btn;
 
-   return tbl;
+   return tb;
 }
 
 Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                      const char *icon, Evas_Smart_Cb clicked_cb, void *data)
 {
-   Evas_Object *tbl, *rect, *btn, *lb, *hbx, *ic;
+   Evas_Object *tb, *rect, *btn, *lb, *hbx, *ic;
 
-   tbl = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
+   tb = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
 
-   rect = evas_object_rectangle_add(tbl);
+   rect = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_size_hint_min_set(rect, ELM_SCALE_SIZE(BTN_WIDTH),
                                  ELM_SCALE_SIZE(BTN_HEIGHT));
 
@@ -95,13 +95,13 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    elm_box_pack_end(hbx, lb);
    elm_layout_content_set(btn, "elm.swallow.content", hbx);
 
-   elm_table_pack(tbl, rect, 0, 0, 1, 1);
-   elm_table_pack(tbl, btn, 0, 0, 1, 1);
+   elm_table_pack(tb, rect, 0, 0, 1, 1);
+   elm_table_pack(tb, btn, 0, 0, 1, 1);
 
    if (alias)
      *alias = btn;
 
-   return tbl;
+   return tb;
 }
 
 const char *
@@ -391,7 +391,7 @@ evisum_about_window_show(void *data)
 {
    Ui *ui;
    Animate_Data *about;
-   Evas_Object *win, *bg, *tbl, *version, *lb, *btn, *im;
+   Evas_Object *win, *bg, *tb, *version, *lb, *btn, *im;
    Evas_Object *hbx, *rec, *pad, *br;
    Evas_Coord x, y, w, h;
    Evas_Coord iw, ih;
@@ -452,10 +452,10 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_max_set(bg, ELM_SCALE_SIZE(320),
                                  ELM_SCALE_SIZE(400));
 
-   tbl = elm_table_add(win);
-   evas_object_show(tbl);
-   elm_win_resize_object_add(win, tbl);
-   elm_table_align_set(tbl, 0, 0);
+   tb = elm_table_add(win);
+   evas_object_show(tb);
+   elm_win_resize_object_add(win, tb);
+   elm_table_align_set(tb, 0, 0);
 
    pad = elm_frame_add(win);
    evas_object_size_hint_weight_set(pad, EXPAND, EXPAND);
@@ -549,11 +549,11 @@ evisum_about_window_show(void *data)
    evas_object_smart_callback_add(btn, "clicked", _btn_close_cb, about);
 
    elm_object_part_content_set(bg, "elm.swallow.content", pad);
-   elm_table_pack(tbl, im, 0, 1, 1, 1);
-   elm_table_pack(tbl, rec, 0, 0, 1, 1);
-   elm_table_pack(tbl, hbx, 0, 0, 1, 1);
-   elm_object_content_set(win, tbl);
-   evas_object_event_callback_add(tbl, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, about);
+   elm_table_pack(tb, im, 0, 1, 1, 1);
+   elm_table_pack(tb, rec, 0, 0, 1, 1);
+   elm_table_pack(tb, hbx, 0, 0, 1, 1);
+   elm_object_content_set(win, tb);
+   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, about);
 
    evas_object_show(win);
 }

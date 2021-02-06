@@ -1218,3 +1218,166 @@ proc_info_pid_children_free(Proc_Info *proc)
    proc_info_free(proc);
 }
 
+int
+proc_sort_by_pid(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->pid - inf2->pid;
+}
+
+int
+proc_sort_by_uid(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->uid - inf2->uid;
+}
+
+int
+proc_sort_by_nice(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->nice - inf2->nice;
+}
+
+int
+proc_sort_by_pri(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->priority - inf2->priority;
+}
+
+int
+proc_sort_by_cpu(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->cpu_id - inf2->cpu_id;
+}
+
+int
+proc_sort_by_threads(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->numthreads - inf2->numthreads;
+}
+
+int
+proc_sort_by_size(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+   int64_t size1, size2;
+
+   inf1 = p1; inf2 = p2;
+
+   size1 = inf1->mem_size;
+   size2 = inf2->mem_size;
+
+   if (size1 > size2)
+     return 1;
+   if (size1 < size2)
+     return -1;
+
+   return 0;
+}
+
+int
+proc_sort_by_rss(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+   int64_t size1, size2;
+
+   inf1 = p1; inf2 = p2;
+
+   size1 = inf1->mem_rss;
+   size2 = inf2->mem_rss;
+
+   if (size1 > size2)
+     return 1;
+   if (size1 < size2)
+     return -1;
+
+   return 0;
+}
+
+int
+proc_sort_by_time(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+   int64_t t1, t2;
+
+   inf1 = p1; inf2 = p2;
+
+   t1 = inf1->run_time;
+   t2 = inf2->run_time;
+
+   if (t1 > t2)
+     return 1;
+   if (t1 < t2)
+     return -1;
+
+   return 0;
+}
+
+int
+proc_sort_by_cpu_usage(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+   double one, two;
+
+   inf1 = p1; inf2 = p2;
+
+   one = inf1->cpu_usage;
+   two = inf2->cpu_usage;
+
+   if (one > two)
+     return 1;
+   else if (one < two)
+     return -1;
+   else return 0;
+}
+
+int
+proc_sort_by_cmd(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return strcasecmp(inf1->command, inf2->command);
+}
+
+int
+proc_sort_by_state(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return strcmp(inf1->state, inf2->state);
+}
+
+int
+proc_sort_by_age(const void *p1, const void *p2)
+{
+   const Proc_Info *c1 = p1, *c2 = p2;
+
+   return c1->start - c2->start;
+}
+

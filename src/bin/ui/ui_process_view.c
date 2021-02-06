@@ -244,21 +244,21 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED)
 }
 
 static Evas_Object *
-_item_column_add(Evas_Object *tbl, const char *text, int col)
+_item_column_add(Evas_Object *tb, const char *text, int col)
 {
    Evas_Object *rec, *lb;
 
-   lb = elm_label_add(tbl);
+   lb = elm_label_add(tb);
    evas_object_size_hint_weight_set(lb, 0, EXPAND);
    evas_object_size_hint_align_set(lb, 0.0, FILL);
-   evas_object_data_set(tbl, text, lb);
+   evas_object_data_set(tb, text, lb);
    evas_object_show(lb);
 
-   rec = evas_object_rectangle_add(tbl);
+   rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_data_set(lb, "rect", rec);
 
-   elm_table_pack(tbl, lb, col, 0, 1, 1);
-   elm_table_pack(tbl, rec, col, 0, 1, 1);
+   elm_table_pack(tb, lb, col, 0, 1, 1);
+   elm_table_pack(tb, rec, col, 0, 1, 1);
 
    return lb;
 }
@@ -274,29 +274,29 @@ _hash_free_cb(void *data)
 static Evas_Object *
 _item_create(Evas_Object *parent)
 {
-   Evas_Object *tbl, *lb, *pb;
+   Evas_Object *tb, *lb, *pb;
 
-   tbl = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_show(tbl);
+   tb = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_show(tb);
 
-   lb = _item_column_add(tbl, "tid", 0);
+   lb = _item_column_add(tb, "tid", 0);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
-   _item_column_add(tbl, "name", 1);
-   lb = _item_column_add(tbl, "state", 2);
+   _item_column_add(tb, "name", 1);
+   lb = _item_column_add(tb, "state", 2);
    evas_object_size_hint_align_set(lb, 0.0, FILL);
-   lb = _item_column_add(tbl, "cpu_id", 3);
+   lb = _item_column_add(tb, "cpu_id", 3);
    evas_object_size_hint_align_set(lb, 0.5, FILL);
 
    pb = elm_progressbar_add(parent);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    elm_progressbar_unit_format_set(pb, "%1.0f %%");
-   evas_object_data_set(tbl, "cpu_usage", pb);
-   elm_table_pack(tbl, pb, 4, 0, 1, 1);
+   evas_object_data_set(tb, "cpu_usage", pb);
+   elm_table_pack(tb, pb, 4, 0, 1, 1);
 
-   return tbl;
+   return tb;
 }
 
 static Evas_Object *
@@ -578,14 +578,6 @@ _children_del(void *data, Evas_Object *obj EINA_UNUSED)
    proc_info_free(proc);
 }
 
-static int
-_sort_by_age(const void *p1, const void *p2)
-{
-   const Proc_Info *c1 = p1, *c2 = p2;
-
-   return c1->start - c2->start;
-}
-
 static void
 _children_populate(Evas_Object *genlist_children, Elm_Object_Item *parent,
                    Eina_List *children)
@@ -613,7 +605,7 @@ _children_populate(Evas_Object *genlist_children, Elm_Object_Item *parent,
           {
              child->children = eina_list_sort(child->children,
                                               eina_list_count(child->children),
-                                              _sort_by_age);
+                                              proc_sort_by_age);
              _children_populate(genlist_children, it, child->children);
           }
      }
@@ -639,7 +631,7 @@ _children_view_update(void *data)
           {
              child->children = eina_list_sort(child->children,
                                               eina_list_count(child->children),
-                                              _sort_by_age);
+                                              proc_sort_by_age);
              _children_populate(pd->genlist_children, NULL, child->children);
              break;
           }
@@ -719,14 +711,14 @@ _graph_update(Ui_Data *pd, Proc_Info *proc)
 static Evas_Object *
 _graph(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *tbl, *obj, *tbl2, *lb, *scr, *fr, *rec;
+   Evas_Object *tb, *obj, *tb2, *lb, *scr, *fr, *rec;
 
    pd->graph.cpu_count = system_cpu_count_get();
 
-   tbl = elm_table_add(parent);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_show(tbl);
+   tb = elm_table_add(parent);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_show(tb);
 
    scr = elm_scroller_add(parent);
    evas_object_size_hint_align_set(scr, FILL, FILL);
@@ -756,10 +748,10 @@ _graph(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_show(fr);
 
-   tbl2 = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl2, EXPAND, 0);
-   evas_object_size_hint_align_set(tbl2, 0.0, 0.0);
-   evas_object_show(tbl2);
+   tb2 = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tb2, EXPAND, 0);
+   evas_object_size_hint_align_set(tb2, 0.0, 0.0);
+   evas_object_show(tb2);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(parent));
    evas_object_color_set(rec, 0, 0, 0, 64);
@@ -776,14 +768,14 @@ _graph(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_align_set(lb, 0.5, 0.5);
    evas_object_show(lb);
 
-   elm_table_pack(tbl2, rec, 0, 0, 1, 1);
-   elm_table_pack(tbl2, lb, 0, 0, 1, 1);
-   elm_object_content_set(fr, tbl2);
+   elm_table_pack(tb2, rec, 0, 0, 1, 1);
+   elm_table_pack(tb2, lb, 0, 0, 1, 1);
+   elm_object_content_set(fr, tb2);
 
-   elm_table_pack(tbl, scr, 0, 0, 1, 1);
-   elm_table_pack(tbl, fr, 0, 0, 1, 1);
+   elm_table_pack(tb, scr, 0, 0, 1, 1);
+   elm_table_pack(tb, fr, 0, 0, 1, 1);
 
-   return tbl;
+   return tb;
 }
 
 static char *
@@ -1020,7 +1012,7 @@ _lb_add(Evas_Object *parent, const char *text)
 static Evas_Object *
 _process_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *fr, *hbx, *tbl;
+   Evas_Object *fr, *hbx, *tb;
    Evas_Object *lb, *entry, *btn, *pad, *ic;
    Evas_Object *rec;
    Proc_Info *proc;
@@ -1031,18 +1023,18 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
 
-   tbl = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_show(tbl);
-   elm_object_focus_allow_set(tbl, 1);
-   elm_object_content_set(fr, tbl);
+   tb = elm_table_add(parent);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_show(tb);
+   elm_object_focus_allow_set(tb, 1);
+   elm_object_content_set(fr, tb);
 
-   rec = evas_object_rectangle_add(evas_object_evas_get(tbl));
+   rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(64), ELM_SCALE_SIZE(64));
    evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(64), ELM_SCALE_SIZE(64));
    evas_object_size_hint_align_set(rec, FILL, 1.0);
-   elm_table_pack(tbl, rec, 0, i, 1, 1);
+   elm_table_pack(tb, rec, 0, i, 1, 1);
 
    proc = proc_info_by_pid(pd->selected_pid);
    ic = elm_icon_add(parent);
@@ -1055,106 +1047,106 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
                               evisum_icon_cache_find(proc)));
         evas_object_show(ic);
         proc_info_free(proc);
-        elm_table_pack(tbl, ic, 0, i, 1, 1);
+        elm_table_pack(tb, ic, 0, i, 1, 1);
      }
 
    lb = _lb_add(parent, _("Command:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_cmd = entry = elm_label_add(parent);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, 0.0, 0.5);
    evas_object_show(entry);
    evas_object_hide(lb);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Command line:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_cmd_args = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("PID:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_pid = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Username:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_user = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("UID:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_uid = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("PPID:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_ppid = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
 #if defined(__MacOS__)
    lb = _lb_add(parent, _("WQ #:"));
 #else
    lb = _lb_add(parent, _("CPU #:"));
 #endif
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_cpu = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Threads:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_threads = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Memory :"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_size = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Shared memory:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_shared = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent,  _(" Resident memory:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_rss = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Virtual memory:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_virt = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Start time:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_started = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Run time:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_run_time = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Nice:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_nice = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Priority:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_pri = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("State:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_state = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("CPU %:"));
-   elm_table_pack(tbl, lb, 0, i, 1, 1);
+   elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->entry_pid_cpu_usage = entry = _entry_add(parent);
-   elm_table_pack(tbl, entry, 1, i++, 1, 1);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    hbx = elm_box_add(parent);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
@@ -1162,7 +1154,7 @@ _process_tab_add(Evas_Object *parent, Ui_Data *pd)
    elm_box_horizontal_set(hbx, 1);
    elm_box_homogeneous_set(hbx, 1);
    evas_object_show(hbx);
-   elm_table_pack(tbl, hbx, 1, i, 1, 1);
+   elm_table_pack(tb, hbx, 1, i, 1, 1);
 
    pad = elm_frame_add(parent);
    evas_object_size_hint_weight_set(pad, EXPAND, EXPAND);
@@ -1285,7 +1277,7 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *fr, *bx, *bx2, *tbl, *rec, *btn, *genlist;
+   Evas_Object *fr, *bx, *bx2, *tb, *rec, *btn, *genlist;
    Evas_Object *graph;
    int i = 0;
 
@@ -1309,59 +1301,59 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_align_set(bx2, FILL, FILL);
    evas_object_show(bx2);
 
-   tbl = elm_table_add(bx2);
-   evas_object_size_hint_weight_set(tbl, EXPAND, 0);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_show(tbl);
-   elm_box_pack_end(bx2, tbl);
+   tb = elm_table_add(bx2);
+   evas_object_size_hint_weight_set(tb, EXPAND, 0);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_show(tb);
+   elm_box_pack_end(bx2, tb);
 
-   pd->tab_thread_id = btn = elm_button_add(tbl);
+   pd->tab_thread_id = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("id"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_thread_clicked_cb, pd);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_name = btn = elm_button_add(tbl);
+   pd->tab_thread_name = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("name"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_name_clicked_cb, pd);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_state = btn = elm_button_add(tbl);
+   pd->tab_thread_state = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("state"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_state_clicked_cb, pd);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_cpu_id = btn = elm_button_add(tbl);
+   pd->tab_thread_cpu_id = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu id"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_id_clicked_cb, pd);
-   rec = evas_object_rectangle_add(evas_object_evas_get(tbl));
+   rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_WIDTH), 1);
-   elm_table_pack(tbl, rec, i, 0, 1, 1);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   pd->tab_thread_cpu_usage = btn = elm_button_add(tbl);
+   pd->tab_thread_cpu_usage = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu %"));
    _btn_icon_state_set(btn, pd->sort_reverse);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_usage_clicked_cb, pd);
-   elm_table_pack(tbl, btn, i++, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->genlist_threads = genlist = elm_genlist_add(parent);
    evas_object_data_set(genlist, "ui", pd);
@@ -1544,7 +1536,6 @@ _tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
         int n = 1;
 
         elm_entry_entry_append(ent, "<code>");
-
         EINA_LIST_FREE(lines, line)
           {
              if (n++ > 1)

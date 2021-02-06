@@ -64,4 +64,43 @@ proc_info_pid_children_get(pid_t pid);
 void
 proc_info_pid_children_free(Proc_Info *procs);
 
+int
+proc_sort_by_pid(const void *p1, const void *p2);
+
+int
+proc_sort_by_uid(const void *p1, const void *p2);
+
+int
+proc_sort_by_nice(const void *p1, const void *p2);
+
+int
+proc_sort_by_pri(const void *p1, const void *p2);
+
+int
+proc_sort_by_cpu(const void *p1, const void *p2);
+
+int
+proc_sort_by_threads(const void *p1, const void *p2);
+
+int
+proc_sort_by_size(const void *p1, const void *p2);
+
+int
+proc_sort_by_rss(const void *p1, const void *p2);
+
+int
+proc_sort_by_time(const void *p1, const void *p2);
+
+int
+proc_sort_by_cpu_usage(const void *p1, const void *p2);
+
+int
+proc_sort_by_cmd(const void *p1, const void *p2);
+
+int
+proc_sort_by_state(const void *p1, const void *p2);
+
+int
+proc_sort_by_age(const void *p1, const void *p2);
+
 #endif
