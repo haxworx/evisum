@@ -12,7 +12,7 @@
 #include <sys/resource.h>
 #include <pwd.h>
 
-#define PROGRESS_CUSTOM_FORMAT 0
+#define PROGRESS_CUSTOM_FORMAT 1
 #define DIRTY_GENLIST_HACK     1
 
 extern int EVISUM_EVENT_CONFIG_CHANGED;
