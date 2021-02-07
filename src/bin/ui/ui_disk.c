@@ -586,7 +586,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tb, rec, i++, 0, 1, 1);
 
    pd->btn_device = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("device"));
@@ -595,7 +595,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_mount = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("mount"));
@@ -604,7 +604,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_fs = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, EXPAND, 0);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("type"));
@@ -613,7 +613,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_total = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("total"));
@@ -624,7 +624,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_used = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("used"));
@@ -635,7 +635,7 @@ ui_disk_win_add(Ui *ui)
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    pd->btn_free = btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
    elm_object_text_set(btn, _("free"));

@@ -7,7 +7,6 @@
 typedef struct
 {
    Evas_Object     *win;
-   Evas_Object     *content;
 
    Evas_Object     *tab_general;
    Evas_Object     *tab_children;
@@ -32,27 +31,27 @@ typedef struct
 
    struct
    {
-      Evas_Object     *entry_pid_cmd;
-      Evas_Object     *entry_pid_cmd_args;
-      Evas_Object     *entry_pid_user;
-      Evas_Object     *entry_pid_pid;
-      Evas_Object     *entry_pid_ppid;
-      Evas_Object     *entry_pid_uid;
-      Evas_Object     *entry_pid_cpu;
-      Evas_Object     *entry_pid_threads;
-      Evas_Object     *entry_pid_virt;
-      Evas_Object     *entry_pid_rss;
-      Evas_Object     *entry_pid_shared;
-      Evas_Object     *entry_pid_size;
-      Evas_Object     *entry_pid_started;
-      Evas_Object     *entry_pid_run_time;
-      Evas_Object     *entry_pid_nice;
-      Evas_Object     *entry_pid_pri;
-      Evas_Object     *entry_pid_state;
-      Evas_Object     *entry_pid_cpu_usage;
-      Evas_Object     *btn_start;
-      Evas_Object     *btn_stop;
-      Evas_Object     *btn_kill;
+      Evas_Object   *entry_cmd;
+      Evas_Object   *entry_cmd_args;
+      Evas_Object   *entry_user;
+      Evas_Object   *entry_pid;
+      Evas_Object   *entry_ppid;
+      Evas_Object   *entry_uid;
+      Evas_Object   *entry_cpu;
+      Evas_Object   *entry_threads;
+      Evas_Object   *entry_virt;
+      Evas_Object   *entry_rss;
+      Evas_Object   *entry_shared;
+      Evas_Object   *entry_size;
+      Evas_Object   *entry_started;
+      Evas_Object   *entry_run_time;
+      Evas_Object   *entry_nice;
+      Evas_Object   *entry_pri;
+      Evas_Object   *entry_state;
+      Evas_Object   *entry_cpu_usage;
+      Evas_Object   *btn_start;
+      Evas_Object   *btn_stop;
+      Evas_Object   *btn_kill;
    } general;
 
    struct
@@ -185,7 +184,9 @@ _thread_info_new(Ui_Data *pd, Proc_Info *th)
    if (!t) return NULL;
 
    key = eina_slstr_printf("%s:%d", th->thread_name, th->tid);
-   if ((inf = eina_hash_find(pd->threads.hash_cpu_times, key)))
+
+   inf = eina_hash_find(pd->threads.hash_cpu_times, key);
+   if (inf)
      {
         if (inf->cpu_time_prev)
           cpu_usage = (inf->cpu_time - inf->cpu_time_prev);
@@ -464,7 +465,7 @@ _sort_by_tid(const void *p1, const void *p2)
 }
 
 static void
-_thread_info_set(Ui_Data *pd, Proc_Info *proc)
+_thread_view_update(Ui_Data *pd, Proc_Info *proc)
 {
    Proc_Info *p;
    Thread_Info *t;
@@ -621,7 +622,6 @@ _children_populate(Evas_Object *genlist, Elm_Object_Item *parent,
              _children_populate(genlist, it, child->children);
           }
      }
-
    elm_genlist_item_class_free(itc);
 }
 
@@ -648,7 +648,6 @@ _children_view_update(void *data)
              break;
           }
      }
-
    child = eina_list_nth(children, 0);
    if (child)
      proc_info_free(child);
@@ -836,7 +835,7 @@ _run_time_string(int64_t secs)
 }
 
 static void
-_general_update(Ui_Data *pd, Proc_Info *proc)
+_general_view_update(Ui_Data *pd, Proc_Info *proc)
 {
    struct passwd *pwd_entry;
 
@@ -851,52 +850,52 @@ _general_update(Ui_Data *pd, Proc_Info *proc)
         elm_object_disabled_set(pd->general.btn_start, 1);
      }
 
-   elm_object_text_set(pd->general.entry_pid_cmd,
+   elm_object_text_set(pd->general.entry_cmd,
                        eina_slstr_printf("<subtitle>%s</subtitle>",
                                          proc->command));
    pwd_entry = getpwuid(proc->uid);
    if (pwd_entry)
-     elm_object_text_set(pd->general.entry_pid_user, pwd_entry->pw_name);
+     elm_object_text_set(pd->general.entry_user, pwd_entry->pw_name);
 
    if (proc->arguments)
-     elm_object_text_set(pd->general.entry_pid_cmd_args, proc->arguments);
+     elm_object_text_set(pd->general.entry_cmd_args, proc->arguments);
    else
-     elm_object_text_set(pd->general.entry_pid_cmd_args, "");
+     elm_object_text_set(pd->general.entry_cmd_args, "");
 
-   elm_object_text_set(pd->general.entry_pid_pid, eina_slstr_printf("%d", proc->pid));
-   elm_object_text_set(pd->general.entry_pid_uid, eina_slstr_printf("%d", proc->uid));
-   elm_object_text_set(pd->general.entry_pid_cpu,
+   elm_object_text_set(pd->general.entry_pid, eina_slstr_printf("%d", proc->pid));
+   elm_object_text_set(pd->general.entry_uid, eina_slstr_printf("%d", proc->uid));
+   elm_object_text_set(pd->general.entry_cpu,
                        eina_slstr_printf("%d", proc->cpu_id));
-   elm_object_text_set(pd->general.entry_pid_ppid, eina_slstr_printf("%d", proc->ppid));
-   elm_object_text_set(pd->general.entry_pid_threads,
+   elm_object_text_set(pd->general.entry_ppid, eina_slstr_printf("%d", proc->ppid));
+   elm_object_text_set(pd->general.entry_threads,
                        eina_slstr_printf("%d", proc->numthreads));
-   elm_object_text_set(pd->general.entry_pid_virt, evisum_size_format(proc->mem_virt));
-   elm_object_text_set(pd->general.entry_pid_rss, evisum_size_format(proc->mem_rss));
+   elm_object_text_set(pd->general.entry_virt, evisum_size_format(proc->mem_virt));
+   elm_object_text_set(pd->general.entry_rss, evisum_size_format(proc->mem_rss));
 #if !defined(__linux__)
-   elm_object_text_set(pd->general.entry_pid_shared, "N/A");
+   elm_object_text_set(pd->general.entry_shared, "N/A");
 #else
-   elm_object_text_set(pd->general.entry_pid_shared,
+   elm_object_text_set(pd->general.entry_shared,
                        evisum_size_format(proc->mem_shared));
 #endif
-   elm_object_text_set(pd->general.entry_pid_size, evisum_size_format(proc->mem_size));
+   elm_object_text_set(pd->general.entry_size, evisum_size_format(proc->mem_size));
    char *t = _run_time_string(proc->run_time);
    if (t)
      {
-        elm_object_text_set(pd->general.entry_pid_run_time, t);
+        elm_object_text_set(pd->general.entry_run_time, t);
         free(t);
      }
    t = _time_string(proc->start);
    if (t)
      {
-        elm_object_text_set(pd->general.entry_pid_started, t);
+        elm_object_text_set(pd->general.entry_started, t);
         free(t);
      }
-   elm_object_text_set(pd->general.entry_pid_nice, eina_slstr_printf("%d", proc->nice));
-   elm_object_text_set(pd->general.entry_pid_pri,
+   elm_object_text_set(pd->general.entry_nice, eina_slstr_printf("%d", proc->nice));
+   elm_object_text_set(pd->general.entry_pri,
                        eina_slstr_printf("%d", proc->priority));
-   elm_object_text_set(pd->general.entry_pid_state, proc->state);
+   elm_object_text_set(pd->general.entry_state, proc->state);
 
-   elm_object_text_set(pd->general.entry_pid_cpu_usage,
+   elm_object_text_set(pd->general.entry_cpu_usage,
                        eina_slstr_printf("%.0f%%", proc->cpu_usage));
 }
 
@@ -959,9 +958,8 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    _graph_update(pd, proc);
    _graph_summary_update(pd, proc);
-
-   _general_update(pd, proc);
-   _thread_info_set(pd, proc);
+   _thread_view_update(pd, proc);
+   _general_view_update(pd, proc);
 
    pd->poll_count++;
    pd->pid_cpu_time = proc->cpu_time;
@@ -1073,7 +1071,7 @@ _general_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    lb = _lb_add(parent, _("Command:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_cmd = entry = elm_label_add(parent);
+   pd->general.entry_cmd = entry = elm_label_add(parent);
    evas_object_size_hint_weight_set(entry, EXPAND, EXPAND);
    evas_object_size_hint_align_set(entry, 0.0, 0.5);
    evas_object_show(entry);
@@ -1082,27 +1080,27 @@ _general_tab_add(Evas_Object *parent, Ui_Data *pd)
 
    lb = _lb_add(parent, _("Command line:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_cmd_args = entry = _entry_add(parent);
+   pd->general.entry_cmd_args = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("PID:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_pid = entry = _entry_add(parent);
+   pd->general.entry_pid = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Username:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_user = entry = _entry_add(parent);
+   pd->general.entry_user = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("UID:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_uid = entry = _entry_add(parent);
+   pd->general.entry_uid = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("PPID:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_ppid = entry = _entry_add(parent);
+   pd->general.entry_ppid = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
 #if defined(__MacOS__)
@@ -1111,62 +1109,62 @@ _general_tab_add(Evas_Object *parent, Ui_Data *pd)
    lb = _lb_add(parent, _("CPU #:"));
 #endif
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_cpu = entry = _entry_add(parent);
+   pd->general.entry_cpu = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Threads:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_threads = entry = _entry_add(parent);
+   pd->general.entry_threads = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Memory :"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_size = entry = _entry_add(parent);
+   pd->general.entry_size = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Shared memory:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_shared = entry = _entry_add(parent);
+   pd->general.entry_shared = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent,  _(" Resident memory:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_rss = entry = _entry_add(parent);
+   pd->general.entry_rss = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Virtual memory:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_virt = entry = _entry_add(parent);
+   pd->general.entry_virt = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Start time:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_started = entry = _entry_add(parent);
+   pd->general.entry_started = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Run time:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_run_time = entry = _entry_add(parent);
+   pd->general.entry_run_time = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Nice:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_nice = entry = _entry_add(parent);
+   pd->general.entry_nice = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("Priority:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_pri = entry = _entry_add(parent);
+   pd->general.entry_pri = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("State:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_state = entry = _entry_add(parent);
+   pd->general.entry_state = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _("CPU %:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
-   pd->general.entry_pid_cpu_usage = entry = _entry_add(parent);
+   pd->general.entry_cpu_usage = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    hbx = elm_box_add(parent);
@@ -1733,7 +1731,7 @@ _action_do(Ui_Data *pd, Evisum_Proc_Action action)
 void
 ui_process_view_win_add(int pid, Evisum_Proc_Action action)
 {
-   Evas_Object *win, *ic, *bx, *tabs;
+   Evas_Object *win, *ic, *bx, *tabs, *tb;
    Proc_Info *proc;
 
    Ui_Data *pd = calloc(1, sizeof(Ui_Data));
@@ -1770,22 +1768,22 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    evas_object_show(bx);
    elm_box_pack_end(bx, tabs);
 
-   pd->content = elm_table_add(bx);
-   evas_object_size_hint_weight_set(pd->content, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(pd->content, FILL, 0.0);
-   evas_object_show(pd->content);
+   tb = elm_table_add(bx);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, 0.0);
+   evas_object_show(tb);
 
    pd->general_view = _general_tab_add(tabs, pd);
    pd->children_view = _children_tab_add(tabs, pd);
    pd->thread_view = _threads_tab_add(tabs, pd);
    pd->manual_view = _manual_tab_add(tabs, pd);
 
-   elm_table_pack(pd->content, pd->general_view, 0, 0, 1, 1);
-   elm_table_pack(pd->content, pd->children_view, 0, 0, 1, 1);
-   elm_table_pack(pd->content, pd->thread_view, 0, 0, 1, 1);
-   elm_table_pack(pd->content, pd->manual_view, 0, 0, 1, 1);
+   elm_table_pack(tb, pd->general_view, 0, 0, 1, 1);
+   elm_table_pack(tb, pd->children_view, 0, 0, 1, 1);
+   elm_table_pack(tb, pd->thread_view, 0, 0, 1, 1);
+   elm_table_pack(tb, pd->manual_view, 0, 0, 1, 1);
 
-   elm_box_pack_end(bx, pd->content);
+   elm_box_pack_end(bx, tb);
    elm_object_content_set(win, bx);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
