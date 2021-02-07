@@ -30,6 +30,7 @@ typedef struct _Proc_Info
 
    char       *command;
    char       *arguments;
+   int         ssleep;
    char        state[32];
 
    short       is_kernel;

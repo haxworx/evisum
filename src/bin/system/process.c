@@ -330,6 +330,7 @@ _process_list_linux_get(void)
         p->cpu_id = st.psr;
         p->start = st.start_time;
         p->run_time = st.run_time;
+	if (toupper(st.state) == 'S') p->ssleep = 1;
         state = _process_state_name(st.state);
         snprintf(p->state, sizeof(p->state), "%s", state);
         p->cpu_time = st.utime + st.stime;
@@ -369,6 +370,7 @@ _proc_thread_info(Proc_Info *p)
         Proc_Info *t = calloc(1, sizeof(Proc_Info));
         if (!t) continue;
         t->cpu_id = st.psr;
+	if (toupper(st.state) == 'S') p->ssleep = 1;
         state = _process_state_name(st.state);
         snprintf(t->state, sizeof(t->state), "%s", state);
         t->cpu_time = st.utime + st.stime;
@@ -405,6 +407,7 @@ proc_info_by_pid(int pid)
    p->cpu_id = st.psr;
    p->start = st.start_time;
    p->run_time = st.run_time;
+   if (toupper(st.state) == 'S') p->ssleep = 1;
    state = _process_state_name(st.state);
    snprintf(p->state, sizeof(p->state), "%s", state);
    p->cpu_time = st.utime + st.stime;
@@ -440,7 +443,10 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    p->run_time = kp->p_uutime_sec + kp->p_ustime_sec +
                  (kp->p_uutime_usec / 1000000) + (kp->p_ustime_usec / 1000000);
    if (kp->p_stat == SSLEEP)
-     state = kp->p_wmesg;
+     {
+        state = kp->p_wmesg;
+        p->ssleep = 1;
+     }
    else
      state = _process_state_name(kp->p_stat);
    snprintf(p->state, sizeof(p->state), "%s", state);
@@ -909,7 +915,10 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
        (usage->ru_stime.tv_sec * 1000000) + usage->ru_stime.tv_usec) / 10000;
    p->run_time = (kp->ki_runtime + 500000) / 1000000;
    if (kp->ki_stat == SSLEEP)
-     state = kp->ki_wmesg;
+     {
+        state = kp->ki_wmesg;
+        p->ssleep = 1;
+     }
    else
      state = _process_state_name(kp->ki_stat);
    snprintf(p->state, sizeof(p->state), "%s", state);
