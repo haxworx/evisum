@@ -580,6 +580,11 @@ ui_disk_win_add(Ui *ui)
    evas_object_size_hint_align_set(tb, FILL, FILL);
    evas_object_show(tb);
 
+   rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(LIST_BTN_HEIGHT));
+   evas_object_size_hint_max_set(rec, -1, ELM_SCALE_SIZE(LIST_BTN_HEIGHT));
+   elm_table_pack(tb, rec, i++, 0, 1, 1);
+
    pd->btn_device = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
@@ -669,7 +674,7 @@ ui_disk_win_add(Ui *ui)
 
    pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
 
-   elm_table_pack(tb, scr, 0, 1, 7, 2);
+   elm_table_pack(tb, scr, 0, 2, 8, 2);
    elm_object_content_set(win, tb);
 
    if (ui->disk.width > 0 && ui->disk.height > 0)

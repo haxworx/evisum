@@ -1309,6 +1309,11 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_show(tb);
    elm_box_pack_end(bx2, tb);
 
+   rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(LIST_BTN_HEIGHT));
+   evas_object_size_hint_max_set(rec, -1, ELM_SCALE_SIZE(LIST_BTN_HEIGHT));
+   elm_table_pack(tb, rec, i++, 0, 1, 1);
+
    pd->tab_thread_id = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);

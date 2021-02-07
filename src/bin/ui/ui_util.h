@@ -7,11 +7,12 @@
 #define FILL EVAS_HINT_FILL
 #define EXPAND EVAS_HINT_EXPAND
 
-#define TAB_BTN_WIDTH  74
-#define TAB_BTN_HEIGHT 2
-#define BTN_WIDTH      68
-#define BTN_HEIGHT     1
-#define ICON_SIZE      14
+#define TAB_BTN_WIDTH   74
+#define TAB_BTN_HEIGHT  28
+#define BTN_WIDTH       68
+#define BTN_HEIGHT      24
+#define ICON_SIZE       14
+#define LIST_BTN_HEIGHT 28
 
 #define UI_CHILD_WIN_WIDTH  360
 #define UI_CHILD_WIN_HEIGHT 360
