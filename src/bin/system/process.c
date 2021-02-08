@@ -254,7 +254,8 @@ _stat(const char *path, Stat *st)
 {
    FILE *f;
    char line[4096];
-   int dummy, res = 0;
+   char name[1024];
+   int dummy, len = 0;
    static long tck = 0;
    static int64_t boot_time = 0;
 
@@ -267,14 +268,10 @@ _stat(const char *path, Stat *st)
 
    if (fgets(line, sizeof(line), f))
      {
-        char *end, *start = strchr(line, '(') + 1;
-        end = strchr(line, ')');
 
-        strncpy(st->name, start, end - start);
-        st->name[end - start] = '\0';
-        res = sscanf(end + 2, "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
+        len = sscanf(line, "%d %s %c %d %d %d %d %d %u %u %u %u %u %d %d %d"
               " %d %d %d %u %u %lld %lu %u %u %u %u %u %u %u %d %d %d %d %u"
-              " %d %d %d %d %d %d %d %d %d",
+              " %d %d %d %d %d %d %d %d %d", &dummy, name,
               &st->state, &st->ppid, &dummy, &dummy, &dummy, &dummy, &st->flags,
               &dummy, &dummy, &dummy, &dummy, &st->utime, &st->stime, &st->cutime,
               &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &st->start_time,
@@ -284,7 +281,14 @@ _stat(const char *path, Stat *st)
      }
    fclose(f);
 
-   if (res != 42) return 0;
+   if (len != 44) return 0;
+
+   len = strlen(name);
+   if (len)
+     {
+        name[len-1] = '\0';
+        snprintf(st->name, sizeof(st->name), "%s", &name[1]);
+     }
 
    if (!tck) tck = sysconf(_SC_CLK_TCK);
 
