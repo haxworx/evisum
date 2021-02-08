@@ -676,12 +676,12 @@ static void
 _graph_summary_update(Ui_Data *pd, Proc_Info *proc)
 {
    elm_object_text_set(pd->threads.graph.lb, eina_slstr_printf(
-                       _("<small><b>"
+                       _("<b>"
                        "CPU: %.0f%%<br>"
                        "Size: %s<br>"
                        "Reserved: %s<br>"
                        "Virtual: %s"
-                       "</></>"),
+                       "</>"),
                        proc->cpu_usage,
                        evisum_size_format(proc->mem_size),
                        evisum_size_format(proc->mem_rss),
@@ -782,8 +782,8 @@ _graph(Evas_Object *parent, Ui_Data *pd)
 
    rec = evas_object_rectangle_add(evas_object_evas_get(parent));
    evas_object_color_set(rec, 0, 0, 0, 64);
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(92), ELM_SCALE_SIZE(64));
-   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(92), ELM_SCALE_SIZE(64));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(128), ELM_SCALE_SIZE(92));
+   evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(128), ELM_SCALE_SIZE(92));
    evas_object_show(rec);
 
    pd->threads.graph.lb = lb = elm_entry_add(parent);
