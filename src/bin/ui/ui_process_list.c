@@ -80,8 +80,6 @@ typedef struct
       int                  dead;
       int                  zombie;
       int                  dsleep;
-      int                  waiting;
-      int                  locked;
    } summary;
 } Ui_Data;
 
@@ -456,8 +454,7 @@ _summary_reset(Ui_Data *pd)
 {
    pd->summary.total = pd->summary.running = pd->summary.sleeping = 0;
    pd->summary.stopped = pd->summary.idle  = pd->summary.zombie = 0;
-   pd->summary.dead = pd->summary.dsleep = pd->summary.waiting = 0;
-   pd->summary.locked = 0;
+   pd->summary.dsleep = pd->summary.dead = 0;
 }
 
 static void
@@ -480,10 +477,6 @@ _summary_update(Ui_Data *pd)
      eina_strbuf_append_printf(buf, "%i dsleep, ", pd->summary.dsleep);
    if (pd->summary.zombie)
      eina_strbuf_append_printf(buf, "%i zombie, ", pd->summary.zombie);
-   if (pd->summary.waiting)
-     eina_strbuf_append_printf(buf, "%i waiting, ", pd->summary.waiting);
-   if (pd->summary.locked)
-     eina_strbuf_append_printf(buf, "%i locked, ", pd->summary.locked);
 
    eina_strbuf_replace_last(buf, ",", ".");
 
@@ -509,10 +502,6 @@ _summary_total(Ui_Data *pd, Proc_Info *proc)
      pd->summary.dead++;
    if (!strcmp(proc->state, "dsleep"))
      pd->summary.dsleep++;
-   if (!strcmp(proc->state, "wait"))
-     pd->summary.waiting++;
-   if (!strcmp(proc->state, "lock"))
-     pd->summary.locked++;
 }
 
 static Eina_List *
