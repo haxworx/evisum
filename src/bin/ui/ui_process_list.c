@@ -76,6 +76,12 @@ typedef struct
       int                  running;
       int                  sleeping;
       int                  stopped;
+      int                  idle;
+      int                  dead;
+      int                  zombie;
+      int                  dsleep;
+      int                  waiting;
+      int                  locked;
    } summary;
 } Ui_Data;
 
@@ -446,14 +452,67 @@ _bring_in(void *data)
 }
 
 static void
-_update_summary(Ui_Data *pd)
+_summary_reset(Ui_Data *pd)
 {
-   const char *txt =
-      eina_slstr_printf("%i processes: %i running, %i sleeping, %i stopped.",
-                        pd->summary.total, pd->summary.running,
-                        pd->summary.sleeping, pd->summary.stopped);
+   pd->summary.total = pd->summary.running = pd->summary.sleeping = 0;
+   pd->summary.stopped = pd->summary.idle  = pd->summary.zombie = 0;
+   pd->summary.dead = pd->summary.dsleep = pd->summary.waiting = 0;
+   pd->summary.locked = 0;
+}
 
-   elm_object_text_set(pd->summary.lb, txt);
+static void
+_summary_update(Ui_Data *pd)
+{
+   Eina_Strbuf *buf = eina_strbuf_new();
+
+   eina_strbuf_append_printf(buf, "%i processes: ", pd->summary.total);
+   if (pd->summary.running)
+     eina_strbuf_append_printf(buf, "%i running, ", pd->summary.running);
+   if (pd->summary.sleeping)
+     eina_strbuf_append_printf(buf, "%i sleeping, ", pd->summary.sleeping);
+   if (pd->summary.stopped)
+     eina_strbuf_append_printf(buf, "%i stopped, ", pd->summary.stopped);
+   if (pd->summary.idle)
+     eina_strbuf_append_printf(buf, "%i idle, ", pd->summary.idle);
+   if (pd->summary.dead)
+     eina_strbuf_append_printf(buf, "%i dead, ", pd->summary.dead);
+   if (pd->summary.dsleep)
+     eina_strbuf_append_printf(buf, "%i dsleep, ", pd->summary.dsleep);
+   if (pd->summary.zombie)
+     eina_strbuf_append_printf(buf, "%i zombie, ", pd->summary.zombie);
+   if (pd->summary.waiting)
+     eina_strbuf_append_printf(buf, "%i waiting, ", pd->summary.waiting);
+   if (pd->summary.locked)
+     eina_strbuf_append_printf(buf, "%i locked, ", pd->summary.locked);
+
+   eina_strbuf_replace_last(buf, ",", ".");
+
+   elm_object_text_set(pd->summary.lb, eina_strbuf_string_get(buf));
+
+   eina_strbuf_free(buf);
+}
+
+static void
+_summary_total(Ui_Data *pd, Proc_Info *proc)
+{
+   pd->summary.total++;
+   if (!strcmp(proc->state, "run"))
+     pd->summary.running++;
+   pd->summary.sleeping += proc->ssleep;
+   if (!strcmp(proc->state, "stop"))
+     pd->summary.stopped++;
+   if (!strcmp(proc->state, "idle"))
+     pd->summary.idle++;
+   if (!strcmp(proc->state, "zombie"))
+     pd->summary.zombie++;
+   if (!strcmp(proc->state, "dead"))
+     pd->summary.dead++;
+   if (!strcmp(proc->state, "dsleep"))
+     pd->summary.dsleep++;
+   if (!strcmp(proc->state, "wait"))
+     pd->summary.waiting++;
+   if (!strcmp(proc->state, "lock"))
+     pd->summary.locked++;
 }
 
 static Eina_List *
@@ -505,8 +564,7 @@ _process_list_search_trim(Eina_List *list, Ui_Data *pd)
    Proc_Info *proc;
    Ui *ui = pd->ui;
 
-   pd->summary.total = pd->summary.running = pd->summary.sleeping = 0;
-   pd->summary.stopped = 0;
+   _summary_reset(pd);
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
@@ -539,12 +597,7 @@ _process_list_search_trim(Eina_List *list, Ui_Data *pd)
                       eina_hash_add(pd->cpu_times, &id, cpu_time);
                    }
               }
-	    pd->summary.total++;
-	    if ((!strcmp(proc->state, "run")) || (!strcmp(proc->state, "onproc")))
-              pd->summary.running++;
-	    pd->summary.sleeping += proc->ssleep;
-	    if (!strcmp(proc->state, "stop"))
-              pd->summary.stopped++;
+            _summary_total(pd, proc);
          }
      }
 
@@ -643,7 +696,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 
    elm_genlist_realized_items_update(pd->genlist);
 
-   _update_summary(pd);
+   _summary_update(pd);
 
 #if DIRTY_GENLIST_HACK
    Eina_List *real = elm_genlist_realized_items_get(pd->genlist);
