@@ -608,7 +608,7 @@ _graph(Ui *ui, Evas_Object *parent)
    ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get("menu"));
    elm_object_part_content_set(btn, "icon", ic);
-   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), 1);
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(ICON_SIZE), 1);
    evas_object_show(ic);
    evas_object_size_hint_weight_set(btn, 1.0, 1.0);
    evas_object_size_hint_align_set(btn, 0.99, 0.01);
