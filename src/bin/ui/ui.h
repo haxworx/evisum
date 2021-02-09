@@ -38,6 +38,8 @@ typedef struct Ui
       Eina_Bool     show_kthreads;
       Eina_Bool     show_user;
 
+      unsigned char alpha;
+      Eina_Bool     transparant;
       Eina_Bool     show_scroller;
    } proc;
 

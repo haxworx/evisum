@@ -40,6 +40,7 @@ typedef struct
    Evas_Object           *win;
    Evas_Object           *main_menu;
    Evas_Object           *menu;
+   Eina_Bool              transparant;
 
    struct
    {
@@ -51,6 +52,8 @@ typedef struct
       Eina_Bool           visible;
       double              keytime;
    } search;
+
+   Evas_Object           *content;
 
    Evas_Object           *genlist;
    Elm_Genlist_Item_Class itc;
@@ -1436,6 +1439,7 @@ _search_empty_cb(void *data)
    if (!pd->search.len)
      {
         evas_object_lower(pd->search.pop);
+	evas_object_hide(pd->search.pop);
         elm_object_focus_allow_set(pd->search.entry, 0);
         pd->search.visible = 0;
         pd->search.timer = NULL;
@@ -1533,6 +1537,7 @@ _win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
         pd->skip_wait = 0;
         elm_object_focus_allow_set(pd->search.entry, 0);
         evas_object_lower(pd->search.pop);
+	evas_object_hide(pd->search.pop);
         pd->search.visible = 0;
      }
    else if (ev->string && strcmp(ev->keyname, "BackSpace"))
@@ -1623,6 +1628,45 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
                             &ui->proc.width, &ui->proc.height);
 }
 
+static void
+_win_alpha_set(Ui_Data *pd)
+{
+   Evas_Object *bg, *win;
+   Ui *ui;
+   int r, g, b, a;
+   double fade;
+
+   win = pd->win;
+   ui = pd->ui;
+
+   bg = evas_object_data_get(win, "bg");
+   if (!bg) return;
+
+   fade = ui->proc.alpha / 100.0;
+
+   // FIXME: Base window colour from theme.
+   if (ui->proc.transparant)
+     {
+        r = b = g = 128; a = 255;
+        evas_object_color_set(bg, r * fade, g * fade, b * fade, fade * a);
+        r = b = g = a = 255;
+        evas_object_color_set(pd->content, r * fade, g * fade, b * fade, fade * a);
+     }
+   else
+     {
+        r = b = g = a = 255;
+        evas_object_color_set(pd->content, r, g, b, a);
+        r = b = g = 128;  a = 255;
+        evas_object_color_set(bg, r, g, b, a);
+     }
+
+   if (ui->proc.transparant != pd->transparant)
+     {
+        elm_win_alpha_set(win, ui->proc.transparant);
+     }
+   pd->transparant = ui->proc.transparant;
+}
+
 static Eina_Bool
 _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
                           void *event EINA_UNUSED)
@@ -1647,6 +1691,8 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
                             ELM_SCROLLER_POLICY_AUTO :
                             ELM_SCROLLER_POLICY_OFF));
    pd->skip_wait = 1;
+
+   _win_alpha_set(pd);
 
    return 1;
 }
@@ -1744,13 +1790,13 @@ ui_process_list_win_add(Ui *ui)
                                             _evisum_config_changed_cb, pd);
    _init(pd);
 
-   ui->proc.win = pd->win = win = elm_win_util_standard_add("evisum", "evisum");
+   ui->proc.win = pd->win = win = elm_win_add(NULL, "evisum", ELM_WIN_BASIC);
    elm_win_autodel_set(win, 1);
    elm_win_title_set(win, _("Process Explorer"));
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
-   evisum_ui_background_add(win, evisum_ui_backgrounds_enabled_get());
+   evisum_ui_background_add(win);
 
    if (ui->proc.width > 1 && ui->proc.height > 1)
      evas_object_resize(win, ui->proc.width, ui->proc.height);
@@ -1763,7 +1809,7 @@ ui_process_list_win_add(Ui *ui)
    else
      elm_win_center(win, 1, 1);
 
-   obj = _ui_content_system_add(pd, win);
+   pd->content = obj = _ui_content_system_add(pd, win);
    elm_object_content_set(win, obj);
    _search_add(pd);
 
@@ -1778,6 +1824,7 @@ ui_process_list_win_add(Ui *ui)
                                   _win_move_cb, pd);
    evas_object_event_callback_add(obj, EVAS_CALLBACK_KEY_DOWN,
                                   _win_key_down_cb, pd);
+   _win_alpha_set(pd);
    evas_object_show(win);
 
    _win_resize_cb(pd, NULL, win, NULL);

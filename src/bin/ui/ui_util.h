@@ -47,7 +47,7 @@ const char *
 evisum_image_path_get(const char *name);
 
 Evas_Object *
-evisum_ui_background_add(Evas_Object *win, Eina_Bool enabled);
+evisum_ui_background_add(Evas_Object *win);
 
 Evas_Object *
 evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled);

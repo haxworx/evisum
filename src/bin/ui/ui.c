@@ -16,6 +16,8 @@
 Evisum_Config *_evisum_config;
 int EVISUM_EVENT_CONFIG_CHANGED;
 
+static Evas_Object *_slider_alpha = NULL;
+
 void
 evisum_ui_config_save(Ui *ui)
 {
@@ -32,7 +34,9 @@ evisum_ui_config_save(Ui *ui)
         if ((_evisum_config->proc.poll_delay != ui->proc.poll_delay) ||
             (_evisum_config->proc.show_kthreads != ui->proc.show_kthreads) ||
             (_evisum_config->proc.show_user != ui->proc.show_user) ||
-            (_evisum_config->proc.show_scroller != ui->proc.show_scroller)
+            (_evisum_config->proc.show_scroller != ui->proc.show_scroller) ||
+            (_evisum_config->proc.transparant != ui->proc.transparant) ||
+            (_evisum_config->proc.alpha != ui->proc.alpha)
            )
           {
              notify = 1;
@@ -49,6 +53,8 @@ evisum_ui_config_save(Ui *ui)
         _evisum_config->proc.show_kthreads = ui->proc.show_kthreads;
         _evisum_config->proc.show_user = ui->proc.show_user;
         _evisum_config->proc.show_scroller = ui->proc.show_scroller;
+        _evisum_config->proc.transparant = ui->proc.transparant;
+        _evisum_config->proc.alpha = ui->proc.alpha;
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
      }
 
@@ -114,6 +120,8 @@ evisum_ui_config_load(Ui *ui)
    proc_info_kthreads_show_set(ui->proc.show_kthreads);
    ui->proc.show_user = _evisum_config->proc.show_user;
    ui->proc.show_scroller = _evisum_config->proc.show_scroller;
+   ui->proc.transparant = _evisum_config->proc.transparant;
+   ui->proc.alpha = _evisum_config->proc.alpha;
 
    ui->proc.width = _evisum_config->proc.width;
    ui->proc.height = _evisum_config->proc.height;
@@ -240,13 +248,12 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb,
    Evas_Object *btn, *ic;
 
    btn = elm_button_add(parent);
-   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_show(btn);
 
    ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get(icon));
-   evisum_ui_icon_size_set(ic, ELM_SCALE_SIZE(ICON_SIZE));
    evas_object_show(ic);
 
    elm_object_part_content_set(btn, "icon", ic);
@@ -268,6 +275,31 @@ _main_menu_slider_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
      elm_slider_unit_format_set(obj, _("%1.0f secs"));
    else
      elm_slider_unit_format_set(obj, _("%1.0f sec"));
+
+   evisum_ui_config_save(ui);
+}
+
+static void
+_main_menu_slider_alpha_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
+                             void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui->proc.alpha = elm_slider_value_get(obj) + 0.5;
+
+   evisum_ui_config_save(ui);
+}
+
+static void
+_main_menu_transparant_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
+                                    void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   if (!ui->proc.alpha) return;
+
+   ui->proc.transparant = elm_check_state_get(obj);
+   elm_object_disabled_set(_slider_alpha, !ui->proc.transparant);
 
    evisum_ui_config_save(ui);
 }
@@ -335,7 +367,7 @@ _main_menu_focus_timer_cb(void *data)
 Evas_Object *
 evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
 {
-   Evas_Object *o, *bx, *bx2, *tb, *sep, *fr, *sli;
+   Evas_Object *o, *obx, *bx, *tb, *hbx, *sep, *fr, *sli;
    Evas_Object *it_focus, *btn, *chk, *rec;
    Evas_Coord ox, oy, ow, oh;
    int i = 0;
@@ -346,10 +378,10 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_size_hint_align_set(o, FILL, FILL);
    elm_object_style_set(o, "noblock");
 
-   bx = elm_box_add(o);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
+   obx = elm_box_add(o);
+   evas_object_size_hint_weight_set(obx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(obx, FILL, FILL);
+   evas_object_show(obx);
 
    fr = elm_frame_add(o);
    elm_object_text_set(fr, _("Actions"));
@@ -357,8 +389,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_show(fr);
 
-   evas_object_size_hint_min_set(fr, 100, 100);
-   elm_object_content_set(fr, bx);
+   elm_object_content_set(fr, obx);
    elm_object_content_set(o, fr);
 
    tb = elm_table_add(o);
@@ -366,42 +397,42 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
    evas_object_show(tb);
 
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
 
    it_focus = btn = _btn_create(tb, "proc", _("Processes"),
                      _menu_process_view_clicked_cb, ui);
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    btn = _btn_create(tb, "cpu", _("CPU"),
                      _menu_cpu_activity_clicked_cb, ui);
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    btn = _btn_create(tb, "memory", _("Memory"),
                      _menu_memory_activity_clicked_cb, ui);
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    btn = _btn_create(tb, "storage", _("Storage"),
                      _menu_disk_activity_clicked_cb, ui);
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
    btn = _btn_create(tb, "sensor", _("Sensors"),
                      _menu_sensors_activity_clicked_cb, ui);
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
@@ -414,8 +445,8 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
 
    btn = _btn_create(tb, "effects", _("Effects"),
                      _menu_effects_clicked_cb, ui);
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
@@ -427,12 +458,12 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_table_pack(tb, sep, i++, 0, 1, 1);
 
    btn = _btn_create(tb, "evisum", _("About"), _about_clicked_cb, ui);
-   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   elm_box_pack_end(bx, tb);
+   elm_box_pack_end(obx, tb);
 
    Menu_Inst *inst = calloc(1, sizeof(Menu_Inst));
    if (!inst) return NULL;
@@ -456,10 +487,10 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_size_hint_align_set(fr, FILL, FILL);
    evas_object_show(fr);
 
-   bx2 = elm_box_add(o);
-   evas_object_size_hint_weight_set(bx2, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx2, FILL, FILL);
-   evas_object_show(bx2);
+   bx = elm_box_add(o);
+   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   evas_object_show(bx);
 
    sli = elm_slider_add(o);
    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
@@ -477,18 +508,18 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
                                   _main_menu_slider_changed_cb, ui);
    evas_object_show(sli);
    _main_menu_slider_changed_cb(ui, sli, NULL);
-   elm_box_pack_end(bx2, sli);
+   elm_box_pack_end(bx, sli);
 
-   sep = elm_separator_add(bx2);
+   sep = elm_separator_add(bx);
    evas_object_size_hint_align_set(sep, FILL, FILL);
    evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
    elm_separator_horizontal_set(sep, 1);
    evas_object_show(sep);
-   elm_box_pack_end(bx2, sep);
+   elm_box_pack_end(bx, sep);
 
    if (ui->proc.has_kthreads)
      {
-        chk = elm_check_add(bx2);
+        chk = elm_check_add(bx);
         evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
         evas_object_size_hint_align_set(chk, FILL, FILL);
         elm_object_text_set(chk, _("Show kernel threads?"));
@@ -496,10 +527,10 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
         evas_object_show(chk);
         evas_object_smart_callback_add(chk, "changed",
                                        _main_menu_show_threads_changed_cb, ui);
-        elm_box_pack_end(bx2, chk);
+        elm_box_pack_end(bx, chk);
     }
 
-   chk = elm_check_add(bx2);
+   chk = elm_check_add(bx);
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
    evas_object_size_hint_align_set(chk, FILL, FILL);
    elm_object_text_set(chk, _("User only?"));
@@ -507,16 +538,23 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_show(chk);
    evas_object_smart_callback_add(chk, "changed",
                                   _main_menu_show_user_changed_cb, ui);
-   elm_box_pack_end(bx2, chk);
+   elm_box_pack_end(bx, chk);
 
-   sep = elm_separator_add(bx2);
-   evas_object_size_hint_align_set(sep, FILL, FILL);
-   evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
-   elm_separator_horizontal_set(sep, 1);
-   evas_object_show(sep);
-   elm_box_pack_end(bx2, sep);
+   elm_object_content_set(fr, bx);
+   elm_box_pack_end(obx, fr);
 
-   chk = elm_check_add(bx2);
+   fr = elm_frame_add(o);
+   elm_object_text_set(fr, _("Display"));
+   evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(fr, FILL, FILL);
+   evas_object_show(fr);
+
+   bx = elm_box_add(o);
+   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   evas_object_show(bx);
+
+   chk = elm_check_add(bx);
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
    evas_object_size_hint_align_set(chk, FILL, FILL);
    elm_object_text_set(chk, _("Display scroll bar?"));
@@ -524,10 +562,43 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_show(chk);
    evas_object_smart_callback_add(chk, "changed",
                                   _main_menu_show_scroller_changed_cb, ui);
-   elm_box_pack_end(bx2, chk);
+   elm_box_pack_end(bx, chk);
 
-   elm_object_content_set(fr, bx2);
-   elm_box_pack_end(bx, fr);
+   hbx = elm_box_add(o);
+   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+   elm_box_horizontal_set(hbx, 1);
+   evas_object_show(hbx);
+
+   chk = elm_check_add(bx);
+   evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(chk, FILL, FILL);
+   elm_object_text_set(chk, _("Alpha"));
+   elm_check_state_set(chk, ui->proc.transparant);
+   evas_object_show(chk);
+   evas_object_smart_callback_add(chk, "changed",
+                                  _main_menu_transparant_changed_cb, ui);
+   elm_box_pack_end(hbx, chk);
+
+   _slider_alpha = sli = elm_slider_add(o);
+   evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
+   elm_slider_min_max_set(sli, 25.0, 100.0);
+   elm_slider_span_size_set(sli, 100.0);
+   elm_slider_step_set(sli, 1 / 100.0);
+   elm_slider_unit_format_set(sli, _("%1.0f %%"));
+   elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_NONE);
+   elm_slider_value_set(sli, ui->proc.alpha);
+   evas_object_size_hint_align_set(sli, FILL, FILL);
+   elm_object_disabled_set(sli, !ui->proc.transparant);
+   evas_object_smart_callback_add(sli, "slider,drag,stop",
+                                  _main_menu_slider_alpha_changed_cb, ui);
+   evas_object_smart_callback_add(sli, "changed",
+                                  _main_menu_slider_alpha_changed_cb, ui);
+   evas_object_show(sli);
+   elm_box_pack_end(hbx, sli);
+   elm_box_pack_end(bx, hbx);
+   elm_object_content_set(fr, bx);
+
+   elm_box_pack_end(obx, fr);
 
    return o;
 }

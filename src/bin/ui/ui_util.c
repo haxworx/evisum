@@ -593,6 +593,7 @@ evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled)
    elm_bg_file_set(bg, evisum_image_path_get(images[i]), NULL);
    evas_object_size_hint_align_set(bg, FILL, FILL);
    evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+   evas_object_data_set(win, "bg", bg);
    elm_win_resize_object_add(win, bg);
    evas_object_show(bg);
 
@@ -600,17 +601,14 @@ evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled)
 }
 
 Evas_Object *
-evisum_ui_background_add(Evas_Object *win, Eina_Bool enabled)
+evisum_ui_background_add(Evas_Object *win)
 {
    Evas_Object *bg;
 
-   if (!enabled) return NULL;
-
    bg = elm_bg_add(win);
-   elm_bg_file_set(bg, evisum_image_path_get("sky_04"), NULL);
-   evas_object_size_hint_align_set(bg, FILL, FILL);
    evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
    elm_win_resize_object_add(win, bg);
+   evas_object_data_set(win, "bg", bg);
    evas_object_show(bg);
 
    return bg;
