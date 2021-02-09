@@ -614,6 +614,8 @@ _graph(Ui *ui, Evas_Object *parent)
    evas_object_size_hint_align_set(btn, 0.99, 0.01);
    elm_object_focus_allow_set(btn, 0);
    evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, ad);
+   // XXX: :)
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tbl, btn, 0, 0, 5, ad->cpu_count);
 
    bx = elm_box_add(box);

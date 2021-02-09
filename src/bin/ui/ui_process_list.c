@@ -171,7 +171,6 @@ _item_create(Evas_Object *obj)
    evas_object_size_hint_align_set(tb, FILL, FILL);
    evas_object_size_hint_weight_set(tb, EXPAND, 0);
 
-
    hbx = elm_box_add(tb);
    elm_box_horizontal_set(hbx, 1);
    evas_object_size_hint_align_set(hbx, 0.0, FILL);
@@ -1215,8 +1214,7 @@ _ui_content_system_add(Ui_Data *pd, Evas_Object *parent)
    evas_object_show(tb);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(LIST_BTN_HEIGHT));
-   evas_object_size_hint_max_set(rec, 1, ELM_SCALE_SIZE(LIST_BTN_HEIGHT));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_table_pack(tb, rec, i, 1, 1, 1);
 
    pd->btn_menu = btn = _btn_create(tb, "menu", _("Menu"),
