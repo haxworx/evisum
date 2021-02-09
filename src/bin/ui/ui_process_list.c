@@ -39,6 +39,7 @@ typedef struct
    Ecore_Timer           *resize_timer;
    Evas_Object           *win;
    Evas_Object           *main_menu;
+   Ecore_Timer           *main_menu_timer;
    Evas_Object           *menu;
    Eina_Bool              transparant;
 
@@ -1128,6 +1129,17 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
 }
 
+static Eina_Bool
+_main_menu_timer_cb(void *data)
+{
+   Ui_Data *pd = data;
+   evas_object_del(pd->main_menu);
+   pd->main_menu_timer = NULL;
+   pd->main_menu = NULL;
+
+   return 0;
+}
+
 static void
 _main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
                         void *ev EINA_UNUSED)
@@ -1135,9 +1147,10 @@ _main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
    Ui_Data *pd = data;
 
    elm_ctxpopup_dismiss(pd->main_menu);
-   evas_object_del(pd->main_menu);
-
-   pd->main_menu = NULL;
+   if (pd->main_menu_timer)
+     _main_menu_timer_cb(pd);
+   else
+     pd->main_menu_timer = ecore_timer_add(0.2, _main_menu_timer_cb, pd);
 }
 
 static Evas_Object *
