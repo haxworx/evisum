@@ -335,9 +335,10 @@ _main_menu_focus_timer_cb(void *data)
 Evas_Object *
 evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
 {
-   Evas_Object *o, *bx, *bx2, *hbox, *sep, *fr, *sli;
-   Evas_Object *it_focus, *btn, *chk;
+   Evas_Object *o, *bx, *bx2, *tb, *sep, *fr, *sli;
+   Evas_Object *it_focus, *btn, *chk, *rec;
    Evas_Coord ox, oy, ow, oh;
+   int i = 0;
 
    evas_object_geometry_get(obj, &ox, &oy, &ow, &oh);
    o = elm_ctxpopup_add(parent);
@@ -360,53 +361,78 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_object_content_set(fr, bx);
    elm_object_content_set(o, fr);
 
-   hbox = elm_box_add(o);
-   elm_box_horizontal_set(hbox, 1);
-   evas_object_size_hint_align_set(hbox, FILL, FILL);
-   evas_object_size_hint_weight_set(hbox, EXPAND, EXPAND);
-   evas_object_show(hbox);
+   tb = elm_table_add(o);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_show(tb);
 
-   it_focus = btn = _btn_create(hbox, "proc", _("Processes"),
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+
+   it_focus = btn = _btn_create(tb, "proc", _("Processes"),
                      _menu_process_view_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   btn = _btn_create(hbox, "cpu", _("CPU"),
+   btn = _btn_create(tb, "cpu", _("CPU"),
                      _menu_cpu_activity_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   btn = _btn_create(hbox, "memory", _("Memory"),
+   btn = _btn_create(tb, "memory", _("Memory"),
                      _menu_memory_activity_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   btn = _btn_create(hbox, "storage", _("Storage"),
+   btn = _btn_create(tb, "storage", _("Storage"),
                      _menu_disk_activity_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   btn = _btn_create(hbox, "sensor", _("Sensors"),
+   btn = _btn_create(tb, "sensor", _("Sensors"),
                      _menu_sensors_activity_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   sep = elm_separator_add(hbox);
+   sep = elm_separator_add(tb);
    evas_object_size_hint_align_set(sep, FILL, FILL);
    evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
    elm_separator_horizontal_set(sep, 0);
    evas_object_show(sep);
-   elm_box_pack_end(hbox, sep);
+   elm_table_pack(tb, sep, i++, 0, 1, 1);
 
-   btn = _btn_create(hbox, "effects", _("Effects"),
+   btn = _btn_create(tb, "effects", _("Effects"),
                      _menu_effects_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   sep = elm_separator_add(hbox);
+   sep = elm_separator_add(tb);
    evas_object_size_hint_align_set(sep, FILL, FILL);
    evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
    elm_separator_horizontal_set(sep, 0);
    evas_object_show(sep);
-   elm_box_pack_end(hbox, sep);
+   elm_table_pack(tb, sep, i++, 0, 1, 1);
 
-   btn = _btn_create(hbox, "evisum", _("About"), _about_clicked_cb, ui);
-   elm_box_pack_end(hbox, btn);
-   elm_box_pack_end(bx, hbox);
+   btn = _btn_create(tb, "evisum", _("About"), _about_clicked_cb, ui);
+   rec = evas_object_rectangle_add(evas_object_evas_get(bx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
+
+   elm_box_pack_end(bx, tb);
 
    Menu_Inst *inst = calloc(1, sizeof(Menu_Inst));
    if (!inst) return NULL;

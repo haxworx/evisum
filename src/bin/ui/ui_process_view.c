@@ -951,7 +951,7 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
         return;
      }
 
-   if (pd->pid_cpu_time && proc->cpu_time >= pd->pid_cpu_time)
+   if ((pd->pid_cpu_time) && (proc->cpu_time >= pd->pid_cpu_time))
      cpu_usage = (double)(proc->cpu_time - pd->pid_cpu_time) / pd->poll_delay;
 
    proc->cpu_usage = cpu_usage;
@@ -1456,6 +1456,8 @@ _manual_tab_add(Evas_Object *parent, Ui_Data *pd)
    elm_entry_line_wrap_set(entry, ELM_WRAP_NONE);
    elm_entry_editable_set(entry, 0);
    elm_entry_scrollable_set(entry, 1);
+   elm_scroller_policy_set(entry, ELM_SCROLLER_POLICY_OFF,
+                           ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(entry);
    elm_box_pack_end(bx, entry);
 
@@ -1529,6 +1531,7 @@ _tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                        void *event_info EINA_UNUSED)
 {
    Ui_Data *pd;
+   Evas_Object *ent;
    Eina_List *lines = NULL;
 
    pd = data;
@@ -1538,38 +1541,40 @@ _tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    if (pd->manual.init) return;
 
-   setenv("MANWIDTH", "80", 1);
+   setenv("MANWIDTH", "75", 1);
 
-   if (pd->selected_cmd && pd->selected_cmd[0] && !strchr(pd->selected_cmd, ' '))
+   ent = pd->manual.entry;
+   if ((pd->selected_cmd) && (pd->selected_cmd[0] )&& (!strchr(pd->selected_cmd, ' ')))
      lines =_exe_response(eina_slstr_printf("man %s | col -bx", pd->selected_cmd));
+
+   elm_entry_entry_append(ent, "<code>");
 
    if (!lines)
      {
-        if (!strcmp(pd->selected_cmd, "evisum"))
-          elm_object_text_set(pd->manual.entry, _evisum_docs());
+        if (pd->selected_pid == getpid())
+          elm_entry_entry_append(ent, _evisum_docs());
         else
           {
-             elm_object_text_set(pd->manual.entry,
-                                 eina_slstr_printf(
-                                 _("No documentation found for %s."),
-                                 pd->selected_cmd));
+             elm_entry_entry_append(ent,
+                                    eina_slstr_printf(
+                                    _("No documentation found for %s."),
+                                    pd->selected_cmd));
           }
      }
    else
      {
         char *line;
-        Evas_Object *ent = pd->manual.entry;
         int n = 1;
 
-        elm_entry_entry_append(ent, "<code>");
         EINA_LIST_FREE(lines, line)
           {
              if (n++ > 1)
                elm_entry_entry_append(ent, eina_slstr_printf("%s<br>", line));
              free(line);
           }
-        elm_entry_entry_append(ent, "</code>");
      }
+
+   elm_entry_entry_append(ent, "</code>");
 
    unsetenv("MANWIDTH");
 
