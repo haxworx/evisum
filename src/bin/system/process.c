@@ -84,7 +84,7 @@ _states_init(void)
 #endif
 #if defined(__OpenBSD__)
    _states[SDEAD]   = "dead";
-   _states[SONPROC] = "onproc";
+   _states[SONPROC] = "run";
 #endif
 #endif
 #endif
