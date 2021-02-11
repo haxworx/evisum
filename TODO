@@ -12,22 +12,12 @@ Process List:
 Maybe the genlist/buttons widget can be a widget with other features also.
 Some issue with scrolling CPU after some time. Not the cache.
 
-Process View:
-
-Some stats over time visually (pretty). Fix the keyboard focus tree.
-Add some stats, process CPU time etc. Needs plugged in.
-This whole UI bit can be much simpler and better.  Cool to check a process
-in the list and pop up some live informative stats...
-
-Improve keyboard support.
-
-ICONz:
-
-A flat icon. ApBBB's original icon is better than I currently can do but it's
-not quite right.
-
 Engine:
 
 Have one process polling and writing to disk and mapping to memory some IPC
 for real-time stats for a UI.
 
+BUGS:
+
+Fix minor leak on exit when setting custom format on progressbar free callback.
+Issue is cache related and abusing genlist related.

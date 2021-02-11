@@ -1,4 +1,19 @@
 =============
+Evisum 0.5.11
+=============
+
+ * Improve layout of process explorer.
+ * Consisent UI element sizing.
+ * Some minor visual improvements.
+ * Removing some leftover attrocity code.
+ * Add window alpha to the process explorer.
+ * Show CPU usage over multiple cores in process explorer.
+ * Add time on CPU field (FreeBSD reports differently depending
+   on the query), they are both accurate.
+ * Add a status bar.
+ * Resolve some rare-case minor string things from sysfs parsing.
+
+=============
 Evisum 0.5.10
 =============
 
