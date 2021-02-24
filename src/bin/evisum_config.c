@@ -54,6 +54,7 @@ _config_init()
    cfg->proc.poll_delay = 3;
    cfg->proc.show_kthreads = 1;
    cfg->proc.transparant = 0;
+   cfg->proc.fields = 0xffffffff;
    cfg->proc.alpha = 100;
 
    return cfg;

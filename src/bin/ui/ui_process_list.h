@@ -5,22 +5,38 @@
 
 typedef enum
 {
-   SORT_BY_NONE,
-   SORT_BY_PID,
-   SORT_BY_UID,
-   SORT_BY_NICE,
-   SORT_BY_PRI,
-   SORT_BY_CPU,
-   SORT_BY_THREADS,
-   SORT_BY_SIZE,
-   SORT_BY_RSS,
-   SORT_BY_CMD,
-   SORT_BY_TIME,
-   SORT_BY_STATE,
-   SORT_BY_CPU_USAGE,
+   PROC_SORT_BY_NONE,
+   PROC_SORT_BY_CMD,
+   PROC_SORT_BY_UID,
+   PROC_SORT_BY_PID,
+   PROC_SORT_BY_THREADS,
+   PROC_SORT_BY_CPU,
+   PROC_SORT_BY_PRI,
+   PROC_SORT_BY_NICE,
+   PROC_SORT_BY_SIZE,
+   PROC_SORT_BY_RSS,
+   PROC_SORT_BY_STATE,
+   PROC_SORT_BY_TIME,
+   PROC_SORT_BY_CPU_USAGE,
+   PROC_SORT_BY_MAX,
+} Proc_Sort;
 
-   SORT_BY_MAX,
-} Sort_Type;
+typedef enum
+{
+   PROC_FIELD_CMD       = 1,
+   PROC_FIELD_UID       = 2,
+   PROC_FIELD_PID       = 3,
+   PROC_FIELD_THREADS   = 4,
+   PROC_FIELD_CPU       = 5,
+   PROC_FIELD_PRI       = 6,
+   PROC_FIELD_NICE      = 7,
+   PROC_FIELD_SIZE      = 8,
+   PROC_FIELD_RSS       = 9,
+   PROC_FIELD_STATE     = 10,
+   PROC_FIELD_TIME      = 11,
+   PROC_FIELD_CPU_USAGE = 12,
+   PROC_FIELD_MAX = 13,
+} Proc_Field;
 
 void
 ui_process_list_win_add(Ui *ui);

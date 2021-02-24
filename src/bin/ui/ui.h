@@ -33,6 +33,7 @@ typedef struct Ui
 
       int           poll_delay;
       int           sort_type;
+      unsigned int  fields;
       Eina_Bool     sort_reverse;
       Eina_Bool     show_self;
       Eina_Bool     show_kthreads;

@@ -55,6 +55,7 @@ evisum_ui_config_save(Ui *ui)
         _evisum_config->proc.show_scroller = ui->proc.show_scroller;
         _evisum_config->proc.transparant = ui->proc.transparant;
         _evisum_config->proc.alpha = ui->proc.alpha;
+	_evisum_config->proc.fields = ui->proc.fields;
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
      }
 
@@ -117,6 +118,7 @@ evisum_ui_config_load(Ui *ui)
    ui->proc.sort_reverse = _evisum_config->proc.sort_reverse;
    ui->proc.poll_delay   = _evisum_config->proc.poll_delay;
    ui->proc.show_kthreads = _evisum_config->proc.show_kthreads;
+   ui->proc.fields = _evisum_config->proc.fields;
    proc_info_kthreads_show_set(ui->proc.show_kthreads);
    ui->proc.show_user = _evisum_config->proc.show_user;
    ui->proc.show_scroller = _evisum_config->proc.show_scroller;
@@ -700,7 +702,7 @@ evisum_ui_init(void)
 
    ui->proc.poll_delay = 3;
    ui->proc.sort_reverse = 0;
-   ui->proc.sort_type = SORT_BY_PID;
+   ui->proc.sort_type = PROC_SORT_BY_PID;
 
    ui->program_pid = getpid();
 
