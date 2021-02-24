@@ -150,8 +150,12 @@ _field_enabled(Proc_Field id)
 static void
 _content_reset(Ui_Data *pd)
 {
+   Evas_Object *rec;
    int j = 0;
    elm_table_clear(pd->tb_content, 0);
+   rec = evas_object_rectangle_add(evas_object_evas_get(pd->win));
+   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(BTN_HEIGHT));
+   elm_table_pack(pd->tb_content, rec, j, 0, 1, 1);
    elm_table_pack(pd->tb_content, pd->btn_menu, j++, 0, 1, 1);
    for (int i = j; i < PROC_FIELD_MAX; i++)
      {
