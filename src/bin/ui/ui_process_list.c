@@ -12,7 +12,6 @@
 #include <sys/resource.h>
 #include <pwd.h>
 
-#define PROGRESS_CUSTOM_FORMAT 1
 #define DIRTY_GENLIST_HACK     1
 
 extern int EVISUM_EVENT_CONFIG_CHANGED;
@@ -93,10 +92,6 @@ typedef struct
 } Ui_Data;
 
 static Ui_Data *_pd = NULL;
-
-#if PROGRESS_CUSTOM_FORMAT
-static double _cpu_usage = 0.0;
-#endif
 
 typedef struct
 {
@@ -317,24 +312,6 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    return lb;
 }
 
-#if PROGRESS_CUSTOM_FORMAT
-static char *
-_pb_format_cb(double val)
-{
-   static char buf[32];
-
-   snprintf(buf, sizeof(buf), "%1.1f %%", _cpu_usage);
-
-   return strdup(buf);
-}
-
-static void
-_pb_format_free_cb(char *str)
-{
-   free(str);
-}
-#endif
-
 static Evas_Object *
 _item_create(Evas_Object *obj)
 {
@@ -444,11 +421,6 @@ _item_create(Evas_Object *obj)
         evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
         evas_object_size_hint_align_set(pb, FILL, FILL);
         elm_progressbar_unit_format_set(pb, "%1.1f %%");
-#if PROGRESS_CUSTOM_FORMAT
-        elm_progressbar_unit_format_function_set(pb,
-                                                 _pb_format_cb,
-                                                 _pb_format_free_cb);
-#endif
         elm_table_pack(tb, pb, i++, 0, 1, 1);
         evas_object_data_set(tb, "proc_cpu_usage", pb);
      }
@@ -680,13 +652,15 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
      {
         pb = evas_object_data_get(it->obj, "proc_cpu_usage");
-#if PROGRESS_CUSTOM_FORMAT
-        _cpu_usage = proc->cpu_usage;
-#endif
         double value = proc->cpu_usage / 100.0;
         double last = elm_progressbar_value_get(pb);
+
         if (!EINA_DBL_EQ(value, last))
-          elm_progressbar_value_set(pb, proc->cpu_usage / 100.0);
+          {
+             elm_progressbar_value_set(pb, proc->cpu_usage / 100.0);
+             snprintf(buf, sizeof(buf), "%1.1f %%", proc->cpu_usage);
+             elm_object_part_text_set(pb, "elm.text.status", buf);
+          }
         evas_object_show(pb);
      }
 
