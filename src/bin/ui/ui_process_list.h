@@ -14,7 +14,9 @@ typedef enum
    PROC_SORT_BY_PRI,
    PROC_SORT_BY_NICE,
    PROC_SORT_BY_SIZE,
+   PROC_SORT_BY_VIRT,
    PROC_SORT_BY_RSS,
+   PROC_SORT_BY_SHARED,
    PROC_SORT_BY_STATE,
    PROC_SORT_BY_TIME,
    PROC_SORT_BY_CPU_USAGE,
@@ -31,11 +33,13 @@ typedef enum
    PROC_FIELD_PRI       = 6,
    PROC_FIELD_NICE      = 7,
    PROC_FIELD_SIZE      = 8,
-   PROC_FIELD_RSS       = 9,
-   PROC_FIELD_STATE     = 10,
-   PROC_FIELD_TIME      = 11,
-   PROC_FIELD_CPU_USAGE = 12,
-   PROC_FIELD_MAX = 13,
+   PROC_FIELD_VIRT      = 9,
+   PROC_FIELD_RSS       = 10,
+   PROC_FIELD_SHARED    = 11,
+   PROC_FIELD_STATE     = 12,
+   PROC_FIELD_TIME      = 13,
+   PROC_FIELD_CPU_USAGE = 14,
+   PROC_FIELD_MAX = 15,
 } Proc_Field;
 
 void

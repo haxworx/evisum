@@ -1311,6 +1311,25 @@ proc_sort_by_size(const void *p1, const void *p2)
 }
 
 int
+proc_sort_by_virt(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+   int64_t size1, size2;
+
+   inf1 = p1; inf2 = p2;
+
+   size1 = inf1->mem_virt;
+   size2 = inf2->mem_virt;
+
+   if (size1 > size2)
+     return 1;
+   if (size1 < size2)
+     return -1;
+
+   return 0;
+}
+
+int
 proc_sort_by_rss(const void *p1, const void *p2)
 {
    const Proc_Info *inf1, *inf2;
@@ -1320,6 +1339,25 @@ proc_sort_by_rss(const void *p1, const void *p2)
 
    size1 = inf1->mem_rss;
    size2 = inf2->mem_rss;
+
+   if (size1 > size2)
+     return 1;
+   if (size1 < size2)
+     return -1;
+
+   return 0;
+}
+
+int
+proc_sort_by_shared(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+   int64_t size1, size2;
+
+   inf1 = p1; inf2 = p2;
+
+   size1 = inf1->mem_shared;
+   size2 = inf2->mem_shared;
 
    if (size1 > size2)
      return 1;

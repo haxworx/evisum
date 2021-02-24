@@ -87,7 +87,13 @@ int
 proc_sort_by_size(const void *p1, const void *p2);
 
 int
+proc_sort_by_virt(const void *p1, const void *p2);
+
+int
 proc_sort_by_rss(const void *p1, const void *p2);
+
+int
+proc_sort_by_shared(const void *p1, const void *p2);
 
 int
 proc_sort_by_time(const void *p1, const void *p2);
