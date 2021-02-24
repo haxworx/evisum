@@ -1665,7 +1665,6 @@ _content_add(Ui_Data *pd, Evas_Object *parent)
    elm_object_content_set(fr, lb);
 
    _fields_init(pd);
-   _content_reset(pd);
 
    return tb;
 }
