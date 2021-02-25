@@ -56,7 +56,7 @@ typedef struct
 
    struct
    {
-      Evas_Object  *genlist;
+      Evas_Object  *glist;
    } children;
 
    struct
@@ -72,7 +72,7 @@ typedef struct
 
       Eina_Hash       *hash_cpu_times;
       Evisum_Ui_Cache *cache;
-      Evas_Object     *genlist;
+      Evas_Object     *glist;
       Evas_Object     *btn_id;
       Evas_Object     *btn_name;
       Evas_Object     *btn_state;
@@ -374,17 +374,17 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 }
 
 static void
-_genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
+_glist_ensure_n_items(Evas_Object *glist, unsigned int items)
 {
    Elm_Object_Item *it;
    Elm_Genlist_Item_Class *itc;
-   unsigned int i, existing = elm_genlist_items_count(genlist);
+   unsigned int i, existing = elm_genlist_items_count(glist);
 
    if (items < existing)
      {
         for (i = existing - items; i > 0; i--)
            {
-              it = elm_genlist_last_item_get(genlist);
+              it = elm_genlist_last_item_get(glist);
               if (it)
                 elm_object_item_del(it);
            }
@@ -401,7 +401,7 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
 
    for (i = existing; i < items; i++)
      {
-        elm_genlist_item_append(genlist, itc, NULL, NULL,
+        elm_genlist_item_append(glist, itc, NULL, NULL,
                                 ELM_GENLIST_ITEM_NONE, NULL, NULL);
      }
 
@@ -472,7 +472,7 @@ _thread_view_update(Ui_Data *pd, Proc_Info *proc)
    Elm_Object_Item *it;
    Eina_List *l, *threads = NULL;
 
-   _genlist_ensure_n_items(pd->threads.genlist, eina_list_count(proc->threads));
+   _glist_ensure_n_items(pd->threads.glist, eina_list_count(proc->threads));
 
    EINA_LIST_FOREACH(proc->threads, l, p)
      {
@@ -486,7 +486,7 @@ _thread_view_update(Ui_Data *pd, Proc_Info *proc)
    if (pd->threads.sort_reverse)
      threads = eina_list_reverse(threads);
 
-   it = elm_genlist_first_item_get(pd->threads.genlist);
+   it = elm_genlist_first_item_get(pd->threads.glist);
 
    EINA_LIST_FREE(threads, t)
      {
@@ -592,7 +592,7 @@ _children_del(void *data, Evas_Object *obj EINA_UNUSED)
 }
 
 static void
-_children_populate(Evas_Object *genlist, Elm_Object_Item *parent,
+_children_populate(Evas_Object *glist, Elm_Object_Item *parent,
                    Eina_List *children)
 {
    Elm_Genlist_Item_Class *itc;
@@ -609,7 +609,7 @@ _children_populate(Evas_Object *genlist, Elm_Object_Item *parent,
 
    EINA_LIST_FOREACH(children, l, child)
      {
-        it = elm_genlist_item_append(genlist, itc, child, parent,
+        it = elm_genlist_item_append(glist, itc, child, parent,
                                      (child->children ?
                                      ELM_GENLIST_ITEM_TREE :
                                      ELM_GENLIST_ITEM_NONE), NULL, NULL);
@@ -619,7 +619,7 @@ _children_populate(Evas_Object *genlist, Elm_Object_Item *parent,
              child->children = eina_list_sort(child->children,
                                               eina_list_count(child->children),
                                               proc_sort_by_age);
-             _children_populate(genlist, it, child->children);
+             _children_populate(glist, it, child->children);
           }
      }
    elm_genlist_item_class_free(itc);
@@ -632,7 +632,7 @@ _children_view_update(void *data)
    Proc_Info *child;
    Ui_Data *pd = data;
 
-   elm_genlist_clear(pd->children.genlist);
+   elm_genlist_clear(pd->children.glist);
 
    if (pd->selected_pid == 0) return 0;
 
@@ -644,7 +644,7 @@ _children_view_update(void *data)
              child->children = eina_list_sort(child->children,
                                               eina_list_count(child->children),
                                               proc_sort_by_age);
-             _children_populate(pd->children.genlist, NULL, child->children);
+             _children_populate(pd->children.glist, NULL, child->children);
              break;
           }
      }
@@ -1226,7 +1226,7 @@ static void
 _threads_list_reorder(Ui_Data *pd)
 {
    pd->poll_count = 0;
-   elm_scroller_page_bring_in(pd->threads.genlist, 0, 0);
+   elm_scroller_page_bring_in(pd->threads.glist, 0, 0);
 }
 
 static void
@@ -1298,7 +1298,7 @@ _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static Evas_Object *
 _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *fr, *bx, *bx2, *tb, *rec, *btn, *genlist;
+   Evas_Object *fr, *bx, *bx2, *tb, *rec, *btn, *glist;
    Evas_Object *graph;
    int i = 0;
 
@@ -1381,20 +1381,20 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_usage_clicked_cb, pd);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
-   pd->threads.genlist = genlist = elm_genlist_add(parent);
-   evas_object_data_set(genlist, "ui", pd);
-   elm_object_focus_allow_set(genlist, 0);
-   elm_genlist_homogeneous_set(genlist, 1);
-   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
-   elm_scroller_policy_set(genlist, ELM_SCROLLER_POLICY_OFF,
+   pd->threads.glist = glist = elm_genlist_add(parent);
+   evas_object_data_set(glist, "ui", pd);
+   elm_object_focus_allow_set(glist, 0);
+   elm_genlist_homogeneous_set(glist, 1);
+   elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_NONE);
+   elm_scroller_policy_set(glist, ELM_SCROLLER_POLICY_OFF,
                            ELM_SCROLLER_POLICY_AUTO);
-   evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(genlist, FILL, FILL);
-   evas_object_show(genlist);
+   evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(glist, FILL, FILL);
+   evas_object_show(glist);
 
-   evas_object_smart_callback_add(pd->threads.genlist, "unrealized",
+   evas_object_smart_callback_add(pd->threads.glist, "unrealized",
                                   _item_unrealized_cb, pd);
-   elm_box_pack_end(bx2, genlist);
+   elm_box_pack_end(bx2, glist);
    elm_box_pack_end(bx, bx2);
 
    return fr;
@@ -1403,7 +1403,7 @@ _threads_tab_add(Evas_Object *parent, Ui_Data *pd)
 static Evas_Object *
 _children_tab_add(Evas_Object *parent, Ui_Data *pd)
 {
-   Evas_Object *fr, *bx, *genlist;
+   Evas_Object *fr, *bx, *glist;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
@@ -1416,17 +1416,17 @@ _children_tab_add(Evas_Object *parent, Ui_Data *pd)
    evas_object_show(bx);
    elm_object_content_set(fr, bx);
 
-   pd->children.genlist = genlist = elm_genlist_add(parent);
-   evas_object_data_set(genlist, "ui", pd);
-   elm_object_focus_allow_set(genlist, 1);
-   elm_genlist_homogeneous_set(genlist, 1);
-   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_DEFAULT);
-   evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(genlist, FILL, FILL);
-   evas_object_show(genlist);
-   evas_object_smart_callback_add(genlist, "selected",
+   pd->children.glist = glist = elm_genlist_add(parent);
+   evas_object_data_set(glist, "ui", pd);
+   elm_object_focus_allow_set(glist, 1);
+   elm_genlist_homogeneous_set(glist, 1);
+   elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_DEFAULT);
+   evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(glist, FILL, FILL);
+   evas_object_show(glist);
+   evas_object_smart_callback_add(glist, "selected",
                                   _item_children_clicked_cb, pd);
-   elm_box_pack_end(bx, genlist);
+   elm_box_pack_end(bx, glist);
 
    return fr;
 }
@@ -1689,7 +1689,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd = data;
 
-   elm_genlist_realized_items_update(pd->threads.genlist);
+   elm_genlist_realized_items_update(pd->threads.glist);
 }
 
 static void
@@ -1800,7 +1800,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
 
    _action_do(pd, action);
 
-   pd->threads.cache = evisum_ui_item_cache_new(pd->threads.genlist,
+   pd->threads.cache = evisum_ui_item_cache_new(pd->threads.glist,
                                                 _item_create, 10);
 
    pd->thread = ecore_thread_feedback_run(_proc_info_main,

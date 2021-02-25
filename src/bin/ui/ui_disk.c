@@ -10,7 +10,7 @@ typedef struct
    Evas_Object     *btn_total;
    Evas_Object     *btn_used;
    Evas_Object     *btn_free;
-   Evas_Object     *genlist;
+   Evas_Object     *glist;
    Evisum_Ui_Cache *cache;
    Ecore_Thread    *thread;
    int             (*sort_cb)(const void *, const void *);
@@ -181,17 +181,17 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 }
 
 static void
-_genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
+_glist_ensure_n_items(Evas_Object *glist, unsigned int items)
 {
    Elm_Object_Item *it;
    Elm_Genlist_Item_Class *itc;
-   unsigned int i, existing = elm_genlist_items_count(genlist);
+   unsigned int i, existing = elm_genlist_items_count(glist);
 
    if (items < existing)
      {
         for (i = existing - items; i > 0; i--)
            {
-              it = elm_genlist_last_item_get(genlist);
+              it = elm_genlist_last_item_get(glist);
               if (it)
                 elm_object_item_del(it);
            }
@@ -208,7 +208,7 @@ _genlist_ensure_n_items(Evas_Object *genlist, unsigned int items)
 
    for (i = existing; i < items; i++)
      {
-        elm_genlist_item_append(genlist, itc, NULL, NULL,
+        elm_genlist_item_append(glist, itc, NULL, NULL,
                                 ELM_GENLIST_ITEM_NONE, NULL, NULL);
      }
 
@@ -252,9 +252,9 @@ _disks_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
      mounted = eina_list_sort(mounted, eina_list_count(mounted), pd->sort_cb);
    if (pd->sort_reverse) mounted = eina_list_reverse(mounted);
 
-   _genlist_ensure_n_items(pd->genlist, eina_list_count(mounted));
+   _glist_ensure_n_items(pd->glist, eina_list_count(mounted));
 
-   it = elm_genlist_first_item_get(pd->genlist);
+   it = elm_genlist_first_item_get(pd->glist);
    EINA_LIST_FREE(mounted, fs)
      {
         File_System *prev = elm_object_item_data_get(it);
@@ -263,7 +263,7 @@ _disks_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
         elm_genlist_item_update(it);
         it = elm_genlist_item_next_get(it);
      }
-   elm_genlist_realized_items_update(pd->genlist);
+   elm_genlist_realized_items_update(pd->glist);
 }
 
 static void
@@ -555,7 +555,7 @@ void
 ui_disk_win_add(Ui *ui)
 {
    Evas_Object *win, *tb, *scr;
-   Evas_Object *genlist, *rec, *btn;
+   Evas_Object *glist, *rec, *btn;
    int i = 0;
 
    if (ui->disk.win)
@@ -661,18 +661,18 @@ ui_disk_win_add(Ui *ui)
                            ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scr);
 
-   pd->genlist = genlist = elm_genlist_add(win);
-   elm_object_focus_allow_set(genlist, 0);
-   evas_object_data_set(genlist, "private", pd);
-   elm_genlist_select_mode_set(genlist, ELM_OBJECT_SELECT_MODE_NONE);
-   evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(genlist, FILL, FILL);
-   evas_object_smart_callback_add(genlist, "unrealized", _item_unrealized_cb, pd);
-   elm_genlist_homogeneous_set(genlist, 1);
-   evas_object_show(genlist);
-   elm_object_content_set(scr, genlist);
+   pd->glist = glist = elm_genlist_add(win);
+   elm_object_focus_allow_set(glist, 0);
+   evas_object_data_set(glist, "private", pd);
+   elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_NONE);
+   evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(glist, FILL, FILL);
+   evas_object_smart_callback_add(glist, "unrealized", _item_unrealized_cb, pd);
+   elm_genlist_homogeneous_set(glist, 1);
+   evas_object_show(glist);
+   elm_object_content_set(scr, glist);
 
-   pd->cache = evisum_ui_item_cache_new(genlist, _item_create, 10);
+   pd->cache = evisum_ui_item_cache_new(glist, _item_create, 10);
 
    elm_table_pack(tb, scr, 0, 2, 8, 2);
    elm_object_content_set(win, tb);

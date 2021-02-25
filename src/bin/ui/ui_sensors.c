@@ -7,7 +7,7 @@ typedef struct
    Eina_List              *sensors;
    Eina_List              *batteries;
 
-   Evas_Object            *genlist;
+   Evas_Object            *glist;
    Elm_Genlist_Item_Class *itc;
 
    sensor_t               *sensor;
@@ -68,7 +68,7 @@ _sensors_refresh(Ui_Data *pd)
 
    pd->sensors = eina_list_sort(pd->sensors, n, _sort_cb);
 
-   elm_genlist_clear(pd->genlist);
+   elm_genlist_clear(pd->glist);
 }
 
 static void
@@ -116,7 +116,7 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
    pd = data;
 
    EINA_LIST_FREE(pd->sensors, s)
-     elm_genlist_item_append(pd->genlist, pd->itc, s,
+     elm_genlist_item_append(pd->glist, pd->itc, s,
                              NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
    if (msg->thermal_valid && pd->sensor)
      {
@@ -158,7 +158,7 @@ _item_del(void *data, Evas_Object *obj)
 }
 
 static void
-_genlist_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
+_glist_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd;
    Elm_Object_Item *it;
@@ -249,7 +249,7 @@ void
 ui_sensors_win_add(Ui *ui)
 {
    Evas_Object *win, *content, *tbl, *bx, *fr;
-   Evas_Object *genlist, *pb;
+   Evas_Object *glist, *pb;
    Evas_Object *ic;
    power_t power;
    int j = 0, i = 0;
@@ -341,16 +341,16 @@ ui_sensors_win_add(Ui *ui)
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_show(bx);
 
-   pd->genlist = genlist = elm_genlist_add(win);
-   evas_object_size_hint_weight_set(genlist, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(genlist, FILL, FILL);
-   elm_object_text_set(genlist, _("Select..."));
-   elm_genlist_multi_select_set(genlist, 0);
-   evas_object_smart_callback_add(genlist, "selected", _genlist_item_pressed_cb, pd);
-   elm_object_focus_allow_set(genlist, 0);
-   evas_object_show(genlist);
+   pd->glist = glist = elm_genlist_add(win);
+   evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(glist, FILL, FILL);
+   elm_object_text_set(glist, _("Select..."));
+   elm_genlist_multi_select_set(glist, 0);
+   evas_object_smart_callback_add(glist, "selected", _glist_item_pressed_cb, pd);
+   elm_object_focus_allow_set(glist, 0);
+   evas_object_show(glist);
 
-   elm_box_pack_end(bx, genlist);
+   elm_box_pack_end(bx, glist);
    elm_box_pack_end(bx, pb);
 
    fr = elm_frame_add(win);
