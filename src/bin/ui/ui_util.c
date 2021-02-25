@@ -170,7 +170,6 @@ evisum_icon_cache_shutdown(void)
    eina_hash_free(_icon_cache);
 }
 
-
 const char *
 evisum_icon_cache_find(const Proc_Info *proc)
 {
