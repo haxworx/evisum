@@ -1,4 +1,12 @@
 =============
+Evisum 0.5.12
+=============
+
+  * Process list fields selectable.
+  * Fix leak.
+  * Fix search bug.
+
+=============
 Evisum 0.5.11
 =============
 
