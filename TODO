@@ -16,8 +16,3 @@ Engine:
 
 Have one process polling and writing to disk and mapping to memory some IPC
 for real-time stats for a UI.
-
-BUGS:
-
-Fix minor leak on exit when setting custom format on progressbar free callback.
-Issue is cache related and abusing genlist related.
