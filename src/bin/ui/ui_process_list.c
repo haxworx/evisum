@@ -254,12 +254,18 @@ _fields_init(Ui_Data *pd)
 {
    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
      {
+        Evas_Object *btn;
+        const char *name = _field_name(i);
+        btn = _fields[i].btn;
+
         _fields[i].id = i;
-        _fields[i].name = _field_name(i);
+        _fields[i].name = name;
         _fields[i].enabled = 1;
         if ((i != PROC_FIELD_CMD) && (!(pd->ui->proc.fields & (1UL << i))))
           _fields[i].enabled = 0;
-        evas_object_event_callback_add(_fields[i].btn, EVAS_CALLBACK_MOUSE_UP,
+
+        elm_object_tooltip_text_set(btn, name);
+        evas_object_event_callback_add(btn, EVAS_CALLBACK_MOUSE_UP,
                                        _field_mouse_up_cb, pd);
      }
 }
