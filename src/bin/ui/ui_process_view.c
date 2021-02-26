@@ -39,6 +39,7 @@ typedef struct
       Evas_Object   *entry_uid;
       Evas_Object   *entry_cpu;
       Evas_Object   *entry_threads;
+      Evas_Object   *entry_files;
       Evas_Object   *entry_virt;
       Evas_Object   *entry_rss;
       Evas_Object   *entry_shared;
@@ -838,6 +839,8 @@ static void
 _general_view_update(Ui_Data *pd, Proc_Info *proc)
 {
    struct passwd *pwd_entry;
+   Eina_List *l;
+   char *s;
 
    if (!strcmp(proc->state, "stop"))
      {
@@ -869,6 +872,13 @@ _general_view_update(Ui_Data *pd, Proc_Info *proc)
    elm_object_text_set(pd->general.entry_ppid, eina_slstr_printf("%d", proc->ppid));
    elm_object_text_set(pd->general.entry_threads,
                        eina_slstr_printf("%d", proc->numthreads));
+   Eina_Strbuf *b = eina_strbuf_new();
+   EINA_LIST_FOREACH(proc->fds, l, s)
+     eina_strbuf_append_printf(b, "%s ", s);
+   if (eina_strbuf_length_get(b))
+     elm_object_text_set(pd->general.entry_files, eina_strbuf_string_get(b));
+   eina_strbuf_free(b);
+
    elm_object_text_set(pd->general.entry_virt, evisum_size_format(proc->mem_virt));
    elm_object_text_set(pd->general.entry_rss, evisum_size_format(proc->mem_rss));
 #if !defined(__linux__)
@@ -1115,6 +1125,11 @@ _general_tab_add(Evas_Object *parent, Ui_Data *pd)
    lb = _lb_add(parent, _("Threads:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->general.entry_threads = entry = _entry_add(parent);
+   elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+   lb = _lb_add(parent, _("Files:"));
+   elm_table_pack(tb, lb, 0, i, 1, 1);
+   pd->general.entry_files = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    lb = _lb_add(parent, _(" Memory :"));

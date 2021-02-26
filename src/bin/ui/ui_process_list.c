@@ -66,6 +66,7 @@ typedef struct
    Evas_Object            *btn_cpu;
    Evas_Object            *btn_pri;
    Evas_Object            *btn_nice;
+   Evas_Object            *btn_files;
    Evas_Object            *btn_size;
    Evas_Object            *btn_virt;
    Evas_Object            *btn_rss;
@@ -122,14 +123,16 @@ _field_name(Proc_Field id)
         return _("Priority");
       case PROC_FIELD_NICE:
         return _("Nice");
+      case PROC_FIELD_FILES:
+        return _("Open files");
       case PROC_FIELD_SIZE:
-        return _("Size");
+        return _("Memory Size");
       case PROC_FIELD_VIRT:
-        return _("Virtual");
+        return _("Memory Virtual");
       case PROC_FIELD_RSS:
-        return _("Reserved");
+        return _("Memory Reserved");
       case PROC_FIELD_SHARED:
-        return _("Shared");
+        return _("Memory Shared");
       case PROC_FIELD_STATE:
         return _("State");
       case PROC_FIELD_TIME:
@@ -390,6 +393,11 @@ _item_create(Evas_Object *obj)
         lb = _item_column_add(tb, "proc_nice", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+   if (_field_enabled(PROC_FIELD_FILES))
+     {
+        lb = _item_column_add(tb, "proc_files", i++);
+        evas_object_size_hint_align_set(lb, 1.0, FILL);
+     }
    if (_field_enabled(PROC_FIELD_SIZE))
      {
         lb = _item_column_add(tb, "proc_size", i++);
@@ -576,6 +584,18 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         evas_object_geometry_get(pd->btn_nice, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "proc_nice");
         snprintf(buf, sizeof(buf), "%d", proc->nice);
+        if (strcmp(buf, elm_object_text_get(lb)))
+          elm_object_text_set(lb, buf);
+        rec = evas_object_data_get(lb, "rec");
+        evas_object_size_hint_min_set(rec, w, 1);
+        evas_object_show(lb);
+     }
+
+   if (_field_enabled(PROC_FIELD_FILES))
+     {
+        evas_object_geometry_get(pd->btn_nice, NULL, NULL, &w, NULL);
+        lb = evas_object_data_get(it->obj, "proc_files");
+        snprintf(buf, sizeof(buf), "%d", proc->numfiles);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
         rec = evas_object_data_get(lb, "rec");
@@ -1123,6 +1143,19 @@ _btn_nice_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
+_btn_files_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+   Ui *ui = pd->ui;
+
+   if (ui->proc.sort_type == PROC_SORT_BY_FILES)
+     ui->proc.sort_reverse = !ui->proc.sort_reverse;
+   ui->proc.sort_type = PROC_SORT_BY_FILES;
+   _btn_clicked_state_save(pd, pd->btn_files);
+}
+
+static void
 _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
@@ -1608,6 +1641,19 @@ _content_add(Ui_Data *pd, Evas_Object *parent)
                                   _btn_nice_clicked_cb, pd);
    _fields[PROC_FIELD_NICE].btn = btn;
 
+   pd->btn_files = btn = elm_button_add(parent);
+   _btn_icon_state_init(btn,
+            (ui->proc.sort_type == PROC_SORT_BY_FILES ?
+            ui->proc.sort_reverse : 0),
+            ui->proc.sort_type == PROC_SORT_BY_FILES);
+   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_align_set(btn, FILL, FILL);
+   elm_object_text_set(btn, _("files"));
+   evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked",
+                                  _btn_files_clicked_cb, pd);
+   _fields[PROC_FIELD_FILES].btn = btn;
+
    pd->btn_size = btn = elm_button_add(parent);
    _btn_icon_state_init(btn,
             (ui->proc.sort_type == PROC_SORT_BY_SIZE ?
@@ -2064,12 +2110,13 @@ static void
 _init(Ui_Data *pd)
 {
    pd->sorters[PROC_SORT_BY_NONE].sort_cb = proc_sort_by_pid;
-   pd->sorters[PROC_SORT_BY_PID].sort_cb = proc_sort_by_pid;
    pd->sorters[PROC_SORT_BY_UID].sort_cb = proc_sort_by_uid;
-   pd->sorters[PROC_SORT_BY_NICE].sort_cb = proc_sort_by_nice;
-   pd->sorters[PROC_SORT_BY_PRI].sort_cb = proc_sort_by_pri;
-   pd->sorters[PROC_SORT_BY_CPU].sort_cb = proc_sort_by_cpu;
+   pd->sorters[PROC_SORT_BY_PID].sort_cb = proc_sort_by_pid;
    pd->sorters[PROC_SORT_BY_THREADS].sort_cb = proc_sort_by_threads;
+   pd->sorters[PROC_SORT_BY_CPU].sort_cb = proc_sort_by_cpu;
+   pd->sorters[PROC_SORT_BY_PRI].sort_cb = proc_sort_by_pri;
+   pd->sorters[PROC_SORT_BY_NICE].sort_cb = proc_sort_by_nice;
+   pd->sorters[PROC_SORT_BY_FILES].sort_cb = proc_sort_by_files;
    pd->sorters[PROC_SORT_BY_SIZE].sort_cb = proc_sort_by_size;
    pd->sorters[PROC_SORT_BY_VIRT].sort_cb = proc_sort_by_virt;
    pd->sorters[PROC_SORT_BY_RSS].sort_cb = proc_sort_by_rss;

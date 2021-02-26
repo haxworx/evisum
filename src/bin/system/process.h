@@ -33,6 +33,9 @@ typedef struct _Proc_Info
    int         ssleep;
    char        state[32];
 
+   Eina_List   *fds;
+   int         numfiles;
+
    short       is_kernel;
    int         tid;
    char       *thread_name;
@@ -82,6 +85,9 @@ proc_sort_by_cpu(const void *p1, const void *p2);
 
 int
 proc_sort_by_threads(const void *p1, const void *p2);
+
+int
+proc_sort_by_files(const void *p1, const void *p2);
 
 int
 proc_sort_by_size(const void *p1, const void *p2);

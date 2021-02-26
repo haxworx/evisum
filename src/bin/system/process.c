@@ -299,6 +299,19 @@ _stat(const char *path, Stat *st)
    return 1;
 }
 
+static int
+_n_files(Proc_Info *p)
+{
+   char buf[4096];
+
+   snprintf(buf, sizeof(buf), "/proc/%d/fd", p->pid);
+   p->fds = ecore_file_ls(buf);
+   if (p->fds)
+     p->numfiles = eina_list_count(p->fds);
+
+   return p->numfiles;
+}
+
 static Eina_List *
 _process_list_linux_get(void)
 {
@@ -334,13 +347,14 @@ _process_list_linux_get(void)
         p->cpu_id = st.psr;
         p->start = st.start_time;
         p->run_time = st.run_time;
-	if (toupper(st.state) == 'S') p->ssleep = 1;
+        if (toupper(st.state) == 'S') p->ssleep = 1;
         state = _process_state_name(st.state);
         snprintf(p->state, sizeof(p->state), "%s", state);
         p->cpu_time = st.utime + st.stime;
         p->nice = st.nice;
         p->priority = st.pri;
         p->numthreads = st.numthreads;
+        p->numfiles = _n_files(p);
         if (st.flags & PF_KTHREAD)
           p->is_kernel = 1;
         _mem_size(p);
@@ -374,7 +388,7 @@ _proc_thread_info(Proc_Info *p)
         Proc_Info *t = calloc(1, sizeof(Proc_Info));
         if (!t) continue;
         t->cpu_id = st.psr;
-	if (toupper(st.state) == 'S') p->ssleep = 1;
+        if (toupper(st.state) == 'S') p->ssleep = 1;
         state = _process_state_name(st.state);
         snprintf(t->state, sizeof(t->state), "%s", state);
         t->cpu_time = st.utime + st.stime;
@@ -418,6 +432,7 @@ proc_info_by_pid(int pid)
    p->priority = st.pri;
    p->nice = st.nice;
    p->numthreads = st.numthreads;
+   p->numfiles = _n_files(p);
    if (st.flags & PF_KTHREAD) p->is_kernel = 1;
    _mem_size(p);
    _cmd_args(p, st.name, sizeof(st.name));
@@ -1089,13 +1104,12 @@ void
 proc_info_free(Proc_Info *proc)
 {
    Proc_Info *t;
+   char *s;
 
    if (!proc) return;
 
    EINA_LIST_FREE(proc->threads, t)
-     {
-        proc_info_free(t);
-     }
+     proc_info_free(t);
 
    if (proc->command)
      free(proc->command);
@@ -1103,6 +1117,9 @@ proc_info_free(Proc_Info *proc)
      free(proc->arguments);
    if (proc->thread_name)
      free(proc->thread_name);
+
+   EINA_LIST_FREE(proc->fds, s)
+     free(s);
 
    free(proc);
 }
@@ -1289,6 +1306,16 @@ proc_sort_by_threads(const void *p1, const void *p2)
    inf1 = p1; inf2 = p2;
 
    return inf1->numthreads - inf2->numthreads;
+}
+
+int
+proc_sort_by_files(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   return inf1->numfiles - inf2->numfiles;
 }
 
 int
