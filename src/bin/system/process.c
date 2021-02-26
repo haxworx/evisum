@@ -22,7 +22,9 @@
 #endif
 
 #if defined(__FreeBSD__)
-#include <libprocstat.h>
+# define _WANT_FILE
+# include <sys/file.h>
+# include <sys/filedesc.h>
 #endif
 
 #if defined(__MacOS__)
@@ -864,44 +866,73 @@ _pid_max(void)
 }
 
 static void
-_cmd_get(Proc_Info *p, struct kinfo_proc *kp)
+_kvm_get(Proc_Info *p, struct kinfo_proc *kp)
 {
    kvm_t * kern;
-   char **args;
    char name[4096];
    Eina_Bool have_command = 0;
 
-   kern = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
-   if (kern)
+   kern = kvm_open(NULL, "/dev/mem", NULL, O_RDONLY, "kvm_open");
+   if (!kern) goto nokvm;
+   char **args;
+   if ((args = kvm_getargv(kern, kp, sizeof(name)-1)) && (args[0]))
      {
-        if ((args = kvm_getargv(kern, kp, sizeof(name)-1)) && (args[0]))
+        char *base = strdup(args[0]);
+        if (base)
           {
-             char *base = strdup(args[0]);
-             if (base)
-               {
-                  char *spc = strchr(base, ' ');
-                  if (spc) *spc = '\0';
+             char *spc = strchr(base, ' ');
+             if (spc) *spc = '\0';
 
-                  if (ecore_file_exists(base))
-                    {
-                       snprintf(name, sizeof(name), "%s", basename(base));
-                       have_command = 1;
-                    }
-                  free(base);
-               }
-             Eina_Strbuf *buf = eina_strbuf_new();
-             for (int i = 0; args[i] != NULL; i++)
+             if (ecore_file_exists(base))
                {
-                  eina_strbuf_append(buf, args[i]);
-                  if (args[i + 1])
-                    eina_strbuf_append(buf, " ");
+                  snprintf(name, sizeof(name), "%s", basename(base));
+                  have_command = 1;
                }
-             p->arguments = eina_strbuf_string_steal(buf);
-             eina_strbuf_free(buf);
+             free(base);
           }
-        kvm_close(kern);
+        Eina_Strbuf *buf = eina_strbuf_new();
+        for (int i = 0; args[i] != NULL; i++)
+          {
+             eina_strbuf_append(buf, args[i]);
+             if (args[i + 1])
+               eina_strbuf_append(buf, " ");
+          }
+        p->arguments = eina_strbuf_string_steal(buf);
+        eina_strbuf_free(buf);
      }
 
+   struct filedesc filed;
+   struct fdescenttbl *fdt;
+   unsigned int n;
+   char buf[64];
+
+   if (!kvm_read(kern, (unsigned long)kp->ki_fd, &filed, sizeof(filed)))
+     goto kvmerror;
+
+   if (!kvm_read(kern, (unsigned long)filed.fd_files, &n, sizeof(n)))
+     goto kvmerror;
+
+   unsigned int size = sizeof(*fdt) + n * sizeof(struct filedescent);
+   fdt = malloc(size);
+   if (fdt)
+     {
+        if (kvm_read(kern, (unsigned long)filed.fd_files, fdt, size))
+          {
+             for (int i = 0; i < n; i++)
+               {
+                  if (!fdt->fdt_ofiles[i].fde_file) continue;
+                  snprintf(buf, sizeof(buf), "%i", i);
+                  p->fds = eina_list_append(p->fds, strdup(buf));
+                  p->numfiles++;
+               }
+          }
+        free(fdt);
+     }
+
+kvmerror:
+   if (kern)
+     kvm_close(kern);
+nokvm:
    if (!have_command)
      snprintf(name, sizeof(name), "%s", kp->ki_comm);
 
@@ -914,7 +945,6 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    struct rusage *usage;
    const char *state;
    Proc_Info *p;
-   char buf[128];
    static int pagesize = 0;
 
    if (!pagesize) pagesize = getpagesize();
@@ -927,7 +957,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->uid = kp->ki_uid;
 
    if (!is_thread)
-     _cmd_get(p, kp);
+     _kvm_get(p, kp);
 
    p->cpu_id = kp->ki_oncpu;
    if (p->cpu_id == -1)
@@ -953,20 +983,6 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;
    p->numthreads = kp->ki_numthreads;
-
-   struct procstat *procstat = procstat_open_sysctl();
-   struct filestat *fst;
-   struct filestat_list *head, *next;
-
-   head = procstat_getfiles(procstat, kp, 0);
-   STAILQ_FOREACH(fst, head, next)
-     {
-        if (fst->fs_fd < 0) continue;
-        snprintf(buf, sizeof(buf), "%i", fst->fs_fd);
-        p->fds = eina_list_append(p->fds, strdup(buf));
-     }
-   p->numfiles = eina_list_count(p->fds);
-   procstat_freefiles(procstat, head);
 
    p->tid = kp->ki_tid;
    p->thread_name = strdup(kp->ki_tdname);
