@@ -21,6 +21,10 @@
 # include <sys/resource.h>
 #endif
 
+#if defined(__FreeBSD__)
+#include <libprocstat.h>
+#endif
+
 #if defined(__MacOS__)
 # include <libproc.h>
 # include <sys/proc_info.h>
@@ -910,6 +914,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    struct rusage *usage;
    const char *state;
    Proc_Info *p;
+   char buf[128];
    static int pagesize = 0;
 
    if (!pagesize) pagesize = getpagesize();
@@ -948,6 +953,20 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;
    p->numthreads = kp->ki_numthreads;
+
+   struct procstat *procstat = procstat_open_sysctl();
+   struct filestat *fst;
+   struct filestat_list *head, *next;
+
+   head = procstat_getfiles(procstat, kp, 0);
+   STAILQ_FOREACH(fst, head, next)
+     {
+        if (fst->fs_fd < 0) continue;
+        snprintf(buf, sizeof(buf), "%i", fst->fs_fd);
+        p->fds = eina_list_append(p->fds, strdup(buf));
+     }
+   p->numfiles = eina_list_count(p->fds);
+   procstat_freefiles(procstat, head);
 
    p->tid = kp->ki_tid;
    p->thread_name = strdup(kp->ki_tdname);

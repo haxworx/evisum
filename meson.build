@@ -14,8 +14,12 @@ cc = meson.get_compiler('c')
 deps = dependency('elementary', version: efl_version)
 
 deps_os = declare_dependency(link_args : [] )
-if host_os == 'openbsd' or host_os == 'freebsd' or host_os == 'dragonfly'
+if host_os == 'openbsd' or host_os == 'dragonfly'
   deps_os = declare_dependency(link_args : [ '-lkvm' ])
+endif
+
+if host_os == 'freebsd'
+  deps_os = declare_dependency(link_args : [ '-lkvm', '-lprocstat' ])
 endif
 
 ##### dir locations
