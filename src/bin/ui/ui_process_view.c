@@ -840,7 +840,7 @@ _general_view_update(Ui_Data *pd, Proc_Info *proc)
 {
    struct passwd *pwd_entry;
    Eina_List *l;
-   char *s;
+   int *num;
 
    if (!strcmp(proc->state, "stop"))
      {
@@ -873,8 +873,8 @@ _general_view_update(Ui_Data *pd, Proc_Info *proc)
    elm_object_text_set(pd->general.entry_threads,
                        eina_slstr_printf("%d", proc->numthreads));
    Eina_Strbuf *b = eina_strbuf_new();
-   EINA_LIST_FOREACH(proc->fds, l, s)
-     eina_strbuf_append_printf(b, "%s ", s);
+   EINA_LIST_FOREACH(proc->fds, l, num)
+     eina_strbuf_append_printf(b, "%i ", *num);
    if (eina_strbuf_length_get(b))
      elm_object_text_set(pd->general.entry_files, eina_strbuf_string_get(b));
    eina_strbuf_free(b);
@@ -1127,7 +1127,7 @@ _general_tab_add(Evas_Object *parent, Ui_Data *pd)
    pd->general.entry_threads = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
-   lb = _lb_add(parent, _("Files:"));
+   lb = _lb_add(parent, _("Open Files:"));
    elm_table_pack(tb, lb, 0, i, 1, 1);
    pd->general.entry_files = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);

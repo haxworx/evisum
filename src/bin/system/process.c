@@ -308,13 +308,20 @@ _stat(const char *path, Stat *st)
 static int
 _n_files(Proc_Info *p)
 {
-   char buf[4096];
+   char buf[256];
+   Eina_List *files;
+   char *f;
 
    snprintf(buf, sizeof(buf), "/proc/%d/fd", p->pid);
-   p->fds = ecore_file_ls(buf);
-   if (p->fds)
-     p->numfiles = eina_list_count(p->fds);
 
+   files = ecore_file_ls(buf);
+   EINA_LIST_FREE(files, f)
+     {
+        int *fd = malloc(sizeof(int));
+        *fd = atoi(f);
+        p->fds = eina_list_append(p->fds, fd);
+        p->numfiles++;
+     }
    return p->numfiles;
 }
 
@@ -1139,7 +1146,7 @@ void
 proc_info_free(Proc_Info *proc)
 {
    Proc_Info *t;
-   char *s;
+   int *i;
 
    if (!proc) return;
 
@@ -1153,8 +1160,8 @@ proc_info_free(Proc_Info *proc)
    if (proc->thread_name)
      free(proc->thread_name);
 
-   EINA_LIST_FREE(proc->fds, s)
-     free(s);
+   EINA_LIST_FREE(proc->fds, i)
+     free(i);
 
    free(proc);
 }
