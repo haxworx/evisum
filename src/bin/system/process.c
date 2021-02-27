@@ -911,7 +911,6 @@ _kvm_get(Proc_Info *p, struct kinfo_proc *kp)
    struct filedesc filed;
    struct fdescenttbl *fdt;
    unsigned int n;
-   char buf[64];
 
    if (!kvm_read(kern, (unsigned long)kp->ki_fd, &filed, sizeof(filed)))
      goto kvmerror;
@@ -928,8 +927,12 @@ _kvm_get(Proc_Info *p, struct kinfo_proc *kp)
              for (int i = 0; i < n; i++)
                {
                   if (!fdt->fdt_ofiles[i].fde_file) continue;
-                  snprintf(buf, sizeof(buf), "%i", i);
-                  p->fds = eina_list_append(p->fds, strdup(buf));
+                  int *fd = malloc(sizeof(int));
+                  if (fd)
+                    {
+                       *fd = i;
+                       p->fds = eina_list_append(p->fds, fd);
+                    }
                   p->numfiles++;
                }
           }

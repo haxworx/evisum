@@ -839,8 +839,6 @@ static void
 _general_view_update(Ui_Data *pd, Proc_Info *proc)
 {
    struct passwd *pwd_entry;
-   Eina_List *l;
-   int *num;
 
    if (!strcmp(proc->state, "stop"))
      {
@@ -865,29 +863,31 @@ _general_view_update(Ui_Data *pd, Proc_Info *proc)
    else
      elm_object_text_set(pd->general.entry_cmd_args, "");
 
-   elm_object_text_set(pd->general.entry_pid, eina_slstr_printf("%d", proc->pid));
-   elm_object_text_set(pd->general.entry_uid, eina_slstr_printf("%d", proc->uid));
+   elm_object_text_set(pd->general.entry_pid,
+                       eina_slstr_printf("%d", proc->pid));
+   elm_object_text_set(pd->general.entry_uid,
+                       eina_slstr_printf("%d", proc->uid));
    elm_object_text_set(pd->general.entry_cpu,
                        eina_slstr_printf("%d", proc->cpu_id));
-   elm_object_text_set(pd->general.entry_ppid, eina_slstr_printf("%d", proc->ppid));
+   elm_object_text_set(pd->general.entry_ppid,
+                       eina_slstr_printf("%d", proc->ppid));
    elm_object_text_set(pd->general.entry_threads,
                        eina_slstr_printf("%d", proc->numthreads));
-   Eina_Strbuf *b = eina_strbuf_new();
-   EINA_LIST_FOREACH(proc->fds, l, num)
-     eina_strbuf_append_printf(b, "%i ", *num);
-   if (eina_strbuf_length_get(b))
-     elm_object_text_set(pd->general.entry_files, eina_strbuf_string_get(b));
-   eina_strbuf_free(b);
-
-   elm_object_text_set(pd->general.entry_virt, evisum_size_format(proc->mem_virt));
-   elm_object_text_set(pd->general.entry_rss, evisum_size_format(proc->mem_rss));
+   elm_object_text_set(pd->general.entry_files,
+                       eina_slstr_printf("%d", proc->numfiles));
+   elm_object_text_set(pd->general.entry_virt,
+                       evisum_size_format(proc->mem_virt));
+   elm_object_text_set(pd->general.entry_rss,
+                       evisum_size_format(proc->mem_rss));
 #if !defined(__linux__)
-   elm_object_text_set(pd->general.entry_shared, "N/A");
+   elm_object_text_set(pd->general.entry_shared,
+                       "N/A");
 #else
    elm_object_text_set(pd->general.entry_shared,
                        evisum_size_format(proc->mem_shared));
 #endif
-   elm_object_text_set(pd->general.entry_size, evisum_size_format(proc->mem_size));
+   elm_object_text_set(pd->general.entry_size,
+                       evisum_size_format(proc->mem_size));
    char *t = _run_time_string(proc->run_time);
    if (t)
      {
@@ -900,11 +900,12 @@ _general_view_update(Ui_Data *pd, Proc_Info *proc)
         elm_object_text_set(pd->general.entry_started, t);
         free(t);
      }
-   elm_object_text_set(pd->general.entry_nice, eina_slstr_printf("%d", proc->nice));
+   elm_object_text_set(pd->general.entry_nice,
+                       eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(pd->general.entry_pri,
                        eina_slstr_printf("%d", proc->priority));
-   elm_object_text_set(pd->general.entry_state, proc->state);
-
+   elm_object_text_set(pd->general.entry_state,
+                       proc->state);
    elm_object_text_set(pd->general.entry_cpu_usage,
                        eina_slstr_printf("%.0f%%", proc->cpu_usage));
 }
