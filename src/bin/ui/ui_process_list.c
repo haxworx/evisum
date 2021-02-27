@@ -430,10 +430,13 @@ _item_create(Evas_Object *obj)
      }
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
      {
+        rec = evas_object_rectangle_add(evas_object_evas_get(tb));
         pb = elm_progressbar_add(hbx);
-        evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
+        evas_object_size_hint_weight_set(pb, 0, EXPAND);
         evas_object_size_hint_align_set(pb, FILL, FILL);
         elm_progressbar_unit_format_set(pb, "%1.1f %%");
+        evas_object_data_set(pb, "rec", rec);
+        elm_table_pack(tb, rec, i, 0, 1, 1);
         elm_table_pack(tb, pb, i++, 0, 1, 1);
         evas_object_data_set(tb, "proc_cpu_usage", pb);
      }
@@ -592,7 +595,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (_field_enabled(PROC_FIELD_FILES))
      {
-        evas_object_geometry_get(pd->btn_nice, NULL, NULL, &w, NULL);
+        evas_object_geometry_get(pd->btn_files, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "proc_files");
         snprintf(buf, sizeof(buf), "%d", proc->numfiles);
         if (strcmp(buf, elm_object_text_get(lb)))
@@ -616,7 +619,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (_field_enabled(PROC_FIELD_VIRT))
      {
-        evas_object_geometry_get(pd->btn_rss, NULL, NULL, &w, NULL);
+        evas_object_geometry_get(pd->btn_virt, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "proc_virt");
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt));
         if (strcmp(buf, elm_object_text_get(lb)))
@@ -640,7 +643,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (_field_enabled(PROC_FIELD_SHARED))
      {
-        evas_object_geometry_get(pd->btn_rss, NULL, NULL, &w, NULL);
+        evas_object_geometry_get(pd->btn_shared, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "proc_shared");
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared));
         if (strcmp(buf, elm_object_text_get(lb)))
@@ -679,6 +682,10 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         pb = evas_object_data_get(it->obj, "proc_cpu_usage");
         double value = proc->cpu_usage / 100.0;
         double last = elm_progressbar_value_get(pb);
+
+        evas_object_geometry_get(pd->btn_cpu_usage, NULL, NULL, &w, NULL);
+        rec = evas_object_data_get(pb, "rec");
+        evas_object_size_hint_min_set(rec, w, 1);
 
         if (!EINA_DBL_EQ(value, last))
           {
