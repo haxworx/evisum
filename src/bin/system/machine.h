@@ -78,9 +78,13 @@ typedef struct
 
 typedef struct
 {
-   uint64_t incoming;
-   uint64_t outgoing;
-} network_t;
+   char name[255];
+   struct
+   {
+      uint64_t in;
+      uint64_t out;
+   } xfer;
+} net_iface_t;
 
 int
 system_cpu_online_count_get(void);
@@ -136,7 +140,7 @@ system_power_state_get(power_t *power);
 void
 system_power_state_free(power_t *power);
 
-void
-system_network_transfer_get(network_t *usage);
+net_iface_t **
+system_network_ifaces_get(int *n);
 
 #endif

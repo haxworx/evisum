@@ -98,54 +98,51 @@ _openbsd_generic_network_status(uint64_t *in,
 #endif
 
 #if defined(__linux__)
-static void
-_linux_generic_network_status(uint64_t *in,
-                              uint64_t *out)
+static net_iface_t **
+_linux_generic_network_status(int *n)
 {
    FILE *f;
-   char buf[4096], dummy_s[256];
+   char buf[4096], name[128];
    unsigned long int tmp_in, tmp_out, dummy;
 
    f = fopen("/proc/net/dev", "r");
-   if (!f) return;
+   if (!f) return NULL;
+
+   net_iface_t **ifaces = NULL;
 
    while (fgets(buf, sizeof(buf), f))
      {
         if (17 == sscanf(buf, "%s %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu "
-                         "%lu %lu %lu %lu %lu\n", dummy_s, &tmp_in, &dummy,
+                         "%lu %lu %lu %lu %lu\n", name, &tmp_in, &dummy,
                          &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                          &tmp_out, &dummy, &dummy, &dummy, &dummy, &dummy,
                          &dummy, &dummy))
           {
-             *in += tmp_in;
-             *out += tmp_out;
+             net_iface_t *iface = malloc(sizeof(net_iface_t));
+             if (iface)
+               {
+                  name[strlen(name)-1] = '\0';
+                  snprintf(iface->name, sizeof(iface->name), "%s", name);
+                  iface->xfer.in = tmp_in;
+                  iface->xfer.out = tmp_out;
+                  void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
+                  ifaces = t;
+                  ifaces[(*n)++] = iface;
+               }
           }
      }
 
    fclose(f);
+
+   return ifaces;
 }
 
 #endif
 
-void
-system_network_transfer_get(network_t *usage)
+net_iface_t **
+system_network_ifaces_get(int *n)
 {
-   uint64_t first_in = 0, first_out = 0;
-   uint64_t last_in = 0, last_out = 0;
-#if defined(__linux__)
-   _linux_generic_network_status(&first_in, &first_out);
-   usleep(1000000);
-   _linux_generic_network_status(&last_in, &last_out);
-#elif defined(__OpenBSD__)
-   _openbsd_generic_network_status(&first_in, &first_out);
-   usleep(1000000);
-   _openbsd_generic_network_status(&last_in, &last_out);
-#elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
-   _freebsd_generic_network_status(&first_in, &first_out);
-   usleep(1000000);
-   _freebsd_generic_network_status(&last_in, &last_out);
-#endif
-   usage->incoming = last_in - first_in;
-   usage->outgoing = last_out - first_out;
+   *n = 0;
+   return _linux_generic_network_status(n);
 }
 

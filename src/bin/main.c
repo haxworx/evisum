@@ -73,6 +73,16 @@ elm_main(int argc, char **argv)
           }
      }
 
+#if 0
+   int n;
+   net_iface_t **ifaces = system_network_ifaces_get(&n);
+   for (int i = 0; i < n; i++) {
+       printf("%s\n", ifaces[i]->name);
+       free(ifaces[i]);
+   }
+   if (ifaces) free(ifaces);
+   exit(1);
+#endif
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
 
 #if ENABLE_NLS
