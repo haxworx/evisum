@@ -317,10 +317,8 @@ _n_files(Proc_Info *p)
    files = ecore_file_ls(buf);
    EINA_LIST_FREE(files, f)
      {
-        int *fd = malloc(sizeof(int));
-        *fd = atoi(f);
-        p->fds = eina_list_append(p->fds, fd);
         p->numfiles++;
+        free(f);
      }
    return p->numfiles;
 }
@@ -927,12 +925,6 @@ _kvm_get(Proc_Info *p, struct kinfo_proc *kp)
              for (int i = 0; i < n; i++)
                {
                   if (!fdt->fdt_ofiles[i].fde_file) continue;
-                  int *fd = malloc(sizeof(int));
-                  if (fd)
-                    {
-                       *fd = i;
-                       p->fds = eina_list_append(p->fds, fd);
-                    }
                   p->numfiles++;
                }
           }
@@ -1149,7 +1141,6 @@ void
 proc_info_free(Proc_Info *proc)
 {
    Proc_Info *t;
-   int *i;
 
    if (!proc) return;
 
@@ -1162,9 +1153,6 @@ proc_info_free(Proc_Info *proc)
      free(proc->arguments);
    if (proc->thread_name)
      free(proc->thread_name);
-
-   EINA_LIST_FREE(proc->fds, i)
-     free(i);
 
    free(proc);
 }
