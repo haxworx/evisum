@@ -143,6 +143,10 @@ net_iface_t **
 system_network_ifaces_get(int *n)
 {
    *n = 0;
+#if defined(__linux__)
    return _linux_generic_network_status(n);
+#else
+   return NULL;
+#endif
 }
 
