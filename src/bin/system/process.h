@@ -30,8 +30,8 @@ typedef struct _Proc_Info
 
    char       *command;
    char       *arguments;
-   int         ssleep;
    char        state[32];
+   char        wchan[32];
 
    Eina_List   *fds;
    int         numfiles;

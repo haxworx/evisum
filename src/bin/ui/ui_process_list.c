@@ -783,18 +783,19 @@ static void
 _summary_total(Ui_Data *pd, Proc_Info *proc)
 {
    pd->summary.total++;
-   if (!strcmp(proc->state, "run"))
+   if (!strcmp(proc->state, "running"))
      pd->summary.running++;
-   pd->summary.sleeping += proc->ssleep;
-   if (!strcmp(proc->state, "stop"))
+   else if (!strcmp(proc->state, "sleeping"))
+     pd->summary.sleeping++;
+   else if (!strcmp(proc->state, "stopped"))
      pd->summary.stopped++;
-   if (!strcmp(proc->state, "idle"))
+   else if (!strcmp(proc->state, "idle"))
      pd->summary.idle++;
-   if (!strcmp(proc->state, "zombie"))
+   else if (!strcmp(proc->state, "zombie"))
      pd->summary.zombie++;
-   if (!strcmp(proc->state, "dead"))
+   else if (!strcmp(proc->state, "dead"))
      pd->summary.dead++;
-   if (!strcmp(proc->state, "dsleep"))
+   else if (!strcmp(proc->state, "dsleep"))
      pd->summary.dsleep++;
 }
 
@@ -1755,7 +1756,7 @@ _content_add(Ui_Data *pd, Evas_Object *parent)
    elm_genlist_homogeneous_set(glist, 1);
    elm_scroller_gravity_set(glist, 0.0, 1.0);
    elm_object_focus_allow_set(glist, 1);
-   elm_scroller_policy_set(glist, ELM_SCROLLER_POLICY_OFF,
+   elm_scroller_policy_set(glist, ELM_SCROLLER_POLICY_AUTO,
                            (ui->proc.show_scroller ?
                             ELM_SCROLLER_POLICY_AUTO :
                             ELM_SCROLLER_POLICY_OFF));
