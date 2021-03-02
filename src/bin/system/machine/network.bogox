@@ -48,18 +48,19 @@ _freebsd_generic_network_status(uint64_t *in,
 #endif
 
 #if defined(__OpenBSD__)
-static void
-_openbsd_generic_network_status(uint64_t *in,
-                                uint64_t *out)
+static net_iface_t **
+_openbsd_generic_network_status(int *n)
 {
    struct ifaddrs *interfaces, *ifa;
 
    if (getifaddrs(&interfaces) < 0)
-     return;
+     return NULL;
 
    int sock = socket(AF_INET, SOCK_STREAM, 0);
    if (sock < 0)
-     return;
+     return NULL;
+
+   net_iface_t **ifaces = NULL;
 
    for (ifa = interfaces; ifa; ifa = ifa->ifa_next) {
         struct ifreq ifreq;
@@ -74,25 +75,38 @@ _openbsd_generic_network_status(uint64_t *in,
         ifreq.ifr_data = (void *)&if_data;
         strncpy(ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ - 1);
         if (ioctl(sock, SIOCGIFDATA, &ifreq) < 0)
-          return;
+          return NULL;
 
         const struct if_data *ifi = &if_data;
         if (!LINK_STATE_IS_UP(ifi->ifi_link_state))
           continue;
+
+        net_iface_t *iface = malloc(sizeof(net_iface_t));
+        if (!iface) return NULL;
+
 
         if (ifi->ifi_type == IFT_ETHER ||
             ifi->ifi_type == IFT_FASTETHER ||
             ifi->ifi_type == IFT_GIGABITETHERNET ||
             ifi->ifi_type == IFT_IEEE80211)
           {
-             if (ifi->ifi_ibytes)
-               *in += ifi->ifi_ibytes;
-
-             if (ifi->ifi_obytes)
-               *out += ifi->ifi_obytes;
+             net_iface_t *iface = malloc(sizeof(net_iface_t));
+             if (iface)
+               {
+                  snprintf(iface->name, sizeof(iface->name), "%s",
+                           ifa->ifa_name);
+                  iface->xfer.in = ifi->ifi_ibytes;
+                  iface->xfer.out = ifi->ifi_obytes;
+                  void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
+                  ifaces = t;
+                  ifaces[(*n)++] = iface;
+               }
           }
+
      }
    close(sock);
+
+   return ifaces;
 }
 
 #endif
@@ -145,6 +159,8 @@ system_network_ifaces_get(int *n)
    *n = 0;
 #if defined(__linux__)
    return _linux_generic_network_status(n);
+#elif defined(__OpenBSD__)
+   return _openbsd_generic_network_status(n);
 #else
    return NULL;
 #endif
