@@ -124,7 +124,7 @@ _field_name(Proc_Field id)
       case PROC_FIELD_NICE:
         return _("Nice");
       case PROC_FIELD_FILES:
-        return _("Open files");
+        return _("Open Files");
       case PROC_FIELD_SIZE:
         return _("Memory Size");
       case PROC_FIELD_VIRT:
