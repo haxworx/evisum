@@ -15,9 +15,8 @@
  */
 
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
-static void
-_freebsd_generic_network_status(uint64_t *in,
-                                uint64_t *out)
+static net_iface_t **
+_freebsd_generic_network_status(int *n)
 {
    struct ifmibdata *ifmd;
    size_t len;
@@ -25,11 +24,13 @@ _freebsd_generic_network_status(uint64_t *in,
    len = sizeof(count);
 
    if (sysctlbyname("net.link.generic.system.ifcount", &count, &len, NULL, 0) == -1)
-     return;
+     return NULL;
 
    ifmd = malloc(sizeof(struct ifmibdata));
    if (!ifmd)
-     return;
+     return NULL;
+
+   net_iface_t **ifaces = NULL;
 
    for (i = 1; i <= count; i++) {
         int mib[] = {
@@ -39,10 +40,22 @@ _freebsd_generic_network_status(uint64_t *in,
         if (sysctl(mib, 6, ifmd, &len, NULL, 0) < 0) continue;
         if (!strcmp(ifmd->ifmd_name, "lo0"))
           continue;
-        *in += ifmd->ifmd_data.ifi_ibytes;
-        *out += ifmd->ifmd_data.ifi_obytes;
+
+        net_iface_t *iface = malloc(sizeof(net_iface_t));
+        if (iface)
+          {
+             snprintf(iface->name, sizeof(iface->name), "%s",
+                      ifmd->ifmd_name);
+             iface->xfer.in = ifmd->ifmd_data.ifi_ibytes;
+             iface->xfer.out = ifmd->ifmd_data.ifi_obytes;
+             void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
+             ifaces = t;
+             ifaces[(*n)++] = iface;
+           }
      }
    free(ifmd);
+
+   return ifaces;
 }
 
 #endif
@@ -158,6 +171,8 @@ system_network_ifaces_get(int *n)
    *n = 0;
 #if defined(__linux__)
    return _linux_generic_network_status(n);
+#elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
+   return _freebsd_generic_network_status(n);
 #elif defined(__OpenBSD__)
    return _openbsd_generic_network_status(n);
 #else
