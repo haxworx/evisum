@@ -1047,7 +1047,7 @@ _btn_clicked_state_save(Ui_Data *pd, Evas_Object *btn)
 
    if (pd->fields_menu)
      {
-        elm_ctxpopup_dismiss(pd->fields_menu);
+        evas_object_del(pd->fields_menu);
         pd->fields_menu = NULL;
         return;
      }
@@ -2081,9 +2081,6 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
    Ui_Data *pd = data;
 
    ui = pd->ui;
-
-   if (pd->fields_menu)
-     elm_ctxpopup_dismiss(pd->fields_menu);
 
    evisum_ui_config_save(ui);
 
