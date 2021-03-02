@@ -84,7 +84,6 @@ _openbsd_generic_network_status(int *n)
         net_iface_t *iface = malloc(sizeof(net_iface_t));
         if (!iface) return NULL;
 
-
         if (ifi->ifi_type == IFT_ETHER ||
             ifi->ifi_type == IFT_FASTETHER ||
             ifi->ifi_type == IFT_GIGABITETHERNET ||
