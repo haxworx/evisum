@@ -1227,7 +1227,6 @@ static void
 _btn_icon_state_set(Evas_Object *btn, Eina_Bool reverse)
 {
    Evas_Object *ic = elm_icon_add(btn);
-
    if (reverse)
      elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
    else

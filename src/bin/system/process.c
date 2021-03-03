@@ -483,7 +483,7 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
 }
 
 static void
-_cmd_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
+_kvm_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
 {
    char **args;
    char name[4096];
@@ -502,6 +502,19 @@ _cmd_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
 
         if (args[0] && ecore_file_exists(args[0]))
           p->command = strdup(ecore_file_file_get(args[0]));
+     }
+   struct kinfo_file *kf;
+   int n;
+
+   if ((kf = kvm_getfiles(kern, KERN_FILE_BYPID, -1, sizeof(struct kinfo_file), &n)))
+     {
+        for (int i = 0; i < n; i++)
+          {
+             if (kf[i].p_pid == kp->p_pid)
+               {
+                  if (kf[i].fd_fd >= 0) p->numfiles++;
+               }
+          }
      }
 
    if (!p->command)
@@ -528,7 +541,7 @@ proc_info_by_pid(int pid)
    if (!p) return NULL;
 
    _proc_get(p, kp);
-   _cmd_get(p, kern, kp);
+   _kvm_get(p, kern, kp);
 
    kp = kvm_getprocs(kern, KERN_PROC_SHOW_THREADS, 0, sizeof(*kp), &pid_count);
 
