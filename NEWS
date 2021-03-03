@@ -2,6 +2,7 @@
 Evisum 0.5.12
 =============
 
+  * Add some more fields to process view.
   * Process list fields selectable.
   * Fix leak.
   * Fix search bug.
