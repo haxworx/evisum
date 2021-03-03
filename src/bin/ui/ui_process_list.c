@@ -75,6 +75,7 @@ typedef struct
    Evas_Object            *btn_time;
    Evas_Object            *btn_cpu_usage;
 
+   Proc_Field              field_max;
    Evas_Object            *fields_menu;
 
    struct
@@ -169,6 +170,7 @@ _content_reset(Ui_Data *pd)
              evas_object_hide(f->btn);
              continue;
           }
+        pd->field_max = i;
         evas_object_show(f->btn);
         elm_table_pack(pd->tb_content, f->btn, j++, 0, 1, 1);
      }
@@ -449,13 +451,28 @@ _run_time_set(char *buf, size_t n, int64_t secs)
 {
    int rem;
 
-   if (secs < 86400)
+    if (secs < 86400)
      snprintf(buf, n, "%02" PRIi64 ":%02"PRIi64, secs / 60, secs % 60);
    else
      {
         rem = secs % 3600;
         snprintf(buf, n, "%02" PRIi64 ":%02d:%02d", secs / 3600, rem / 60, rem % 60);
      }
+}
+
+static void
+_field_adjust(Ui_Data *pd, Proc_Field id, Evas_Object *obj, Evas_Coord w)
+{
+   Evas_Object *rec = evas_object_data_get(obj, "rec");
+   if (id != pd->field_max)
+     evas_object_size_hint_min_set(rec, w, 1);
+   else
+     {
+        evas_object_size_hint_min_set(rec, 1, 1);
+        evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+        evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
+     }
+   evas_object_show(obj);
 }
 
 static Evas_Object *
@@ -499,11 +516,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_show(lb);
    elm_box_recalculate(hbx);
 
-   o = evas_object_data_get(it->obj, "icon");
    const char *new = evisum_icon_path_get(evisum_icon_cache_find(proc));
    const char *old = NULL;
+   o = evas_object_data_get(it->obj, "icon");
    elm_image_file_get(o, &old, NULL);
-   if (!old || strcmp(old, new))
+   if ((!old) || (strcmp(old, new)))
      elm_icon_standard_set(o, new);
    rec = evas_object_data_get(o, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -528,9 +545,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
                   pd->skip_wait = 1;
                }
           }
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_UID, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_PID))
@@ -540,9 +555,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%d", proc->pid);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_PID, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_THREADS))
@@ -552,9 +565,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%d", proc->numthreads);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_THREADS, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_CPU))
@@ -564,9 +575,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%d", proc->cpu_id);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_CPU, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_PRI))
@@ -576,9 +585,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%d", proc->priority);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_PRI, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_NICE))
@@ -588,9 +595,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%d", proc->nice);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_NICE, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_FILES))
@@ -600,9 +605,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%d", proc->numfiles);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_FILES, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_SIZE))
@@ -612,9 +615,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_SIZE, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_VIRT))
@@ -624,9 +625,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_VIRT, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_RSS))
@@ -636,9 +635,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_RSS, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_SHARED))
@@ -648,9 +645,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_SHARED, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_STATE))
@@ -660,9 +655,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         snprintf(buf, sizeof(buf), "%s", proc->state);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_STATE, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_TIME))
@@ -672,9 +665,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         _run_time_set(buf, sizeof(buf), proc->run_time);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
-        rec = evas_object_data_get(lb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
-        evas_object_show(lb);
+        _field_adjust(pd, PROC_FIELD_TIME, lb, w);
      }
 
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
@@ -684,8 +675,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         double last = elm_progressbar_value_get(pb);
 
         evas_object_geometry_get(pd->btn_cpu_usage, NULL, NULL, &w, NULL);
-        rec = evas_object_data_get(pb, "rec");
-        evas_object_size_hint_min_set(rec, w, 1);
+        _field_adjust(pd, PROC_FIELD_CPU_USAGE, pb, w);
 
         if (!EINA_DBL_EQ(value, last))
           {
