@@ -11,6 +11,8 @@ evisum_ui_item_cache_new(Evas_Object *parent,
    cache->item_create_cb = create_cb;
    cache->inactive = cache->active = NULL;
    cache->size = size;
+   cache->pending = NULL;
+   cache->pending_timer = NULL;
 
    for (int i = 0; i < size; i++)
      {
@@ -61,6 +63,23 @@ evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs)
      }
 }
 
+static Eina_Bool
+_pending_triggered_cb(void *data)
+{
+
+   Eina_List *l, *l_next;
+   Evas_Object *o;
+   Evisum_Ui_Cache *cache = data;
+
+   EINA_LIST_FOREACH_SAFE(cache->pending, l, l_next, o)
+     {
+        cache->pending = eina_list_remove_list(cache->pending, l);
+        evas_object_del(o);
+     }
+   cache->pending_timer = NULL;
+   return 0;
+}
+
 Item_Cache *
 evisum_ui_item_cache_item_get(Evisum_Ui_Cache *cache)
 {
@@ -91,10 +110,12 @@ evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache)
 
    EINA_LIST_FREE(cache->active, it)
      {
+        cache->pending = eina_list_append(cache->pending, it->obj);
         free(it);
      }
    EINA_LIST_FREE(cache->inactive, it)
      {
+        cache->pending = eina_list_append(cache->pending, it->obj);
         free(it);
      }
    for (int i = 0; i < cache->size; i++)
@@ -106,6 +127,13 @@ evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache)
              cache->inactive = eina_list_prepend(cache->inactive, it);
           }
      }
+}
+
+void
+evisum_ui_item_cache_pending_del(Evisum_Ui_Cache *cache)
+{
+   if (!cache->pending_timer)
+     cache->pending_timer = ecore_timer_add(0.5, _pending_triggered_cb, cache);
 }
 
 Eina_Bool
@@ -153,5 +181,7 @@ evisum_ui_item_cache_free(Evisum_Ui_Cache *cache)
      free(it);
    EINA_LIST_FREE(cache->inactive, it)
      free(it);
+   eina_list_free(cache->pending);
+
    free(cache);
 }

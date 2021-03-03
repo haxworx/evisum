@@ -176,9 +176,9 @@ _content_reset(Ui_Data *pd)
      }
    elm_table_pack(pd->tb_content, pd->glist, 0, 1, j, 1);
    elm_table_pack(pd->tb_content, pd->summary.fr, 0, 2, j, 1);
+   elm_genlist_clear(pd->glist);
    if (pd->cache)
      evisum_ui_item_cache_reset(pd->cache);
-   elm_genlist_clear(pd->glist);
 }
 
 static void
@@ -991,6 +991,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    if (!pd->poll_count)
      ecore_timer_add(1.0, _bring_in, pd);
    pd->poll_count++;
+
 }
 
 static void
@@ -1020,6 +1021,7 @@ _btn_clicked_state_save(Ui_Data *pd, Evas_Object *btn)
 
    if (pd->fields_menu)
      {
+        evisum_ui_item_cache_pending_del(pd->cache);
         evas_object_del(pd->fields_menu);
         pd->fields_menu = NULL;
         return;
