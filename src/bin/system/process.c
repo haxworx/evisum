@@ -64,7 +64,7 @@ proc_info_kthreads_show_get(void)
    return _show_kthreads;
 }
 
-static const char * _states[255];
+static const char * _states[128];
 
 static void
 _states_init(void)
