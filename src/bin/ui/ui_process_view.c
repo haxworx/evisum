@@ -838,8 +838,9 @@ static void
 _manual_init_cb(void *data, Ecore_Thread *thread)
 {
    Eina_List *lines = NULL;
-   char *line;
+   Eina_Strbuf *sbuf = NULL;
    char buf[4096];
+   char *line;
    int n = 1;
    Ui_Data *pd = data;
 
@@ -857,14 +858,22 @@ _manual_init_cb(void *data, Ecore_Thread *thread)
                  pd->selected_cmd);
         ecore_thread_feedback(thread, strdup(buf));
      }
+   else sbuf = eina_strbuf_new();
    EINA_LIST_FREE(lines, line)
      {
         if (n++ > 1)
           {
-             snprintf(buf, sizeof(buf), "%s<br>", line);
-             ecore_thread_feedback(thread, strdup(buf));
-	  }
-	free(line);
+             eina_strbuf_append_printf(sbuf, "%s<br>", line);
+             if (eina_strbuf_length_get(sbuf) >= 4096)
+               ecore_thread_feedback(thread, eina_strbuf_string_steal(sbuf));
+          }
+       free(line);
+     }
+   if (sbuf)
+     {
+        if (eina_strbuf_length_get(sbuf))
+          ecore_thread_feedback(thread, eina_strbuf_string_steal(sbuf));
+        eina_strbuf_free(sbuf);
      }
    ecore_thread_feedback(thread, strdup("</code>"));
    unsetenv("MANWIDTH");
