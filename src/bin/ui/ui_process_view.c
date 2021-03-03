@@ -1544,54 +1544,70 @@ _tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                        void *event_info EINA_UNUSED)
 {
    Ui_Data *pd;
-   Evas_Object *ent;
-   Eina_List *lines = NULL;
 
    pd = data;
-
    _tab_change(pd, pd->manual_view, obj);
    elm_object_focus_set(pd->tab_general, 1);
+}
 
-   if (pd->manual.init) return;
+static void
+_manual_get_cb(void *data, Ecore_Thread *thread)
+{
+   Eina_List *lines;
+   char *line;
+   char buf[4096];
+   int n = 1;
+   Ui_Data *pd = data;
 
    setenv("MANWIDTH", "75", 1);
 
-   ent = pd->manual.entry;
-   if ((pd->selected_cmd) && (pd->selected_cmd[0] )&& (!strchr(pd->selected_cmd, ' ')))
-     lines =_exe_response(eina_slstr_printf("man %s | col -bx", pd->selected_cmd));
-
-   elm_entry_entry_append(ent, "<code>");
-
+   ecore_thread_feedback(thread, strdup("<code>"));
+   snprintf(buf, sizeof(buf), "man %s | col -bx", pd->selected_cmd);
+   lines = _exe_response(buf);
    if (!lines)
      {
-        if (pd->selected_pid == getpid())
-          elm_entry_entry_append(ent, _evisum_docs());
-        else
-          {
-             elm_entry_entry_append(ent,
-                                    eina_slstr_printf(
-                                    _("No documentation found for %s."),
-                                    pd->selected_cmd));
-          }
+        snprintf(buf, sizeof(buf), _("No documentation found for %s."),
+                 pd->selected_cmd);
+        ecore_thread_feedback(thread, strdup(buf));
      }
-   else
+
+   EINA_LIST_FREE(lines, line)
      {
-        char *line;
-        int n = 1;
-
-        EINA_LIST_FREE(lines, line)
+        if (n++ > 1)
           {
-             if (n++ > 1)
-               elm_entry_entry_append(ent, eina_slstr_printf("%s<br>", line));
-             free(line);
-          }
+             snprintf(buf, sizeof(buf), "%s<br>", line);
+             ecore_thread_feedback(thread, strdup(buf));
+	  }
+	free(line);
      }
 
-   elm_entry_entry_append(ent, "</code>");
+     ecore_thread_feedback(thread, strdup("</code>"));
 
-   unsetenv("MANWIDTH");
+     unsetenv("MANWIDTH");
+     pd->manual.init = 1;
+}
 
-   pd->manual.init = 1;
+static void
+_manual_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
+{
+   Ui_Data *pd = data;
+   Evas_Object *ent =  pd->manual.entry;
+   char *s = msgdata;
+
+   elm_entry_entry_append(ent, s);
+
+   free(s);
+}
+
+static void
+_manual_init(Ui_Data *pd)
+{
+   if ((!pd->selected_cmd) || (!pd->selected_cmd[0]) || (strchr(pd->selected_cmd, ' ')))
+     return;
+
+   ecore_thread_feedback_run(_manual_cb,
+                             _manual_feedback_cb,
+                             NULL, NULL, pd, 1);
 }
 
 static Evas_Object *
@@ -1811,6 +1827,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    elm_win_center(win, 1, 1);
    evas_object_show(win);
 
+   _manual_init(pd);
    _action_do(pd, action);
 
    pd->threads.cache = evisum_ui_item_cache_new(pd->threads.glist,

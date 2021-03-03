@@ -54,13 +54,3 @@ _man2entry(const char *text)
    return str;
 }
 
-static const char *
-_evisum_docs(void)
-{
-   const char *txt =
-         "<b>Congratulations you found the documentation!</b><br><br>"
-         "<br>"
-         "There isn't any!<br>";
-
-   return txt;
-}
