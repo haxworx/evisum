@@ -89,7 +89,7 @@ _states_init(void)
    _states[SZOMB]   = "zombie";
 #endif
 #if defined(__OpenBSD__)
-   _states[SDEAD]   = "dead";
+   _states[SDEAD]   = "zombie";
    _states[SONPROC] = "running";
 #endif
 #endif
