@@ -11,7 +11,6 @@
 #define TAB_BTN_HEIGHT  24
 #define BTN_WIDTH       68
 #define BTN_HEIGHT      24
-#define ICON_SIZE       14
 #define LIST_BTN_HEIGHT 24
 
 #define UI_CHILD_WIN_WIDTH  360
