@@ -764,7 +764,6 @@ _graph(Evas_Object *parent, Ui_Data *pd)
    evas_object_size_hint_min_set(obj, 100,
                                  (BAR_HEIGHT * pd->threads.graph.cpu_count)
                                   * elm_config_scale_get());
-
    elm_object_content_set(scr, obj);
 
    _color_init(cpu_colormap_in, COLOR_CPU_NUM, pd->threads.graph.cpu_colormap);
@@ -836,26 +835,28 @@ _run_time_string(int64_t secs)
 }
 
 static void
-_manual_cb(void *data, Ecore_Thread *thread)
+_manual_init_cb(void *data, Ecore_Thread *thread)
 {
-   Eina_List *lines;
+   Eina_List *lines = NULL;
    char *line;
    char buf[4096];
    int n = 1;
    Ui_Data *pd = data;
 
    setenv("MANWIDTH", "75", 1);
-
    ecore_thread_feedback(thread, strdup("<code>"));
-   snprintf(buf, sizeof(buf), "man %s | col -bx", pd->selected_cmd);
-   lines = _exe_response(buf);
+
+   if (!strchr(pd->selected_cmd, ' '))
+     {
+        snprintf(buf, sizeof(buf), "man %s | col -bx", pd->selected_cmd);
+        lines = _exe_response(buf);
+     }
    if (!lines)
      {
         snprintf(buf, sizeof(buf), _("No documentation found for %s."),
                  pd->selected_cmd);
         ecore_thread_feedback(thread, strdup(buf));
      }
-
    EINA_LIST_FREE(lines, line)
      {
         if (n++ > 1)
@@ -865,20 +866,20 @@ _manual_cb(void *data, Ecore_Thread *thread)
 	  }
 	free(line);
      }
-
-     ecore_thread_feedback(thread, strdup("</code>"));
-
-     unsetenv("MANWIDTH");
-     pd->manual.init = 1;
+   ecore_thread_feedback(thread, strdup("</code>"));
+   unsetenv("MANWIDTH");
+   pd->manual.init = 1;
 }
 
 static void
-_manual_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
+_manual_init_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 {
+   Evas_Object *ent;
+   char *s;
    Ui_Data *pd = data;
-   Evas_Object *ent =  pd->manual.entry;
-   char *s = msgdata;
 
+   ent = pd->manual.entry;
+   s = msgdata;
    elm_entry_entry_append(ent, s);
 
    free(s);
@@ -887,19 +888,21 @@ _manual_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 static void
 _manual_init(Ui_Data *pd)
 {
-   if ((!pd->selected_cmd) || (!pd->selected_cmd[0]) || (strchr(pd->selected_cmd, ' ')))
+   if (pd->manual.init) return;
+
+   if ((!pd->selected_cmd) || (!pd->selected_cmd[0]))
      return;
 
-   ecore_thread_feedback_run(_manual_cb,
-                             _manual_feedback_cb,
+   ecore_thread_feedback_run(_manual_init_cb,
+                             _manual_init_feedback_cb,
                              NULL, NULL, pd, 1);
 }
-
 
 static void
 _general_view_update(Ui_Data *pd, Proc_Info *proc)
 {
    struct passwd *pwd_entry;
+   char *s;
 
    if (!strcmp(proc->state, "stop"))
      {
@@ -940,26 +943,21 @@ _general_view_update(Ui_Data *pd, Proc_Info *proc)
                        evisum_size_format(proc->mem_virt));
    elm_object_text_set(pd->general.entry_rss,
                        evisum_size_format(proc->mem_rss));
-#if !defined(__linux__)
-   elm_object_text_set(pd->general.entry_shared,
-                       "N/A");
-#else
    elm_object_text_set(pd->general.entry_shared,
                        evisum_size_format(proc->mem_shared));
-#endif
    elm_object_text_set(pd->general.entry_size,
                        evisum_size_format(proc->mem_size));
-   char *t = _run_time_string(proc->run_time);
-   if (t)
+   s = _run_time_string(proc->run_time);
+   if (s)
      {
-        elm_object_text_set(pd->general.entry_run_time, t);
-        free(t);
+        elm_object_text_set(pd->general.entry_run_time, s);
+        free(s);
      }
-   t = _time_string(proc->start);
-   if (t)
+   s = _time_string(proc->start);
+   if (s)
      {
-        elm_object_text_set(pd->general.entry_started, t);
-        free(t);
+        elm_object_text_set(pd->general.entry_started, s);
+        free(s);
      }
    elm_object_text_set(pd->general.entry_nice,
                        eina_slstr_printf("%d", proc->nice));
@@ -1015,7 +1013,7 @@ _proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg)
 
    _threads_cpu_usage(pd, proc);
 
-   if (pd->poll_count != 0 && (pd->poll_count % 10))
+   if ((pd->poll_count != 0) && (pd->poll_count % 10))
      {
         _graph_update(pd, proc);
         proc_info_free(proc);
@@ -1604,13 +1602,10 @@ static void
 _tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                        void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
+   Ui_Data *pd = data;
 
-   pd = data;
    _tab_change(pd, pd->manual_view, obj);
    elm_object_focus_set(pd->tab_general, 1);
-   if (pd->manual.init) return;
-
    _manual_init(pd);
 }
 
