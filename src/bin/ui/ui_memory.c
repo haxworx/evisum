@@ -287,12 +287,12 @@ ui_mem_win_add(Ui *ui)
         elm_table_pack(tb, pb, 2, 6 + i, 1, 1);
      }
 
-   if (ui->mem.width > 0 && ui->mem.height > 0)
+   if ((ui->mem.width > 0) && (ui->mem.height > 0))
      evas_object_resize(win, ui->mem.width, ui->mem.height);
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH , UI_CHILD_WIN_HEIGHT);
 
-   if (ui->mem.x > 0 && ui->mem.y > 0)
+   if ((ui->mem.x > 0) && (ui->mem.y > 0))
      evas_object_move(win, ui->mem.x, ui->mem.y);
    else
      elm_win_center(win, 1, 1);

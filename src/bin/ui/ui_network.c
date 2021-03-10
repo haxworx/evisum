@@ -378,12 +378,12 @@ ui_network_win_add(Ui *ui)
 
    elm_object_content_set(win, bx);
 
-   if (ui->network.width > 0 && ui->network.height > 0)
+   if ((ui->network.width) > 0 && (ui->network.height > 0))
      evas_object_resize(win, ui->network.width, ui->network.height);
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
 
-   if (ui->network.x > 0 && ui->network.y > 0)
+   if ((ui->network.x > 0) && (ui->network.y > 0))
      evas_object_move(win, ui->network.x, ui->network.y);
    else
      elm_win_center(win, 1, 1);

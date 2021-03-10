@@ -779,7 +779,7 @@ void
 ui_cpu_win_add(Ui *ui)
 {
    Animate *ad;
-   Evas_Object *win, *box, *scroller;
+   Evas_Object *win, *box, *scr;
 
    if (ui->cpu.win)
      {
@@ -798,12 +798,12 @@ ui_cpu_win_add(Ui *ui)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
                                   _win_resize_cb, ui);
 
-   scroller = elm_scroller_add(win);
-   evas_object_size_hint_weight_set(scroller, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(scroller, FILL, FILL);
-   elm_scroller_policy_set(scroller,
+   scr = elm_scroller_add(win);
+   evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(scr, FILL, FILL);
+   elm_scroller_policy_set(scr,
                            ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
-   evas_object_show(scroller);
+   evas_object_show(scr);
 
    box = elm_box_add(win);
    evas_object_size_hint_align_set(box, FILL, FILL);
@@ -811,17 +811,17 @@ ui_cpu_win_add(Ui *ui)
    evas_object_show(box);
 
    ad = _graph(ui, box);
-   evas_object_event_callback_add(scroller, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ad);
-   evas_object_event_callback_add(scroller, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, ad);
-   elm_object_content_set(scroller, box);
-   elm_object_content_set(win, scroller);
+   evas_object_event_callback_add(scr, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ad);
+   evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, ad);
+   elm_object_content_set(scr, box);
+   elm_object_content_set(win, scr);
 
-   if (ui->cpu.width > 0 && ui->cpu.height > 0)
+   if ((ui->cpu.width > 0) && (ui->cpu.height > 0))
      evas_object_resize(win, ui->cpu.width, ui->cpu.height);
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
 
-   if (ui->cpu.x > 0 && ui->cpu.y > 0)
+   if ((ui->cpu.x > 0) && (ui->cpu.y > 0))
      evas_object_move(win, ui->cpu.x, ui->cpu.y);
    else
      elm_win_center(win, 1, 1);

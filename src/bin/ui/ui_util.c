@@ -465,6 +465,7 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(lb, FILL, FILL);
    elm_entry_single_line_set(lb, 0);
+   elm_object_focus_allow_set(lb, 0);
    elm_entry_scrollable_set(lb, 0);
    elm_entry_editable_set(lb, 0);
    elm_entry_select_allow_set(lb, 0);

@@ -2139,7 +2139,7 @@ ui_process_list_win_add(Ui *ui)
      evas_object_resize(win, EVISUM_WIN_WIDTH * elm_config_scale_get(),
                         EVISUM_WIN_HEIGHT * elm_config_scale_get());
 
-   if ((ui->proc.x) > 0 && (ui->proc.y > 0))
+   if ((ui->proc.x > 0) && (ui->proc.y > 0))
      evas_object_move(win, ui->proc.x, ui->proc.y);
    else
      elm_win_center(win, 1, 1);

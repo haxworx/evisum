@@ -369,12 +369,12 @@ ui_sensors_win_add(Ui *ui)
    pd->itc->func.filter_get = NULL;
    pd->itc->func.del = _item_del;
 
-   if (ui->sensors.width > 0 && ui->sensors.height > 0)
+   if ((ui->sensors.width > 0) && (ui->sensors.height > 0))
      evas_object_resize(win, ui->sensors.width, ui->sensors.height);
    else
      evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
 
-   if (ui->sensors.x > 0 && ui->sensors.y > 0)
+   if ((ui->sensors.x > 0) && (ui->sensors.y > 0))
      evas_object_move(win, ui->sensors.x, ui->sensors.y);
    else
      elm_win_center(win, 1, 1);
