@@ -360,8 +360,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    Animate *ad = data;
    Ui *ui = ad->ui;
 
-   evisum_ui_config_save(ui);
-
    ecore_thread_cancel(ad->thread);
    ecore_thread_wait(ad->thread, 0.5);
 
@@ -773,7 +771,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui *ui = data;
 
-   evisum_ui_config_save(ui);
+   evas_object_geometry_get(obj, NULL, NULL, &ui->cpu.width, &ui->cpu.height);
 }
 
 void

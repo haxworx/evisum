@@ -22,7 +22,6 @@ static Evas_Object *_slider_alpha = NULL;
 void
 evisum_ui_config_save(Ui *ui)
 {
-   Evas_Coord x, y, w, h;
    Eina_Bool notify = 0;
 
    if (!_evisum_config) return;
@@ -62,51 +61,46 @@ evisum_ui_config_save(Ui *ui)
 
    if (ui->cpu.win)
      {
-        evas_object_geometry_get(ui->cpu.win, &x, &y, &w, &h);
-        _evisum_config->cpu.width = ui->cpu.width = w;
-        _evisum_config->cpu.height = ui->cpu.height = h;
-        _evisum_config->cpu.x = x;
-        _evisum_config->cpu.y = y;
+        _evisum_config->cpu.width = ui->cpu.width;
+        _evisum_config->cpu.height = ui->cpu.height;
+        _evisum_config->cpu.x = ui->cpu.x;
+        _evisum_config->cpu.y = ui->cpu.y;
         _evisum_config->cpu.restart = ui->cpu.restart;
      }
 
    if (ui->mem.win)
      {
-        evas_object_geometry_get(ui->mem.win, &x, &y, &w, &h);
-        _evisum_config->mem.width = ui->mem.width = w;
-        _evisum_config->mem.height = ui->mem.height = h;
-        _evisum_config->mem.x = x;
-        _evisum_config->mem.y = y;
+        _evisum_config->mem.width = ui->mem.width;
+        _evisum_config->mem.height = ui->mem.height;
+        _evisum_config->mem.x = ui->mem.x;
+        _evisum_config->mem.y = ui->mem.y;
         _evisum_config->mem.restart = ui->mem.restart;
      }
 
    if (ui->disk.win)
      {
-        evas_object_geometry_get(ui->disk.win, &x, &y, &w, &h);
-        _evisum_config->disk.width = ui->disk.width = w;
-        _evisum_config->disk.height = ui->disk.height = h;
-        _evisum_config->disk.x = x;
-        _evisum_config->disk.y = y;
+        _evisum_config->disk.width = ui->disk.width;
+        _evisum_config->disk.height = ui->disk.height;
+        _evisum_config->disk.x = ui->disk.x;
+        _evisum_config->disk.y = ui->disk.y;
         _evisum_config->disk.restart = ui->disk.restart;
      }
 
    if (ui->sensors.win)
      {
-        evas_object_geometry_get(ui->sensors.win, &x, &y, &w, &h);
-        _evisum_config->sensors.width = ui->sensors.width = w;
-        _evisum_config->sensors.height = ui->sensors.height = h;
-        _evisum_config->sensors.x = x;
-        _evisum_config->sensors.y = y;
+        _evisum_config->sensors.width = ui->sensors.width;
+        _evisum_config->sensors.height = ui->sensors.height;
+        _evisum_config->sensors.x = ui->sensors.x;
+        _evisum_config->sensors.y = ui->sensors.y;
         _evisum_config->sensors.restart = ui->sensors.restart;
      }
 
    if (ui->network.win)
      {
-        evas_object_geometry_get(ui->network.win, &x, &y, &w, &h);
-        _evisum_config->network.width = ui->network.width = w;
-        _evisum_config->network.height = ui->network.height = h;
-        _evisum_config->network.x = x;
-        _evisum_config->network.y = y;
+        _evisum_config->network.width = ui->network.width;
+        _evisum_config->network.height = ui->network.height;
+        _evisum_config->network.x = ui->network.x;
+        _evisum_config->network.y = ui->network.y;
         _evisum_config->network.restart = ui->network.restart;
      }
 
@@ -734,6 +728,7 @@ void
 evisum_ui_shutdown(Ui *ui)
 {
    evisum_icon_cache_shutdown();
+   evisum_ui_config_save(ui);
 
    free(ui);
 }

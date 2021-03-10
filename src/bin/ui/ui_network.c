@@ -103,7 +103,7 @@ _network_update(void *data, Ecore_Thread *thread)
           }
         free(ifaces);
 
-        ecore_thread_feedback(thread, NULL);
+        ecore_thread_feedback(thread, pd->interfaces);
         for (int i = 0; i < 8; i++)
           {
              if (pd->skip_wait || ecore_thread_check(thread)) break;
@@ -185,10 +185,12 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 {
    Network_Interface *iface;
    Evas_Object *obj;
-   Eina_List *l;
+   Eina_List *l, *interfaces;
    char *s;
    Eina_Strbuf *buf;
    Ui_Data *pd = data;
+
+   interfaces = msgdata;
 
    EINA_LIST_FREE(pd->purge, obj)
      {
@@ -198,7 +200,7 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 
    buf = eina_strbuf_new();
 
-   EINA_LIST_FOREACH(pd->interfaces, l, iface)
+   EINA_LIST_FOREACH(interfaces, l, iface)
      {
         if (iface->is_new)
           {
@@ -273,8 +275,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Ui *ui = pd->ui;
    Network_Interface *iface;
 
-   evisum_ui_config_save(ui);
-
    ecore_thread_cancel(pd->thread);
    ecore_thread_wait(pd->thread, 0.5);
    eina_list_free(pd->purge);
@@ -288,23 +288,15 @@ static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd = data;
+   Ui *ui = pd->ui;
 
-   evisum_ui_config_save(pd->ui);
-}
-
-static void
-_popup_gone_cb(void *data, Evas_Object *obj EINA_UNUSED,
-               void *event_info EINA_UNUSED)
-{
-   Ui_Data *pd = data;
-
-   evas_object_del(pd->win);
+   evas_object_geometry_get(obj, NULL, NULL, &ui->network.width, &ui->network.height);
 }
 
 void
 ui_network_win_add(Ui *ui)
 {
-   Evas_Object *win, *pop, *scr, *bx;
+   Evas_Object *win, *bx;
  
    if (ui->network.win)
      {
@@ -326,30 +318,12 @@ ui_network_win_add(Ui *ui)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
 
-   pop = elm_popup_add(win);
-   elm_popup_allow_events_set(pop, 1);
-   elm_object_style_set(pop, "transparent");
-   elm_object_part_text_set(pop, "title,text", "Interfaces");
-   evas_object_size_hint_weight_set(pop, 1.0, 1.0);
-   evas_object_size_hint_align_set(pop, FILL, FILL);
-   elm_popup_align_set(pop, FILL, FILL);
-   evas_object_smart_callback_add(pop, "dismissed", _popup_gone_cb, pd);
-   evas_object_show(pop);
-
-   scr = elm_scroller_add(win);
-   elm_scroller_content_min_limit(scr, 0, 1);
-   evas_object_size_hint_weight_set(scr, 1.0, 1.0);
-   evas_object_size_hint_align_set(scr, FILL, FILL);
-   evas_object_size_hint_min_set(scr, 1, ELM_SCALE_SIZE(400));
-   evas_object_show(scr);
-
    pd->bx = bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, 1.0, 1.0);
    evas_object_size_hint_align_set(bx, FILL, FILL);
    elm_box_padding_set(bx, ELM_SCALE_SIZE(10), ELM_SCALE_SIZE(10));
    evas_object_show(bx);
-   elm_object_content_set(scr, bx);
-   elm_object_content_set(pop, scr);
+   elm_object_content_set(win, bx);
 
    if (ui->network.width > 0 && ui->network.height > 0)
      evas_object_resize(win, ui->network.width, ui->network.height);

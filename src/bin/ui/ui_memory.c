@@ -187,7 +187,6 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 
    ui = pd->ui;
 
-   evisum_ui_config_save(ui);
    ecore_thread_cancel(pd->thread);
    ecore_thread_wait(pd->thread, 0.5);
 
@@ -199,8 +198,9 @@ static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Ui_Data *pd = data;
+   Ui *ui = pd->ui;
 
-   evisum_ui_config_save(pd->ui);
+   evas_object_geometry_get(obj, NULL, NULL, &ui->mem.width, &ui->mem.height);
 }
 
 void
