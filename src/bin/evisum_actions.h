@@ -9,6 +9,7 @@ typedef enum
    EVISUM_ACTION_MEM     = 3,
    EVISUM_ACTION_STORAGE = 4,
    EVISUM_ACTION_SENSORS = 5,
+   EVISUM_ACTION_NETWORK = 6,
 } Evisum_Action;
 
 #endif

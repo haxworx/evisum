@@ -49,6 +49,8 @@ elm_main(int argc, char **argv)
                     "        Launch memory view.\n"
                     "      -d\n"
                     "        Launch storage view.\n"
+                    "      -n\n"
+                    "        Launch network view.\n"
                     "      -s\n"
                     "        Launch sensors view.\n"
                     "      -p <pid>\n"
@@ -66,6 +68,8 @@ elm_main(int argc, char **argv)
           action = EVISUM_ACTION_STORAGE;
         else if (!strcmp(argv[i], "-s"))
           action = EVISUM_ACTION_SENSORS;
+        else if (!strcmp(argv[i], "-n"))
+          action = EVISUM_ACTION_NETWORK;
         else if (!strcmp(argv[i], "-p") && i < (argc -1))
           {
              action = EVISUM_ACTION_PROCESS;

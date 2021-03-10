@@ -1,6 +1,6 @@
 install_data('go-up.png', 'go-down.png',
              'battery.png', 'start.png', 'stop.png',
-             'kill.png', 'cancel.png',
+             'kill.png', 'cancel.png', 'network.png',
              'increase.png', 'decrease.png',
              'sensor.png', 'mount.png', 'ladyhand.png',
              'find.png', 'bug.png', 'exit.png', 'cpu.png',

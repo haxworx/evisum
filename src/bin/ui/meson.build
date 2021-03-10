@@ -6,6 +6,8 @@ src += files([
    'ui_util.c',
    'ui_cache.c',
    'ui_cache.h',
+   'ui_network.c',
+   'ui_network.h',
    'ui_sensors.c',
    'ui_sensors.h',
    'ui_disk.c',

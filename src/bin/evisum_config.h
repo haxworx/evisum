@@ -3,7 +3,7 @@
 
 #include "ui/ui.h"
 
-#define CONFIG_VERSION 0x000f
+#define CONFIG_VERSION 0x0010
 
 typedef struct _Evisum_Config
 {
@@ -63,6 +63,14 @@ typedef struct _Evisum_Config
       int x, y;
       Eina_Bool    restart;
    } sensors;
+
+   struct
+   {
+      int width;
+      int height;
+      int x, y;
+      Eina_Bool    restart;
+   } network;
 
 } Evisum_Config;
 

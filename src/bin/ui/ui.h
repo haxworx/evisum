@@ -82,6 +82,15 @@ typedef struct Ui
       int           x, y;
       Eina_Bool     restart;
    } sensors;
+
+   struct
+   {
+      Evas_Object  *win;
+      int           width;
+      int           height;
+      int           x, y;
+      Eina_Bool     restart;
+   } network;
 } Ui;
 
 Ui *

@@ -10,6 +10,7 @@
 #include "ui/ui_memory.h"
 #include "ui/ui_disk.h"
 #include "ui/ui_sensors.h"
+#include "ui/ui_network.h"
 #include "ui/ui_process_view.h"
 #include "ui/ui_process_list.h"
 
@@ -55,7 +56,7 @@ evisum_ui_config_save(Ui *ui)
         _evisum_config->proc.show_scroller = ui->proc.show_scroller;
         _evisum_config->proc.transparant = ui->proc.transparant;
         _evisum_config->proc.alpha = ui->proc.alpha;
-	_evisum_config->proc.fields = ui->proc.fields;
+        _evisum_config->proc.fields = ui->proc.fields;
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
      }
 
@@ -97,6 +98,16 @@ evisum_ui_config_save(Ui *ui)
         _evisum_config->sensors.x = x;
         _evisum_config->sensors.y = y;
         _evisum_config->sensors.restart = ui->sensors.restart;
+     }
+
+   if (ui->network.win)
+     {
+        evas_object_geometry_get(ui->network.win, &x, &y, &w, &h);
+        _evisum_config->network.width = ui->network.width = w;
+        _evisum_config->network.height = ui->network.height = h;
+        _evisum_config->network.x = x;
+        _evisum_config->network.y = y;
+        _evisum_config->network.restart = ui->network.restart;
      }
 
    config_save(_evisum_config);
@@ -154,6 +165,12 @@ evisum_ui_config_load(Ui *ui)
    ui->sensors.x = _evisum_config->sensors.x;
    ui->sensors.y = _evisum_config->sensors.y;
    ui->sensors.restart = _evisum_config->sensors.restart;
+
+   ui->network.width = _evisum_config->network.width;
+   ui->network.height = _evisum_config->network.height;
+   ui->network.x = _evisum_config->network.x;
+   ui->network.y = _evisum_config->network.y;
+   ui->network.restart = _evisum_config->network.restart;
 }
 
 void
@@ -164,6 +181,7 @@ evisum_ui_restart(Ui *ui)
    if (ui->mem.win) ui->mem.restart = 1;
    if (ui->disk.win) ui->disk.restart = 1;
    if (ui->sensors.win) ui->sensors.restart = 1;
+   if (ui->network.win) ui->network.restart = 1;
 
    evisum_ui_config_save(ui);
    evisum_server_shutdown();
@@ -187,6 +205,15 @@ _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    Ui *ui = data;
 
    ui_mem_win_add(ui);
+}
+
+static void
+_menu_network_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                                  void *event_info EINA_UNUSED)
+{
+   Ui *ui = data;
+
+   ui_network_win_add(ui);
 }
 
 static void
@@ -438,6 +465,13 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
 
+   btn = _btn_create(tb, "network", _("Network"),
+                     _menu_network_activity_clicked_cb, ui);
+   rec = evas_object_rectangle_add(evas_object_evas_get(obx));
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
+   elm_table_pack(tb, rec, i, 0, 1, 1);
+   elm_table_pack(tb, btn, i++, 0, 1, 1);
+
    sep = elm_separator_add(tb);
    evas_object_size_hint_align_set(sep, FILL, FILL);
    evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
@@ -654,11 +688,17 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
         restart = 1;
      }
 
+   if (ui->network.restart)
+     {
+        ui_network_win_add(ui);
+        restart = 1;
+     }
+
    if (restart)
      {
         ui->proc.restart = ui->cpu.restart = 0;
         ui->mem.restart = ui->disk.restart = 0;
-        ui->sensors.restart = 0;
+        ui->sensors.restart = ui->network.restart = 0;
         evisum_ui_config_save(ui);
         return;
      }
@@ -682,6 +722,9 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
          break;
        case EVISUM_ACTION_SENSORS:
          ui_sensors_win_add(ui);
+         break;
+       case EVISUM_ACTION_NETWORK:
+         ui_network_win_add(ui);
          break;
      }
 }
