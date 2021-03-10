@@ -4,11 +4,8 @@
 typedef struct
 {
    Ecore_Thread          *thread;
-   Eina_List             *interfaces;
    Evas_Object           *win;
    Evas_Object           *glist;
-   Eina_List             *purge;
-   Eina_Bool              skip_wait;
    Elm_Genlist_Item_Class itc, itc2;
    Ui                    *ui;
 } Ui_Data;
@@ -28,16 +25,16 @@ typedef struct
    Evas_Object     *obj;
    Elm_Object_Item *it, *it2;
    Eina_Bool        is_new;
+   Eina_Bool        delete_me;
 } Network_Interface;
-
 
 static void
 _interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Ui_Data *pd)
 {
-   Eina_List *l, *l2;
+   Eina_List *l;
    Network_Interface *iface;
 
-   EINA_LIST_FOREACH_SAFE(list, l, l2, iface)
+   EINA_LIST_FOREACH(list, l, iface)
      {
         Eina_Bool found = 0;
         for (int i = 0; i < n; i++)
@@ -50,14 +47,7 @@ _interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Ui_Data *pd)
                }
           }
         if (!found)
-          {
-             if (iface->it)
-               pd->purge = eina_list_append(pd->purge, iface->it);
-             if (iface->it2)
-               pd->purge = eina_list_append(pd->purge, iface->it2);
-             free(iface);
-             pd->interfaces = eina_list_remove_list(pd->interfaces, l);
-          }
+          iface->delete_me = 1;
      }
 }
 
@@ -65,22 +55,24 @@ static void
 _network_update(void *data, Ecore_Thread *thread)
 {
    Ui_Data *pd = data;
-   int n;
+   Eina_List *interfaces = NULL;
+   Network_Interface *iface;
 
    while (!ecore_thread_check(thread))
      {
-        Eina_List *l;
-        Network_Interface *iface, *iface2;
-
+        int n;
         net_iface_t *nwif, **ifaces = system_network_ifaces_get(&n);
 
-	_interface_gone(ifaces, n, pd->interfaces, pd);
+	_interface_gone(ifaces, n, interfaces, pd);
 
         for (int i = 0; i < n; i++)
            {
+             Network_Interface *iface2;
+             Eina_List *l;
+
              nwif = ifaces[i];
              iface = NULL;
-             EINA_LIST_FOREACH(pd->interfaces, l, iface2)
+             EINA_LIST_FOREACH(interfaces, l, iface2)
                {
                   if (!strcmp(nwif->name, iface2->name))
                     {
@@ -93,7 +85,7 @@ _network_update(void *data, Ecore_Thread *thread)
                   iface = calloc(1, sizeof(Network_Interface));
                   iface->is_new = 1;
                   snprintf(iface->name, sizeof(iface->name), "%s", nwif->name);
-                  pd->interfaces = eina_list_append(pd->interfaces, iface);
+                  interfaces = eina_list_append(interfaces, iface);
                }
              else
                {
@@ -113,20 +105,21 @@ _network_update(void *data, Ecore_Thread *thread)
                     iface->peak_out = iface->out;
                   iface->total_in = nwif->xfer.in;
                   iface->total_out = nwif->xfer.out;
-
                }
              free(nwif);
           }
         free(ifaces);
 
-        ecore_thread_feedback(thread, pd->interfaces);
+        ecore_thread_feedback(thread, interfaces);
         for (int i = 0; i < 8; i++)
           {
-             if (pd->skip_wait || ecore_thread_check(thread)) break;
+             if (ecore_thread_check(thread))
+               break;
              usleep(250000);
           }
-        pd->skip_wait = 0;
      }
+   EINA_LIST_FREE(interfaces, iface)
+     free(iface);
 }
 
 static Evas_Object *
@@ -200,40 +193,49 @@ static char *
 _network_transfer_format(double rate)
 {
    const char *unit = "B/s";
+   char buf[256];
 
    if (rate > 1048576)
      {
         rate /= 1048576;
         unit = "MB/s";
      }
-   else if (rate > 1024 && rate < 1048576)
+   else if ((rate > 1024) && (rate < 1048576))
      {
         rate /= 1024;
         unit = "KB/s";
      }
 
-   return strdup(eina_slstr_printf("%.2f %s", rate, unit));
+   snprintf(buf, sizeof(buf), "%.2f %s", rate, unit);
+   return strdup(buf);
 }
 
 static void
 _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA_UNUSED)
 {
+   Eina_List *interfaces;
    Network_Interface *iface;
+   Ui_Data *pd;
    Evas_Object *obj;
-   Elm_Object_Item *it;
-   Eina_List *l;
+   Eina_List *l, *l2;
    char *s;
    Eina_Strbuf *buf;
-   Ui_Data *pd = data;
 
-   EINA_LIST_FREE(pd->purge, it)
-     elm_object_item_del(it);
+   interfaces = msgdata;
+   pd = data;
 
    buf = eina_strbuf_new();
 
-   EINA_LIST_FOREACH(pd->interfaces, l, iface)
+   EINA_LIST_FOREACH_SAFE(interfaces, l, l2, iface)
      {
-        if (iface->is_new)
+        if (iface->delete_me)
+          {
+             elm_object_item_del(iface->it);
+             elm_object_item_del(iface->it2);
+             free(iface);
+             interfaces = eina_list_remove_list(interfaces, l);
+          }
+	else if (iface->is_new)
           {
              iface->it = elm_genlist_item_append(pd->glist, &pd->itc2, iface->name, NULL, ELM_GENLIST_ITEM_GROUP, NULL, NULL);
 	     iface->it2 = elm_genlist_item_append(pd->glist, &pd->itc, iface, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
@@ -303,14 +305,10 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 {
    Ui_Data *pd = data;
    Ui *ui = pd->ui;
-   Network_Interface *iface;
 
    evisum_ui_config_save(ui);
    ecore_thread_cancel(pd->thread);
    ecore_thread_wait(pd->thread, 0.5);
-   eina_list_free(pd->purge);
-   EINA_LIST_FREE(pd->interfaces, iface)
-     free(iface);
    ui->network.win = NULL;
    free(pd);
 }
