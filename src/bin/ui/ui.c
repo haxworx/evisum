@@ -643,7 +643,7 @@ _ui_init_system_probe(Ui *ui)
 #else
    ui->proc.has_kthreads = 1;
 #endif
-#if defined(__FreeBSD__) || defined(__DragonFly__)
+#if defined(__FreeBSD__)
    ui->mem.zfs_mounted = file_system_in_use("ZFS");
 #endif
 }
