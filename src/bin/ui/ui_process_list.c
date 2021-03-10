@@ -2057,6 +2057,8 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
 
    ui = pd->ui;
 
+   evisum_ui_config_save(ui);
+
    if (pd->search.timer)
      ecore_timer_del(pd->search.timer);
 
