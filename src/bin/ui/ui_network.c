@@ -13,7 +13,7 @@ typedef struct
 
 typedef struct
 {
-   char     name[128];
+   char     name[255];
    uint64_t total_in;
    uint64_t total_out;
 
