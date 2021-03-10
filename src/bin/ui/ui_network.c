@@ -5,6 +5,7 @@ typedef struct
 {
    Ecore_Thread *thread;
    Eina_List    *interfaces;
+   Evas_Object  *win;
    Evas_Object  *bx;
    Eina_List    *purge;
    Eina_Bool     skip_wait;
@@ -291,6 +292,15 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    evisum_ui_config_save(pd->ui);
 }
 
+static void
+_popup_gone_cb(void *data, Evas_Object *obj EINA_UNUSED,
+               void *event_info EINA_UNUSED)
+{
+   Ui_Data *pd = data;
+
+   evas_object_del(pd->win);
+}
+
 void
 ui_network_win_add(Ui *ui)
 {
@@ -306,22 +316,24 @@ ui_network_win_add(Ui *ui)
    if (!pd) return;
    pd->ui = ui;
 
-   ui->network.win = win = elm_win_util_standard_add("evisum", _("Network"));
+   ui->network.win = pd->win = win = elm_win_util_standard_add("evisum", _("Network"));
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win,
-                                   evisum_ui_backgrounds_enabled_get());
+   evisum_ui_background_random_add(win, 1);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
 
    pop = elm_popup_add(win);
+   elm_popup_allow_events_set(pop, 1);
    elm_object_style_set(pop, "transparent");
    elm_object_part_text_set(pop, "title,text", "Interfaces");
    evas_object_size_hint_weight_set(pop, 1.0, 1.0);
    evas_object_size_hint_align_set(pop, FILL, FILL);
+   elm_popup_align_set(pop, FILL, FILL);
+   evas_object_smart_callback_add(pop, "dismissed", _popup_gone_cb, pd);
    evas_object_show(pop);
 
    scr = elm_scroller_add(win);
