@@ -3,13 +3,14 @@
 
 typedef struct
 {
-   Ecore_Thread *thread;
-   Eina_List    *interfaces;
-   Evas_Object  *win;
-   Evas_Object  *bx;
-   Eina_List    *purge;
-   Eina_Bool     skip_wait;
-   Ui           *ui;
+   Ecore_Thread          *thread;
+   Eina_List             *interfaces;
+   Evas_Object           *win;
+   Evas_Object           *glist;
+   Eina_List             *purge;
+   Eina_Bool              skip_wait;
+   Elm_Genlist_Item_Class itc, itc2;
+   Ui                    *ui;
 } Ui_Data;
 
 typedef struct
@@ -24,9 +25,41 @@ typedef struct
    uint64_t in;
    uint64_t out;
 
-   Evas_Object *obj;
-   Eina_Bool    is_new;
+   Evas_Object     *obj;
+   Elm_Object_Item *it, *it2;
+   Eina_Bool        is_new;
 } Network_Interface;
+
+
+static void
+_interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Ui_Data *pd)
+{
+   Eina_List *l, *l2;
+   Network_Interface *iface;
+
+   EINA_LIST_FOREACH_SAFE(list, l, l2, iface)
+     {
+        Eina_Bool found = 0;
+        for (int i = 0; i < n; i++)
+          {
+             net_iface_t *nwif = ifaces[i];
+             if (!strcmp(nwif->name, iface->name))
+               {
+                  found = 1;
+                  break;
+               }
+          }
+        if (!found)
+          {
+             if (iface->it)
+               pd->purge = eina_list_append(pd->purge, iface->it);
+             if (iface->it2)
+               pd->purge = eina_list_append(pd->purge, iface->it2);
+             free(iface);
+             pd->interfaces = eina_list_remove_list(pd->interfaces, l);
+          }
+     }
+}
 
 static void
 _network_update(void *data, Ecore_Thread *thread)
@@ -36,32 +69,15 @@ _network_update(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
-        Eina_List *l, *l2;
+        Eina_List *l;
         Network_Interface *iface, *iface2;
 
         net_iface_t *nwif, **ifaces = system_network_ifaces_get(&n);
-        EINA_LIST_FOREACH_SAFE(pd->interfaces, l, l2, iface2)
-          {
-             Eina_Bool found = 0;
-             for (int i = 0; i < n; i++)
-               {
-                  nwif = ifaces[i];
-                  if (!strcmp(nwif->name, iface2->name))
-                    {
-                       found = 1;
-                       break;
-                    }
-               }
-             if (!found)
-               {
-                  if (iface2->obj)
-                    pd->purge = eina_list_append(pd->purge, iface2->obj);
-                  free(iface2);
-                  pd->interfaces = eina_list_remove_list(pd->interfaces, l);
-               }
-          }
+
+	_interface_gone(ifaces, n, pd->interfaces, pd);
+
         for (int i = 0; i < n; i++)
-           {        
+           {
              nwif = ifaces[i];
              iface = NULL;
              EINA_LIST_FOREACH(pd->interfaces, l, iface2)
@@ -77,7 +93,7 @@ _network_update(void *data, Ecore_Thread *thread)
                   iface = calloc(1, sizeof(Network_Interface));
                   iface->is_new = 1;
                   snprintf(iface->name, sizeof(iface->name), "%s", nwif->name);
-                  pd->interfaces = eina_list_sorted_insert(pd->interfaces, (Eina_Compare_Cb) (void *)strcmp, iface->name);
+                  pd->interfaces = eina_list_append(pd->interfaces, iface);
                }
              else
                {
@@ -114,9 +130,9 @@ _network_update(void *data, Ecore_Thread *thread)
 }
 
 static Evas_Object *
-_lb_add(Evas_Object *base, const char *txt)
+_lb_add(Evas_Object *obj, const char *txt)
 {
-   Evas_Object *lb = elm_label_add(base);
+   Evas_Object *lb = elm_label_add(obj);
    evas_object_size_hint_weight_set(lb, 1.0, 1.0);
    evas_object_size_hint_align_set(lb, FILL, FILL);
    elm_object_text_set(lb, txt);
@@ -125,40 +141,59 @@ _lb_add(Evas_Object *base, const char *txt)
    return lb;
 }
 
-static Evas_Object *
-_iface_obj_add(Evas_Object *base, const char *name)
+static char *
+_text_get(void *data, Evas_Object *obj, const char *part)
 {
-   Evas_Object *tb, *lb;
+   char *buf;
 
-   tb = elm_table_add(base);
-   evas_object_size_hint_weight_set(tb, 1.0, 1.0);
+   if (strcmp(part, "elm.text")) return NULL;
+
+   buf = data;
+
+   return strdup(buf);
+}
+
+static Evas_Object *
+_iface_obj_add(void *data, Evas_Object *obj, const char *part)
+{
+   Evas_Object *bx, *tb, *lb;
+   Network_Interface *iface;
+
+   if (strcmp(part, "elm.swallow.content")) return NULL;
+
+   iface = data;
+
+   bx = elm_box_add(obj);
+   evas_object_size_hint_weight_set(bx, 1.0, 1.0);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   evas_object_show(bx);
+
+   iface->obj = tb = elm_table_add(obj);
+   evas_object_size_hint_weight_set(tb, 1.0, 0);
    evas_object_size_hint_align_set(tb, FILL, FILL);
    evas_object_show(tb);
 
-   lb = _lb_add(base, _("Name"));
-   elm_table_pack(tb, lb, 0, 0, 1, 1);
-   lb = _lb_add(base, name);
-   elm_table_pack(tb, lb, 1, 0, 1, 1);
-
-   lb = _lb_add(base, _("Total In/Out"));
+   lb = _lb_add(obj, _("Total In/Out"));
    elm_table_pack(tb, lb, 0, 1, 1, 1);
-   lb = _lb_add(base, "");
+   lb = _lb_add(obj, "");
    evas_object_data_set(tb, "total", lb);
    elm_table_pack(tb, lb, 1, 1, 1, 1);
 
-   lb = _lb_add(base, _("Peak In/Out"));
+   lb = _lb_add(obj, _("Peak In/Out"));
    elm_table_pack(tb, lb, 0, 2, 1, 1);
-   lb = _lb_add(base, "");
+   lb = _lb_add(obj, "");
    evas_object_data_set(tb, "peak", lb);
    elm_table_pack(tb, lb, 1, 2, 1, 1);
 
-   lb = _lb_add(base, _("In/Out"));
+   lb = _lb_add(obj, _("In/Out"));
    elm_table_pack(tb, lb, 0, 3, 1, 1);
-   lb = _lb_add(base, "");
+   lb = _lb_add(obj, "");
    evas_object_data_set(tb, "inout", lb);
    elm_table_pack(tb, lb, 1, 3, 1, 1);
 
-   return tb;
+   elm_box_pack_end(bx, tb);
+
+   return bx;
 }
 
 static char *
@@ -181,31 +216,27 @@ _network_transfer_format(double rate)
 }
 
 static void
-_network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
+_network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA_UNUSED)
 {
    Network_Interface *iface;
    Evas_Object *obj;
-   Eina_List *l, *interfaces;
+   Elm_Object_Item *it;
+   Eina_List *l;
    char *s;
    Eina_Strbuf *buf;
    Ui_Data *pd = data;
 
-   interfaces = msgdata;
-
-   EINA_LIST_FREE(pd->purge, obj)
-     {
-        elm_box_unpack(pd->bx, obj);
-        evas_object_del(obj);
-     }
+   EINA_LIST_FREE(pd->purge, it)
+     elm_object_item_del(it);
 
    buf = eina_strbuf_new();
 
-   EINA_LIST_FOREACH(interfaces, l, iface)
+   EINA_LIST_FOREACH(pd->interfaces, l, iface)
      {
         if (iface->is_new)
           {
-             iface->obj = _iface_obj_add(pd->bx, iface->name);
-             elm_box_pack_end(pd->bx, iface->obj);   
+             iface->it = elm_genlist_item_append(pd->glist, &pd->itc2, iface->name, NULL, ELM_GENLIST_ITEM_GROUP, NULL, NULL);
+	     iface->it2 = elm_genlist_item_append(pd->glist, &pd->itc, iface, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
           }
         else
           {
@@ -213,7 +244,7 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
              elm_object_text_set(obj, eina_slstr_printf("%s / %s",
                                  evisum_size_format(iface->total_in),
                                  evisum_size_format(iface->total_out)));
-             
+
              obj = evas_object_data_get(iface->obj, "peak");
              s = _network_transfer_format(iface->peak_in);
              eina_strbuf_append(buf, s);
@@ -222,8 +253,8 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
              eina_strbuf_append_printf(buf, " / %s", s);
              free(s);
              elm_object_text_set(obj, eina_strbuf_string_get(buf));
-             eina_strbuf_reset(buf);      
-             
+             eina_strbuf_reset(buf);
+
              obj = evas_object_data_get(iface->obj, "inout");
              s = _network_transfer_format(iface->in);
              eina_strbuf_append(buf, s);
@@ -232,9 +263,8 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
              eina_strbuf_append_printf(buf, " / %s", s);
              free(s);
              elm_object_text_set(obj, eina_strbuf_string_get(buf));
-             eina_strbuf_reset(buf);      
+             eina_strbuf_reset(buf);
           }
-        
      }
    eina_strbuf_free(buf);
 }
@@ -296,8 +326,9 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 ui_network_win_add(Ui *ui)
 {
-   Evas_Object *win, *bx;
- 
+   Evas_Object *win, *bx, *glist;;
+   Elm_Genlist_Item_Class *itc;
+
    if (ui->network.win)
      {
         elm_win_raise(ui->network.win);
@@ -312,17 +343,40 @@ ui_network_win_add(Ui *ui)
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win, 1);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
 
-   pd->bx = bx = elm_box_add(win);
+   bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, 1.0, 1.0);
    evas_object_size_hint_align_set(bx, FILL, FILL);
-   elm_box_padding_set(bx, ELM_SCALE_SIZE(10), ELM_SCALE_SIZE(10));
    evas_object_show(bx);
+
+   pd->glist = glist = elm_genlist_add(win);
+   elm_genlist_homogeneous_set(glist, 1);
+   evas_object_size_hint_weight_set(glist, 1.0, 1.0);
+   evas_object_size_hint_align_set(glist, FILL, FILL);
+   elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_NONE);
+   evas_object_show(glist);
+   elm_box_pack_end(bx, glist);
+
+   itc = &pd->itc;
+   itc->item_style = "full";
+   itc->func.text_get = NULL;
+   itc->func.content_get = _iface_obj_add;
+   itc->func.filter_get = NULL;
+   itc->func.state_get = NULL;
+   itc->func.del = NULL;
+
+   itc = &pd->itc2;
+   itc->item_style = "group_index";
+   itc->func.text_get = _text_get;
+   itc->func.content_get = NULL;
+   itc->func.filter_get = NULL;
+   itc->func.state_get = NULL;
+   itc->func.del = NULL;
+
    elm_object_content_set(win, bx);
 
    if (ui->network.width > 0 && ui->network.height > 0)
