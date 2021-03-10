@@ -360,6 +360,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
    Animate *ad = data;
    Ui *ui = ad->ui;
 
+   evisum_ui_config_save(ui);
    ecore_thread_cancel(ad->thread);
    ecore_thread_wait(ad->thread, 0.5);
 
