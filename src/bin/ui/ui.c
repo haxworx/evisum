@@ -602,6 +602,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
 
    hbx = elm_box_add(o);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+   evas_object_size_hint_align_set(hbx, FILL, FILL);
    elm_box_horizontal_set(hbx, 1);
    evas_object_show(hbx);
 
