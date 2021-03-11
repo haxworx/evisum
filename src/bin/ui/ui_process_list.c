@@ -38,7 +38,7 @@ typedef struct
    Evas_Object           *main_menu;
    Ecore_Timer           *main_menu_timer;
    Evas_Object           *menu;
-   Eina_Bool              transparant;
+   Eina_Bool              transparent;
 
    struct
    {
@@ -1984,7 +1984,7 @@ _win_alpha_set(Data *pd)
    fade = ui->proc.alpha / 100.0;
 
    // FIXME: Base window colour from theme.
-   if (ui->proc.transparant)
+   if (ui->proc.transparent)
      {
         r = b = g = 128; a = 255;
         evas_object_color_set(bg, r * fade, g * fade, b * fade, fade * a);
@@ -1999,11 +1999,11 @@ _win_alpha_set(Data *pd)
         evas_object_color_set(bg, r, g, b, a);
      }
 
-   if (ui->proc.transparant != pd->transparant)
+   if (ui->proc.transparent != pd->transparent)
      {
-        elm_win_alpha_set(win, ui->proc.transparant);
+        elm_win_alpha_set(win, ui->proc.transparent);
      }
-   pd->transparant = ui->proc.transparant;
+   pd->transparent = ui->proc.transparent;
 }
 
 static Eina_Bool

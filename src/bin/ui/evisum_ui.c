@@ -35,7 +35,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
             (_evisum_config->proc.show_kthreads != ui->proc.show_kthreads) ||
             (_evisum_config->proc.show_user != ui->proc.show_user) ||
             (_evisum_config->proc.show_scroller != ui->proc.show_scroller) ||
-            (_evisum_config->proc.transparant != ui->proc.transparant) ||
+            (_evisum_config->proc.transparent != ui->proc.transparent) ||
             (_evisum_config->proc.alpha != ui->proc.alpha)
            )
           {
@@ -53,7 +53,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
         _evisum_config->proc.show_kthreads = ui->proc.show_kthreads;
         _evisum_config->proc.show_user = ui->proc.show_user;
         _evisum_config->proc.show_scroller = ui->proc.show_scroller;
-        _evisum_config->proc.transparant = ui->proc.transparant;
+        _evisum_config->proc.transparent = ui->proc.transparent;
         _evisum_config->proc.alpha = ui->proc.alpha;
         _evisum_config->proc.fields = ui->proc.fields;
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
@@ -125,7 +125,7 @@ evisum_ui_config_load(Evisum_Ui *ui)
    proc_info_kthreads_show_set(ui->proc.show_kthreads);
    ui->proc.show_user = _evisum_config->proc.show_user;
    ui->proc.show_scroller = _evisum_config->proc.show_scroller;
-   ui->proc.transparant = _evisum_config->proc.transparant;
+   ui->proc.transparent = _evisum_config->proc.transparent;
    ui->proc.alpha = _evisum_config->proc.alpha;
 
    ui->proc.width = _evisum_config->proc.width;
@@ -309,15 +309,15 @@ _main_menu_slider_alpha_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
 }
 
 static void
-_main_menu_transparant_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
+_main_menu_transparent_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                                     void *event_info EINA_UNUSED)
 {
    Evisum_Ui *ui = data;
 
    if (!ui->proc.alpha) return;
 
-   ui->proc.transparant = elm_check_state_get(obj);
-   elm_object_disabled_set(_slider_alpha, !ui->proc.transparant);
+   ui->proc.transparent = elm_check_state_get(obj);
+   elm_object_disabled_set(_slider_alpha, !ui->proc.transparent);
 
    evisum_ui_config_save(ui);
 }
@@ -599,10 +599,10 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
    evas_object_size_hint_align_set(chk, FILL, FILL);
    elm_object_text_set(chk, _("Alpha"));
-   elm_check_state_set(chk, ui->proc.transparant);
+   elm_check_state_set(chk, ui->proc.transparent);
    evas_object_show(chk);
    evas_object_smart_callback_add(chk, "changed",
-                                  _main_menu_transparant_changed_cb, ui);
+                                  _main_menu_transparent_changed_cb, ui);
    elm_box_pack_end(hbx, chk);
 
    _slider_alpha = sli = elm_slider_add(o);
@@ -614,7 +614,7 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_NONE);
    elm_slider_value_set(sli, ui->proc.alpha);
    evas_object_size_hint_align_set(sli, FILL, FILL);
-   elm_object_disabled_set(sli, !ui->proc.transparant);
+   elm_object_disabled_set(sli, !ui->proc.transparent);
    evas_object_smart_callback_add(sli, "slider,drag,stop",
                                   _main_menu_slider_alpha_changed_cb, ui);
    evas_object_smart_callback_add(sli, "changed",

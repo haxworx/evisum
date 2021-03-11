@@ -28,7 +28,7 @@ typedef struct _Evisum_Config
       unsigned int  fields;
 
       Eina_Bool     show_scroller;
-      Eina_Bool     transparant;
+      Eina_Bool     transparent;
       unsigned char alpha;
    } proc;
 

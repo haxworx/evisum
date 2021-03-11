@@ -40,7 +40,7 @@ typedef struct _Evisum_Ui
       Eina_Bool     show_user;
 
       unsigned char alpha;
-      Eina_Bool     transparant;
+      Eina_Bool     transparent;
       Eina_Bool     show_scroller;
    } proc;
 
