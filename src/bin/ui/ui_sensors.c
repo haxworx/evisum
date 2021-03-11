@@ -14,8 +14,9 @@ typedef struct
    Evas_Object            *thermal_pb;
    Evas_Object            *power_ic;
    Eina_Bool               skip_wait;
-   Ui                     *ui;
-} Ui_Data;
+
+   Evisum_Ui              *ui;
+} Data;
 
 typedef struct
 {
@@ -27,7 +28,7 @@ typedef struct
    power_t   power;
    double    thermal_temp;
    Eina_Bool thermal_valid;
-} Data;
+} Sensor_Data;
 
 static void
 _name_set(char *buf, size_t len, sensor_t *s)
@@ -53,7 +54,7 @@ _sort_cb(const void *p1, const void *p2)
 }
 
 static void
-_sensors_refresh(Ui_Data *pd)
+_sensors_refresh(Data *pd)
 {
    sensor_t **sensors;
    int n;
@@ -74,9 +75,9 @@ _sensors_refresh(Ui_Data *pd)
 static void
 _sensors_update(void *data, Ecore_Thread *thread)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
-   Data *msg = malloc(sizeof(Data));
+   Sensor_Data *msg = malloc(sizeof(Data));
    if (!msg) return;
 
    while (!ecore_thread_check(thread))
@@ -106,8 +107,8 @@ _sensors_update(void *data, Ecore_Thread *thread)
 static void
 _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 {
-   Data *msg;
-   Ui_Data *pd;
+   Sensor_Data *msg;
+   Data *pd;
    sensor_t *s;
    Eina_List *l;
    int i = 0;
@@ -160,7 +161,7 @@ _item_del(void *data, Evas_Object *obj)
 static void
 _glist_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
 {
-   Ui_Data *pd;
+   Data *pd;
    Elm_Object_Item *it;
    sensor_t *s;
    char buf[64];
@@ -193,7 +194,7 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Ui_Data *pd;
+   Data *pd;
 
    pd = data;
    ev = event_info;
@@ -208,8 +209,8 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -222,8 +223,8 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Bat *bat;
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    evisum_ui_config_save(ui);
    ecore_thread_cancel(pd->thread);
@@ -239,14 +240,14 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    evas_object_geometry_get(obj, NULL, NULL, &ui->sensors.width, &ui->sensors.height);
 }
 
 void
-ui_sensors_win_add(Ui *ui)
+ui_sensors_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *content, *tbl, *bx, *fr;
    Evas_Object *glist, *pb;
@@ -260,7 +261,7 @@ ui_sensors_win_add(Ui *ui)
         return;
      }
 
-   Ui_Data *pd = calloc(1, sizeof(Ui_Data));
+   Data *pd = calloc(1, sizeof(Data));
    if (!pd) return;
    pd->ui = ui;
 
@@ -268,8 +269,6 @@ ui_sensors_win_add(Ui *ui)
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win,
-                                   evisum_ui_backgrounds_enabled_get());
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);

@@ -14,8 +14,8 @@ typedef struct  {
    Evas_Object  *swap;
    Evas_Object  *video[MEM_VIDEO_CARD_MAX];
 
-   Ui           *ui;
-} Ui_Data;
+   Evisum_Ui    *ui;
+} Data;
 
 static Evas_Object *
 _label_mem(Evas_Object *parent, const char *text)
@@ -64,7 +64,7 @@ _mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
 }
 
 static void
-_update_widgets(Ui_Data *pd, meminfo_t *memory)
+_update_widgets(Data *pd, meminfo_t *memory)
 {
    Evas_Object *pb;
    double ratio, value;
@@ -139,7 +139,7 @@ _update_widgets(Ui_Data *pd, meminfo_t *memory)
 static void
 _mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
 {
-   Ui_Data *pd;
+   Data *pd;
    meminfo_t *memory;
 
    pd = data;
@@ -154,7 +154,7 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Ui_Data *pd;
+   Data *pd;
 
    pd = data;
    ev = event_info;
@@ -169,8 +169,8 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -182,8 +182,8 @@ static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
             void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-   Ui_Data *pd = data;
+   Evisum_Ui *ui;
+   Data *pd = data;
 
    ui = pd->ui;
 
@@ -198,14 +198,14 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    evas_object_geometry_get(obj, NULL, NULL, &ui->mem.width, &ui->mem.height);
 }
 
 void
-ui_mem_win_add(Ui *ui)
+ui_mem_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *lb, *bx, *tb, *pb;
    Evas_Object *fr;
@@ -218,7 +218,7 @@ ui_mem_win_add(Ui *ui)
         return;
      }
 
-   Ui_Data *pd = calloc(1, sizeof(Ui_Data));
+   Data *pd = calloc(1, sizeof(Data));
    if (!pd) return;
    pd->ui = ui;
 
@@ -230,8 +230,6 @@ ui_mem_win_add(Ui *ui)
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win,
-                                   evisum_ui_backgrounds_enabled_get());
 
    bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, EXPAND, 0);

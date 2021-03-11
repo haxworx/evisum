@@ -1,11 +1,10 @@
 #include "ui_util.h"
-#include "ui.h"
+#include "evisum_ui.h"
 #include <Elementary.h>
 #include "config.h"
 
 #define ARRAY_SIZE(n) sizeof(n) / sizeof(n[0])
 
-Eina_Bool _backgrounds_enabled = 0;
 #if !defined(__OpenBSD__)
 static
 #endif
@@ -273,7 +272,7 @@ evisum_ui_textblock_font_size_get(Evas_Object *tb)
 }
 
 typedef struct {
-   Ui             *ui;
+   Evisum_Ui      *ui;
    Evas_Object    *obj;
    Evas_Object    *win;
    Evas_Object    *bg;
@@ -288,7 +287,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Animate_Data *ad;
-   Ui *ui;
+   Evisum_Ui *ui;
 
    ad = data;
    ui = ad->ui;
@@ -307,7 +306,7 @@ _btn_close_cb(void *data EINA_UNUSED, Evas_Object *obj,
               void *event_info EINA_UNUSED)
 {
    Animate_Data *ad;
-   Ui *ui;
+   Evisum_Ui *ui;
 
    ad = data;
    ui = ad->ui;
@@ -388,7 +387,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 void
 evisum_about_window_show(void *data)
 {
-   Ui *ui;
+   Evisum_Ui *ui;
    Animate_Data *about;
    Evas_Object *win, *bg, *tb, *version, *lb, *btn, *im;
    Evas_Object *hbx, *rec, *pad, *br;
@@ -577,30 +576,6 @@ evisum_image_path_get(const char *name)
 }
 
 Evas_Object *
-evisum_ui_background_random_add(Evas_Object *win, Eina_Bool enabled)
-{
-   Evas_Object *bg;
-   int i;
-   char *images[] = { "sky_01", "sky_02", "sky_03", "sky_04"  };
-
-   if (!enabled) return NULL;
-
-   srand(time(NULL));
-
-   i = rand() % ARRAY_SIZE(images);
-
-   bg = elm_bg_add(win);
-   elm_bg_file_set(bg, evisum_image_path_get(images[i]), NULL);
-   evas_object_size_hint_align_set(bg, FILL, FILL);
-   evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
-   evas_object_data_set(win, "bg", bg);
-   elm_win_resize_object_add(win, bg);
-   evas_object_show(bg);
-
-   return bg;
-}
-
-Evas_Object *
 evisum_ui_background_add(Evas_Object *win)
 {
    Evas_Object *bg;
@@ -612,18 +587,6 @@ evisum_ui_background_add(Evas_Object *win)
    evas_object_show(bg);
 
    return bg;
-}
-
-Eina_Bool
-evisum_ui_backgrounds_enabled_get(void)
-{
-   return _backgrounds_enabled;
-}
-
-void
-evisum_ui_backgrounds_enabled_set(Eina_Bool enabled)
-{
-   _backgrounds_enabled = enabled;
 }
 
 void

@@ -17,14 +17,14 @@ typedef struct
    Eina_Bool        sort_reverse;
    Eina_Bool        skip_wait;
 
-   Ui              *ui;
-} Ui_Data;
+   Evisum_Ui       *ui;
+} Data;
 
 static void
 _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
+   Data *pd;
    Evas_Object *o;
    Eina_List *contents = NULL;
 
@@ -102,7 +102,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Evas_Object *lb, *r, *pb;
    Evas_Coord w, ow;
-   Ui_Data *pd;
+   Data *pd;
    File_System *inf = data;
 
    if (!inf) return NULL;
@@ -218,7 +218,7 @@ _glist_ensure_n_items(Evas_Object *glist, unsigned int items)
 static void
 _disks_poll(void *data, Ecore_Thread *thread)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    while (!ecore_thread_check(thread))
      {
@@ -242,7 +242,7 @@ _disks_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 {
    Elm_Object_Item *it;
    File_System *fs;
-   Ui_Data *pd;
+   Data *pd;
    Eina_List *mounted;
 
    pd = data;
@@ -267,7 +267,7 @@ _disks_poll_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 }
 
 static void
-_disks_poll_update(Ui_Data *pd)
+_disks_poll_update(Data *pd)
 {
    pd->skip_wait = 1;
 }
@@ -276,7 +276,7 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Ui_Data *pd;
+   Data *pd;
 
    pd = data;
    ev = event_info;
@@ -291,8 +291,8 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -304,8 +304,8 @@ static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -437,7 +437,7 @@ static void
 _btn_device_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
                        void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (pd->sort_cb == _sort_by_device)
      pd->sort_reverse = !pd->sort_reverse;
@@ -451,7 +451,7 @@ static void
 _btn_mount_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
                       void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (pd->sort_cb == _sort_by_mount)
      pd->sort_reverse = !pd->sort_reverse;
@@ -465,7 +465,7 @@ static void
 _btn_fs_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
                    void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (pd->sort_cb == _sort_by_type)
      pd->sort_reverse = !pd->sort_reverse;
@@ -479,7 +479,7 @@ static void
 _btn_used_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (pd->sort_cb == _sort_by_used)
      pd->sort_reverse = !pd->sort_reverse;
@@ -493,7 +493,7 @@ static void
 _btn_free_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (pd->sort_cb == _sort_by_free)
      pd->sort_reverse = !pd->sort_reverse;
@@ -507,7 +507,7 @@ static void
 _btn_total_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
                       void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (pd->sort_cb == _sort_by_total)
      pd->sort_reverse = !pd->sort_reverse;
@@ -521,7 +521,7 @@ static void
 _btn_usage_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
                       void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (pd->sort_cb == _sort_by_cpu_usage)
      pd->sort_reverse = !pd->sort_reverse;
@@ -534,8 +534,8 @@ _btn_usage_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    _disks_poll_update(pd);
    evas_object_geometry_get(obj, NULL, NULL, &ui->disk.width, &ui->disk.height);
@@ -551,7 +551,7 @@ _btn_min_size(Evas_Object *parent)
 }
 
 void
-ui_disk_win_add(Ui *ui)
+ui_disk_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *tb, *scr;
    Evas_Object *glist, *rec, *btn;
@@ -567,10 +567,8 @@ ui_disk_win_add(Ui *ui)
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evisum_ui_background_random_add(win,
-                                   evisum_ui_backgrounds_enabled_get());
 
-   Ui_Data *pd = calloc(1, sizeof(Ui_Data));
+   Data *pd = calloc(1, sizeof(Data));
    pd->ui = ui;
    pd->skip_wait = 1;
 

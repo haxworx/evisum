@@ -6,7 +6,7 @@
 #include <Ecore.h>
 #include <Ecore_Con.h>
 #include "evisum_server.h"
-#include "src/bin/ui/ui.h"
+#include "src/bin/ui/evisum_ui.h"
 
 #define LISTEN_SOCKET_NAME "evisum_server"
 #define WANTED "bonjour monde"
@@ -23,7 +23,7 @@ _evisum_server_server_client_connect_cb(void *data EINA_UNUSED, int type EINA_UN
 {
    Ecore_Con_Event_Client_Data *ev;
    Evisum_Action *action;
-   Ui *ui;
+   Evisum_Ui *ui;
    int *pid;
 
    ev = event;
@@ -54,7 +54,7 @@ evisum_server_shutdown(void)
 Eina_Bool
 evisum_server_init(void *data)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
    Evisum_Server *server = calloc(1, sizeof(Evisum_Server));
    if (!server) return 0;
 

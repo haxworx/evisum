@@ -1,5 +1,5 @@
-#ifndef __UI_H__
-#define __UI_H__
+#ifndef __EVISUM_UI_H__
+#define __EVISUM_UI_H__
 
 #include <Elementary.h>
 #include "gettext.h"
@@ -16,7 +16,7 @@
 #define EVISUM_WIN_WIDTH  800
 #define EVISUM_WIN_HEIGHT 600
 
-typedef struct Ui
+typedef struct _Evisum_Ui
 {
    pid_t                program_pid;
    Ecore_Event_Handler *handler_sig;
@@ -91,30 +91,30 @@ typedef struct Ui
       int           x, y;
       Eina_Bool     restart;
    } network;
-} Ui;
+} Evisum_Ui;
 
-Ui *
+Evisum_Ui *
 evisum_ui_init(void);
 
 void
-evisum_ui_shutdown(Ui *ui);
+evisum_ui_shutdown(Evisum_Ui *ui);
 
 Evas_Object *
-evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj);
+evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj);
 
 void
-evisum_ui_activate(Ui *ui, Evisum_Action action, int pid);
+evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid);
 
 const char *
-evisum_ui_icon_cache_find(Ui *ui, const char *cmd);
+evisum_ui_icon_cache_find(Evisum_Ui *ui, const char *cmd);
 
 void
-evisum_ui_config_load(Ui *ui);
+evisum_ui_config_load(Evisum_Ui *ui);
 
 void
-evisum_ui_config_save(Ui *ui);
+evisum_ui_config_save(Evisum_Ui *ui);
 
 void
-evisum_ui_restart(Ui *ui);
+evisum_ui_restart(Evisum_Ui *ui);
 
 #endif

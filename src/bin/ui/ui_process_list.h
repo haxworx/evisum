@@ -1,7 +1,7 @@
 #ifndef __UI_PROCESS_LIST_H__
 #define __UI_PROCESS_LIST_H__
 
-#include "ui.h"
+#include "evisum_ui.h"
 
 typedef enum
 {
@@ -45,6 +45,6 @@ typedef enum
 } Proc_Field;
 
 void
-ui_process_list_win_add(Ui *ui);
+ui_process_list_win_add(Evisum_Ui *ui);
 
 #endif

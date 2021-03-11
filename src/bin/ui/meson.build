@@ -1,7 +1,7 @@
 src += files([
    'gettext.h',
-   'ui.h',
-   'ui.c',
+   'evisum_ui.h',
+   'evisum_ui.c',
    'ui_util.h',
    'ui_util.c',
    'ui_cache.c',

@@ -7,12 +7,12 @@
 #include "config.h"
 #include "evisum_config.h"
 #include "evisum_server.h"
-#include "ui/ui.h"
+#include "ui/evisum_ui.h"
 
 static Eina_Bool
 _shutdown_cb(void *data, int type, void *event EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    if (ui->cpu.win) evas_object_del(ui->cpu.win);
    if (ui->mem.win) evas_object_del(ui->mem.win);
@@ -24,7 +24,7 @@ _shutdown_cb(void *data, int type, void *event EINA_UNUSED)
 }
 
 static void
-_signals(Ui *ui)
+_signals(Evisum_Ui *ui)
 {
    ui->handler_sig = ecore_event_handler_add(ECORE_EVENT_SIGNAL_EXIT, _shutdown_cb, ui);
 }
@@ -32,7 +32,7 @@ _signals(Ui *ui)
 int
 elm_main(int argc, char **argv)
 {
-   Ui *ui;
+   Evisum_Ui *ui;
    int i, pid = -1;
    Evisum_Action action = EVISUM_ACTION_DEFAULT;
 

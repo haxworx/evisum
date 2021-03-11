@@ -7,8 +7,9 @@ typedef struct
    Evas_Object           *win;
    Evas_Object           *glist;
    Elm_Genlist_Item_Class itc, itc2;
-   Ui                    *ui;
-} Ui_Data;
+
+   Evisum_Ui             *ui;
+} Data;
 
 typedef struct
 {
@@ -29,7 +30,7 @@ typedef struct
 } Network_Interface;
 
 static void
-_interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Ui_Data *pd)
+_interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Data *pd)
 {
    Eina_List *l;
    Network_Interface *iface;
@@ -54,7 +55,7 @@ _interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Ui_Data *pd)
 static void
 _network_update(void *data, Ecore_Thread *thread)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
    Eina_List *interfaces = NULL;
    Network_Interface *iface;
 
@@ -215,7 +216,7 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA
 {
    Eina_List *interfaces;
    Network_Interface *iface;
-   Ui_Data *pd;
+   Data *pd;
    Evas_Object *obj;
    Eina_List *l, *l2;
    char *s;
@@ -275,7 +276,7 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Ui_Data *pd;
+   Data *pd;
 
    pd = data;
    ev = event_info;
@@ -290,8 +291,8 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -303,8 +304,8 @@ static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    evisum_ui_config_save(ui);
    ecore_thread_cancel(pd->thread);
@@ -316,14 +317,14 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    evas_object_geometry_get(obj, NULL, NULL, &ui->network.width, &ui->network.height);
 }
 
 void
-ui_network_win_add(Ui *ui)
+ui_network_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *bx, *glist;;
    Elm_Genlist_Item_Class *itc;
@@ -334,7 +335,7 @@ ui_network_win_add(Ui *ui)
         return;
      }
 
-   Ui_Data *pd = calloc(1, sizeof(Ui_Data));
+   Data *pd = calloc(1, sizeof(Data));
    if (!pd) return;
    pd->ui = ui;
 

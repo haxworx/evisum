@@ -5,7 +5,7 @@
 
 #include "system/filesystems.h"
 
-#include "ui.h"
+#include "evisum_ui.h"
 #include "ui/ui_cpu.h"
 #include "ui/ui_memory.h"
 #include "ui/ui_disk.h"
@@ -20,14 +20,14 @@ int EVISUM_EVENT_CONFIG_CHANGED;
 static Evas_Object *_slider_alpha = NULL;
 
 void
-evisum_ui_config_save(Ui *ui)
+evisum_ui_config_save(Evisum_Ui *ui)
 {
    Eina_Bool notify = 0;
 
    if (!_evisum_config) return;
 
    _evisum_config->effects = 0;
-   _evisum_config->backgrounds = evisum_ui_backgrounds_enabled_get();
+   _evisum_config->backgrounds = 0;
 
    if (ui->proc.win)
      {
@@ -111,13 +111,11 @@ evisum_ui_config_save(Ui *ui)
 }
 
 void
-evisum_ui_config_load(Ui *ui)
+evisum_ui_config_load(Evisum_Ui *ui)
 {
    _evisum_config = NULL;
 
    _evisum_config = config_load();
-
-   evisum_ui_backgrounds_enabled_set(_evisum_config->backgrounds);
 
    ui->proc.sort_type    = _evisum_config->proc.sort_type;
    ui->proc.sort_reverse = _evisum_config->proc.sort_reverse;
@@ -168,7 +166,7 @@ evisum_ui_config_load(Ui *ui)
 }
 
 void
-evisum_ui_restart(Ui *ui)
+evisum_ui_restart(Evisum_Ui *ui)
 {
    if (ui->proc.win) ui->proc.restart = 1;
    if (ui->cpu.win) ui->cpu.restart = 1;
@@ -187,7 +185,7 @@ static void
 _about_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                   void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    evisum_about_window_show(ui);
 }
@@ -196,7 +194,7 @@ static void
 _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                                  void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui_mem_win_add(ui);
 }
@@ -205,7 +203,7 @@ static void
 _menu_network_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                                   void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui_network_win_add(ui);
 }
@@ -214,7 +212,7 @@ static void
 _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                                void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui_disk_win_add(ui);
 }
@@ -223,7 +221,7 @@ static void
 _menu_sensors_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                                void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui_sensors_win_add(ui);
 }
@@ -232,7 +230,7 @@ static void
 _menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                               void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui_cpu_win_add(ui);
 }
@@ -241,7 +239,7 @@ static void
 _menu_process_view_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                               void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui_process_list_win_add(ui);
 }
@@ -250,18 +248,15 @@ static void
 _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-   Eina_Bool state;
+   Evisum_Ui *ui;
 
    ui = data;
 
-   state = !evisum_ui_backgrounds_enabled_get();
-
-   evisum_ui_backgrounds_enabled_set(state);
-
+#if 0
    evisum_ui_config_save(ui);
 
    evisum_ui_restart(ui);
+#endif
 }
 
 static Evas_Object *
@@ -290,7 +285,7 @@ static void
 _main_menu_slider_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                              void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui->proc.poll_delay = elm_slider_value_get(obj) + 0.5;
 
@@ -306,7 +301,7 @@ static void
 _main_menu_slider_alpha_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                              void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui->proc.alpha = elm_slider_value_get(obj) + 0.5;
 
@@ -317,7 +312,7 @@ static void
 _main_menu_transparant_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                                     void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    if (!ui->proc.alpha) return;
 
@@ -331,7 +326,7 @@ static void
 _main_menu_show_threads_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                                    void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui->proc.show_kthreads = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
@@ -341,7 +336,7 @@ static void
 _main_menu_show_scroller_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                                     void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui->proc.show_scroller = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
@@ -351,7 +346,7 @@ static void
 _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                                 void *event_info EINA_UNUSED)
 {
-   Ui *ui = data;
+   Evisum_Ui *ui = data;
 
    ui->proc.show_user = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
@@ -388,7 +383,7 @@ _main_menu_focus_timer_cb(void *data)
 }
 
 Evas_Object *
-evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
+evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
 {
    Evas_Object *o, *obx, *bx, *tb, *hbx, *sep, *fr, *sli;
    Evas_Object *it_focus, *btn, *chk, *rec;
@@ -636,7 +631,7 @@ evisum_ui_main_menu_create(Ui *ui, Evas_Object *parent, Evas_Object *obj)
 
 // Any OS specific feature checks.
 static void
-_ui_init_system_probe(Ui *ui)
+_ui_init_system_probe(Evisum_Ui *ui)
 {
 #if defined(__OpenBSD__)
    ui->proc.has_kthreads = 0;
@@ -649,7 +644,7 @@ _ui_init_system_probe(Ui *ui)
 }
 
 void
-evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
+evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid)
 {
    Eina_Bool restart = 0;
 
@@ -725,7 +720,7 @@ evisum_ui_activate(Ui *ui, Evisum_Action action, int pid)
 }
 
 void
-evisum_ui_shutdown(Ui *ui)
+evisum_ui_shutdown(Evisum_Ui *ui)
 {
    evisum_icon_cache_shutdown();
    evisum_ui_config_save(ui);
@@ -733,10 +728,10 @@ evisum_ui_shutdown(Ui *ui)
    free(ui);
 }
 
-Ui *
+Evisum_Ui *
 evisum_ui_init(void)
 {
-   Ui *ui = calloc(1, sizeof(Ui));
+   Evisum_Ui *ui = calloc(1, sizeof(Evisum_Ui));
    if (!ui) return NULL;
 
    ui->proc.poll_delay = 3;
@@ -747,7 +742,6 @@ evisum_ui_init(void)
 
    EVISUM_EVENT_CONFIG_CHANGED = ecore_event_type_new();
 
-   evisum_ui_backgrounds_enabled_set(0);
    evisum_ui_config_load(ui);
 
    evisum_icon_cache_init();

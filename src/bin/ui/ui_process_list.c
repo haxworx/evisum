@@ -1,7 +1,7 @@
 #include "config.h"
 #include "evisum_config.h"
 
-#include "ui.h"
+#include "evisum_ui.h"
 #include "ui/ui_process_list.h"
 #include "ui/ui_process_view.h"
 
@@ -32,8 +32,6 @@ typedef struct
    Sorter                 sorters[PROC_SORT_BY_MAX];
    pid_t                  selected_pid;
    int                    poll_count;
-
-   Ui                    *ui;
 
    Ecore_Timer           *resize_timer;
    Evas_Object           *win;
@@ -91,9 +89,12 @@ typedef struct
       int                  zombie;
       int                  dsleep;
    } summary;
-} Ui_Data;
+ 
+   Evisum_Ui              *ui;
 
-static Ui_Data *_pd = NULL;
+} Data;
+
+static Data *_pd = NULL;
 
 typedef struct
 {
@@ -153,7 +154,7 @@ _field_enabled(Proc_Field id)
 }
 
 static void
-_content_reset(Ui_Data *pd)
+_content_reset(Data *pd)
 {
    Evas_Object *rec;
    int j = 0;
@@ -186,13 +187,13 @@ _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
 {
    Field *f = data;
    f->enabled = !f->enabled;
-   Ui *ui = _pd->ui;
+   Evisum_Ui *ui = _pd->ui;
    _content_reset(_pd);
    ui->proc.fields ^= (1 << f->id);
 }
 
 static Evas_Object *
-_field_menu_create(Ui_Data *pd, Evas_Object *parent)
+_field_menu_create(Data *pd, Evas_Object *parent)
 {
    Evas_Object *o, *fr, *bx, *ck;
 
@@ -236,7 +237,7 @@ _field_mouse_up_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
    Evas_Event_Mouse_Up *ev;
    Evas_Object *o;
    Evas_Coord ox, oy, ow, oh;
-   Ui_Data *pd;
+   Data *pd;
 
    ev = event_info;
    pd = data;
@@ -255,7 +256,7 @@ _field_mouse_up_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
 }
 
 static void
-_fields_init(Ui_Data *pd)
+_fields_init(Data *pd)
 {
    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
      {
@@ -280,7 +281,7 @@ _item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Evas_Object *o;
-   Ui_Data *pd;
+   Data *pd;
    Eina_List *contents = NULL;
 
    pd = data;
@@ -461,7 +462,7 @@ _run_time_set(char *buf, size_t n, int64_t secs)
 }
 
 static void
-_field_adjust(Ui_Data *pd, Proc_Field id, Evas_Object *obj, Evas_Coord w)
+_field_adjust(Data *pd, Proc_Field id, Evas_Object *obj, Evas_Coord w)
 {
    Evas_Object *rec = evas_object_data_get(obj, "rec");
    if (id != pd->field_max)
@@ -483,7 +484,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    Evas_Object *rec, *lb, *o, *hbx, *pb;
    char buf[128];
    Evas_Coord w, ow;
-   Ui_Data *pd = _pd;
+   Data *pd = _pd;
 
    proc = (void *) data;
 
@@ -720,7 +721,7 @@ _glist_ensure_n_items(Evas_Object *glist, unsigned int items,
 static Eina_Bool
 _bring_in(void *data)
 {
-   Ui_Data *pd;
+   Data *pd;
    int h_page, v_page;
 
    pd = data;
@@ -734,7 +735,7 @@ _bring_in(void *data)
 }
 
 static void
-_summary_reset(Ui_Data *pd)
+_summary_reset(Data *pd)
 {
    pd->summary.total = pd->summary.running = pd->summary.sleeping = 0;
    pd->summary.stopped = pd->summary.idle  = pd->summary.zombie = 0;
@@ -742,7 +743,7 @@ _summary_reset(Ui_Data *pd)
 }
 
 static void
-_summary_update(Ui_Data *pd)
+_summary_update(Data *pd)
 {
    Eina_Strbuf *buf = eina_strbuf_new();
 
@@ -770,7 +771,7 @@ _summary_update(Ui_Data *pd)
 }
 
 static void
-_summary_total(Ui_Data *pd, Proc_Info *proc)
+_summary_total(Data *pd, Proc_Info *proc)
 {
    pd->summary.total++;
    if (!strcmp(proc->state, "running"))
@@ -790,9 +791,9 @@ _summary_total(Ui_Data *pd, Proc_Info *proc)
 }
 
 static Eina_List *
-_process_list_sort(Eina_List *list, Ui_Data *pd)
+_process_list_sort(Eina_List *list, Data *pd)
 {
-   Ui *ui;
+   Evisum_Ui *ui;
    Sorter s;
    ui = pd->ui;
 
@@ -832,11 +833,11 @@ _cpu_times_free_cb(void *data)
 }
 
 static Eina_List *
-_process_list_search_trim(Eina_List *list, Ui_Data *pd)
+_process_list_search_trim(Eina_List *list, Data *pd)
 {
    Eina_List *l, *l_next;
    Proc_Info *proc;
-   Ui *ui = pd->ui;
+   Evisum_Ui *ui = pd->ui;
 
    _summary_reset(pd);
 
@@ -879,10 +880,10 @@ _process_list_search_trim(Eina_List *list, Ui_Data *pd)
 }
 
 static Eina_List *
-_process_list_get(Ui_Data *pd)
+_process_list_get(Data *pd)
 {
    Eina_List *list;
-   Ui *ui;
+   Evisum_Ui *ui;
 
    ui = pd->ui;
 
@@ -900,9 +901,9 @@ _process_list_get(Ui_Data *pd)
 static void
 _process_list(void *data, Ecore_Thread *thread)
 {
-   Ui_Data *pd;
+   Data *pd;
    Eina_List *list;
-   Ui *ui;
+   Evisum_Ui *ui;
    Proc_Info *proc;
    int i, delay = 1;
 
@@ -938,7 +939,7 @@ static void
 _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                           void *msg EINA_UNUSED)
 {
-   Ui_Data *pd;
+   Data *pd;
    Eina_List *list;
    Proc_Info *proc;
    Elm_Object_Item *it;
@@ -995,7 +996,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 }
 
 static void
-_process_list_update(Ui_Data *pd)
+_process_list_update(Data *pd)
 {
    pd->skip_wait = 1;
 }
@@ -1015,9 +1016,9 @@ _btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse,
 }
 
 static void
-_btn_clicked_state_save(Ui_Data *pd, Evas_Object *btn)
+_btn_clicked_state_save(Data *pd, Evas_Object *btn)
 {
-   Ui *ui = pd->ui;
+   Evisum_Ui *ui = pd->ui;
 
    if (pd->fields_menu)
      {
@@ -1037,8 +1038,8 @@ static void
 _btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_CMD)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1050,8 +1051,8 @@ static void
 _btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_UID)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1063,8 +1064,8 @@ static void
 _btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_PID)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1076,8 +1077,8 @@ static void
 _btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                         void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_THREADS)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1089,8 +1090,8 @@ static void
 _btn_cpu_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_CPU)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1102,8 +1103,8 @@ static void
 _btn_pri_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_PRI)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1115,8 +1116,8 @@ static void
 _btn_nice_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_NICE)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1128,8 +1129,8 @@ static void
 _btn_files_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_FILES)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1141,8 +1142,8 @@ static void
 _btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_SIZE)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1154,8 +1155,8 @@ static void
 _btn_virt_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_VIRT)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1167,8 +1168,8 @@ static void
 _btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_RSS)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1180,8 +1181,8 @@ static void
 _btn_shared_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                        void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_SHARED)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1193,8 +1194,8 @@ static void
 _btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_STATE)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1206,8 +1207,8 @@ static void
 _btn_time_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_TIME)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1219,8 +1220,8 @@ static void
 _btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                           void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
-   Ui *ui = pd->ui;
+   Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    if (ui->proc.sort_type == PROC_SORT_BY_CPU_USAGE)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1232,7 +1233,7 @@ static void
 _item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj,
                         void *ev EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    evas_object_del(obj);
 
@@ -1243,7 +1244,7 @@ static void
 _item_menu_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
    kill(pd->selected_pid, SIGCONT);
 }
 
@@ -1251,7 +1252,7 @@ static void
 _item_menu_stop_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
    kill(pd->selected_pid, SIGSTOP);
 }
 
@@ -1259,7 +1260,7 @@ static void
 _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
    kill(pd->selected_pid, SIGKILL);
 }
 
@@ -1267,7 +1268,7 @@ static void
 _item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
    elm_menu_close(pd->menu);
    pd->menu = NULL;
 }
@@ -1278,7 +1279,7 @@ _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Proc_Info *proc;
    const char *terminal = "xterm";
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
@@ -1295,7 +1296,7 @@ _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui_Data *pd)
+_item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it, Data *pd)
 {
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("bug"),
                      _("Debug"), _item_menu_debug_cb, pd);
@@ -1305,7 +1306,7 @@ static void
 _item_menu_manual_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
@@ -1316,7 +1317,7 @@ static void
 _item_menu_threads_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
@@ -1327,7 +1328,7 @@ static void
 _item_menu_children_cb(void *data, Evas_Object *obj EINA_UNUSED,
                        void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
@@ -1338,7 +1339,7 @@ static void
 _item_menu_general_cb(void *data, Evas_Object *obj EINA_UNUSED,
                       void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    _item_menu_cancel_cb(pd, NULL, NULL);
 
@@ -1346,7 +1347,7 @@ _item_menu_general_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_item_menu_info_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui_Data *pd)
+_item_menu_info_add(Evas_Object *menu, Elm_Object_Item *menu_it, Data *pd)
 {
    elm_menu_item_add(menu, menu_it, evisum_icon_path_get("info"),
                      _("General"), _item_menu_general_cb, pd);
@@ -1359,7 +1360,7 @@ _item_menu_info_add(Evas_Object *menu, Elm_Object_Item *menu_it, Ui_Data *pd)
 }
 
 static Evas_Object *
-_item_menu_create(Ui_Data *pd, Proc_Info *proc)
+_item_menu_create(Data *pd, Proc_Info *proc)
 {
    Elm_Object_Item *menu_it, *menu_it2;
    Evas_Object *menu;
@@ -1415,7 +1416,7 @@ _item_pid_secondary_clicked_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
 {
    Evas_Object *menu;
    Evas_Event_Mouse_Up *ev;
-   Ui_Data *pd;
+   Data *pd;
    Elm_Object_Item *it;
    Proc_Info *proc;
 
@@ -1440,7 +1441,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Elm_Object_Item *it;
    Proc_Info *proc;
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    it = event_info;
 
@@ -1457,7 +1458,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 static Eina_Bool
 _main_menu_timer_cb(void *data)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
    evas_object_del(pd->main_menu);
    pd->main_menu_timer = NULL;
    pd->main_menu = NULL;
@@ -1469,7 +1470,7 @@ static void
 _main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
                         void *ev EINA_UNUSED)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    elm_ctxpopup_dismiss(pd->main_menu);
    if (pd->main_menu_timer)
@@ -1505,8 +1506,8 @@ static void
 _btn_menu_clicked_cb(void *data, Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -1518,11 +1519,11 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
 }
 
 static Evas_Object *
-_content_add(Ui_Data *pd, Evas_Object *parent)
+_content_add(Data *pd, Evas_Object *parent)
 {
    Evas_Object *tb, *btn, *glist;
    Evas_Object *fr, *lb;
-   Ui *ui = pd->ui;
+   Evisum_Ui *ui = pd->ui;
 
    tb = elm_table_add(parent);
    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
@@ -1772,7 +1773,7 @@ _content_add(Ui_Data *pd, Evas_Object *parent)
 static Eina_Bool
 _search_empty_cb(void *data)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    if (!pd->search.len)
      {
@@ -1796,7 +1797,7 @@ _search_empty_cb(void *data)
 }
 
 static void
-_search_clear(Ui_Data *pd)
+_search_clear(Data *pd)
 {
    if (pd->search.text)
      free(pd->search.text);
@@ -1809,7 +1810,7 @@ _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
    const char *text;
-   Ui_Data *pd;
+   Data *pd;
 
    pd = data;
    ev = event_info;
@@ -1830,7 +1831,7 @@ _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_search_add(Ui_Data *pd)
+_search_add(Data *pd)
 {
    Evas_Object *tb, *fr, *rec, *entry;
 
@@ -1864,7 +1865,7 @@ _search_add(Ui_Data *pd)
 }
 
 static void
-_win_key_down_search(Ui_Data *pd, Evas_Event_Key_Down *ev)
+_win_key_down_search(Data *pd, Evas_Event_Key_Down *ev)
 {
    Evas_Coord w, h;
 
@@ -1902,7 +1903,7 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Ui_Data *pd;
+   Data *pd;
    Evas_Coord x, y, w, h;
 
    pd = data;
@@ -1933,7 +1934,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 static Eina_Bool
 _resize_cb(void *data)
 {
-   Ui_Data *pd = data;
+   Data *pd = data;
 
    pd->skip_wait = 0;
    pd->resize_timer = NULL;
@@ -1944,8 +1945,8 @@ _resize_cb(void *data)
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -1967,10 +1968,10 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_win_alpha_set(Ui_Data *pd)
+_win_alpha_set(Data *pd)
 {
    Evas_Object *bg, *win;
-   Ui *ui;
+   Evisum_Ui *ui;
    int r, g, b, a;
    double fade;
 
@@ -2010,8 +2011,8 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
                           void *event EINA_UNUSED)
 {
    Eina_Iterator *it;
-   Ui *ui;
-   Ui_Data *pd = data;
+   Evisum_Ui *ui;
+   Data *pd = data;
    void *d = NULL;
 
    ui = pd->ui;
@@ -2039,8 +2040,8 @@ static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
              void *event_info EINA_UNUSED)
 {
-   Ui_Data *pd;
-   Ui *ui;
+   Data *pd;
+   Evisum_Ui *ui;
 
    pd = data;
    ui = pd->ui;
@@ -2052,8 +2053,8 @@ static void
 _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
             Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Ui *ui;
-   Ui_Data *pd = data;
+   Evisum_Ui *ui;
+   Data *pd = data;
 
    ui = pd->ui;
 
@@ -2086,7 +2087,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
 }
 
 static void
-_init(Ui_Data *pd)
+_init(Data *pd)
 {
    pd->sorters[PROC_SORT_BY_NONE].sort_cb = proc_sort_by_pid;
    pd->sorters[PROC_SORT_BY_UID].sort_cb = proc_sort_by_uid;
@@ -2107,7 +2108,7 @@ _init(Ui_Data *pd)
 }
 
 void
-ui_process_list_win_add(Ui *ui)
+ui_process_list_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *icon;
    Evas_Object *tb;
@@ -2118,7 +2119,7 @@ ui_process_list_win_add(Ui *ui)
         return;
      }
 
-   Ui_Data *pd = _pd = calloc(1, sizeof(Ui_Data));
+   Data *pd = _pd = calloc(1, sizeof(Data));
    if (!pd) return;
 
    pd->selected_pid = -1;
