@@ -2,9 +2,11 @@
 Evisum 0.5.12
 =============
 
+  * Add a basic network overview tool.
   * Add some more fields to process view.
   * Process list fields selectable.
   * Fix leak.
+  * Load manpages in separate thread (no blocking with LARGE docs).
   * Fix search bug.
 
 =============
