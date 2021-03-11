@@ -3,12 +3,12 @@
 
 typedef struct
 {
-   Ecore_Thread          *thread;
-   Evas_Object           *win;
-   Evas_Object           *glist;
-   Elm_Genlist_Item_Class itc, itc2;
+   Ecore_Thread           *thread;
+   Evas_Object            *win;
+   Evas_Object            *glist;
+   Elm_Genlist_Item_Class *itc, *itc2;
 
-   Evisum_Ui             *ui;
+   Evisum_Ui              *ui;
 } Data;
 
 typedef struct
@@ -238,8 +238,8 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA
           }
 	else if (iface->is_new)
           {
-             iface->it = elm_genlist_item_append(pd->glist, &pd->itc2, iface->name, NULL, ELM_GENLIST_ITEM_GROUP, NULL, NULL);
-	     iface->it2 = elm_genlist_item_append(pd->glist, &pd->itc, iface, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
+             iface->it = elm_genlist_item_append(pd->glist, pd->itc2, iface->name, NULL, ELM_GENLIST_ITEM_GROUP, NULL, NULL);
+	     iface->it2 = elm_genlist_item_append(pd->glist, pd->itc, iface, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
           }
         else
           {
@@ -307,6 +307,9 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Data *pd = data;
    Evisum_Ui *ui = pd->ui;
 
+   elm_genlist_item_class_free(pd->itc);
+   elm_genlist_item_class_free(pd->itc2);
+
    evisum_ui_config_save(ui);
    ecore_thread_cancel(pd->thread);
    ecore_thread_wait(pd->thread, 0.5);
@@ -361,7 +364,8 @@ ui_network_win_add(Evisum_Ui *ui)
    evas_object_show(glist);
    elm_box_pack_end(bx, glist);
 
-   itc = &pd->itc;
+   itc = elm_genlist_item_class_new();
+   pd->itc = itc;
    itc->item_style = "full";
    itc->func.text_get = NULL;
    itc->func.content_get = _iface_obj_add;
@@ -369,7 +373,8 @@ ui_network_win_add(Evisum_Ui *ui)
    itc->func.state_get = NULL;
    itc->func.del = NULL;
 
-   itc = &pd->itc2;
+   itc = elm_genlist_item_class_new();
+   pd->itc2 = itc;
    itc->item_style = "group_index";
    itc->func.text_get = _text_get;
    itc->func.content_get = NULL;
