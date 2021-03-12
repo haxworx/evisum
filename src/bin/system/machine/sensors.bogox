@@ -264,9 +264,9 @@ _power_battery_count_get(power_t *power)
              power->batteries[i] = calloc(1, sizeof(bat_t));
              power->batteries[i]->name = strdup(snsrdev.xname);
              power->batteries[i]->present = true;
-             batteries[i]->mibs[0] = mibs[0];
-             batteries[i]->mibs[1] = mibs[1];
-             batteries[i]->mibs[2] = mibs[2];
+             power->batteries[i]->mibs[0] = mibs[0];
+             power->batteries[i]->mibs[1] = mibs[1];
+             power->batteries[i]->mibs[2] = mibs[2];
           }
         if (!strcmp("acpiac0", snsrdev.xname))
           {
@@ -508,10 +508,6 @@ system_power_state_free(power_t *power)
      {
         if (power->batteries[i]->name)
           free(power->batteries[i]->name);
-#if defined(__OpenBSD__)
-        if (power->batteries[i]->mibs)
-          free(power->batteries[i]->mibs);
-#endif
         free(power->batteries[i]);
      }
    if (power->batteries)
