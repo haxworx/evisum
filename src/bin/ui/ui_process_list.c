@@ -177,6 +177,7 @@ _content_reset(Data *pd)
      }
    elm_table_pack(pd->tb_content, pd->glist, 0, 1, j, 1);
    elm_table_pack(pd->tb_content, pd->summary.fr, 0, 2, j, 1);
+   evas_object_show(pd->summary.fr);
    elm_genlist_clear(pd->glist);
    if (pd->cache)
      evisum_ui_item_cache_reset(pd->cache);
@@ -313,13 +314,12 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    evas_object_data_set(tb, text, lb);
    evas_object_size_hint_align_set(lb, FILL, FILL);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   evas_object_show(lb);
-
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_data_set(lb, "rec", rec);
 
    elm_table_pack(tb, rec, col, 0, 1, 1);
    elm_table_pack(tb, lb, col, 0, 1, 1);
+   evas_object_show(lb);
 
    return lb;
 }
@@ -339,17 +339,16 @@ _item_create(Evas_Object *obj)
    elm_box_horizontal_set(hbx, 1);
    evas_object_size_hint_align_set(hbx, 0.0, FILL);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
-   evas_object_show(hbx);
-
    ic = elm_icon_add(tb);
    evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
    evas_object_size_hint_align_set(ic, FILL, FILL);
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_size_hint_max_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
-   evas_object_show(ic);
    evas_object_data_set(tb, "icon", ic);
    elm_box_pack_end(hbx, ic);
    elm_table_pack(tb, hbx, i, 0, 1, 1);
+   evas_object_show(hbx);
+   evas_object_show(ic);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(4), 1);
@@ -363,8 +362,8 @@ _item_create(Evas_Object *obj)
    evas_object_size_hint_weight_set(lb, 0, EXPAND);
    evas_object_data_set(tb, "proc_cmd", lb);
    evas_object_data_set(lb, "hbx", hbx);
-   evas_object_show(lb);
    elm_box_pack_end(hbx, lb);
+   evas_object_show(lb);
 
    if (_field_enabled(PROC_FIELD_UID))
      {
@@ -1757,7 +1756,6 @@ _content_add(Data *pd, Evas_Object *parent)
    elm_object_style_set(fr, "pad_small");
    evas_object_size_hint_weight_set(fr, EXPAND, 0);
    evas_object_size_hint_align_set(fr, 0, FILL);
-   evas_object_show(fr);
 
    pd->summary.lb = lb = elm_label_add(fr);
    evas_object_size_hint_weight_set(lb, EXPAND, 0);
@@ -1847,7 +1845,6 @@ _search_add(Data *pd)
    elm_object_text_set(fr, _("Search"));
    evas_object_size_hint_weight_set(fr, 0, 0);
    evas_object_size_hint_align_set(fr, FILL, 0.5);
-   evas_object_show(fr);
 
    pd->search.entry = entry = elm_entry_add(fr);
    evas_object_size_hint_weight_set(entry, 0, 0);
@@ -1859,6 +1856,7 @@ _search_add(Data *pd)
    evas_object_show(entry);
    elm_object_content_set(fr, entry);
    elm_table_pack(tb, fr, 0, 0, 1, 1);
+   evas_object_show(fr);
 
    evas_object_event_callback_add(entry, EVAS_CALLBACK_KEY_DOWN,
                                   _search_key_down_cb, pd);

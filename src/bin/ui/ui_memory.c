@@ -24,7 +24,6 @@ _label_mem(Evas_Object *parent, const char *text)
    evas_object_size_hint_weight_set(lb, 0, EXPAND);
    evas_object_size_hint_align_set(lb, FILL, FILL);
    elm_object_text_set(lb, eina_slstr_printf("%s",text));
-   evas_object_show(lb);
 
    return lb;
 }
@@ -36,7 +35,6 @@ _progress_add(Evas_Object *parent)
    evas_object_size_hint_align_set(pb, FILL, FILL);
    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
    elm_progressbar_span_size_set(pb, 1.0);
-   evas_object_show(pb);
 
    return pb;
 }
@@ -256,26 +254,36 @@ ui_mem_win_add(Evisum_Ui *ui)
    pd->used = pb = _progress_add(tb);
    elm_table_pack(tb, lb, 1, 1, 1, 1);
    elm_table_pack(tb, pb, 2, 1, 1, 1);
+   evas_object_show(lb);
+   evas_object_show(pb);
 
    lb = _label_mem(tb, _("Cached"));
    pd->cached = pb = _progress_add(tb);
    elm_table_pack(tb, lb, 1, 2, 1, 1);
    elm_table_pack(tb, pb, 2, 2, 1, 1);
+   evas_object_show(lb);
+   evas_object_show(pb);
 
    lb = _label_mem(tb, _("Buffered"));
    pd->buffered = pb = _progress_add(tb);
    elm_table_pack(tb, lb, 1, 3, 1, 1);
    elm_table_pack(tb, pb, 2, 3, 1, 1);
+   evas_object_show(lb);
+   evas_object_show(pb);
 
    lb = _label_mem(tb, _("Shared"));
    pd->shared = pb = _progress_add(tb);
    elm_table_pack(tb, lb, 1, 4, 1, 1);
    elm_table_pack(tb, pb, 2, 4, 1, 1);
+   evas_object_show(lb);
+   evas_object_show(pb);
 
    lb = _label_mem(tb, _("Swapped"));
    pd->swap = pb = _progress_add(tb);
    elm_table_pack(tb, lb, 1, 5, 1, 1);
    elm_table_pack(tb, pb, 2, 5, 1, 1);
+   evas_object_show(lb);
+   evas_object_show(pb);
 
    for (i = 0; i < memory.video_count; i++)
      {
@@ -283,6 +291,8 @@ ui_mem_win_add(Evisum_Ui *ui)
         pd->video[i] = pb = _progress_add(tb);
         elm_table_pack(tb, lb, 1, 6 + i, 1, 1);
         elm_table_pack(tb, pb, 2, 6 + i, 1, 1);
+        evas_object_show(lb);
+        evas_object_show(pb);
      }
 
    if ((ui->mem.width > 0) && (ui->mem.height > 0))

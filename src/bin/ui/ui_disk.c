@@ -53,13 +53,13 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
 
    lb = elm_label_add(tb);
    evas_object_data_set(tb, text, lb);
-   evas_object_show(lb);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_data_set(lb, "rect", rec);
 
    elm_table_pack(tb, lb, col, 0, 1, 1);
    elm_table_pack(tb, rec, col, 0, 1, 1);
+   evas_object_show(lb);
 
    return lb;
 }
@@ -585,79 +585,77 @@ ui_disk_win_add(Evisum_Ui *ui)
    pd->btn_device = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
    elm_object_text_set(btn, _("device"));
    evas_object_smart_callback_add(btn, "clicked", _btn_device_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->btn_mount = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
    elm_object_text_set(btn, _("mount"));
    evas_object_smart_callback_add(btn, "clicked", _btn_mount_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->btn_fs = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
    elm_object_text_set(btn, _("type"));
    evas_object_smart_callback_add(btn, "clicked", _btn_fs_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->btn_total = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
    elm_object_text_set(btn, _("total"));
    evas_object_smart_callback_add(btn, "clicked", _btn_total_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    rec = _btn_min_size(btn);
    elm_table_pack(tb, rec, i, i, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->btn_used = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
    elm_object_text_set(btn, _("used"));
    evas_object_smart_callback_add(btn, "clicked", _btn_used_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    rec = _btn_min_size(btn);
    elm_table_pack(tb, rec, i, i, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->btn_free = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
    elm_object_text_set(btn, _("free"));
    evas_object_smart_callback_add(btn, "clicked", _btn_free_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    rec = _btn_min_size(btn);
    elm_table_pack(tb, rec, i, i, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->btn_usage = btn = elm_button_add(win);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
    elm_object_text_set(btn, _("usage"));
    evas_object_smart_callback_add(btn, "clicked", _btn_usage_clicked_cb, pd);
    _btn_icon_state_set(btn, 0);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    scr = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(scr, FILL, FILL);
    elm_scroller_policy_set(scr,
                            ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
-   evas_object_show(scr);
-
    pd->glist = glist = elm_genlist_add(win);
    elm_object_focus_allow_set(glist, 0);
    evas_object_data_set(glist, "private", pd);
@@ -668,6 +666,7 @@ ui_disk_win_add(Evisum_Ui *ui)
    elm_genlist_homogeneous_set(glist, 1);
    evas_object_show(glist);
    elm_object_content_set(scr, glist);
+   evas_object_show(scr);
 
    pd->cache = evisum_ui_item_cache_new(glist, _item_create, 10);
 

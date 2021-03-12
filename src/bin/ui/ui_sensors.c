@@ -288,7 +288,6 @@ ui_sensors_win_add(Evisum_Ui *ui)
         evas_object_size_hint_weight_set(fr, EXPAND, 0);
         evas_object_size_hint_align_set(fr, FILL, FILL);
         elm_object_text_set(fr, _("Power"));
-        evas_object_show(fr);
 
         bx = elm_box_add(win);
         evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
@@ -298,10 +297,11 @@ ui_sensors_win_add(Evisum_Ui *ui)
         tbl = elm_table_add(win);
         evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
         evas_object_size_hint_align_set(tbl, FILL, FILL);
-        evas_object_show(tbl);
         elm_box_pack_end(bx, tbl);
+        evas_object_show(tbl);
         elm_object_content_set(fr, bx);
         elm_box_pack_end(content, fr);
+        evas_object_show(fr);
      }
    for (i = 0; i < power.battery_count; i++)
      {
@@ -320,9 +320,9 @@ ui_sensors_win_add(Evisum_Ui *ui)
         pb = elm_progressbar_add(win);
         evas_object_size_hint_weight_set(pb, EXPAND, 0);
         evas_object_size_hint_align_set(pb, FILL, FILL);
-        evas_object_show(pb);
         bat->pb = pb;
         elm_table_pack(tbl, pb, 1, j++, 1, 1);
+        evas_object_show(pb);
 
         pd->batteries = eina_list_append(pd->batteries, bat);
      }
@@ -333,7 +333,6 @@ ui_sensors_win_add(Evisum_Ui *ui)
    evas_object_size_hint_weight_set(pb, EXPAND, 0);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    elm_progressbar_unit_format_set(pb, "%1.1f°C");
-   evas_object_show(pb);
 
    bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
@@ -347,19 +346,20 @@ ui_sensors_win_add(Evisum_Ui *ui)
    elm_genlist_multi_select_set(glist, 0);
    evas_object_smart_callback_add(glist, "selected", _glist_item_pressed_cb, pd);
    elm_object_focus_allow_set(glist, 0);
-   evas_object_show(glist);
 
    elm_box_pack_end(bx, glist);
+   evas_object_show(glist);
    elm_box_pack_end(bx, pb);
+   evas_object_show(pb);
 
    fr = elm_frame_add(win);
    elm_object_text_set(fr, _("Thermal"));
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
    evas_object_size_hint_align_set(fr, FILL, FILL);
-   evas_object_show(fr);
    elm_object_content_set(fr, bx);
 
    elm_box_pack_end(content, fr);
+   evas_object_show(fr);
 
    pd->itc = elm_genlist_item_class_new();
    pd->itc->item_style = "no_icon";
