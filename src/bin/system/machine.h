@@ -63,7 +63,7 @@ typedef struct
    uint8_t percent;
    bool    present;
 #if defined(__OpenBSD__)
-   int    *mibs;
+   int     mibs[5];
 #endif
 } bat_t;
 
@@ -73,7 +73,9 @@ typedef struct
    int      battery_count;
 
    bat_t  **batteries;
-   int      ac_mibs[5];
+#if defined(__OpenBSD__)
+   int      mibs[5];
+#endif
 } power_t;
 
 typedef struct

@@ -113,8 +113,8 @@ system_sensors_thermal_get(int *sensor_count)
         if (snsr.type != SENSOR_TEMP)
           continue;
 
-        void *tmp = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
-        sensors = tmp;
+        void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors = t;
         sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup(snsrdev.xname);
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
@@ -127,8 +127,8 @@ system_sensors_thermal_get(int *sensor_count)
 
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
-        void *tmp = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
-        sensors = tmp;
+        void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        sensors = t;
         sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
         sensor->name = strdup("hw.acpi.thermal.tz0.temperature");
         sensor->value = (float) (value -  2732) / 10;
@@ -142,8 +142,8 @@ system_sensors_thermal_get(int *sensor_count)
         const char *mibname = strsli_printf("dev.cpu.%d.temperature", i);
         if ((sysctlbyname(mibname, &value, &len, NULL, 0)) != -1)
           {
-             void *tmp = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
-             sensors = tmp;
+             void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+             sensors = t;
              sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
              sensor->name = strdup(mibname);
              sensor->value = (float) (value - 2732) / 10;
@@ -196,8 +196,8 @@ system_sensors_thermal_get(int *sensor_count)
                        continue;
                     }
 
-                  void *tmp = realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
-                  sensors = tmp;
+                  void *t = realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
+                  sensors = t;
                   sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
 
                   snprintf(buf, sizeof(buf), "%s/name", link);
@@ -257,33 +257,34 @@ _power_battery_count_get(power_t *power)
         if (!strncmp(snsrdev.xname, "acpibat", 7))
           {
              i = power->battery_count;
-             power->batteries = realloc(power->batteries, 1 +
-                                power->battery_count++ * sizeof(bat_t **));
+
+             void *t = realloc(power->batteries, 1 +
+                               power->battery_count++ * sizeof(bat_t **));
+             power->batteries = t;
              power->batteries[i] = calloc(1, sizeof(bat_t));
              power->batteries[i]->name = strdup(snsrdev.xname);
              power->batteries[i]->present = true;
-             power->batteries[i]->mibs = malloc(sizeof(int) * 5);
-
-             int *tmp = power->batteries[i]->mibs;
-             tmp[0] = mibs[0];
-             tmp[1] = mibs[1];
-             tmp[2] = mibs[2];
+             batteries[i]->mibs[0] = mibs[0];
+             batteries[i]->mibs[1] = mibs[1];
+             batteries[i]->mibs[2] = mibs[2];
           }
         if (!strcmp("acpiac0", snsrdev.xname))
           {
-             power->ac_mibs[0] = mibs[0];
-             power->ac_mibs[1] = mibs[1];
-             power->ac_mibs[2] = mibs[2];
+             power->mibs[0] = mibs[0];
+             power->mibs[1] = mibs[1];
+             power->mibs[2] = mibs[2];
           }
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
-   size_t len = sizeof(power->battery_count);
+   int n_units, fd;
 
-   if ((sysctlbyname("hw.acpi.battery.units", &power->battery_count, &len, NULL, 0))  < 0)
-     power->battery_count = 0;
-
-   if ((sysctlbyname("hw.acpi.acline", NULL, &len, NULL, 0)) != -1)
-     sysctlnametomib("hw.acpi.acline", power->ac_mibs, &len);
+   fd = open("/dev/acpi", O_RDONLY);
+   if (fd != -1)
+     {
+        if (ioctl(fd, ACPIIO_BATT_GET_UNITS, &n_units) != -1)
+          power->battery_count = n_units;
+        close(fd);
+     }
 
    power->batteries = malloc(power->battery_count * sizeof(bat_t **));
    for (int i = 0; i < power->battery_count; i++) {
@@ -305,8 +306,9 @@ _power_battery_count_get(power_t *power)
              if (!strncmp(type, "Battery", 7))
                {
                   id = power->battery_count;
-                  power->batteries = realloc(power->batteries, (1 +
-                                     power->battery_count) * sizeof(bat_t **));
+                  void *t = realloc(power->batteries, (1 +
+                                    power->battery_count) * sizeof(bat_t **));
+                  power->batteries = t;
                   power->batteries[id] = calloc(1, sizeof(bat_t));
                   power->batteries[id]->name = strdup(names[i]->d_name);
                   power->batteries[id]->present = true;
@@ -376,7 +378,7 @@ _battery_state_get(power_t *power)
 
    for (i = 0; i < power->battery_count; i++) {
         battio.unit = i;
-        if (ioctl(fd, ACPIIO_BATT_GET_BIF, &battio) != -1)
+        if (ioctl(fd, ACPIIO_BATT_GET_BIX, &battio) != -1)
           {
              if (battio.bif.lfcap == 0)
                power->batteries[i]->charge_full = battio.bif.dcap;
@@ -460,26 +462,27 @@ system_power_state_get(power_t *power)
 #if defined(__OpenBSD__)
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-   unsigned int value;
-   size_t len;
 #endif
 
    if (!_power_battery_count_get(power))
      return;
 
 #if defined(__OpenBSD__)
-   power->ac_mibs[3] = 9;
-   power->ac_mibs[4] = 0;
+   power->mibs[3] = 9;
+   power->mibs[4] = 0;
 
-   if (sysctl(power->ac_mibs, 5, &snsr, &slen, NULL, 0) != -1)
+   if (sysctl(power->mibs, 5, &snsr, &slen, NULL, 0) != -1)
      power->have_ac = (int)snsr.value;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
-   len = sizeof(value);
-   if ((sysctl(power->ac_mibs, 3, &value, &len, NULL, 0)) == -1)
-     return;
+   int val, fd;
 
-   power->have_ac = value;
+   fd = open("/dev/acpi", O_RDONLY);
+   if (fd != -1)
+     {
+        if (ioctl(fd, ACPIIO_ACAD_GET_STATUS, &val) != -1)
+          power->have_ac = val;
+        close(fd);
+     }
 #elif defined(__linux__)
    char *buf = file_contents("/sys/class/power_supply/AC/online");
    if (buf)
