@@ -73,7 +73,7 @@ collections {
                 signal: "menu,show";
                 source: "evisum/menu";
                 action: STATE_SET "visible" 0.0;
-                transition: SINUSOIDAL 1.0;
+                transition: SINUSOIDAL 0.5;
                 target: "evisum/menu-clip";
             }
 
@@ -82,7 +82,7 @@ collections {
                 signal: "menu,hide";
                 source: "evisum/menu";
                 action: STATE_SET "default" 0.0;
-                transition: SINUSOIDAL 1.0;
+                transition: SINUSOIDAL 0.5;
                 target: "evisum/menu-clip";
             }
         }

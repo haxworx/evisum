@@ -443,7 +443,7 @@ _win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
             ad->btn_visible = 1;
          }
      }
-   else if (ad->btn_visible)
+   else if ((ad->btn_visible) && (!ad->menu))
     {
        elm_object_signal_emit(ad->btn_menu, "menu,hide", "evisum/menu");
        ad->btn_visible = 0;
