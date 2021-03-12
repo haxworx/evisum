@@ -127,11 +127,7 @@ static Evas_Object *
 _lb_add(Evas_Object *obj, const char *txt)
 {
    Evas_Object *lb = elm_label_add(obj);
-   evas_object_size_hint_weight_set(lb, 1.0, 1.0);
-   evas_object_size_hint_align_set(lb, FILL, FILL);
    elm_object_text_set(lb, txt);
-   evas_object_show(lb);
-
    return lb;
 }
 
@@ -150,44 +146,54 @@ _text_get(void *data, Evas_Object *obj, const char *part)
 static Evas_Object *
 _iface_obj_add(void *data, Evas_Object *obj, const char *part)
 {
-   Evas_Object *bx, *tb, *lb;
+   Evas_Object *tb, *lb, *fr;
    Network_Interface *iface;
 
    if (strcmp(part, "elm.swallow.content")) return NULL;
 
    iface = data;
 
-   bx = elm_box_add(obj);
-   evas_object_size_hint_weight_set(bx, 1.0, 1.0);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
-
    iface->obj = tb = elm_table_add(obj);
+   elm_table_padding_set(tb,
+                         8 * elm_config_scale_get(),
+                         4 * elm_config_scale_get());
    evas_object_size_hint_weight_set(tb, 1.0, 0);
-   evas_object_size_hint_align_set(tb, FILL, FILL);
-   evas_object_show(tb);
+   evas_object_size_hint_align_set(tb, FILL, 0.0);
 
-   lb = _lb_add(obj, _("Total In/Out"));
-   elm_table_pack(tb, lb, 0, 1, 1, 1);
+   lb = _lb_add(obj, _("<hilight>Total In/Out</>"));
+   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   elm_table_pack(tb, lb, 0, 0, 1, 1);
+   evas_object_show(lb);
    lb = _lb_add(obj, "");
+   evas_object_size_hint_weight_set(lb, 1.0, 0.0);
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_data_set(tb, "total", lb);
-   elm_table_pack(tb, lb, 1, 1, 1, 1);
+   elm_table_pack(tb, lb, 1, 0, 1, 1);
+   evas_object_show(lb);
 
-   lb = _lb_add(obj, _("Peak In/Out"));
-   elm_table_pack(tb, lb, 0, 2, 1, 1);
+   lb = _lb_add(obj, _("<hilight>Peak In/Out</>"));
+   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   elm_table_pack(tb, lb, 0, 1, 1, 1);
+   evas_object_show(lb);
    lb = _lb_add(obj, "");
+   evas_object_size_hint_weight_set(lb, 1.0, 0.0);
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_data_set(tb, "peak", lb);
-   elm_table_pack(tb, lb, 1, 2, 1, 1);
+   elm_table_pack(tb, lb, 1, 1, 1, 1);
+   evas_object_show(lb);
 
-   lb = _lb_add(obj, _("In/Out"));
-   elm_table_pack(tb, lb, 0, 3, 1, 1);
+   lb = _lb_add(obj, _("<hilight>In/Out</>"));
+   evas_object_size_hint_align_set(lb, 1.0, 0.5);
+   elm_table_pack(tb, lb, 0, 2, 1, 1);
+   evas_object_show(lb);
    lb = _lb_add(obj, "");
+   evas_object_size_hint_weight_set(lb, 1.0, 0.0);
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_data_set(tb, "inout", lb);
-   elm_table_pack(tb, lb, 1, 3, 1, 1);
+   elm_table_pack(tb, lb, 1, 2, 1, 1);
+   evas_object_show(lb);
 
-   elm_box_pack_end(bx, tb);
-
-   return bx;
+   return tb;
 }
 
 static char *
@@ -354,15 +360,14 @@ ui_network_win_add(Evisum_Ui *ui)
    evas_object_size_hint_weight_set(bx, 1.0, 1.0);
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_event_callback_add(bx, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
-   evas_object_show(bx);
 
    pd->glist = glist = elm_genlist_add(win);
    elm_genlist_homogeneous_set(glist, 1);
    evas_object_size_hint_weight_set(glist, 1.0, 1.0);
    evas_object_size_hint_align_set(glist, FILL, FILL);
    elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_NONE);
-   evas_object_show(glist);
    elm_box_pack_end(bx, glist);
+   evas_object_show(glist);
 
    itc = elm_genlist_item_class_new();
    pd->itc = itc;
@@ -382,7 +387,8 @@ ui_network_win_add(Evisum_Ui *ui)
    itc->func.state_get = NULL;
    itc->func.del = NULL;
 
-   elm_object_content_set(win, bx);
+   elm_win_resize_object_add(win, bx);
+   evas_object_show(bx);
 
    if ((ui->network.width) > 0 && (ui->network.height > 0))
      evas_object_resize(win, ui->network.width, ui->network.height);
