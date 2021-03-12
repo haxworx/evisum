@@ -1968,7 +1968,8 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
                             &ui->proc.width, &ui->proc.height);
 
    if (!evisum_ui_effects_enabled_get(ui)) return;
-   evas_object_move(pd->indicator, ui->proc.width - 32, ui->proc.height - 32);
+   evas_object_move(pd->indicator, ui->proc.width - ELM_SCALE_SIZE(32),
+                    ui->proc.height - ELM_SCALE_SIZE(32));
    evas_object_show(pd->indicator);
 }
 
