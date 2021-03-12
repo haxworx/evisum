@@ -146,7 +146,7 @@ _text_get(void *data, Evas_Object *obj, const char *part)
 static Evas_Object *
 _iface_obj_add(void *data, Evas_Object *obj, const char *part)
 {
-   Evas_Object *tb, *lb, *fr;
+   Evas_Object *tb, *lb;
    Network_Interface *iface;
 
    if (strcmp(part, "elm.swallow.content")) return NULL;
