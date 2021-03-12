@@ -21,6 +21,8 @@ typedef struct _Evisum_Ui
    pid_t                program_pid;
    Ecore_Event_Handler *handler_sig;
 
+   Eina_Bool            effects;
+
    struct
    {
       Evas_Object  *win;
@@ -116,5 +118,11 @@ evisum_ui_config_save(Evisum_Ui *ui);
 
 void
 evisum_ui_restart(Evisum_Ui *ui);
+
+Eina_Bool
+evisum_ui_effects_enabled_get(Evisum_Ui *ui);
+
+void
+evisum_ui_effects_enabled_set(Evisum_Ui *ui, Eina_Bool enabled);
 
 #endif

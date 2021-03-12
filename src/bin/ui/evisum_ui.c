@@ -26,7 +26,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
 
    if (!_evisum_config) return;
 
-   _evisum_config->effects = 0;
+   _evisum_config->effects = ui->effects;
    _evisum_config->backgrounds = 0;
 
    if (ui->proc.win)
@@ -110,12 +110,26 @@ evisum_ui_config_save(Evisum_Ui *ui)
      ecore_event_add(EVISUM_EVENT_CONFIG_CHANGED, NULL, NULL, NULL);
 }
 
+Eina_Bool
+evisum_ui_effects_enabled_get(Evisum_Ui *ui)
+{
+   return ui->effects;
+}
+
+void
+evisum_ui_effects_enabled_set(Evisum_Ui *ui, Eina_Bool enabled)
+{
+   ui->effects = enabled;
+}
+
 void
 evisum_ui_config_load(Evisum_Ui *ui)
 {
    _evisum_config = NULL;
 
    _evisum_config = config_load();
+
+   ui->effects           = _evisum_config->effects;
 
    ui->proc.sort_type    = _evisum_config->proc.sort_type;
    ui->proc.sort_reverse = _evisum_config->proc.sort_reverse;
@@ -249,14 +263,15 @@ _menu_effects_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
    Evisum_Ui *ui;
+   Eina_Bool state;
 
    ui = data;
 
-#if 0
-   evisum_ui_config_save(ui);
+   state = evisum_ui_effects_enabled_get(ui);
+   evisum_ui_effects_enabled_set(ui, !state);
 
+   evisum_ui_config_save(ui);
    evisum_ui_restart(ui);
-#endif
 }
 
 static Evas_Object *

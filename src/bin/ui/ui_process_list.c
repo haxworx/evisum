@@ -90,6 +90,7 @@ typedef struct
       int                  dsleep;
    } summary;
  
+   Elm_Layout             *indicator;
    Evisum_Ui              *ui;
 
 } Data;
@@ -992,6 +993,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
      ecore_timer_add(1.0, _bring_in, pd);
    pd->poll_count++;
 
+   if (evisum_ui_effects_enabled_get(pd->ui))
+     elm_object_signal_emit(pd->indicator, "indicator,show", "evisum/indicator");
 }
 
 static void
@@ -1963,6 +1966,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    evas_object_geometry_get(obj, NULL, NULL,
                             &ui->proc.width, &ui->proc.height);
+   evas_object_move(pd->indicator, 32, ui->proc.height - 32);
 }
 
 static void
@@ -2085,6 +2089,30 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
 }
 
 static void
+_effects_add(Data *pd, Evas_Object *win)
+{
+   Elm_Layout *lay;
+   Evas_Object *pb;
+
+   if (evisum_ui_effects_enabled_get(pd->ui))
+     {
+        pb = elm_progressbar_add(win);
+        elm_object_style_set(pb, "wheel");
+        elm_progressbar_pulse_set(pb, 1);
+        elm_progressbar_pulse(pb, 1);
+        evas_object_show(pb);
+
+        pd->indicator = lay = elm_layout_add(win);
+        elm_layout_file_set(lay, PACKAGE_DATA_DIR"/themes/evisum.edj", "evisum");
+        elm_layout_content_set(lay, "evisum/indicator", pb);
+        evas_object_show(lay);
+     }
+
+   _win_alpha_set(pd);
+   evas_object_show(win);
+}
+
+static void
 _init(Data *pd)
 {
    pd->sorters[PROC_SORT_BY_NONE].sort_cb = proc_sort_by_pid;
@@ -2161,8 +2189,8 @@ ui_process_list_win_add(Evisum_Ui *ui)
                                   _win_move_cb, pd);
    evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN,
                                   _win_key_down_cb, pd);
-   _win_alpha_set(pd);
-   evas_object_show(win);
+
+   _effects_add(pd, win);
 
    _win_resize_cb(pd, NULL, win, NULL);
    pd->thread = ecore_thread_feedback_run(_process_list,
