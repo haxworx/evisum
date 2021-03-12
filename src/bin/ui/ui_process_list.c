@@ -1966,7 +1966,10 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 
    evas_object_geometry_get(obj, NULL, NULL,
                             &ui->proc.width, &ui->proc.height);
-   evas_object_move(pd->indicator, 32, ui->proc.height - 32);
+
+   if (!evisum_ui_effects_enabled_get(ui)) return;
+   evas_object_move(pd->indicator, ui->proc.width - 32, ui->proc.height - 32);
+   evas_object_show(pd->indicator);
 }
 
 static void
@@ -2103,7 +2106,7 @@ _effects_add(Data *pd, Evas_Object *win)
         evas_object_show(pb);
 
         pd->indicator = lay = elm_layout_add(win);
-        elm_layout_file_set(lay, PACKAGE_DATA_DIR"/themes/evisum.edj", "evisum");
+        elm_layout_file_set(lay, PACKAGE_DATA_DIR"/themes/evisum.edj", "proc");
         elm_layout_content_set(lay, "evisum/indicator", pb);
         evas_object_show(lay);
      }
@@ -2174,9 +2177,7 @@ ui_process_list_win_add(Evisum_Ui *ui)
      elm_win_center(win, 1, 1);
 
    pd->tb_content = tb = _content_add(pd, win);
-   _content_reset(pd);
    elm_object_content_set(win, tb);
-   _search_add(pd);
 
    pd->cache = evisum_ui_item_cache_new(pd->glist, _item_create, 40);
    pd->cpu_times = eina_hash_int64_new(_cpu_times_free_cb);
@@ -2190,7 +2191,9 @@ ui_process_list_win_add(Evisum_Ui *ui)
    evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN,
                                   _win_key_down_cb, pd);
 
+   _search_add(pd);
    _effects_add(pd, win);
+   _content_reset(pd);
 
    _win_resize_cb(pd, NULL, win, NULL);
    pd->thread = ecore_thread_feedback_run(_process_list,

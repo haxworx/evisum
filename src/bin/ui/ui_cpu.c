@@ -625,7 +625,7 @@ _graph(Evisum_Ui *ui, Evas_Object *parent)
    ad->btn_menu = lay = elm_layout_add(parent);
    evas_object_size_hint_weight_set(lay, 1.0, 1.0);
    evas_object_size_hint_align_set(lay, 0.99, 0.01);
-   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "evisum");
+   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
    elm_layout_content_set(lay, "evisum/menu", btn);
    elm_table_pack(tbl, lay, 0, 0, 5, ad->cpu_count);
    evas_object_show(lay);
