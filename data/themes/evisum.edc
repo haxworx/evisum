@@ -148,7 +148,7 @@ collections {
                 signal: "indicator,hide";
                 source: "evisum/indicator";
                 action: STATE_SET "default" 0.0;
-                transition: SINUSOIDAL 2.0;
+                transition: SINUSOIDAL 0.8;
                 target: "evisum/indicator-clip";
             }
         }
