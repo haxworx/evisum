@@ -34,6 +34,7 @@ elm_main(int argc, char **argv)
 {
    Evisum_Ui *ui;
    int i, pid = -1;
+   size_t len;
    Evisum_Action action = EVISUM_ACTION_DEFAULT;
 
    for (i = 0; i < argc; i++)
@@ -41,7 +42,7 @@ elm_main(int argc, char **argv)
         if ((!strcmp(argv[i], "-h")) || (!strcmp(argv[i], "-help")) ||
             (!strcmp(argv[i], "--help") || !strcasecmp(argv[i], "-v")))
           {
-             printf("Usage: evisum [OPTIONS]\n"
+             printf("Usage: evisum [OPTIONS] <pid>\n"
                     "   Where OPTIONS can be one of\n"
                     "      -c\n"
                     "        Launch CPU view.\n"
@@ -51,10 +52,8 @@ elm_main(int argc, char **argv)
                     "        Launch storage view.\n"
                     "      -n\n"
                     "        Launch network view.\n"
-                    "      -s\n"
+                    "      -s | -p\n"
                     "        Launch sensors view.\n"
-                    "      -p <pid>\n"
-                    "        Launch process view for pid.\n"
                     "      -h | -help | --help\n"
                     "        This menu.\n"
                     "   No arguments will launch the process explorer.\n");
@@ -66,17 +65,28 @@ elm_main(int argc, char **argv)
           action = EVISUM_ACTION_MEM;
         else if (!strcmp(argv[i], "-d"))
           action = EVISUM_ACTION_STORAGE;
-        else if (!strcmp(argv[i], "-s"))
+        else if ((!strcmp(argv[i], "-s")) || (!strcmp(argv[i], "-p")))
           action = EVISUM_ACTION_SENSORS;
         else if (!strcmp(argv[i], "-n"))
           action = EVISUM_ACTION_NETWORK;
-        else if (!strcmp(argv[i], "-p") && i < (argc -1))
-          {
-             action = EVISUM_ACTION_PROCESS;
-             pid = atoi(argv[i+1]);
-          }
      }
 
+     if ((argc == 2) && (action == EVISUM_ACTION_DEFAULT))
+       {
+          action = EVISUM_ACTION_PROCESS;
+          len = strlen(argv[1]);
+          for (int i = 0; i < len; i++)
+            {
+               if (!isdigit(argv[1][i]))
+                 {
+                    action = EVISUM_ACTION_DEFAULT;
+                    break;
+                 }
+            }
+          if (len > 8) action = EVISUM_ACTION_DEFAULT;
+          if (action == EVISUM_ACTION_PROCESS)
+            pid = atoi(argv[1]);
+       }
 #if 0
    int n;
    net_iface_t **ifaces = system_network_ifaces_get(&n);
