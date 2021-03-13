@@ -51,16 +51,6 @@ evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs)
              free(it);
           }
      }
-   if (eina_list_count(cache->inactive)) return;
-   for (int i = 0; i < cache->size; i++)
-     {
-        Item_Cache *it = malloc(sizeof(Item_Cache));
-        if (it)
-          {
-             it->obj = cache->item_create_cb(cache->parent);
-             cache->inactive = eina_list_prepend(cache->inactive, it);
-          }
-     }
 }
 
 Item_Cache *
@@ -68,13 +58,31 @@ evisum_ui_item_cache_item_get(Evisum_Ui_Cache *cache)
 {
    Eina_List *l, *l_next;
    Item_Cache *it;
+   Eina_Bool clean;
+   int i = 0, n = eina_list_count(cache->inactive);
+
+   clean = (n > 10) ? 1 : 0;
 
    EINA_LIST_FOREACH_SAFE(cache->inactive, l, l_next, it)
      {
         cache->inactive = eina_list_remove_list(cache->inactive, l);
-        cache->active = eina_list_prepend(cache->active, it);
-        return it;
+        if ((clean) && (i < 8))
+          {
+             cache->pending = eina_list_prepend(cache->pending, it->obj);
+             free(it);
+             i++;
+          }
+        else
+         {
+            cache->active = eina_list_prepend(cache->active, it);
+            break;
+         }
+        it = NULL;
      }
+
+   if (clean)
+     evisum_ui_item_cache_pending_del(cache);
+   if (it) return it;
 
    it = calloc(1, sizeof(Item_Cache));
    if (it)
@@ -168,7 +176,7 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj)
         if (it->obj == obj)
           {
              cache->active = eina_list_remove_list(cache->active, l);
-             if (n >= 50)
+             if (n > 10)
                {
                   evas_object_del(it->obj);
                   free(it);

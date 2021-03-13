@@ -1005,10 +1005,10 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    eina_list_free(real);
 #endif
 
-#if 0
-   printf("active %d and inactive %d\n",
+#if 1
+   printf("active %d and inactive %d => %d (realized)\n",
            eina_list_count(pd->cache->active),
-           eina_list_count(pd->cache->inactive));
+           eina_list_count(pd->cache->inactive), n);
 #endif
    if (!pd->poll_count)
      ecore_timer_add(1.0, _bring_in, pd);
