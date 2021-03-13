@@ -110,6 +110,7 @@ evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache)
              cache->inactive = eina_list_prepend(cache->inactive, it);
           }
      }
+   evisum_ui_item_cache_pending_del(cache);
 }
 
 // Delete N at a time and pass on until empty.

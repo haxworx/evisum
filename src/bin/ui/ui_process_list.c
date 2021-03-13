@@ -180,9 +180,7 @@ _content_reset(Data *pd)
    elm_table_pack(pd->tb_content, pd->summary.fr, 0, 2, j, 1);
    evas_object_show(pd->summary.fr);
    elm_genlist_clear(pd->glist);
-   if (pd->cache)
-     evisum_ui_item_cache_reset(pd->cache);
-   evisum_ui_item_cache_pending_del(pd->cache);
+   evisum_ui_item_cache_reset(pd->cache);
 }
 
 static void
