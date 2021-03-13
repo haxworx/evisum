@@ -361,74 +361,74 @@ _item_create(Evas_Object *obj)
 
    lb = elm_label_add(tb);
    evas_object_size_hint_weight_set(lb, 0, EXPAND);
-   evas_object_data_set(tb, "proc_cmd", lb);
+   evas_object_data_set(tb, "cmd", lb);
    evas_object_data_set(lb, "hbx", hbx);
    elm_box_pack_end(hbx, lb);
    evas_object_show(lb);
 
    if (_field_enabled(PROC_FIELD_UID))
      {
-        lb = _item_column_add(tb, "proc_uid", i++);
+        lb = _item_column_add(tb, "uid", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_PID))
      {
-        lb = _item_column_add(tb, "proc_pid", i++);
+        lb = _item_column_add(tb, "pid", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_THREADS))
      {
-        lb = _item_column_add(tb, "proc_threads", i++);
+        lb = _item_column_add(tb, "thr", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_CPU))
      {
-        lb = _item_column_add(tb, "proc_cpu", i++);
+        lb = _item_column_add(tb, "cpu", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_PRI))
      {
-        lb = _item_column_add(tb, "proc_prio", i++);
+        lb = _item_column_add(tb, "prio", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_NICE))
      {
-        lb = _item_column_add(tb, "proc_nice", i++);
+        lb = _item_column_add(tb, "nice", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_FILES))
      {
-        lb = _item_column_add(tb, "proc_files", i++);
+        lb = _item_column_add(tb, "files", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_SIZE))
      {
-        lb = _item_column_add(tb, "proc_size", i++);
+        lb = _item_column_add(tb, "size", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_VIRT))
      {
-        lb = _item_column_add(tb, "proc_virt", i++);
+        lb = _item_column_add(tb, "virt", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_RSS))
      {
-        lb = _item_column_add(tb, "proc_rss", i++);
+        lb = _item_column_add(tb, "rss", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_SHARED))
      {
-        lb = _item_column_add(tb, "proc_shared", i++);
+        lb = _item_column_add(tb, "share", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_STATE))
      {
-        lb = _item_column_add(tb, "proc_state", i++);
+        lb = _item_column_add(tb, "state", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
    if (_field_enabled(PROC_FIELD_TIME))
      {
-        lb = _item_column_add(tb, "proc_time", i++);
+        lb = _item_column_add(tb, "time", i++);
         evas_object_size_hint_align_set(lb, 0.5, FILL);
      }
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
@@ -441,7 +441,7 @@ _item_create(Evas_Object *obj)
         evas_object_data_set(pb, "rec", rec);
         elm_table_pack(tb, rec, i, 0, 1, 1);
         elm_table_pack(tb, pb, i++, 0, 1, 1);
-        evas_object_data_set(tb, "proc_cpu_usage", pb);
+        evas_object_data_set(tb, "cpu_u", pb);
      }
 
    return tb;
@@ -501,7 +501,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(pd->btn_menu, NULL, NULL, &ow, NULL);
    evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
    w += (ow - 8);
-   lb = evas_object_data_get(it->obj, "proc_cmd");
+   lb = evas_object_data_get(it->obj, "cmd");
    snprintf(buf, sizeof(buf), "%s", proc->command);
    if (strcmp(buf, elm_object_text_get(lb)))
      elm_object_text_set(lb, buf);
@@ -530,7 +530,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_UID))
      {
         evas_object_geometry_get(pd->btn_uid, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_uid");
+        lb = evas_object_data_get(it->obj, "uid");
         pwd_entry = getpwuid(proc->uid);
         if (pwd_entry)
           snprintf(buf, sizeof(buf), "%s", pwd_entry->pw_name);
@@ -552,7 +552,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_PID))
      {
         evas_object_geometry_get(pd->btn_pid, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_pid");
+        lb = evas_object_data_get(it->obj, "pid");
         snprintf(buf, sizeof(buf), "%d", proc->pid);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -562,7 +562,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_THREADS))
      {
         evas_object_geometry_get(pd->btn_threads, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_threads");
+        lb = evas_object_data_get(it->obj, "thr");
         snprintf(buf, sizeof(buf), "%d", proc->numthreads);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -572,7 +572,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_CPU))
      {
         evas_object_geometry_get(pd->btn_cpu, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_cpu");
+        lb = evas_object_data_get(it->obj, "cpu");
         snprintf(buf, sizeof(buf), "%d", proc->cpu_id);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -582,7 +582,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_PRI))
      {
         evas_object_geometry_get(pd->btn_pri, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_prio");
+        lb = evas_object_data_get(it->obj, "prio");
         snprintf(buf, sizeof(buf), "%d", proc->priority);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -592,7 +592,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_NICE))
      {
         evas_object_geometry_get(pd->btn_nice, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_nice");
+        lb = evas_object_data_get(it->obj, "nice");
         snprintf(buf, sizeof(buf), "%d", proc->nice);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -602,7 +602,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_FILES))
      {
         evas_object_geometry_get(pd->btn_files, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_files");
+        lb = evas_object_data_get(it->obj, "files");
         snprintf(buf, sizeof(buf), "%d", proc->numfiles);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -612,7 +612,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_SIZE))
      {
         evas_object_geometry_get(pd->btn_size, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_size");
+        lb = evas_object_data_get(it->obj, "size");
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -622,7 +622,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_VIRT))
      {
         evas_object_geometry_get(pd->btn_virt, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_virt");
+        lb = evas_object_data_get(it->obj, "virt");
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -632,7 +632,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_RSS))
      {
         evas_object_geometry_get(pd->btn_rss, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_rss");
+        lb = evas_object_data_get(it->obj, "rss");
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -642,7 +642,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_SHARED))
      {
         evas_object_geometry_get(pd->btn_shared, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_shared");
+        lb = evas_object_data_get(it->obj, "share");
         snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared));
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -652,7 +652,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_STATE))
      {
         evas_object_geometry_get(pd->btn_state, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_state");
+        lb = evas_object_data_get(it->obj, "state");
         snprintf(buf, sizeof(buf), "%s", proc->state);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -662,7 +662,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (_field_enabled(PROC_FIELD_TIME))
      {
         evas_object_geometry_get(pd->btn_time, NULL, NULL, &w, NULL);
-        lb = evas_object_data_get(it->obj, "proc_time");
+        lb = evas_object_data_get(it->obj, "time");
         _run_time_set(buf, sizeof(buf), proc->run_time);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
@@ -671,7 +671,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
      {
-        pb = evas_object_data_get(it->obj, "proc_cpu_usage");
+        pb = evas_object_data_get(it->obj, "cpu_u");
         double value = proc->cpu_usage / 100.0;
         double last = elm_progressbar_value_get(pb);
 
