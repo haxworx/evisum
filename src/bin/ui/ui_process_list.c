@@ -167,12 +167,8 @@ _cache_reset_done_cb(void *data)
 static void
 _content_reset(Data *pd)
 {
-   Evas_Object *rec;
    int j = 0;
    elm_table_clear(pd->tb_content, 0);
-   rec = evas_object_rectangle_add(evas_object_evas_get(pd->win));
-   evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(BTN_HEIGHT));
-   elm_table_pack(pd->tb_content, rec, j, 0, 1, 1);
    elm_table_pack(pd->tb_content, pd->btn_menu, j++, 0, 1, 1);
    for (int i = j; i < PROC_FIELD_MAX; i++)
      {
@@ -210,13 +206,13 @@ _field_menu_create(Data *pd, Evas_Object *parent)
 
    fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
-   evas_object_show(fr);
 
    bx = elm_box_add(parent);
    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_show(bx);
    elm_object_content_set(fr, bx);
+   evas_object_show(fr);
 
    for (int i = PROC_FIELD_UID; i < PROC_FIELD_MAX; i++)
      {
@@ -227,8 +223,8 @@ _field_menu_create(Data *pd, Evas_Object *parent)
         elm_check_state_set(ck, _fields[i].enabled);
         evas_object_smart_callback_add(ck, "changed",
                                        _field_menu_check_changed_cb, &_fields[i]);
-        evas_object_show(ck);
         elm_box_pack_end(bx, ck);
+        evas_object_show(ck);
      }
 
    o = elm_ctxpopup_add(parent);
@@ -946,7 +942,9 @@ _process_list(void *data, Ecore_Thread *thread)
           }
         list = _process_list_get(pd);
         if (!pd->skip_wait)
-          ecore_thread_feedback(thread, list);
+          {
+             ecore_thread_feedback(thread, list);
+          }
         else
           {
              EINA_LIST_FREE(list, proc)
