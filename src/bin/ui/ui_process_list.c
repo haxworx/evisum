@@ -182,6 +182,7 @@ _content_reset(Data *pd)
    elm_genlist_clear(pd->glist);
    if (pd->cache)
      evisum_ui_item_cache_reset(pd->cache);
+   evisum_ui_item_cache_pending_del(pd->cache);
 }
 
 static void
@@ -859,7 +860,7 @@ _process_list_search_trim(Eina_List *list, Data *pd)
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-	if (_process_ignore(pd, proc))
+       if (_process_ignore(pd, proc))
          {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
@@ -1036,7 +1037,6 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
 
    if (pd->fields_menu)
      {
-        evisum_ui_item_cache_pending_del(pd->cache);
         evas_object_del(pd->fields_menu);
         pd->fields_menu = NULL;
         return;

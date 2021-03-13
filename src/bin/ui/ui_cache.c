@@ -63,23 +63,6 @@ evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs)
      }
 }
 
-static Eina_Bool
-_pending_triggered_cb(void *data)
-{
-
-   Eina_List *l, *l_next;
-   Evas_Object *o;
-   Evisum_Ui_Cache *cache = data;
-
-   EINA_LIST_FOREACH_SAFE(cache->pending, l, l_next, o)
-     {
-        cache->pending = eina_list_remove_list(cache->pending, l);
-        evas_object_del(o);
-     }
-   cache->pending_timer = NULL;
-   return 0;
-}
-
 Item_Cache *
 evisum_ui_item_cache_item_get(Evisum_Ui_Cache *cache)
 {
@@ -127,6 +110,36 @@ evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache)
              cache->inactive = eina_list_prepend(cache->inactive, it);
           }
      }
+}
+
+// Delete N at a time and pass on until empty.
+static Eina_Bool
+_pending_triggered_cb(void *data)
+{
+
+   Eina_List *l, *l_next;
+   Evas_Object *o;
+   Evisum_Ui_Cache *cache;
+   int n, i = 0;
+
+   cache = data;
+
+   n = eina_list_count(cache->pending);
+   EINA_LIST_FOREACH_SAFE(cache->pending, l, l_next, o)
+     {
+        cache->pending = eina_list_remove_list(cache->pending, l);
+        evas_object_del(o);
+        i++; n--;
+        if (i == 20) break;
+     }
+   if (n)
+     return 1;
+
+#if 0
+   puts("GONE");
+#endif
+   cache->pending_timer = NULL;
+   return 0;
 }
 
 void
