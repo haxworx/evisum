@@ -191,6 +191,13 @@ evisum_ui_item_cache_free(Evisum_Ui_Cache *cache)
 {
    Item_Cache *it;
 
+   if (cache->pending_timer)
+     {
+        ecore_timer_del(cache->pending_timer);
+        cache->pending_done_cb = NULL;
+        cache->data = NULL;
+     }
+
    if (cache->parent)
      evas_object_del(cache->parent);
 
