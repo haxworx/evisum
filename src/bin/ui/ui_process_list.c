@@ -89,7 +89,7 @@ typedef struct
       int                  zombie;
       int                  dsleep;
    } summary;
- 
+
    Elm_Layout             *indicator;
    Evisum_Ui              *ui;
 
@@ -832,22 +832,34 @@ _cpu_times_free_cb(void *data)
    free(cpu_time);
 }
 
+static Eina_Bool
+_process_ignore(Data *pd, Proc_Info *proc)
+{
+   Evisum_Ui *ui = pd->ui;
+
+   if (proc->pid == ui->program_pid) return 1;
+
+   if (!pd->search.len) return 0;
+
+   if (strncasecmp(proc->command, pd->search.text, pd->search.len))
+     return 1;
+   if (!strstr(proc->command, pd->search.text))
+     return 1;
+
+   return 0;
+}
+
 static Eina_List *
 _process_list_search_trim(Eina_List *list, Data *pd)
 {
    Eina_List *l, *l_next;
    Proc_Info *proc;
-   Evisum_Ui *ui = pd->ui;
 
    _summary_reset(pd);
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-        if ((proc->pid == ui->program_pid) ||
-            ((pd->search.len) &&
-             (strncasecmp(proc->command, pd->search.text, pd->search.len) &&
-             (!strstr(proc->command, pd->search.text))))
-           )
+	if (_process_ignore(pd, proc))
          {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
