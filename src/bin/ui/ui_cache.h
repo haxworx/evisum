@@ -11,6 +11,8 @@ typedef struct _Evisum_Ui_Cache {
    Evas_Object *parent;
    Evas_Object *(*item_create_cb)(Evas_Object *);
    int          size;
+   void        (*pending_done_cb)(void *);
+   void        *data;
    Ecore_Timer *pending_timer;
    Eina_List   *pending;
 } Evisum_Ui_Cache;
@@ -32,7 +34,7 @@ void
 evisum_ui_item_cache_free(Evisum_Ui_Cache *cache);
 
 void
-evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache);
+evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache, void (*done_cb)(void *data), void *data);
 
 void
 evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs);

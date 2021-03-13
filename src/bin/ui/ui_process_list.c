@@ -155,6 +155,16 @@ _field_enabled(Proc_Field id)
 }
 
 static void
+_cache_reset_done_cb(void *data)
+{
+   Data *pd = data;
+   pd->skip_wait = 1;
+#if 0
+   puts("DONE");
+#endif
+}
+
+static void
 _content_reset(Data *pd)
 {
    Evas_Object *rec;
@@ -180,7 +190,7 @@ _content_reset(Data *pd)
    elm_table_pack(pd->tb_content, pd->summary.fr, 0, 2, j, 1);
    evas_object_show(pd->summary.fr);
    elm_genlist_clear(pd->glist);
-   evisum_ui_item_cache_reset(pd->cache);
+   evisum_ui_item_cache_reset(pd->cache, _cache_reset_done_cb, pd);
 }
 
 static void

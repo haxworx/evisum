@@ -87,9 +87,12 @@ evisum_ui_item_cache_item_get(Evisum_Ui_Cache *cache)
 }
 
 void
-evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache)
+evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache, void (*done_cb)(void *data), void *data)
 {
    Item_Cache *it;
+
+   cache->pending_done_cb = done_cb;
+   cache->data = data;
 
    EINA_LIST_FREE(cache->active, it)
      {
@@ -136,9 +139,9 @@ _pending_triggered_cb(void *data)
    if (n)
      return 1;
 
-#if 0
-   puts("GONE");
-#endif
+   if (cache->pending_done_cb)
+     cache->pending_done_cb(cache->data);
+
    cache->pending_timer = NULL;
    return 0;
 }
