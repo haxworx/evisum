@@ -51,7 +51,7 @@ typedef struct
       double              keytime;
    } search;
 
-   Evas_Object           *tb_content;
+   Evas_Object           *tb_main;
 
    Evas_Object           *glist;
    Elm_Genlist_Item_Class itc;
@@ -187,8 +187,8 @@ static void
 _content_reset(Data *pd)
 {
    int j = 0;
-   elm_table_clear(pd->tb_content, 0);
-   elm_table_pack(pd->tb_content, pd->btn_menu, j++, 0, 1, 1);
+   elm_table_clear(pd->tb_main, 0);
+   elm_table_pack(pd->tb_main, pd->btn_menu, j++, 0, 1, 1);
    for (int i = j; i < PROC_FIELD_MAX; i++)
      {
         Field *f = &_fields[i];
@@ -198,11 +198,11 @@ _content_reset(Data *pd)
              continue;
           }
         pd->field_max = i;
+        elm_table_pack(pd->tb_main, f->btn, j++, 0, 1, 1);
         evas_object_show(f->btn);
-        elm_table_pack(pd->tb_content, f->btn, j++, 0, 1, 1);
      }
-   elm_table_pack(pd->tb_content, pd->glist, 0, 1, j, 1);
-   elm_table_pack(pd->tb_content, pd->summary.fr, 0, 2, j, 1);
+   elm_table_pack(pd->tb_main, pd->glist, 0, 1, j, 1);
+   elm_table_pack(pd->tb_main, pd->summary.fr, 0, 2, j, 1);
    evas_object_show(pd->summary.fr);
    elm_genlist_clear(pd->glist);
    evisum_ui_item_cache_reset(pd->cache, _cache_reset_done_cb, pd);
@@ -1870,12 +1870,12 @@ _win_alpha_set(Data *pd)
         r = b = g = 128; a = 255;
         evas_object_color_set(bg, r * fade, g * fade, b * fade, fade * a);
         r = b = g = a = 255;
-        evas_object_color_set(pd->tb_content, r * fade, g * fade, b * fade, fade * a);
+        evas_object_color_set(pd->tb_main, r * fade, g * fade, b * fade, fade * a);
      }
    else
      {
         r = b = g = a = 255;
-        evas_object_color_set(pd->tb_content, r, g, b, a);
+        evas_object_color_set(pd->tb_main, r, g, b, a);
         r = b = g = 128;  a = 255;
         evas_object_color_set(bg, r, g, b, a);
      }
@@ -2052,7 +2052,7 @@ ui_process_list_win_add(Evisum_Ui *ui)
    else
      elm_win_center(win, 1, 1);
 
-   pd->tb_content = tb = _content_add(pd, win);
+   pd->tb_main = tb = _content_add(pd, win);
    elm_object_content_set(win, tb);
 
    pd->cache = evisum_ui_item_cache_new(pd->glist, _item_create, 40);
