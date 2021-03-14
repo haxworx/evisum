@@ -865,9 +865,8 @@ _process_ignore(Data *pd, Proc_Info *proc)
 
    if (!pd->search.len) return 0;
 
-   if (strncasecmp(proc->command, pd->search.text, pd->search.len))
-     return 1;
-   if (!strstr(proc->command, pd->search.text))
+   if ((strncasecmp(proc->command, pd->search.text, pd->search.len)) &&
+       (!strstr(proc->command, pd->search.text)))
      return 1;
 
    return 0;
