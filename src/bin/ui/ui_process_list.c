@@ -1073,198 +1073,22 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
 }
 
 static void
-_btn_cmd_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                    void *event_info EINA_UNUSED)
+_btn_clicked_cb(void *data, Evas_Object *obj,
+                void *event_info EINA_UNUSED)
 {
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
+   Data *pd;
+   Evisum_Ui *ui;
+   Proc_Sort type;
 
-   if (ui->proc.sort_type == PROC_SORT_BY_CMD)
+   pd = data;
+   ui = pd->ui;
+
+   type = (Proc_Sort) (int *) evas_object_data_get(obj, "type");
+
+   if (ui->proc.sort_type == type)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_CMD;
-   _btn_clicked_state_save(pd, pd->btn_cmd);
-}
-
-static void
-_btn_uid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                    void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_UID)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_UID;
-   _btn_clicked_state_save(pd, pd->btn_uid);
-}
-
-static void
-_btn_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                    void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_PID)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_PID;
-   _btn_clicked_state_save(pd, pd->btn_pid);
-}
-
-static void
-_btn_threads_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                        void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_THREADS)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_THREADS;
-   _btn_clicked_state_save(pd, pd->btn_threads);
-}
-
-static void
-_btn_cpu_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                    void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_CPU)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_CPU;
-   _btn_clicked_state_save(pd, pd->btn_cpu);
-}
-
-static void
-_btn_pri_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                    void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_PRI)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_PRI;
-   _btn_clicked_state_save(pd, pd->btn_pri);
-}
-
-static void
-_btn_nice_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                     void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_NICE)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_NICE;
-   _btn_clicked_state_save(pd, pd->btn_nice);
-}
-
-static void
-_btn_files_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                      void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_FILES)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_FILES;
-   _btn_clicked_state_save(pd, pd->btn_files);
-}
-
-static void
-_btn_size_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                     void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_SIZE)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_SIZE;
-   _btn_clicked_state_save(pd, pd->btn_size);
-}
-
-static void
-_btn_virt_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                     void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_VIRT)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_VIRT;
-   _btn_clicked_state_save(pd, pd->btn_virt);
-}
-
-static void
-_btn_rss_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                    void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_RSS)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_RSS;
-   _btn_clicked_state_save(pd, pd->btn_rss);
-}
-
-static void
-_btn_shared_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_SHARED)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_SHARED;
-   _btn_clicked_state_save(pd, pd->btn_shared);
-}
-
-static void
-_btn_state_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                      void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_STATE)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_STATE;
-   _btn_clicked_state_save(pd, pd->btn_state);
-}
-
-static void
-_btn_time_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                     void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_TIME)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_TIME;
-   _btn_clicked_state_save(pd, pd->btn_time);
-}
-
-static void
-_btn_cpu_usage_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
-                          void *event_info EINA_UNUSED)
-{
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
-
-   if (ui->proc.sort_type == PROC_SORT_BY_CPU_USAGE)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
-   ui->proc.sort_type = PROC_SORT_BY_CPU_USAGE;
-   _btn_clicked_state_save(pd, pd->btn_cpu_usage);
+   ui->proc.sort_type = type;
+   _btn_clicked_state_save(pd, obj);
 }
 
 static void
@@ -1578,10 +1402,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_CMD);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CMD);
    elm_object_text_set(btn, _("command"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_cmd_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_CMD].btn = btn;
 
    pd->btn_uid = btn = elm_button_add(parent);
@@ -1591,10 +1416,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_UID);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_UID);
    elm_object_text_set(btn, _("user"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_uid_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_UID].btn = btn;
 
    pd->btn_pid = btn = elm_button_add(parent);
@@ -1604,10 +1430,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_PID);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PID);
    elm_object_text_set(btn, _("pid"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_pid_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_PID].btn = btn;
 
    pd->btn_threads = btn = elm_button_add(parent);
@@ -1617,10 +1444,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_THREADS);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_THREADS);
    elm_object_text_set(btn, _("thr"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_threads_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_THREADS].btn = btn;
 
    pd->btn_cpu = btn = elm_button_add(parent);
@@ -1630,10 +1458,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_CPU);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU);
    elm_object_text_set(btn, _("cpu"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_cpu_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_CPU].btn = btn;
 
    pd->btn_pri = btn = elm_button_add(parent);
@@ -1643,10 +1472,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_PRI);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PRI);
    elm_object_text_set(btn, _("prio"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_pri_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_PRI].btn = btn;
 
    pd->btn_nice = btn = elm_button_add(parent);
@@ -1656,10 +1486,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_NICE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_NICE);
    elm_object_text_set(btn, _("nice"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_nice_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_NICE].btn = btn;
 
    pd->btn_files = btn = elm_button_add(parent);
@@ -1669,10 +1500,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_FILES);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_FILES);
    elm_object_text_set(btn, _("files"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_files_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_FILES].btn = btn;
 
    pd->btn_size = btn = elm_button_add(parent);
@@ -1682,10 +1514,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_SIZE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SIZE);
    elm_object_text_set(btn, _("size"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_size_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_SIZE].btn = btn;
 
    pd->btn_virt = btn = elm_button_add(parent);
@@ -1695,10 +1528,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_VIRT);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_VIRT);
    elm_object_text_set(btn, _("virt"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_virt_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_VIRT].btn = btn;
 
    pd->btn_rss = btn = elm_button_add(parent);
@@ -1708,10 +1542,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_RSS);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_RSS);
    elm_object_text_set(btn, _("res"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_rss_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_RSS].btn = btn;
 
    pd->btn_shared = btn = elm_button_add(parent);
@@ -1721,10 +1556,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_SHARED);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SHARED);
    elm_object_text_set(btn, _("shr"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_shared_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_SHARED].btn = btn;
 
    pd->btn_state = btn = elm_button_add(parent);
@@ -1734,10 +1570,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_STATE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_STATE);
    elm_object_text_set(btn, _("state"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_state_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_STATE].btn = btn;
 
    pd->btn_time = btn = elm_button_add(parent);
@@ -1747,10 +1584,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_TIME);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_TIME);
    elm_object_text_set(btn, _("time"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_time_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_TIME].btn = btn;
 
    pd->btn_cpu_usage = btn = elm_button_add(parent);
@@ -1760,10 +1598,11 @@ _content_add(Data *pd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_CPU_USAGE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU_USAGE);
    elm_object_text_set(btn, _("cpu %"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
-                                  _btn_cpu_usage_clicked_cb, pd);
+                                  _btn_clicked_cb, pd);
    _fields[PROC_FIELD_CPU_USAGE].btn = btn;
 
    pd->glist = glist = elm_genlist_add(parent);
