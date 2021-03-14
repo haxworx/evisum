@@ -27,7 +27,7 @@ typedef struct
    uint32_t         poll_count;
    int64_t          pid_cpu_time;
 
-   Ecore_Thread     *thread;
+   Ecore_Thread    *thread;
 
    struct
    {
@@ -266,13 +266,13 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    evas_object_size_hint_weight_set(lb, 0, EXPAND);
    evas_object_size_hint_align_set(lb, 0.0, FILL);
    evas_object_data_set(tb, text, lb);
-   evas_object_show(lb);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_data_set(lb, "rect", rec);
 
    elm_table_pack(tb, lb, col, 0, 1, 1);
    elm_table_pack(tb, rec, col, 0, 1, 1);
+   evas_object_show(lb);
 
    return lb;
 }
@@ -1406,8 +1406,8 @@ _threads_tab_add(Evas_Object *parent, Data *pd)
    tb = elm_table_add(bx2);
    evas_object_size_hint_weight_set(tb, EXPAND, 0);
    evas_object_size_hint_align_set(tb, FILL, FILL);
-   evas_object_show(tb);
    elm_box_pack_end(bx2, tb);
+   evas_object_show(tb);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_size_hint_min_set(rec, 1, ELM_SCALE_SIZE(LIST_BTN_HEIGHT));
@@ -1419,48 +1419,48 @@ _threads_tab_add(Evas_Object *parent, Data *pd)
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("id"));
    _btn_icon_state_set(btn, pd->threads.sort_reverse);
-   evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_thread_clicked_cb, pd);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->threads.btn_name = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("name"));
    _btn_icon_state_set(btn, pd->threads.sort_reverse);
-   evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_name_clicked_cb, pd);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->threads.btn_state = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("state"));
    _btn_icon_state_set(btn, pd->threads.sort_reverse);
-   evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_state_clicked_cb, pd);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->threads.btn_cpu_id = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu id"));
    _btn_icon_state_set(btn, pd->threads.sort_reverse);
-   evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_id_clicked_cb, pd);
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    elm_table_pack(tb, rec, i, 0, 1, 1);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->threads.btn_cpu_usage = btn = elm_button_add(tb);
    evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    elm_object_text_set(btn, _("cpu %"));
    _btn_icon_state_set(btn, pd->threads.sort_reverse);
-   evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_cpu_usage_clicked_cb, pd);
    elm_table_pack(tb, btn, i++, 0, 1, 1);
+   evas_object_show(btn);
 
    pd->threads.glist = glist = elm_genlist_add(parent);
    evas_object_data_set(glist, "ui", pd);
@@ -1471,11 +1471,11 @@ _threads_tab_add(Evas_Object *parent, Data *pd)
                            ELM_SCROLLER_POLICY_AUTO);
    evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(glist, FILL, FILL);
-   evas_object_show(glist);
 
    evas_object_smart_callback_add(pd->threads.glist, "unrealized",
                                   _item_unrealized_cb, pd);
    elm_box_pack_end(bx2, glist);
+   evas_object_show(glist);
    elm_box_pack_end(bx, bx2);
 
    return fr;
@@ -1743,7 +1743,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_action_do(Data *pd, Evisum_Proc_Action action)
+_activate(Data *pd, Evisum_Proc_Action action)
 {
    switch (action)
      {
@@ -1824,6 +1824,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
 
    elm_box_pack_end(bx, tb);
    elm_object_content_set(win, bx);
+
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
    evas_object_event_callback_add(bx, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
@@ -1832,7 +1833,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    elm_win_center(win, 1, 1);
    evas_object_show(win);
 
-   _action_do(pd, action);
+   _activate(pd, action);
 
    pd->threads.cache = evisum_ui_item_cache_new(pd->threads.glist,
                                                 _item_create, 10);
