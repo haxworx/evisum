@@ -75,6 +75,7 @@ typedef struct
 
    Proc_Field              field_max;
    Evas_Object            *fields_menu;
+   Ecore_Timer            *fields_timer;
 
    struct
    {
@@ -154,16 +155,34 @@ _field_enabled(Proc_Field id)
    return _fields[id].enabled;
 }
 
+static Eina_Bool
+_fields_update_timer_cb(void *data)
+{
+   Data *pd = data;
+
+   pd->skip_wait = 1;
+   pd->fields_timer = NULL;
+
+   return 0;
+}
+
 static void
 _cache_reset_done_cb(void *data)
 {
    Data *pd = data;
-   pd->skip_wait = 1;
+
+   if (pd->fields_timer)
+     ecore_timer_reset(pd->fields_timer);
+   else
+     pd->fields_timer = ecore_timer_add(1.0, _fields_update_timer_cb, pd);
 #if 0
    puts("DONE");
 #endif
 }
 
+// Updating fields is a heavy exercise. We both offset the
+// cache clearing and delay the initial update for a better
+// experience.
 static void
 _content_reset(Data *pd)
 {
