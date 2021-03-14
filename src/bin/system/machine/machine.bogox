@@ -50,20 +50,6 @@ file_contents(const char *path)
    return buf;
 }
 
-char *
-strsli_printf(const char *fmt, ...)
-{
-   static char buf[4096];
-   va_list ap;
-
-   buf[0] = 0x00;
-   va_start(ap, fmt);
-   vsnprintf(buf, sizeof(buf), fmt, ap);
-   va_end(ap);
-
-   return buf;
-}
-
 void
 strimmer(char *s)
 {

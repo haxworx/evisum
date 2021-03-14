@@ -140,7 +140,9 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
           {
               Bat *bat = eina_list_data_get(l);
               elm_object_tooltip_text_set(bat->pb,
-                                          msg->power.batteries[i]->name);
+                                          eina_slstr_printf("%s (%s)",
+                                          msg->power.batteries[i]->vendor,
+                                          msg->power.batteries[i]->model));
               double perc = (double) msg->power.batteries[i]->percent / 100;
               elm_progressbar_value_set(bat->pb, perc);
           }

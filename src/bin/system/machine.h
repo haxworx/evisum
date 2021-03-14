@@ -58,6 +58,8 @@ typedef struct
 typedef struct
 {
    char   *name;
+   char   *vendor;
+   char   *model;
    double  charge_full;
    double  charge_current;
    uint8_t percent;

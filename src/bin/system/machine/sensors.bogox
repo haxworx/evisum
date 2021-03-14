@@ -123,6 +123,7 @@ system_sensors_thermal_get(int *sensor_count)
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    sensor_t *sensor;
    int value;
+   char buf[256];
    size_t len = sizeof(value);
 
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
@@ -139,13 +140,13 @@ system_sensors_thermal_get(int *sensor_count)
    for (int i = 0; i < n; i++)
      {
         len = sizeof(value);
-        const char *mibname = strsli_printf("dev.cpu.%d.temperature", i);
-        if ((sysctlbyname(mibname, &value, &len, NULL, 0)) != -1)
+        snprintf(buf, sizeof(buf), "dev.cpu.%i.temperature", i);
+        if ((sysctlbyname(buf, &value, &len, NULL, 0)) != -1)
           {
              void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
              sensors = t;
              sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
-             sensor->name = strdup(mibname);
+             sensor->name = strdup(buf);
              sensor->value = (float) (value - 2732) / 10;
           }
      }
@@ -277,6 +278,7 @@ _power_battery_count_get(power_t *power)
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    int n_units, fd;
+   char name[256];
 
    fd = open("/dev/acpi", O_RDONLY);
    if (fd != -1)
@@ -289,18 +291,22 @@ _power_battery_count_get(power_t *power)
    power->batteries = malloc(power->battery_count * sizeof(bat_t **));
    for (int i = 0; i < power->battery_count; i++) {
         power->batteries[i] = calloc(1, sizeof(bat_t));
+        snprintf(name, sizeof(name), "hw.acpi.battery.%i", i);
+        power->batteries[i]->name = strdup(name);
         power->batteries[i]->present = true;
      }
 #elif defined(__linux__)
    char *type;
    struct dirent **names;
+   char path[PATH_MAX];
    int i, n, id;
 
    n = scandir("/sys/class/power_supply", &names, 0, alphasort);
    if (n < 0) return power->battery_count;
 
    for (i = 0; i < n; i++) {
-        type = file_contents(strsli_printf("/sys/class/power_supply/%s/type", names[i]->d_name));
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", names[i]->d_name);
+        type = file_contents(path);
         if (type)
           {
              if (!strncmp(type, "Battery", 7))
@@ -311,6 +317,10 @@ _power_battery_count_get(power_t *power)
                   power->batteries = t;
                   power->batteries[id] = calloc(1, sizeof(bat_t));
                   power->batteries[id]->name = strdup(names[i]->d_name);
+                  snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", names[i]->d_name);
+                  power->batteries[id]->vendor = file_contents(path);
+                  snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", names[i]->d_name);
+                  power->batteries[id]->model = file_contents(path);
                   power->batteries[id]->present = true;
                   power->battery_count++;
                }
@@ -372,7 +382,6 @@ _battery_state_get(power_t *power)
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    int fd, i;
    union acpi_battery_ioctl_arg battio;
-   char name[256];
 
    if ((fd = open("/dev/acpi", O_RDONLY)) == -1) return;
 
@@ -385,8 +394,8 @@ _battery_state_get(power_t *power)
              else
                power->batteries[i]->charge_full = battio.bif.lfcap;
           }
-        snprintf(name, sizeof(name), "%s %s", battio.bif.oeminfo, battio.bif.model);
-        power->batteries[i]->name = strdup(name);
+        power->batteries[i]->vendor = strdup(battio.bix.oeminfo);
+        power->batteries[i]->model = strdup(battio.bix.model);
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
           power->batteries[i]->charge_current = battio.bst.cap;
@@ -397,7 +406,7 @@ _battery_state_get(power_t *power)
    close(fd);
 
 #elif defined(__linux__)
-   const char *path;
+   char path[PATH_MAX];
    struct dirent *dh;
    struct stat st;
    DIR *dir;
@@ -407,7 +416,7 @@ _battery_state_get(power_t *power)
    for (int i = 0; i < power->battery_count; i++) {
         naming = NULL;
 
-        path = strsli_printf("/sys/class/power_supply/%s", power->batteries[i]->name);
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s", power->batteries[i]->name);
 
         if ((stat(path, &st) < 0) || (!S_ISDIR(st.st_mode)))
           continue;
@@ -435,13 +444,15 @@ _battery_state_get(power_t *power)
         if (!naming)
           continue;
 
-        buf = file_contents(strsli_printf("%s/%s_full", link, naming));
+        snprintf(path, sizeof(path), "%s/%s_full", link, naming);
+        buf = file_contents(path);
         if (buf)
           {
              power->batteries[i]->charge_full = atol(buf);
              free(buf);
           }
-        buf = file_contents(strsli_printf("%s/%s_now", link, naming));
+        snprintf(path, sizeof(path), "%s/%s_now", link, naming);
+        buf = file_contents(path);
         if (buf)
           {
              power->batteries[i]->charge_current = atol(buf);
@@ -508,6 +519,10 @@ system_power_state_free(power_t *power)
      {
         if (power->batteries[i]->name)
           free(power->batteries[i]->name);
+        if (power->batteries[i]->model)
+          free(power->batteries[i]->model);
+        if (power->batteries[i]->vendor)
+          free(power->batteries[i]->vendor);
         free(power->batteries[i]);
      }
    if (power->batteries)
