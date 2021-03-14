@@ -1531,7 +1531,7 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb,
 
    ic = elm_icon_add(btn);
    elm_icon_standard_set(ic, evisum_icon_path_get(icon));
-   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), 1);
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    elm_object_part_content_set(btn, "icon", ic);
    evas_object_show(ic);
 
