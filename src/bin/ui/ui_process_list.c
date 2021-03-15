@@ -482,6 +482,10 @@ _item_create(Evas_Object *obj)
         evas_object_show(hbx);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(2), 1);
+        elm_box_pack_end(hbx, rec);
+
+        rec = evas_object_rectangle_add(evas_object_evas_get(tb));
         evas_object_data_set(pb, "rec", rec);
         elm_table_pack(tb, rec, i, 0, 1, 1);
         elm_table_pack(tb, hbx, i++, 0, 1, 1);
