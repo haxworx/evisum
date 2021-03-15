@@ -208,10 +208,16 @@ _content_reset(Data *pd)
 static void
 _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
 {
-   Field *f = data;
+   Evisum_Ui *ui;
+   Data *pd;
+   Field *f;
+
+   pd = _pd;
+   ui = pd->ui;
+
+   f = data;
    f->enabled = !f->enabled;
-   Evisum_Ui *ui = _pd->ui;
-   _content_reset(_pd);
+   _content_reset(pd);
    ui->proc.fields ^= (1 << f->id);
 }
 
@@ -336,7 +342,6 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    elm_box_horizontal_set(hbx, 1);
    evas_object_size_hint_align_set(hbx, FILL, FILL);
    evas_object_size_hint_weight_set(hbx, 1.0, 1.0);
-   evas_object_show(hbx);
 
    lb = elm_label_add(tb);
    evas_object_data_set(tb, text, lb);
@@ -352,6 +357,7 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    evas_object_data_set(lb, "rec", rec);
    elm_table_pack(tb, rec, col, 0, 1, 1);
    elm_table_pack(tb, hbx, col, 0, 1, 1);
+   evas_object_show(hbx);
    evas_object_show(lb);
 
    return lb;
@@ -500,7 +506,7 @@ _run_time_set(char *buf, size_t n, int64_t secs)
 {
    int rem;
 
-    if (secs < 86400)
+   if (secs < 86400)
      snprintf(buf, n, "%02" PRIi64 ":%02"PRIi64, secs / 60, secs % 60);
    else
      {
@@ -512,7 +518,9 @@ _run_time_set(char *buf, size_t n, int64_t secs)
 static void
 _field_adjust(Data *pd, Proc_Field id, Evas_Object *obj, Evas_Coord w)
 {
-   Evas_Object *rec = evas_object_data_get(obj, "rec");
+   Evas_Object *rec;
+
+   rec = evas_object_data_get(obj, "rec");
    if (id != pd->field_max)
      evas_object_size_hint_min_set(rec, w, 1);
    else
@@ -964,14 +972,14 @@ _process_list(void *data, Ecore_Thread *thread)
    Eina_List *list;
    Evisum_Ui *ui;
    Proc_Info *proc;
-   int i, delay = 1;
+   int delay = 1;
 
    pd = data;
    ui = pd->ui;
 
    while (!ecore_thread_check(thread))
      {
-        for (i = 0; i < delay * 8; i++)
+        for (int i = 0; i < delay * 8; i++)
           {
              if (ecore_thread_check(thread)) return;
 
@@ -1016,18 +1024,13 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    it = elm_genlist_first_item_get(pd->glist);
    EINA_LIST_FREE(list, proc)
      {
-        if (!it)
-          proc_info_free(proc);
-        else
-          {
-             Proc_Info *prev = elm_object_item_data_get(it);
-             if (prev)
-               proc_info_free(prev);
+        Proc_Info *prev = elm_object_item_data_get(it);
+        if (prev)
+          proc_info_free(prev);
 
-             elm_object_item_data_set(it, proc);
+        elm_object_item_data_set(it, proc);
 
-             it = elm_genlist_item_next_get(it);
-          }
+        it = elm_genlist_item_next_get(it);
      }
 
    elm_genlist_realized_items_update(pd->glist);
@@ -1103,11 +1106,13 @@ _btn_clicked_cb(void *data, Evas_Object *obj,
    Data *pd;
    Evisum_Ui *ui;
    Proc_Sort type;
+   int t;
 
    pd = data;
    ui = pd->ui;
 
-   type = (Proc_Sort) (int *) evas_object_data_get(obj, "type");
+   t = (intptr_t) evas_object_data_get(obj, "type");
+   type = t & PROC_SORT_BY_MAX;
 
    if (ui->proc.sort_type == type)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
@@ -1131,6 +1136,7 @@ _item_menu_start_cb(void *data, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Data *pd = data;
+
    kill(pd->selected_pid, SIGCONT);
 }
 
@@ -1139,6 +1145,7 @@ _item_menu_stop_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
    Data *pd = data;
+
    kill(pd->selected_pid, SIGSTOP);
 }
 
@@ -1147,6 +1154,7 @@ _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED,
                    void *event_info EINA_UNUSED)
 {
    Data *pd = data;
+
    kill(pd->selected_pid, SIGKILL);
 }
 
@@ -1155,6 +1163,7 @@ _item_menu_cancel_cb(void *data, Evas_Object *obj EINA_UNUSED,
                      void *event_info EINA_UNUSED)
 {
    Data *pd = data;
+
    elm_menu_close(pd->menu);
    pd->menu = NULL;
 }
@@ -1327,8 +1336,9 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Elm_Object_Item *it;
    Proc_Info *proc;
-   Data *pd = data;
+   Data *pd;
 
+   pd = data;
    it = event_info;
 
    elm_genlist_item_selected_set(it, 0);
@@ -1345,6 +1355,7 @@ static Eina_Bool
 _main_menu_timer_cb(void *data)
 {
    Data *pd = data;
+
    evas_object_del(pd->main_menu);
    pd->main_menu_timer = NULL;
    pd->main_menu = NULL;
@@ -1903,9 +1914,10 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
 {
    Eina_Iterator *it;
    Evisum_Ui *ui;
-   Data *pd = data;
+   Data *pd;
    void *d = NULL;
 
+   pd = data;
    ui = pd->ui;
 
    it = eina_hash_iterator_data_new(pd->cpu_times);
@@ -1945,8 +1957,9 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
             Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evisum_Ui *ui;
-   Data *pd = data;
+   Data *pd;
 
+   pd = data;
    ui = pd->ui;
 
    evisum_ui_config_save(ui);
