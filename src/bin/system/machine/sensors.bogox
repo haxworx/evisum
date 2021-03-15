@@ -89,7 +89,8 @@ system_sensors_thermal_get(int *sensor_count)
    size_t slen = sizeof(struct sensor);
    size_t sdlen = sizeof(struct sensordev);
 
-   for (devn = 0;; devn++) {
+   for (devn = 0;; devn++)
+      {
         mibs[2] = devn;
 
         if (sysctl(mibs, 3, &snsrdev, &sdlen, NULL, 0) == -1)
@@ -264,6 +265,8 @@ _power_battery_count_get(power_t *power)
              power->batteries = t;
              power->batteries[i] = calloc(1, sizeof(bat_t));
              power->batteries[i]->name = strdup(snsrdev.xname);
+             power->batteries[i]->model = strdup("Unknown");
+             power->batteries[i]->vendor = strdup("Unknown");
              power->batteries[i]->present = true;
              power->batteries[i]->mibs[0] = mibs[0];
              power->batteries[i]->mibs[1] = mibs[1];
