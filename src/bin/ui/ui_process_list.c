@@ -409,66 +409,79 @@ _item_create(Evas_Object *obj)
         lb = _item_column_add(tb, "uid", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_PID))
      {
         lb = _item_column_add(tb, "pid", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_THREADS))
      {
         lb = _item_column_add(tb, "thr", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_CPU))
      {
         lb = _item_column_add(tb, "cpu", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_PRI))
      {
         lb = _item_column_add(tb, "prio", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_NICE))
      {
         lb = _item_column_add(tb, "nice", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_FILES))
      {
         lb = _item_column_add(tb, "files", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_SIZE))
      {
         lb = _item_column_add(tb, "size", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_VIRT))
      {
         lb = _item_column_add(tb, "virt", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_RSS))
      {
         lb = _item_column_add(tb, "rss", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_SHARED))
      {
         lb = _item_column_add(tb, "share", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_STATE))
      {
         lb = _item_column_add(tb, "state", i++);
         evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_TIME))
      {
         lb = _item_column_add(tb, "time", i++);
         evas_object_size_hint_align_set(lb, 0.5, FILL);
      }
+
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
      {
         hbx = elm_box_add(tb);
@@ -565,7 +578,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(hbx, NULL, NULL, &ow, NULL);
    if (ow > w)
      {
-        evas_object_size_hint_min_set(pd->btn_cmd, w, 1);
+        evas_object_size_hint_min_set(pd->btn_cmd, ow , 1);
         pd->skip_wait = 1;
      }
    rec = evas_object_data_get(lb, "rec");
@@ -593,14 +606,13 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         else
           snprintf(buf, sizeof(buf), "%i", proc->uid);
         if (strcmp(buf, elm_object_text_get(lb)))
+          elm_object_text_set(lb, buf);
+
+        evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
+        if (ow > w)
           {
-             elm_object_text_set(lb, buf);
-             evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
-             if (ow > w)
-               {
-                  evas_object_size_hint_min_set(pd->btn_uid, w, 1);
-                  pd->skip_wait = 1;
-               }
+             evas_object_size_hint_min_set(pd->btn_uid, ow, 1);
+             pd->skip_wait = 1;
           }
         _field_adjust(pd, PROC_FIELD_UID, lb, w);
      }
@@ -2076,6 +2088,7 @@ ui_process_list_win_add(Evisum_Ui *ui)
      elm_win_center(win, 1, 1);
 
    pd->tb_main = tb = _content_add(pd, win);
+   elm_win_resize_object_add(win, tb);
    elm_object_content_set(win, tb);
 
    pd->cache = evisum_ui_item_cache_new(pd->glist, _item_create, 40);
