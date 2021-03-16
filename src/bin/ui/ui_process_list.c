@@ -1124,7 +1124,7 @@ _btn_clicked_cb(void *data, Evas_Object *obj,
    ui = pd->ui;
 
    t = (intptr_t) evas_object_data_get(obj, "type");
-   type = t & PROC_SORT_BY_MAX;
+   type = (t & 0xff);
 
    if (ui->proc.sort_type == type)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
