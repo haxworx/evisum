@@ -268,7 +268,7 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    evas_object_data_set(tb, text, lb);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
-   evas_object_data_set(lb, "rect", rec);
+   evas_object_data_set(lb, "rec", rec);
 
    elm_table_pack(tb, lb, col, 0, 1, 1);
    elm_table_pack(tb, rec, col, 0, 1, 1);
@@ -340,7 +340,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%d", th->tid));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->threads.btn_id, w, 1);
-   rec = evas_object_data_get(lb, "rect");
+   rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
 
    evas_object_geometry_get(pd->threads.btn_name, NULL, NULL, &w, NULL);
@@ -348,7 +348,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", th->name));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->threads.btn_name, w, 1);
-   rec = evas_object_data_get(lb, "rect");
+   rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
 
    evas_object_geometry_get(pd->threads.btn_state, NULL, NULL, &w, NULL);
@@ -356,7 +356,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", th->state));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->threads.btn_state, w, 1);
-   rec = evas_object_data_get(lb, "rect");
+   rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
 
    evas_object_geometry_get(pd->threads.btn_cpu_id, NULL, NULL, &w, NULL);
@@ -364,7 +364,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%d", th->cpu_id));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->threads.btn_cpu_id, w, 1);
-   rec = evas_object_data_get(lb, "rect");
+   rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
 
    pb = evas_object_data_get(it->obj, "cpu_usage");
@@ -844,7 +844,7 @@ _manual_init_cb(void *data, Ecore_Thread *thread)
    int n = 1;
    Data *pd = data;
 
-   setenv("MANWIDTH", "75", 1);
+   setenv("MANWIDTH", "80", 1);
    ecore_thread_feedback(thread, strdup("<code>"));
 
    if (!strchr(pd->selected_cmd, ' '))

@@ -1089,7 +1089,9 @@ _btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse,
      elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
+
    elm_object_part_content_set(btn, "icon", ic);
+
    evas_object_show(ic);
 }
 

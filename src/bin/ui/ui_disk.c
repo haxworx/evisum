@@ -55,7 +55,7 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    evas_object_data_set(tb, text, lb);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
-   evas_object_data_set(lb, "rect", rec);
+   evas_object_data_set(lb, "rec", rec);
 
    elm_table_pack(tb, lb, col, 0, 1, 1);
    elm_table_pack(tb, rec, col, 0, 1, 1);
@@ -122,7 +122,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", inf->path));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_device, w, 1);
-   r = evas_object_data_get(lb, "rect");
+   r = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(lb);
 
@@ -131,7 +131,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", inf->mount));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_mount, w, 1);
-   r = evas_object_data_get(lb, "rect");
+   r = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(lb);
 
@@ -140,7 +140,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", inf->type_name));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_fs, w, 1);
-   r = evas_object_data_get(lb, "rect");
+   r = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(lb);
 
@@ -149,7 +149,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(inf->usage.total)));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_total, w, 1);
-   r = evas_object_data_get(lb, "rect");
+   r = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(lb);
 
@@ -158,7 +158,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(inf->usage.used)));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_used, ow, 1);
-   r = evas_object_data_get(lb, "rect");
+   r = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(lb);
 
@@ -168,7 +168,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(avail)));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(pd->btn_free, ow, 1);
-   r = evas_object_data_get(lb, "rect");
+   r = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(r, w, 1);
    evas_object_show(lb);
 
