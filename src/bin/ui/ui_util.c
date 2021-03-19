@@ -106,21 +106,25 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
 const char *
 evisum_size_format(unsigned long long bytes)
 {
-   const char *s, *unit = "BKMGTPEZY";
    unsigned long powi = 1;
    unsigned long long value;
    unsigned int precision = 2, powj = 1;
+   int i = 0;
+   static const char *units[8] = {
+      _("B"), _("K"), _("M"), _("G"),
+      _("T"), _("P"), _("E"), _("Z"),
+   };
 
    value = bytes;
    while (value > 1024)
      {
        if ((value / 1024) < powi) break;
        powi *= 1024;
-       ++unit;
-       if (unit[1] == '\0') break;
+       ++i;
+       if (i == 7) break;
      }
 
-   if (*unit == 'B') precision = 0;
+   if (!i) precision = 0;
 
    while (precision > 0)
      {
@@ -129,9 +133,7 @@ evisum_size_format(unsigned long long bytes)
         --precision;
      }
 
-   s = eina_slstr_printf("%1.*f %c", precision, (double) value / powi, *unit);
-
-   return s;
+   return eina_slstr_printf("%1.*f %s", precision, (double) value / powi, units[i]);
 }
 
 static char *
