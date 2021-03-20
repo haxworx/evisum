@@ -972,8 +972,10 @@ _general_view_update(Data *pd, Proc_Info *proc)
                        eina_slstr_printf("%d", proc->nice));
    elm_object_text_set(pd->general.entry_pri,
                        eina_slstr_printf("%d", proc->priority));
-   elm_object_text_set(pd->general.entry_state,
-                       proc->state);
+   if (proc->wchan[0] && ((proc->state[0] == 's' && proc->state[1] == 'l')))
+     elm_object_text_set(pd->general.entry_state, proc->wchan);
+   else
+     elm_object_text_set(pd->general.entry_state, proc->state);
    elm_object_text_set(pd->general.entry_cpu_usage,
                        eina_slstr_printf("%.0f%%", proc->cpu_usage));
 }
