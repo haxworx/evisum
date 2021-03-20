@@ -32,6 +32,7 @@ typedef struct _Evisum_Ui
       Eina_Bool     restart;
 
       Eina_Bool     has_kthreads;
+      Eina_Bool     has_wchan;
 
       int           poll_delay;
       int           sort_type;

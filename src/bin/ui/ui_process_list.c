@@ -719,9 +719,14 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (_field_enabled(PROC_FIELD_STATE))
      {
+        Evisum_Ui *ui = pd->ui;
+
         evas_object_geometry_get(pd->btn_state, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "state");
-        snprintf(buf, sizeof(buf), "%s", proc->state);
+        if ((ui->proc.has_wchan) && (proc->state[0] == 's' && proc->state[1] == 'l'))
+          snprintf(buf, sizeof(buf), "%s", proc->wchan);
+        else
+          snprintf(buf, sizeof(buf), "%s", proc->state);
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
         _field_adjust(pd, PROC_FIELD_STATE, lb, w);
