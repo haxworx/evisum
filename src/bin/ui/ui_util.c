@@ -281,7 +281,6 @@ typedef struct {
    Evas_Object    *im;
    Ecore_Animator *animator;
    double          pos;
-   double          pos2;
 } Animate_Data;
 
 static void
@@ -330,41 +329,22 @@ about_anim(void *data)
 {
    Animate_Data *ad;
    Evas_Coord w, h, oh;
-   static Eina_Bool begin = 0;
-   static Evas_Coord ix = 0;
    ad = data;
 
    evas_object_geometry_get(ad->bg, NULL, NULL,  &w, &h);
-   if (!ix) ix = w / 3;
    if (w <= 0 || h <= 0) return 1;
    evas_object_geometry_get(ad->obj, NULL, NULL, NULL, &oh);
    evas_object_move(ad->obj, 0, ad->pos);
    evas_object_show(ad->obj);
+
+   evas_object_move(ad->im, ELM_SCALE_SIZE(4), h - ELM_SCALE_SIZE(64));
+   evas_object_show(ad->im);
 
    ad->pos -= 0.5;
 
    if (ad->pos <= -oh)
      {
         ad->pos =  h;
-        begin = 1;
-     }
-
-   if (!begin) return 1;
-
-   ad->pos2 += 10;
-
-   evas_object_move(ad->im, ix, ad->pos2);
-   evas_object_show(ad->im);
-
-   if (ad->pos2 > h + oh)
-     {
-        ad->pos2 = -oh;
-        time_t t = time(NULL);
-        srand(t);
-        ix = rand() % w;
-        evas_object_move(ad->im, ix, ad->pos2);
-        evas_object_hide(ad->im);
-        begin = 0;
      }
 
    return 1;
@@ -482,9 +462,9 @@ evisum_about_window_show(void *data)
    im = evas_object_image_filled_add(evas_object_evas_get(bg));
    evas_object_image_file_set(im, evisum_icon_path_get("lovethisdogharvey"), NULL);
    evas_object_image_size_get(im, &iw, &ih);
-   evas_object_size_hint_min_set(im, iw / 2, ih / 2);
-   evas_object_resize(im, iw / 2, ih / 2);
-   evas_object_move(im, iw / 3, h + ih + ih);
+   evas_object_size_hint_min_set(im, ELM_SCALE_SIZE(iw) * 0.5, ELM_SCALE_SIZE(ih) * 0.5);
+   evas_object_resize(im, ELM_SCALE_SIZE(iw) * 0.5, ELM_SCALE_SIZE(ih) * 0.5);
+   evas_object_show(im);
    evas_object_pass_events_set(im, 1);
 
    about = malloc(sizeof(Animate_Data));
@@ -494,7 +474,6 @@ evisum_about_window_show(void *data)
    about->pos = ELM_SCALE_SIZE(400);
    about->ui = ui;
    about->im = im;
-   about->pos2 = -ih;
    about->animator = ecore_animator_add(about_anim, about);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, about);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _about_resize_cb, about);
