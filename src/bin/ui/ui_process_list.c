@@ -1398,10 +1398,18 @@ static void
 _glist_scroll_stopped_cb(void *data, Evas_Object *obj EINA_UNUSED,
                          void *event_info EINA_UNUSED)
 {
-   Data *pd = data;
+   Data *pd;
+   Evas_Coord oy;
+   static Evas_Coord prev_oy;
+
+   pd = data;
+
+   elm_scroller_region_get(pd->glist, NULL, &oy, NULL, NULL);
 
    pd->skip_update = 0;
-   pd->skip_wait = 1;
+   if (oy != prev_oy)
+     pd->skip_wait = 1;
+   prev_oy = oy;
 }
 
 static Eina_Bool
