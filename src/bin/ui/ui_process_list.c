@@ -591,7 +591,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(pd->btn_menu, NULL, NULL, &bw, NULL);
    evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &ow, NULL);
-   w = bw + ow - ELM_SCALE_SIZE(8);
+   w = bw + ow;
    lb = evas_object_data_get(it->obj, "cmd");
    snprintf(buf, sizeof(buf), "%s", proc->command);
    if (strcmp(buf, elm_object_text_get(lb)))
@@ -1097,12 +1097,6 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 }
 
 static void
-_process_list_update(Data *pd)
-{
-   pd->skip_wait = 1;
-}
-
-static void
 _btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse,
                        Eina_Bool selected EINA_UNUSED)
 {
@@ -1134,8 +1128,6 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
      }
    _btn_icon_state_update(btn, ui->proc.sort_reverse, 0);
 
-   _process_list_update(pd);
-
    elm_scroller_page_bring_in(pd->glist, 0, 0);
 }
 
@@ -1158,6 +1150,8 @@ _btn_clicked_cb(void *data, Evas_Object *obj,
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = type;
    _btn_clicked_state_save(pd, obj);
+   pd->skip_update = 0;
+   pd->skip_wait = 1;
 }
 
 static void
@@ -1389,6 +1383,25 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 
    pd->selected_pid = proc->pid;
    ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
+}
+
+static void
+_glist_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                   void *event_info EINA_UNUSED)
+{
+   Data *pd = data;
+
+   pd->skip_update = 1;
+}
+
+static void
+_glist_scroll_stopped_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                         void *event_info EINA_UNUSED)
+{
+   Data *pd = data;
+
+   pd->skip_update = 0;
+   pd->skip_wait = 1;
 }
 
 static Eina_Bool
@@ -1690,6 +1703,12 @@ _content_add(Data *pd, Evas_Object *parent)
                                   _item_pid_secondary_clicked_cb, pd);
    evas_object_smart_callback_add(glist, "unrealized",
                                   _item_unrealized_cb, pd);
+   evas_object_smart_callback_add(glist, "scroll",
+                                  _glist_scrolled_cb, pd);
+   evas_object_smart_callback_add(glist, "scroll,anim,stop",
+                                  _glist_scroll_stopped_cb, pd);
+   evas_object_smart_callback_add(glist, "scroll,drag,stop",
+                                  _glist_scroll_stopped_cb, pd);
 
    pd->summary.fr = fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
@@ -1719,13 +1738,15 @@ _search_empty_cb(void *data)
         elm_object_focus_allow_set(pd->search.entry, 0);
         pd->search.visible = 0;
         pd->search.timer = NULL;
+        pd->skip_update = 0;
         pd->skip_wait = 1;
         return 0;
      }
 
    if (pd->search.keytime &&
-       ((ecore_loop_time_get() - pd->search.keytime) > 0.1))
+       ((ecore_loop_time_get() - pd->search.keytime) > 0.2))
      {
+        pd->skip_update = 0;
         pd->skip_wait = 1;
         pd->search.keytime = 0;
      }
@@ -1740,6 +1761,7 @@ _search_clear(Data *pd)
      free(pd->search.text);
    pd->search.text = NULL;
    pd->search.len = 0;
+   pd->skip_update = 0;
 }
 
 static void
@@ -1758,6 +1780,7 @@ _search_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
    text = elm_object_text_get(obj);
    if (text)
      {
+        pd->skip_update = 1;
         pd->search.keytime = ecore_loop_time_get();
         _search_clear(pd);
         pd->search.text = strdup(text);
