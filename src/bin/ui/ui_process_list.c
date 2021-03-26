@@ -103,7 +103,7 @@ static Data *_pd = NULL;
 typedef struct
 {
    Proc_Field   id;
-   const char  *name;
+   const char  *desc;
    Eina_Bool    enabled;
    Evas_Object *btn;
 } Field;
@@ -111,7 +111,7 @@ typedef struct
 static Field _fields[PROC_FIELD_MAX];
 
 static const char *
-_field_name(Proc_Field id)
+_field_desc(Proc_Field id)
 {
   switch (id)
    {
@@ -120,7 +120,7 @@ _field_name(Proc_Field id)
       case PROC_FIELD_UID:
         return _("User");
       case PROC_FIELD_PID:
-        return _("PID");
+        return _("Process ID");
       case PROC_FIELD_THREADS:
         return _("Threads");
       case PROC_FIELD_CPU:
@@ -145,6 +145,47 @@ _field_name(Proc_Field id)
         return _("Time");
       case PROC_FIELD_CPU_USAGE:
         return _("CPU Usage");
+      default:
+         break;
+   }
+  return "BUG";
+}
+
+static const char *
+_field_name(Proc_Field id)
+{
+  switch (id)
+   {
+      case PROC_FIELD_CMD:
+        return _("command");
+      case PROC_FIELD_UID:
+        return _("user");
+      case PROC_FIELD_PID:
+        return _("pid");
+      case PROC_FIELD_THREADS:
+        return _("thr");
+      case PROC_FIELD_CPU:
+        return _("cpu");
+      case PROC_FIELD_PRI:
+        return _("pri");
+      case PROC_FIELD_NICE:
+        return _("nice");
+      case PROC_FIELD_FILES:
+        return _("files");
+      case PROC_FIELD_SIZE:
+        return _("size");
+      case PROC_FIELD_VIRT:
+        return _("virt");
+      case PROC_FIELD_RSS:
+        return _("res");
+      case PROC_FIELD_SHARED:
+        return _("shr");
+      case PROC_FIELD_STATE:
+        return _("state");
+      case PROC_FIELD_TIME:
+        return _("time");
+      case PROC_FIELD_CPU_USAGE:
+        return _("cpu %");
       default:
          break;
    }
@@ -230,7 +271,7 @@ _field_menu_create(Data *pd, Evas_Object *parent)
         ck = elm_check_add(parent);
         evas_object_size_hint_weight_set(ck, EXPAND, EXPAND);
         evas_object_size_hint_align_set(ck, FILL, FILL);
-        elm_object_text_set(ck, _fields[i].name);
+        elm_object_text_set(ck, _fields[i].desc);
         elm_check_state_set(ck, _fields[i].enabled);
         evas_object_smart_callback_add(ck, "changed",
                                        _field_menu_check_changed_cb, &_fields[i]);
@@ -279,16 +320,19 @@ _fields_init(Data *pd)
    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
      {
         Evas_Object *btn;
-        const char *name = _field_name(i);
-        btn = _fields[i].btn;
+        const char *name, *desc;
+        name = _field_name(i);
+        desc = _field_desc(i);
+        btn  = _fields[i].btn;
 
         _fields[i].id = i;
-        _fields[i].name = name;
+        _fields[i].desc = desc;
         _fields[i].enabled = 1;
         if ((i != PROC_FIELD_CMD) && (!(pd->ui->proc.fields & (1UL << i))))
           _fields[i].enabled = 0;
 
-        elm_object_tooltip_text_set(btn, name);
+        elm_object_tooltip_text_set(btn, desc);
+        elm_object_text_set(btn, name);
         evas_object_event_callback_add(btn, EVAS_CALLBACK_MOUSE_UP,
                                        _field_mouse_up_cb, pd);
      }
@@ -1499,7 +1543,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CMD);
-   elm_object_text_set(btn, _("command"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_CMD].btn = btn;
@@ -1512,7 +1555,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_UID);
-   elm_object_text_set(btn, _("user"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_UID].btn = btn;
@@ -1525,7 +1567,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PID);
-   elm_object_text_set(btn, _("pid"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_PID].btn = btn;
@@ -1538,7 +1579,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_THREADS);
-   elm_object_text_set(btn, _("thr"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_THREADS].btn = btn;
@@ -1551,7 +1591,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU);
-   elm_object_text_set(btn, _("cpu"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_CPU].btn = btn;
@@ -1564,7 +1603,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PRI);
-   elm_object_text_set(btn, _("prio"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_PRI].btn = btn;
@@ -1577,7 +1615,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_NICE);
-   elm_object_text_set(btn, _("nice"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_clicked_cb, pd);
@@ -1591,7 +1628,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_FILES);
-   elm_object_text_set(btn, _("files"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_FILES].btn = btn;
@@ -1604,7 +1640,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SIZE);
-   elm_object_text_set(btn, _("size"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_SIZE].btn = btn;
@@ -1617,7 +1652,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_VIRT);
-   elm_object_text_set(btn, _("virt"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_VIRT].btn = btn;
@@ -1630,7 +1664,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_RSS);
-   elm_object_text_set(btn, _("res"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_RSS].btn = btn;
@@ -1643,7 +1676,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SHARED);
-   elm_object_text_set(btn, _("shr"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_SHARED].btn = btn;
@@ -1656,7 +1688,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_STATE);
-   elm_object_text_set(btn, _("state"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_STATE].btn = btn;
@@ -1669,7 +1700,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_TIME);
-   elm_object_text_set(btn, _("time"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_TIME].btn = btn;
@@ -1682,7 +1712,6 @@ _content_add(Data *pd, Evas_Object *parent)
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU_USAGE);
-   elm_object_text_set(btn, _("cpu %"));
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, pd);
    _fields[PROC_FIELD_CPU_USAGE].btn = btn;
