@@ -372,7 +372,7 @@ _item_column_add(Evas_Object *tb, const char *text, int col)
    elm_box_pack_end(hbx, lb);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(2), 1);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(6), 1);
    elm_box_pack_end(hbx, rec);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
@@ -501,7 +501,7 @@ _item_create(Evas_Object *obj)
    if (_field_enabled(PROC_FIELD_TIME))
      {
         lb = _item_column_add(tb, "time", i++);
-        evas_object_size_hint_align_set(lb, 0.5, FILL);
+        evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
 
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
