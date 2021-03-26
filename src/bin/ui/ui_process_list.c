@@ -1436,7 +1436,8 @@ _glist_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Data *pd = data;
 
-   pd->skip_update = 1;
+   if (pd->poll_count < 10)
+     pd->skip_update = 1;
 }
 
 static void
@@ -1471,8 +1472,10 @@ _glist_mouse_wheel_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNU
 
    elm_scroller_region_get(pd->glist, &x, &y, &w, &h);
 
-   if (ev->z == 1) movement = (GENLIST_SCROLL_BY);
-   else if (ev->z == -1) movement = -(GENLIST_SCROLL_BY);
+   h *= 1.2;
+
+   if (ev->z == 1) movement = (h < GENLIST_SCROLL_BY ? h : GENLIST_SCROLL_BY);
+   else if (ev->z == -1) movement = (h < GENLIST_SCROLL_BY ? -h : -GENLIST_SCROLL_BY);
 
    elm_scroller_region_bring_in(pd->glist, x, y + movement, w, h);
 }
