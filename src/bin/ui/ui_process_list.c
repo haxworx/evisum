@@ -29,6 +29,7 @@ typedef struct
    Ecore_Event_Handler   *handler;
    Eina_Hash             *cpu_times;
    Eina_Bool              skip_wait;
+   Eina_Bool              skip_update;
    Sorter                 sorters[PROC_SORT_BY_MAX];
    pid_t                  selected_pid;
    int                    poll_count;
@@ -73,6 +74,7 @@ typedef struct
    Evas_Object            *btn_time;
    Evas_Object            *btn_cpu_usage;
 
+   Eina_Bool               fields_changed;
    Proc_Field              field_max;
    Evas_Object            *fields_menu;
    Ecore_Timer            *fields_timer;
@@ -161,6 +163,7 @@ _fields_update_timer_cb(void *data)
    Data *pd = data;
 
    pd->skip_wait = 1;
+   pd->skip_update = 0;
    pd->fields_timer = NULL;
 
    return 0;
@@ -198,6 +201,8 @@ _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
    pd = _pd;
    ui = pd->ui;
 
+   pd->skip_update = 1;
+   pd->fields_changed = 1;
    f = data;
    // Updating here is far too expensive. Maybe in 10 years time. :)
    // f->enabled = !f->enabled;
@@ -319,6 +324,7 @@ _content_reset(Data *pd)
    evas_object_show(pd->summary.fr);
    elm_genlist_clear(pd->glist);
    evisum_ui_item_cache_reset(pd->cache, _cache_reset_done_cb, pd);
+   pd->fields_changed = 0;
 }
 
 static void
@@ -1014,7 +1020,6 @@ _process_list(void *data, Ecore_Thread *thread)
         for (int i = 0; i < delay * 8; i++)
           {
              if (ecore_thread_check(thread)) return;
-
              if (pd->skip_wait)
                {
                   pd->skip_wait = 0;
@@ -1023,10 +1028,8 @@ _process_list(void *data, Ecore_Thread *thread)
              usleep(125000);
           }
         list = _process_list_get(pd);
-        if (!pd->skip_wait)
-          {
-             ecore_thread_feedback(thread, list);
-          }
+        if (!pd->skip_update)
+          ecore_thread_feedback(thread, list);
         else
           {
              EINA_LIST_FREE(list, proc)
@@ -1125,7 +1128,8 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
         evas_object_del(pd->fields_menu);
         pd->fields_menu = NULL;
         // Postpone field changes until the user dismisses the popup.
-        _content_reset(pd);
+        if (pd->fields_changed)
+          _content_reset(pd);
         return;
      }
    _btn_icon_state_update(btn, ui->proc.sort_reverse, 0);
