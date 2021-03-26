@@ -566,9 +566,9 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 {
    Proc_Info *proc;
    struct passwd *pwd_entry;
-   Evas_Object *rec, *lb, *o, *hbx, *pb;
+   Evas_Object *rec, *lb, *o, *pb;
    char buf[128];
-   Evas_Coord w, ow;
+   Evas_Coord w, ow, bw;
    Data *pd = _pd;
 
    proc = (void *) data;
@@ -583,24 +583,23 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         exit(-1);
      }
 
-   evas_object_geometry_get(pd->btn_menu, NULL, NULL, &ow, NULL);
-   evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &w, NULL);
-   w += (ow - 8);
+   evas_object_geometry_get(pd->btn_menu, NULL, NULL, &bw, NULL);
+   evas_object_geometry_get(pd->btn_cmd, NULL, NULL, &ow, NULL);
+   w = bw + ow - ELM_SCALE_SIZE(8);
    lb = evas_object_data_get(it->obj, "cmd");
    snprintf(buf, sizeof(buf), "%s", proc->command);
    if (strcmp(buf, elm_object_text_get(lb)))
      elm_object_text_set(lb, buf);
-   hbx = evas_object_data_get(lb, "hbx");
-   evas_object_geometry_get(hbx, NULL, NULL, &ow, NULL);
+   evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
+   ow += bw;
    if (ow > w)
      {
-        evas_object_size_hint_min_set(pd->btn_cmd, ow , 1);
+        evas_object_size_hint_min_set(pd->btn_cmd, ow, 1);
         pd->skip_wait = 1;
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
-   elm_box_recalculate(hbx);
 
    const char *new = evisum_icon_path_get(evisum_icon_cache_find(proc));
    const char *old = NULL;
