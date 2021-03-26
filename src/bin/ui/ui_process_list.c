@@ -12,7 +12,8 @@
 #include <sys/resource.h>
 #include <pwd.h>
 
-#define DIRTY_GENLIST_HACK     1
+#define DIRTY_GENLIST_HACK    1
+#define GENLIST_SCROLL_BY     512
 
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
@@ -1470,8 +1471,8 @@ _glist_mouse_wheel_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNU
 
    elm_scroller_region_get(pd->glist, &x, &y, &w, &h);
 
-   if (ev->z == 1) movement = (h / 2);
-   else if (ev->z == -1) movement = -(h / 2);
+   if (ev->z == 1) movement = (GENLIST_SCROLL_BY);
+   else if (ev->z == -1) movement = -(GENLIST_SCROLL_BY);
 
    elm_scroller_region_bring_in(pd->glist, x, y + movement, w, h);
 }
@@ -1942,9 +1943,9 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
         return;
      }
    else if (!strcmp(ev->keyname, "Prior"))
-     elm_scroller_region_bring_in(pd->glist, x, y - h, w, h);
+     elm_scroller_region_bring_in(pd->glist, x, y - GENLIST_SCROLL_BY, w, h);
    else if (!strcmp(ev->keyname, "Next"))
-     elm_scroller_region_bring_in(pd->glist, x, y + h, w, h);
+     elm_scroller_region_bring_in(pd->glist, x, y + GENLIST_SCROLL_BY, w, h);
    else
      _win_key_down_search(pd, ev);
 
