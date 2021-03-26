@@ -177,32 +177,15 @@ _cache_reset_done_cb(void *data)
      pd->fields_timer = ecore_timer_add(1.0, _fields_update_timer_cb, pd);
 }
 
-// Updating fields is a heavy exercise. We both offset the
-// cache clearing and delay the initial update for a better
-// experience.
 static void
-_content_reset(Data *pd)
+_fields_update(Data *pd)
 {
-   int j = 0;
-   elm_table_clear(pd->tb_main, 0);
-   elm_table_pack(pd->tb_main, pd->btn_menu, j++, 0, 1, 1);
-   for (int i = j; i < PROC_FIELD_MAX; i++)
+   for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
      {
-        Field *f = &_fields[i];
-        if (!f->enabled)
-          {
-             evas_object_hide(f->btn);
-             continue;
-          }
-        pd->field_max = i;
-        elm_table_pack(pd->tb_main, f->btn, j++, 0, 1, 1);
-        evas_object_show(f->btn);
+        _fields[i].enabled = 1;
+        if ((i != PROC_FIELD_CMD) && (!(pd->ui->proc.fields & (1UL << i))))
+          _fields[i].enabled = 0;
      }
-   elm_table_pack(pd->tb_main, pd->glist, 0, 1, j, 1);
-   elm_table_pack(pd->tb_main, pd->summary.fr, 0, 2, j, 1);
-   evas_object_show(pd->summary.fr);
-   elm_genlist_clear(pd->glist);
-   evisum_ui_item_cache_reset(pd->cache, _cache_reset_done_cb, pd);
 }
 
 static void
@@ -216,8 +199,9 @@ _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
    ui = pd->ui;
 
    f = data;
-   f->enabled = !f->enabled;
-   _content_reset(pd);
+   // Updating here is far too expensive. Maybe in 10 years time. :)
+   // f->enabled = !f->enabled;
+   // _content_reset(pd);
    ui->proc.fields ^= (1 << f->id);
 }
 
@@ -303,6 +287,38 @@ _fields_init(Data *pd)
         evas_object_event_callback_add(btn, EVAS_CALLBACK_MOUSE_UP,
                                        _field_mouse_up_cb, pd);
      }
+}
+
+// Updating fields is a heavy exercise. We both offset the
+// cache clearing and delay the initial update for a better
+// experience.
+static void
+_content_reset(Data *pd)
+{
+   int j = 0;
+
+   // Update fields from bitmask.
+   _fields_update(pd);
+
+   elm_table_clear(pd->tb_main, 0);
+   elm_table_pack(pd->tb_main, pd->btn_menu, j++, 0, 1, 1);
+   for (int i = j; i < PROC_FIELD_MAX; i++)
+     {
+        Field *f = &_fields[i];
+        if (!f->enabled)
+          {
+             evas_object_hide(f->btn);
+             continue;
+          }
+        pd->field_max = i;
+        elm_table_pack(pd->tb_main, f->btn, j++, 0, 1, 1);
+        evas_object_show(f->btn);
+     }
+   elm_table_pack(pd->tb_main, pd->glist, 0, 1, j, 1);
+   elm_table_pack(pd->tb_main, pd->summary.fr, 0, 2, j, 1);
+   evas_object_show(pd->summary.fr);
+   elm_genlist_clear(pd->glist);
+   evisum_ui_item_cache_reset(pd->cache, _cache_reset_done_cb, pd);
 }
 
 static void
@@ -1109,6 +1125,8 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
      {
         evas_object_del(pd->fields_menu);
         pd->fields_menu = NULL;
+        // Postpone field changes until the user dismisses the popup.
+        _content_reset(pd);
         return;
      }
    _btn_icon_state_update(btn, ui->proc.sort_reverse, 0);
