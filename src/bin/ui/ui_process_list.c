@@ -31,6 +31,7 @@ typedef struct
    Eina_Hash             *cpu_times;
    Eina_Bool              skip_wait;
    Eina_Bool              skip_update;
+   Eina_Bool              update_every_item;
    Sorter                 sorters[PROC_SORT_BY_MAX];
    pid_t                  selected_pid;
    int                    poll_count;
@@ -609,7 +610,6 @@ _field_adjust(Data *pd, Proc_Field id, Evas_Object *obj, Evas_Coord w)
         evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
         evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
      }
-   evas_object_show(obj);
 }
 
 static Evas_Object *
@@ -646,6 +646,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w)
      {
         evas_object_size_hint_min_set(pd->btn_cmd, ow, 1);
+        pd->update_every_item = 1;
         pd->skip_wait = 1;
      }
    rec = evas_object_data_get(lb, "rec");
@@ -678,6 +679,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         if (ow > w)
           {
              evas_object_size_hint_min_set(pd->btn_uid, ow, 1);
+             pd->update_every_item = 1;
              pd->skip_wait = 1;
           }
         _field_adjust(pd, PROC_FIELD_UID, lb, w);
@@ -1109,11 +1111,15 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
           proc_info_free(prev);
 
         elm_object_item_data_set(it, proc);
+        if (pd->update_every_item)
+          elm_genlist_item_update(it);
 
         it = elm_genlist_item_next_get(it);
      }
 
-   elm_genlist_realized_items_update(pd->glist);
+   if (!pd->update_every_item)
+     elm_genlist_realized_items_update(pd->glist);
+   pd->update_every_item = 0;
 
    _summary_update(pd);
 
