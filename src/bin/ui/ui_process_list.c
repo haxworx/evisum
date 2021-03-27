@@ -869,7 +869,7 @@ _bring_in(void *data)
    elm_scroller_gravity_set(pd->glist, 0.0, 0.0);
    elm_scroller_last_page_get(pd->glist, &h_page, &v_page);
    elm_scroller_page_bring_in(pd->glist, h_page, v_page);
-   elm_genlist_realized_items_update(pd->glist);
+//   elm_genlist_realized_items_update(pd->glist);
    evas_object_show(pd->glist);
 
    return 0;
@@ -1140,7 +1140,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
            eina_list_count(pd->cache->inactive), n);
 #endif
    if (!pd->poll_count)
-     ecore_timer_add(1.0, _bring_in, pd);
+     ecore_timer_add(2.0, _bring_in, pd);
    pd->poll_count++;
 
    if (evisum_ui_effects_enabled_get(pd->ui))
@@ -1460,7 +1460,10 @@ _glist_scroll_stopped_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    pd->skip_update = 0;
    if (oy != prev_oy)
-     pd->skip_wait = 1;
+     {
+        pd->skip_wait = 1;
+        elm_genlist_realized_items_update(pd->glist);
+     }
    prev_oy = oy;
 }
 
