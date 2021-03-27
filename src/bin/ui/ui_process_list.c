@@ -1467,28 +1467,6 @@ _glist_scroll_stopped_cb(void *data, Evas_Object *obj EINA_UNUSED,
    prev_oy = oy;
 }
 
-static void
-_glist_mouse_wheel_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                      void *event_info)
-{
-   Evas_Event_Mouse_Wheel *ev;
-   Data *pd;
-   Evas_Coord x, y, w, h;
-   Evas_Coord movement = 0;
-
-   pd = data;
-   ev = event_info;
-
-   elm_scroller_region_get(pd->glist, &x, &y, &w, &h);
-
-   h *= 1.2;
-
-   if (ev->z == 1) movement = (h < GENLIST_SCROLL_BY ? h : GENLIST_SCROLL_BY);
-   else if (ev->z == -1) movement = (h < GENLIST_SCROLL_BY ? -h : -GENLIST_SCROLL_BY);
-
-   elm_scroller_region_bring_in(pd->glist, x, y + movement, w, h);
-}
-
 static Eina_Bool
 _main_menu_timer_cb(void *data)
 {
@@ -1752,7 +1730,7 @@ _content_add(Data *pd, Evas_Object *parent)
    pd->glist = glist = elm_genlist_add(parent);
    elm_genlist_homogeneous_set(glist, 1);
    elm_scroller_gravity_set(glist, 0.0, 1.0);
-   elm_scroller_wheel_disabled_set(glist, 1);
+   elm_scroller_bounce_set(glist, 0, 0);
    elm_object_focus_allow_set(glist, 1);
    elm_scroller_policy_set(glist, ELM_SCROLLER_POLICY_AUTO,
                            (ui->proc.show_scroller ?
@@ -1780,8 +1758,6 @@ _content_add(Data *pd, Evas_Object *parent)
                                   _glist_scroll_stopped_cb, pd);
    evas_object_smart_callback_add(glist, "scroll,drag,stop",
                                   _glist_scroll_stopped_cb, pd);
-   evas_object_event_callback_add(glist, EVAS_CALLBACK_MOUSE_WHEEL,
-                                  _glist_mouse_wheel_cb, pd);
 
    pd->summary.fr = fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
