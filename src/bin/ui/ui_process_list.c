@@ -2206,7 +2206,7 @@ ui_process_list_win_add(Evisum_Ui *ui)
    elm_win_resize_object_add(win, tb);
    elm_object_content_set(win, tb);
 
-   pd->cache = evisum_ui_item_cache_new(pd->glist, _item_create, 40);
+   pd->cache = evisum_ui_item_cache_new(pd->glist, _item_create, 30);
    pd->cpu_times = eina_hash_int64_new(_cpu_times_free_cb);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL,
