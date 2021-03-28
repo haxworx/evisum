@@ -32,6 +32,11 @@ collections {
           name: "joke" COMP;
           source: "badjoke.wav";
        }
+       sample
+       {
+          name: "cockerel" COMP;
+          source: "cockerel.wav";
+       }
     }
     group
     {
@@ -164,6 +169,12 @@ collections {
                signal: "fields,change";
                source: "evisum/indicator";
                action: PLAY_SAMPLE "joke" 1.0 INPUT;
+            }
+            program
+            {
+               signal: "process,kill";
+               source: "evisum/indicator";
+               action: PLAY_SAMPLE "cockerel" 1.0 INPUT;
             }
         }
     }

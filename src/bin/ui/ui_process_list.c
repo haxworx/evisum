@@ -1171,7 +1171,7 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
              if (evisum_ui_effects_enabled_get(pd->ui))
                elm_object_signal_emit(pd->indicator, "fields,change", "evisum/indicator");
              _content_reset(pd);
-	  }
+           }
         return;
      }
    _btn_icon_state_update(btn, ui->proc.sort_reverse, 0);
@@ -1237,6 +1237,8 @@ _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Data *pd = data;
 
+   if (evisum_ui_effects_enabled_get(pd->ui))
+     elm_object_signal_emit(pd->indicator, "process,kill", "evisum/indicator");
    kill(pd->selected_pid, SIGKILL);
 }
 
@@ -1439,7 +1441,14 @@ _glist_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Data *pd = data;
 
-   pd->skip_update = 1;
+   // Update regularly on launch to allow for alignment.
+   if (pd->poll_count > 3)
+     pd->skip_update = 1;
+   else
+     {
+        pd->skip_update = 0;
+        pd->skip_wait = 1;
+     }
 }
 
 static void
