@@ -1080,6 +1080,15 @@ _process_list(void *data, Ecore_Thread *thread)
 }
 
 static void
+_indicator(Data *pd)
+{
+   if ((!pd->skip_update) && (!pd->resize_timer) && (pd->poll_count > 5))
+     {
+        elm_object_signal_emit(pd->indicator, "indicator,show", "evisum/indicator");
+     }
+}
+
+static void
 _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
                           void *msg EINA_UNUSED)
 {
@@ -1137,7 +1146,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    pd->poll_count++;
 
    if (evisum_ui_effects_enabled_get(pd->ui))
-     elm_object_signal_emit(pd->indicator, "indicator,show", "evisum/indicator");
+     _indicator(pd);
 }
 
 static void
@@ -1169,7 +1178,9 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
         if (pd->fields_changed)
           {
              if (evisum_ui_effects_enabled_get(pd->ui))
-               elm_object_signal_emit(pd->indicator, "fields,change", "evisum/indicator");
+               {
+                  elm_object_signal_emit(pd->indicator, "fields,change", "evisum/indicator");
+               }
              _content_reset(pd);
            }
         return;
@@ -1238,7 +1249,10 @@ _item_menu_kill_cb(void *data, Evas_Object *obj EINA_UNUSED,
    Data *pd = data;
 
    if (evisum_ui_effects_enabled_get(pd->ui))
-     elm_object_signal_emit(pd->indicator, "process,kill", "evisum/indicator");
+     {
+        elm_object_signal_emit(pd->indicator, "process,kill", "evisum/indicator");
+     }
+
    kill(pd->selected_pid, SIGKILL);
 }
 

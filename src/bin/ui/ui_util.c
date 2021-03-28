@@ -335,7 +335,8 @@ about_anim(void *data)
    if (w <= 0 || h <= 0) return 1;
    evas_object_geometry_get(ad->obj, NULL, NULL, NULL, &oh);
    evas_object_move(ad->obj, 0, ad->pos);
-   evas_object_show(ad->obj);
+   if (ad->pos <= h)
+     evas_object_show(ad->obj);
 
    evas_object_move(ad->im, ELM_SCALE_SIZE(4), h - ELM_SCALE_SIZE(64));
    evas_object_show(ad->im);
