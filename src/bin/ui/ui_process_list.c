@@ -547,7 +547,7 @@ _item_create(Evas_Object *obj)
    if (_field_enabled(PROC_FIELD_TIME))
      {
         lb = _item_column_add(tb, "time", i++);
-        evas_object_size_hint_align_set(lb, 1.0, FILL);
+        evas_object_size_hint_align_set(lb, 0.5, FILL);
      }
 
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
@@ -604,6 +604,13 @@ _field_adjust(Data *pd, Proc_Field id, Evas_Object *obj, Evas_Coord w)
      }
 }
 
+static void
+_alignment_fix(Data *pd)
+{
+   pd->update_every_item = 1;
+   pd->skip_wait = 1;
+}
+
 static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source)
 {
@@ -638,8 +645,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    if (ow > w)
      {
         evas_object_size_hint_min_set(pd->btn_cmd, ow, 1);
-        pd->update_every_item = 1;
-        pd->skip_wait = 1;
+        _alignment_fix(pd);
      }
    rec = evas_object_data_get(lb, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
@@ -671,8 +677,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         if (ow > w)
           {
              evas_object_size_hint_min_set(pd->btn_uid, ow, 1);
-             pd->update_every_item = 1;
-             pd->skip_wait = 1;
+             _alignment_fix(pd);
           }
         _field_adjust(pd, PROC_FIELD_UID, lb, w);
      }
