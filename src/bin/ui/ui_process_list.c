@@ -1074,6 +1074,7 @@ _process_list(void *data, Ecore_Thread *thread)
              EINA_LIST_FREE(list, proc)
                proc_info_free(proc);
           }
+        pd->skip_update = 0;
         delay = ui->proc.poll_delay;
      }
 }
@@ -1165,10 +1166,12 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
         evas_object_del(pd->fields_menu);
         pd->fields_menu = NULL;
         // Postpone field changes until the user dismisses the popup.
-        if (evisum_ui_effects_enabled_get(pd->ui))
-          elm_object_signal_emit(pd->indicator, "fields,change", "evisum/indicator");
         if (pd->fields_changed)
-          _content_reset(pd);
+          {
+             if (evisum_ui_effects_enabled_get(pd->ui))
+               elm_object_signal_emit(pd->indicator, "fields,change", "evisum/indicator");
+             _content_reset(pd);
+	  }
         return;
      }
    _btn_icon_state_update(btn, ui->proc.sort_reverse, 0);
@@ -1436,8 +1439,7 @@ _glist_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Data *pd = data;
 
-   if (pd->poll_count < 10)
-     pd->skip_update = 1;
+   pd->skip_update = 1;
 }
 
 static void
@@ -1452,7 +1454,6 @@ _glist_scroll_stopped_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    elm_scroller_region_get(pd->glist, NULL, &oy, NULL, NULL);
 
-   pd->skip_update = 0;
    if (oy != prev_oy)
      {
         pd->skip_wait = 1;
