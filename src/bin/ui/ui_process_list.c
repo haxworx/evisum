@@ -557,20 +557,12 @@ _item_create(Evas_Object *obj)
         evas_object_size_hint_weight_set(hbx, 1.0, 1.0);
         evas_object_size_hint_align_set(hbx, FILL, FILL);
 
-        rec = evas_object_rectangle_add(evas_object_evas_get(tb));
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(2), 1);
-        elm_box_pack_end(hbx, rec);
-
         pb = elm_progressbar_add(hbx);
         evas_object_size_hint_weight_set(pb, 0, EXPAND);
         evas_object_size_hint_align_set(pb, FILL, FILL);
         elm_progressbar_unit_format_set(pb, "%1.1f %%");
         elm_box_pack_end(hbx, pb);
         evas_object_show(hbx);
-
-        rec = evas_object_rectangle_add(evas_object_evas_get(tb));
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(2), 1);
-        elm_box_pack_end(hbx, rec);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(tb));
         evas_object_data_set(pb, "rec", rec);
