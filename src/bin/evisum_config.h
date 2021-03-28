@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x0010
+#define CONFIG_VERSION 0x0011
 
 typedef struct _Evisum_Config
 {
