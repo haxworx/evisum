@@ -25,6 +25,14 @@ group { \
 }
 
 collections {
+    sounds
+    {
+       sample
+       {
+          name: "joke" COMP;
+          source: "badjoke.wav";
+       }
+    }
     group
     {
         name: "cpu";
@@ -150,6 +158,12 @@ collections {
                 action: STATE_SET "default" 0.0;
                 transition: SINUSOIDAL 0.8;
                 target: "evisum/indicator-clip";
+            }
+            program
+            {
+               signal: "fields,change";
+               source: "evisum/indicator";
+               action: PLAY_SAMPLE "joke" 1.0 INPUT;
             }
         }
     }

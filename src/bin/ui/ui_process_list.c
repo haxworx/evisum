@@ -1165,6 +1165,8 @@ _btn_clicked_state_save(Data *pd, Evas_Object *btn)
         evas_object_del(pd->fields_menu);
         pd->fields_menu = NULL;
         // Postpone field changes until the user dismisses the popup.
+        if (evisum_ui_effects_enabled_get(pd->ui))
+          elm_object_signal_emit(pd->indicator, "fields,change", "evisum/indicator");
         if (pd->fields_changed)
           _content_reset(pd);
         return;
