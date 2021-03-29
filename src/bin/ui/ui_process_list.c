@@ -885,21 +885,21 @@ _summary_update(Data *pd)
 {
    Eina_Strbuf *buf = eina_strbuf_new();
 
-   eina_strbuf_append_printf(buf, "%i processes: ", pd->summary.total);
+   eina_strbuf_append_printf(buf, _("%i processes: "), pd->summary.total);
    if (pd->summary.running)
-     eina_strbuf_append_printf(buf, "%i running, ", pd->summary.running);
+     eina_strbuf_append_printf(buf, _("%i running, "), pd->summary.running);
    if (pd->summary.sleeping)
-     eina_strbuf_append_printf(buf, "%i sleeping, ", pd->summary.sleeping);
+     eina_strbuf_append_printf(buf, _("%i sleeping, "), pd->summary.sleeping);
    if (pd->summary.stopped)
-     eina_strbuf_append_printf(buf, "%i stopped, ", pd->summary.stopped);
+     eina_strbuf_append_printf(buf, _("%i stopped, "), pd->summary.stopped);
    if (pd->summary.idle)
-     eina_strbuf_append_printf(buf, "%i idle, ", pd->summary.idle);
+     eina_strbuf_append_printf(buf, _("%i idle, "), pd->summary.idle);
    if (pd->summary.dead)
-     eina_strbuf_append_printf(buf, "%i dead, ", pd->summary.dead);
+     eina_strbuf_append_printf(buf, _("%i dead, "), pd->summary.dead);
    if (pd->summary.dsleep)
-     eina_strbuf_append_printf(buf, "%i dsleep, ", pd->summary.dsleep);
+     eina_strbuf_append_printf(buf, _("%i dsleep, "), pd->summary.dsleep);
    if (pd->summary.zombie)
-     eina_strbuf_append_printf(buf, "%i zombie, ", pd->summary.zombie);
+     eina_strbuf_append_printf(buf, _("%i zombie, "), pd->summary.zombie);
 
    eina_strbuf_replace_last(buf, ",", ".");
 
@@ -912,19 +912,19 @@ static void
 _summary_total(Data *pd, Proc_Info *proc)
 {
    pd->summary.total++;
-   if (!strcmp(proc->state, "running"))
+   if (!strcmp(proc->state, _("running")))
      pd->summary.running++;
-   else if (!strcmp(proc->state, "sleeping"))
+   else if (!strcmp(proc->state, _("sleeping")))
      pd->summary.sleeping++;
-   else if (!strcmp(proc->state, "stopped"))
+   else if (!strcmp(proc->state, _("stopped")))
      pd->summary.stopped++;
-   else if (!strcmp(proc->state, "idle"))
+   else if (!strcmp(proc->state, _("idle")))
      pd->summary.idle++;
-   else if (!strcmp(proc->state, "zombie"))
+   else if (!strcmp(proc->state, _("zombie")))
      pd->summary.zombie++;
-   else if (!strcmp(proc->state, "dead"))
+   else if (!strcmp(proc->state, _("dead")))
      pd->summary.dead++;
-   else if (!strcmp(proc->state, "dsleep"))
+   else if (!strcmp(proc->state, _("dsleep")))
      pd->summary.dsleep++;
 }
 

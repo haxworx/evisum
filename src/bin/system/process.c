@@ -2,6 +2,9 @@
 # define __MacOS__
 #endif
 
+#include "ui/gettext.h"
+#define _(STR) gettext(STR)
+
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
 # include <sys/types.h>
 # include <sys/sysctl.h>
@@ -70,27 +73,27 @@ static void
 _states_init(void)
 {
 #if defined(__linux__)
-   _states['D']     = "dsleep";
-   _states['I']     = "idle";
-   _states['R']     = "running";
-   _states['S']     = "sleeping";
-   _states['T']     = "stopped";
-   _states['X']     = "dead";
-   _states['Z']     = "zombie";
+   _states['D']     = _("dsleep");
+   _states['I']     = _("idle");
+   _states['R']     = _("running");
+   _states['S']     = _("sleeping");
+   _states['T']     = _("stopped");
+   _states['X']     = _("dead");
+   _states['Z']     = _("zombie");
 #else
-   _states[SIDL]    = "idle";
-   _states[SRUN]    = "running";
-   _states[SSLEEP]  = "sleeping";
-   _states[SSTOP]   = "stopped";
+   _states[SIDL]    = _("idle");
+   _states[SRUN]    = _("running");
+   _states[SSLEEP]  = _("sleeping");
+   _states[SSTOP]   = _("stopped");
 #if !defined(__MacOS__)
 #if !defined(__OpenBSD__)
-   _states[SWAIT]   = "wait";
-   _states[SLOCK]   = "lock";
-   _states[SZOMB]   = "zombie";
+   _states[SWAIT]   = _("wait");
+   _states[SLOCK]   = _("lock");
+   _states[SZOMB]   = _("zombie");
 #endif
 #if defined(__OpenBSD__)
-   _states[SDEAD]   = "zombie";
-   _states[SONPROC] = "running";
+   _states[SDEAD]   = _("zombie");
+   _states[SONPROC] = _("running");
 #endif
 #endif
 #endif
