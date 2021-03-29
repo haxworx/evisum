@@ -996,33 +996,33 @@ _process_list_search_trim(Eina_List *list, Data *pd)
 
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
-       if (_process_ignore(pd, proc))
-         {
-            proc_info_free(proc);
-            list = eina_list_remove_list(list, l);
-         }
+        if (_process_ignore(pd, proc))
+          {
+             proc_info_free(proc);
+             list = eina_list_remove_list(list, l);
+          }
         else
-         {
-            int64_t *cpu_time, id = proc->pid;
+          {
+             int64_t *cpu_time, id = proc->pid;
 
-            if ((cpu_time = eina_hash_find(pd->cpu_times, &id)))
-              {
-                 if (*cpu_time)
-                   proc->cpu_usage = (double) (proc->cpu_time - *cpu_time) /
-                                               pd->ui->proc.poll_delay;
-                 *cpu_time = proc->cpu_time;
-              }
-            else
-              {
-                 cpu_time = malloc(sizeof(int64_t));
-                 if (cpu_time)
-                   {
-                      *cpu_time = proc->cpu_time;
-                      eina_hash_add(pd->cpu_times, &id, cpu_time);
-                   }
-              }
-            _summary_total(pd, proc);
-         }
+             if ((cpu_time = eina_hash_find(pd->cpu_times, &id)))
+               {
+                  if (*cpu_time)
+                    proc->cpu_usage = (double) (proc->cpu_time - *cpu_time) /
+                                                pd->ui->proc.poll_delay;
+                  *cpu_time = proc->cpu_time;
+               }
+             else
+               {
+                  cpu_time = malloc(sizeof(int64_t));
+                  if (cpu_time)
+                    {
+                       *cpu_time = proc->cpu_time;
+                       eina_hash_add(pd->cpu_times, &id, cpu_time);
+                    }
+               }
+             _summary_total(pd, proc);
+          }
      }
 
     return list;
