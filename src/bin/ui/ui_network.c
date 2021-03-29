@@ -9,7 +9,7 @@ typedef struct
    Elm_Genlist_Item_Class *itc, *itc2;
 
    Evisum_Ui              *ui;
-} Data;
+} Win_Data;
 
 typedef struct
 {
@@ -30,7 +30,7 @@ typedef struct
 } Network_Interface;
 
 static void
-_interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Data *pd)
+_interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Win_Data *wd)
 {
    Eina_List *l;
    Network_Interface *iface;
@@ -55,7 +55,7 @@ _interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Data *pd)
 static void
 _network_update(void *data, Ecore_Thread *thread)
 {
-   Data *pd = data;
+   Win_Data *wd = data;
    Eina_List *interfaces = NULL;
    Network_Interface *iface;
 
@@ -64,7 +64,7 @@ _network_update(void *data, Ecore_Thread *thread)
         int n;
         net_iface_t *nwif, **ifaces = system_network_ifaces_get(&n);
 
-	_interface_gone(ifaces, n, interfaces, pd);
+        _interface_gone(ifaces, n, interfaces, wd);
 
         for (int i = 0; i < n; i++)
            {
@@ -222,14 +222,14 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA
 {
    Eina_List *interfaces;
    Network_Interface *iface;
-   Data *pd;
+   Win_Data *wd;
    Evas_Object *obj;
    Eina_List *l, *l2;
    char *s;
    Eina_Strbuf *buf;
 
    interfaces = msgdata;
-   pd = data;
+   wd = data;
 
    buf = eina_strbuf_new();
 
@@ -242,10 +242,10 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA
              free(iface);
              interfaces = eina_list_remove_list(interfaces, l);
           }
-	else if (iface->is_new)
+        else if (iface->is_new)
           {
-             iface->it = elm_genlist_item_append(pd->glist, pd->itc2, iface->name, NULL, ELM_GENLIST_ITEM_GROUP, NULL, NULL);
-	     iface->it2 = elm_genlist_item_append(pd->glist, pd->itc, iface, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
+             iface->it = elm_genlist_item_append(wd->glist, wd->itc2, iface->name, NULL, ELM_GENLIST_ITEM_GROUP, NULL, NULL);
+             iface->it2 = elm_genlist_item_append(wd->glist, wd->itc, iface, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
           }
         else
           {
@@ -282,26 +282,26 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Data *pd;
+   Win_Data *wd;
 
-   pd = data;
+   wd = data;
    ev = event_info;
 
    if (!ev || !ev->keyname)
      return;
 
    if (!strcmp(ev->keyname, "Escape"))
-     evas_object_del(pd->ui->network.win);
+     evas_object_del(wd->ui->network.win);
 }
 
 static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Data *pd;
+   Win_Data *wd;
    Evisum_Ui *ui;
 
-   pd = data;
-   ui = pd->ui;
+   wd = data;
+   ui = wd->ui;
 
    evas_object_geometry_get(obj, &ui->network.x, &ui->network.y, NULL, NULL);
 }
@@ -310,24 +310,24 @@ static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
+   Win_Data *wd = data;
+   Evisum_Ui *ui = wd->ui;
 
-   elm_genlist_item_class_free(pd->itc);
-   elm_genlist_item_class_free(pd->itc2);
+   elm_genlist_item_class_free(wd->itc);
+   elm_genlist_item_class_free(wd->itc2);
 
    evisum_ui_config_save(ui);
-   ecore_thread_cancel(pd->thread);
-   ecore_thread_wait(pd->thread, 0.5);
+   ecore_thread_cancel(wd->thread);
+   ecore_thread_wait(wd->thread, 0.5);
    ui->network.win = NULL;
-   free(pd);
+   free(wd);
 }
 
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
+   Win_Data *wd = data;
+   Evisum_Ui *ui = wd->ui;
 
    evas_object_geometry_get(obj, NULL, NULL, &ui->network.width, &ui->network.height);
 }
@@ -344,24 +344,24 @@ ui_network_win_add(Evisum_Ui *ui)
         return;
      }
 
-   Data *pd = calloc(1, sizeof(Data));
-   if (!pd) return;
-   pd->ui = ui;
+   Win_Data *wd = calloc(1, sizeof(Win_Data));
+   if (!wd) return;
+   wd->ui = ui;
 
-   ui->network.win = pd->win = win = elm_win_util_standard_add("evisum", _("Network"));
+   ui->network.win = wd->win = win = elm_win_util_standard_add("evisum", _("Network"));
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, wd);
 
    bx = elm_box_add(win);
    evas_object_size_hint_weight_set(bx, 1.0, 1.0);
    evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_event_callback_add(bx, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
+   evas_object_event_callback_add(bx, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, wd);
 
-   pd->glist = glist = elm_genlist_add(win);
+   wd->glist = glist = elm_genlist_add(win);
    elm_genlist_homogeneous_set(glist, 1);
    evas_object_size_hint_weight_set(glist, 1.0, 1.0);
    evas_object_size_hint_align_set(glist, FILL, FILL);
@@ -370,7 +370,7 @@ ui_network_win_add(Evisum_Ui *ui)
    evas_object_show(glist);
 
    itc = elm_genlist_item_class_new();
-   pd->itc = itc;
+   wd->itc = itc;
    itc->item_style = "full";
    itc->func.text_get = NULL;
    itc->func.content_get = _iface_obj_add;
@@ -379,7 +379,7 @@ ui_network_win_add(Evisum_Ui *ui)
    itc->func.del = NULL;
 
    itc = elm_genlist_item_class_new();
-   pd->itc2 = itc;
+   wd->itc2 = itc;
    itc->item_style = "group_index";
    itc->func.text_get = _text_get;
    itc->func.content_get = NULL;
@@ -402,10 +402,10 @@ ui_network_win_add(Evisum_Ui *ui)
 
    evas_object_show(win);
 
-   pd->thread = ecore_thread_feedback_run(_network_update,
+   wd->thread = ecore_thread_feedback_run(_network_update,
                                           _network_update_feedback_cb,
                                           NULL,
                                           NULL,
-                                          pd, 1);
+                                          wd, 1);
 }
 

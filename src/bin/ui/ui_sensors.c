@@ -16,7 +16,7 @@ typedef struct
    Eina_Bool               skip_wait;
 
    Evisum_Ui              *ui;
-} Data;
+} Win_Data;
 
 typedef struct
 {
@@ -28,7 +28,7 @@ typedef struct
    power_t   power;
    double    thermal_temp;
    Eina_Bool thermal_valid;
-} Sensor_Data;
+} Sensor_Win_Data;
 
 static void
 _name_set(char *buf, size_t len, sensor_t *s)
@@ -54,7 +54,7 @@ _sort_cb(const void *p1, const void *p2)
 }
 
 static void
-_sensors_refresh(Data *pd)
+_sensors_refresh(Win_Data *wd)
 {
    sensor_t **sensors;
    int n;
@@ -63,43 +63,43 @@ _sensors_refresh(Data *pd)
    if (!sensors) return;
 
    for (int i = 0; i < n; i++)
-     pd->sensors = eina_list_append(pd->sensors, sensors[i]);
+     wd->sensors = eina_list_append(wd->sensors, sensors[i]);
 
    free(sensors);
 
-   pd->sensors = eina_list_sort(pd->sensors, n, _sort_cb);
+   wd->sensors = eina_list_sort(wd->sensors, n, _sort_cb);
 
-   elm_genlist_clear(pd->glist);
+   elm_genlist_clear(wd->glist);
 }
 
 static void
 _sensors_update(void *data, Ecore_Thread *thread)
 {
-   Data *pd = data;
+   Win_Data *wd = data;
 
-   Sensor_Data *msg = malloc(sizeof(Data));
+   Sensor_Win_Data *msg = malloc(sizeof(Win_Data));
    if (!msg) return;
 
    while (!ecore_thread_check(thread))
      {
         system_power_state_get(&msg->power);
-        if (pd->sensor)
+        if (wd->sensor)
           {
-             if (!system_sensor_thermal_get(pd->sensor))
+             if (!system_sensor_thermal_get(wd->sensor))
                msg->thermal_valid = 0;
              else
                {
                   msg->thermal_valid = 1;
-                  msg->thermal_temp = pd->sensor->value;
+                  msg->thermal_temp = wd->sensor->value;
                }
           }
         ecore_thread_feedback(thread, msg);
         for (int i = 0; i < 8; i++)
           {
-             if (pd->skip_wait || ecore_thread_check(thread)) break;
+             if (wd->skip_wait || ecore_thread_check(thread)) break;
              usleep(250000);
           }
-	pd->skip_wait = 0;
+	wd->skip_wait = 0;
      }
    free(msg);
 }
@@ -107,33 +107,33 @@ _sensors_update(void *data, Ecore_Thread *thread)
 static void
 _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
 {
-   Sensor_Data *msg;
-   Data *pd;
+   Sensor_Win_Data *msg;
+   Win_Data *wd;
    sensor_t *s;
    Eina_List *l;
    int i = 0;
 
    msg = msgdata;
-   pd = data;
+   wd = data;
 
-   EINA_LIST_FREE(pd->sensors, s)
-     elm_genlist_item_append(pd->glist, pd->itc, s,
+   EINA_LIST_FREE(wd->sensors, s)
+     elm_genlist_item_append(wd->glist, wd->itc, s,
                              NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
-   if (msg->thermal_valid && pd->sensor)
+   if (msg->thermal_valid && wd->sensor)
      {
-        elm_progressbar_value_set(pd->thermal_pb, msg->thermal_temp / 100);
-        elm_object_tooltip_text_set(pd->thermal_pb, pd->sensor->name);
+        elm_progressbar_value_set(wd->thermal_pb, msg->thermal_temp / 100);
+        elm_object_tooltip_text_set(wd->thermal_pb, wd->sensor->name);
      }
 
-   if (pd->power_ic)
+   if (wd->power_ic)
      {
         if (msg->power.have_ac)
-          elm_icon_standard_set(pd->power_ic, evisum_icon_path_get("on"));
+          elm_icon_standard_set(wd->power_ic, evisum_icon_path_get("on"));
         else
-          elm_icon_standard_set(pd->power_ic, evisum_icon_path_get("off"));
-        evas_object_show(pd->power_ic);
+          elm_icon_standard_set(wd->power_ic, evisum_icon_path_get("off"));
+        evas_object_show(wd->power_ic);
      }
-   l = eina_list_nth_list(pd->batteries, 0);
+   l = eina_list_nth_list(wd->batteries, 0);
    while (l && msg->power.battery_count)
      {
         if (msg->power.batteries[i]->present)
@@ -163,18 +163,18 @@ _item_del(void *data, Evas_Object *obj)
 static void
 _glist_item_pressed_cb(void *data, Evas_Object *obj, void *event_info)
 {
-   Data *pd;
+   Win_Data *wd;
    Elm_Object_Item *it;
    sensor_t *s;
    char buf[64];
 
-   pd = data;
+   wd = data;
    it = event_info;
 
-   pd->sensor = s = elm_object_item_data_get(it);
+   wd->sensor = s = elm_object_item_data_get(it);
    _name_set(buf, sizeof(buf), s);
    elm_object_text_set(obj, buf);
-   pd->skip_wait = 1;
+   wd->skip_wait = 1;
 }
 
 static char *
@@ -196,26 +196,26 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Data *pd;
+   Win_Data *wd;
 
-   pd = data;
+   wd = data;
    ev = event_info;
 
    if (!ev || !ev->keyname)
      return;
 
    if (!strcmp(ev->keyname, "Escape"))
-     evas_object_del(pd->ui->sensors.win);
+     evas_object_del(wd->ui->sensors.win);
 }
 
 static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Data *pd;
+   Win_Data *wd;
    Evisum_Ui *ui;
 
-   pd = data;
-   ui = pd->ui;
+   wd = data;
+   ui = wd->ui;
 
    evas_object_geometry_get(obj, &ui->sensors.x, &ui->sensors.y, NULL, NULL);
 }
@@ -225,25 +225,25 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Bat *bat;
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
+   Win_Data *wd = data;
+   Evisum_Ui *ui = wd->ui;
 
    evisum_ui_config_save(ui);
-   ecore_thread_cancel(pd->thread);
-   ecore_thread_wait(pd->thread, 0.5);
+   ecore_thread_cancel(wd->thread);
+   ecore_thread_wait(wd->thread, 0.5);
    ui->sensors.win = NULL;
-   EINA_LIST_FREE(pd->batteries, bat)
+   EINA_LIST_FREE(wd->batteries, bat)
      free(bat);
 
-   elm_genlist_item_class_free(pd->itc);
-   free(pd);
+   elm_genlist_item_class_free(wd->itc);
+   free(wd);
 }
 
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Data *pd = data;
-   Evisum_Ui *ui = pd->ui;
+   Win_Data *wd = data;
+   Evisum_Ui *ui = wd->ui;
 
    evas_object_geometry_get(obj, NULL, NULL, &ui->sensors.width, &ui->sensors.height);
 }
@@ -263,18 +263,18 @@ ui_sensors_win_add(Evisum_Ui *ui)
         return;
      }
 
-   Data *pd = calloc(1, sizeof(Data));
-   if (!pd) return;
-   pd->ui = ui;
+   Win_Data *wd = calloc(1, sizeof(Win_Data));
+   if (!wd) return;
+   wd->ui = ui;
 
    ui->sensors.win = win = elm_win_util_standard_add("evisum", _("Sensors"));
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, pd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, pd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, pd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, wd);
 
    content = elm_box_add(win);
    evas_object_size_hint_weight_set(content, EXPAND, EXPAND);
@@ -314,7 +314,7 @@ ui_sensors_win_add(Evisum_Ui *ui)
 
         if (!i)
           {
-             pd->power_ic = ic = elm_icon_add(win);
+             wd->power_ic = ic = elm_icon_add(win);
              evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
              evas_object_size_hint_align_set(ic, 1.0, 0.5);
              elm_table_pack(tbl, ic, 0, j, 1, 1);
@@ -326,12 +326,12 @@ ui_sensors_win_add(Evisum_Ui *ui)
         elm_table_pack(tbl, pb, 1, j++, 1, 1);
         evas_object_show(pb);
 
-        pd->batteries = eina_list_append(pd->batteries, bat);
+        wd->batteries = eina_list_append(wd->batteries, bat);
      }
 
    system_power_state_free(&power);
 
-   pd->thermal_pb = pb = elm_progressbar_add(win);
+   wd->thermal_pb = pb = elm_progressbar_add(win);
    evas_object_size_hint_weight_set(pb, EXPAND, 0);
    evas_object_size_hint_align_set(pb, FILL, FILL);
    elm_progressbar_unit_format_set(pb, "%1.1f°C");
@@ -341,12 +341,12 @@ ui_sensors_win_add(Evisum_Ui *ui)
    evas_object_size_hint_align_set(bx, FILL, FILL);
    evas_object_show(bx);
 
-   pd->glist = glist = elm_genlist_add(win);
+   wd->glist = glist = elm_genlist_add(win);
    evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(glist, FILL, FILL);
    elm_object_text_set(glist, _("Select..."));
    elm_genlist_multi_select_set(glist, 0);
-   evas_object_smart_callback_add(glist, "selected", _glist_item_pressed_cb, pd);
+   evas_object_smart_callback_add(glist, "selected", _glist_item_pressed_cb, wd);
    elm_object_focus_allow_set(glist, 0);
 
    elm_box_pack_end(bx, glist);
@@ -363,12 +363,12 @@ ui_sensors_win_add(Evisum_Ui *ui)
    elm_box_pack_end(content, fr);
    evas_object_show(fr);
 
-   pd->itc = elm_genlist_item_class_new();
-   pd->itc->item_style = "no_icon";
-   pd->itc->func.content_get = NULL;
-   pd->itc->func.text_get = _text_get;
-   pd->itc->func.filter_get = NULL;
-   pd->itc->func.del = _item_del;
+   wd->itc = elm_genlist_item_class_new();
+   wd->itc->item_style = "no_icon";
+   wd->itc->func.content_get = NULL;
+   wd->itc->func.text_get = _text_get;
+   wd->itc->func.filter_get = NULL;
+   wd->itc->func.del = _item_del;
 
    if ((ui->sensors.width > 0) && (ui->sensors.height > 0))
      evas_object_resize(win, ui->sensors.width, ui->sensors.height);
@@ -382,12 +382,12 @@ ui_sensors_win_add(Evisum_Ui *ui)
 
    evas_object_show(win);
 
-   _sensors_refresh(pd);
+   _sensors_refresh(wd);
 
-   pd->thread = ecore_thread_feedback_run(_sensors_update,
+   wd->thread = ecore_thread_feedback_run(_sensors_update,
                                           _sensors_update_feedback_cb,
                                           NULL,
                                           NULL,
-                                          pd, 1);
+                                          wd, 1);
 }
 
