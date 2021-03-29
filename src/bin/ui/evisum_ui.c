@@ -537,7 +537,7 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
    elm_slider_min_max_set(sli, 1.0, 10.0);
    elm_slider_span_size_set(sli, 10.0);
    elm_slider_step_set(sli, 1 / 10.0);
-   elm_slider_indicator_format_set(sli, "%1.0f");
+   elm_slider_indicator_show_set(sli, 0);
    elm_slider_unit_format_set(sli, _("%1.0f secs"));
    elm_slider_value_set(sli, ui->proc.poll_delay);
    evas_object_size_hint_align_set(sli, FILL, FILL);
