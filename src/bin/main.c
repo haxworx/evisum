@@ -34,44 +34,31 @@ _signals(Evisum_Ui *ui)
 static void
 _background_poller_cb(void *data, Ecore_Thread *thread)
 {
+   meminfo_t memory;
    Evisum_Ui *ui = data;
-   double max = system_cpu_online_count_get() * 100.0;
+
+   system_memory_usage_get(&memory);
+   ui->mem_total = memory.total;
 
    while (!ecore_thread_check(thread))
      {
-        meminfo_t memory;
-        static uint64_t cpu_time_prev = 0;
-        uint64_t cpu_time = 0;
-        int n_cpu;
-
-        cpu_core_t **cores = system_cpu_state_get(&n_cpu);
-        for (int i = 0; i < n_cpu; i++)
+        int ncpu;
+        double percent = 0.0;
+        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 250000);
+        for (int i = 0; i < ncpu; i++)
           {
-             cpu_time += cores[i]->total - cores[i]->idle;
+             percent += cores[i]->percent;
              free(cores[i]);
           }
         free(cores);
 
         memset(&memory, 0, sizeof(meminfo_t));
         system_memory_usage_get(&memory);
-        ui->mem_total = memory.total;
         ui->mem_used = memory.used;
         if (file_system_in_use("ZFS"))
           ui->mem_used += memory.zfs_arc_used;
 
-        for (int i = 0; i < 16; i++)
-          {
-             if (ecore_thread_check(thread))
-               break;
-             usleep(62500);
-          }
-
-       if (cpu_time_prev)
-         {
-            ui->cpu_usage = (double) (cpu_time - cpu_time_prev);
-            if (ui->cpu_usage > max) ui->cpu_usage = max;
-         }
-       cpu_time_prev = cpu_time;
+        ui->cpu_usage = percent / ncpu;
      }
 }
 
@@ -154,7 +141,7 @@ elm_main(int argc, char **argv)
    evisum_server_init(ui);
    evisum_ui_activate(ui, action, pid);
 
-   ecore_thread_run(_background_poller_cb, NULL, NULL, ui);
+   ui->background_poll_thread = ecore_thread_run(_background_poller_cb, NULL, NULL, ui);
 
    ecore_main_loop_begin();
 

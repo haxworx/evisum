@@ -910,7 +910,6 @@ _summary_update(Win_Data *wd)
 {
    Evisum_Ui *ui;
    Eina_Strbuf *buf;
-   unsigned int online = system_cpu_online_count_get();
 
    buf = eina_strbuf_new();
 
@@ -936,9 +935,7 @@ _summary_update(Win_Data *wd)
 
    elm_object_text_set(wd->summary.lb, eina_strbuf_string_get(buf));
 
-   elm_progressbar_value_set(wd->summary.pb_cpu, (ui->cpu_usage / 100.0) / online);
-   elm_object_part_text_set(wd->summary.pb_cpu, "elm.text.status",
-                            eina_slstr_printf("%1.0f %%", ui->cpu_usage));
+   elm_progressbar_value_set(wd->summary.pb_cpu, ui->cpu_usage / 100.0);
 
    eina_strbuf_reset(buf);
 

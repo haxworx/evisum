@@ -111,10 +111,10 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         unsigned long *cpu = cpu_times[i];
 
         total = 0;
-        for (j = 0; j < CPU_STATES; j++)
+        for (j = CP_USER; j <= CP_IDLE; j++)
           total += cpu[j];
 
-        idle = cpu[4];
+        idle = cpu[CP_IDLE];
 
         diff_total = total - core->total;
         diff_idle = idle - core->idle;

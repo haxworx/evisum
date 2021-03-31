@@ -744,6 +744,9 @@ evisum_ui_shutdown(Evisum_Ui *ui)
    evisum_icon_cache_shutdown();
    evisum_ui_config_save(ui);
 
+   ecore_thread_cancel(ui->background_poll_thread);
+   ecore_thread_wait(ui->background_poll_thread, 0.5);
+
    free(ui);
 }
 

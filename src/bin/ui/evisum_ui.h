@@ -20,6 +20,7 @@ typedef struct _Evisum_Ui
 {
    pid_t                program_pid;
    Ecore_Event_Handler *handler_sig;
+   Ecore_Thread        *background_poll_thread;
 
    Eina_Bool            effects;
 

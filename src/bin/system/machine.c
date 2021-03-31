@@ -60,6 +60,7 @@
 # include <net/if_mib.h>
 # include <vm/vm_param.h>
 # include <dev/acpica/acpiio.h>
+# include <sys/resource.h>
 #endif
 
 #include "macros.h"
