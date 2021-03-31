@@ -13,7 +13,7 @@
 #include <pwd.h>
 
 #define DIRTY_GENLIST_HACK    1
-#define GENLIST_SCROLL_BY     512
+#define SIZING_ADJUST_PERIOD  3
 
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
@@ -609,6 +609,7 @@ _alignment_fix(Win_Data *wd)
 {
    wd->update_every_item = 1;
    wd->skip_wait = 1;
+   wd->poll_count = 0;
 }
 
 static Evas_Object *
@@ -1101,7 +1102,10 @@ _process_list(void *data, Ecore_Thread *thread)
                proc_info_free(proc);
           }
         wd->skip_update = 0;
-        delay = ui->proc.poll_delay;
+        if (wd->poll_count > SIZING_ADJUST_PERIOD)
+          delay = ui->proc.poll_delay;
+        else
+          delay = 1;
      }
 }
 
@@ -1482,7 +1486,7 @@ _glist_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED,
    Win_Data *wd = data;
 
    // Update regularly on launch to allow for alignment.
-   if (wd->poll_count > 3)
+   if (wd->poll_count > SIZING_ADJUST_PERIOD)
      wd->skip_update = 1;
    else
      {
@@ -1975,9 +1979,9 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
         return;
      }
    else if (!strcmp(ev->keyname, "Prior"))
-     elm_scroller_region_bring_in(wd->glist, x, y - GENLIST_SCROLL_BY, w, h);
+     elm_scroller_region_bring_in(wd->glist, x, y - 512, w, h);
    else if (!strcmp(ev->keyname, "Next"))
-     elm_scroller_region_bring_in(wd->glist, x, y + GENLIST_SCROLL_BY, w, h);
+     elm_scroller_region_bring_in(wd->glist, x, y + 512, w, h);
    else
      _win_key_down_search(wd, ev);
 
