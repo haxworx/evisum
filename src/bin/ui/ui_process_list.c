@@ -32,6 +32,7 @@ typedef struct
    Eina_Bool              skip_wait;
    Eina_Bool              skip_update;
    Eina_Bool              update_every_item;
+   Eina_Bool              first_run;
    Sorter                 sorters[PROC_SORT_BY_MAX];
    pid_t                  selected_pid;
    int                    poll_count;
@@ -84,6 +85,8 @@ typedef struct
    struct
    {
       Evas_Object         *fr;
+      Evas_Object         *pb_cpu;
+      Evas_Object         *pb_mem;
       Evas_Object         *lb;
       int                  total;
       int                  running;
@@ -905,7 +908,13 @@ _summary_reset(Win_Data *wd)
 static void
 _summary_update(Win_Data *wd)
 {
-   Eina_Strbuf *buf = eina_strbuf_new();
+   Evisum_Ui *ui;
+   Eina_Strbuf *buf;
+   unsigned int online = system_cpu_online_count_get();
+
+   buf = eina_strbuf_new();
+
+   ui = wd->ui;
 
    eina_strbuf_append_printf(buf, _("%i processes: "), wd->summary.total);
    if (wd->summary.running)
@@ -926,6 +935,16 @@ _summary_update(Win_Data *wd)
    eina_strbuf_replace_last(buf, ",", ".");
 
    elm_object_text_set(wd->summary.lb, eina_strbuf_string_get(buf));
+
+   elm_progressbar_value_set(wd->summary.pb_cpu, (ui->cpu_usage / 100.0) / online);
+   elm_object_part_text_set(wd->summary.pb_cpu, "elm.text.status",
+                            eina_slstr_printf("%1.2f %%", ui->cpu_usage));
+
+   eina_strbuf_reset(buf);
+
+   elm_progressbar_value_set(wd->summary.pb_mem, (ui->mem_total / 100) / ui->mem_total);
+   eina_strbuf_append_printf(buf, "%s / %s ", evisum_size_format(ui->mem_used), evisum_size_format(ui->mem_total));
+   elm_object_part_text_set(wd->summary.pb_mem, "elm.text.status", eina_strbuf_string_get(buf));
 
    eina_strbuf_free(buf);
 }
@@ -1171,8 +1190,12 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
            eina_list_count(wd->cache->active),
            eina_list_count(wd->cache->inactive), n);
 #endif
-   if (!wd->poll_count)
-     ecore_timer_add(2.0, _bring_in, wd);
+   if (wd->first_run)
+     {
+        wd->first_run = 0;
+        ecore_timer_add(2.0, _bring_in, wd);
+     }
+
    wd->poll_count++;
 
    if (evisum_ui_effects_enabled_get(wd->ui))
@@ -1583,7 +1606,7 @@ static Evas_Object *
 _content_add(Win_Data *wd, Evas_Object *parent)
 {
    Evas_Object *tb, *btn, *glist;
-   Evas_Object *fr, *lb;
+   Evas_Object *fr, *hbx, *bx, *pb, *lb;
    Evisum_Ui *ui = wd->ui;
 
    tb = elm_table_add(parent);
@@ -1810,13 +1833,38 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    wd->summary.fr = fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
    evas_object_size_hint_weight_set(fr, EXPAND, 0);
-   evas_object_size_hint_align_set(fr, 0, FILL);
+   evas_object_size_hint_align_set(fr, FILL, FILL);
 
-   wd->summary.lb = lb = elm_label_add(fr);
+   hbx = elm_box_add(parent);
+   elm_box_horizontal_set(hbx, 1);
+   evas_object_size_hint_weight_set(hbx, 1.0, 0);
+   evas_object_size_hint_align_set(hbx, FILL, FILL);
+   evas_object_show(hbx);
+
+   wd->summary.lb = lb = elm_label_add(parent);
    evas_object_size_hint_weight_set(lb, EXPAND, 0);
    evas_object_size_hint_align_set(lb, 0.0, FILL);
+   elm_box_pack_end(hbx, lb);
    evas_object_show(lb);
-   elm_object_content_set(fr, lb);
+
+   bx = elm_box_add(parent);
+   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   evas_object_show(bx);
+   elm_box_pack_end(hbx, bx);
+
+   wd->summary.pb_cpu = pb = elm_progressbar_add(parent);
+   elm_progressbar_unit_format_set(pb, "%1.2f %%");
+   elm_progressbar_span_size_set(pb, 140);
+   evas_object_show(pb);
+   elm_box_pack_end(hbx, pb);
+
+   wd->summary.pb_mem = pb= elm_progressbar_add(parent);
+   elm_progressbar_span_size_set(pb, 140);
+   evas_object_show(pb);
+   elm_box_pack_end(hbx, pb);
+
+   elm_object_content_set(fr, hbx);
 
    _fields_init(wd);
 
@@ -2211,6 +2259,7 @@ ui_process_list_win_add(Evisum_Ui *ui)
    if (!wd) return;
 
    wd->selected_pid = -1;
+   wd->first_run = 1;
    wd->ui = ui;
    wd->handler = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED,
                                          _evisum_config_changed_cb, wd);

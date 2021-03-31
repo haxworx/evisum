@@ -23,6 +23,10 @@ typedef struct _Evisum_Ui
 
    Eina_Bool            effects;
 
+   double               cpu_usage;
+   uint64_t             mem_total;
+   uint64_t             mem_used;
+
    Eina_Bool            kthreads_has_rss;
    struct
    {

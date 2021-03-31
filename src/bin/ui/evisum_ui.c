@@ -535,7 +535,7 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
    sli = elm_slider_add(o);
    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
    elm_slider_min_max_set(sli, 1.0, 10.0);
-   elm_slider_span_size_set(sli, 10.0);
+   elm_slider_span_size_set(sli, 10.0 - 1.0);
    elm_slider_step_set(sli, 1 / 10.0);
    elm_slider_indicator_show_set(sli, 0);
    elm_slider_unit_format_set(sli, _("%1.0f secs"));
