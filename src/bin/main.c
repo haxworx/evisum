@@ -39,6 +39,7 @@ _background_poller_cb(void *data, Ecore_Thread *thread)
 
    system_memory_usage_get(&memory);
    ui->mem_total = memory.total;
+   ui->mem_used = memory.used;
 
    while (!ecore_thread_check(thread))
      {
@@ -58,7 +59,7 @@ _background_poller_cb(void *data, Ecore_Thread *thread)
         if (file_system_in_use("ZFS"))
           ui->mem_used += memory.zfs_arc_used;
 
-        ui->cpu_usage = percent / ncpu;
+        ui->cpu_usage = percent / system_cpu_online_count_get();
      }
 }
 
