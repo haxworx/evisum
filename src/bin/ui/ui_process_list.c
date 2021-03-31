@@ -938,7 +938,7 @@ _summary_update(Win_Data *wd)
 
    elm_progressbar_value_set(wd->summary.pb_cpu, (ui->cpu_usage / 100.0) / online);
    elm_object_part_text_set(wd->summary.pb_cpu, "elm.text.status",
-                            eina_slstr_printf("%1.2f %%", ui->cpu_usage));
+                            eina_slstr_printf("%1.0f %%", ui->cpu_usage));
 
    eina_strbuf_reset(buf);
 

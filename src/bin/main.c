@@ -8,6 +8,7 @@
 #include "evisum_config.h"
 #include "evisum_server.h"
 #include "ui/evisum_ui.h"
+#include "system/filesystems.h"
 
 static Eina_Bool
 _shutdown_cb(void *data, int type, void *event EINA_UNUSED)
@@ -55,6 +56,8 @@ _background_poller_cb(void *data, Ecore_Thread *thread)
         system_memory_usage_get(&memory);
         ui->mem_total = memory.total;
         ui->mem_used = memory.used;
+        if (file_system_in_use("ZFS"))
+          ui->mem_used += memory.zfs_arc_used;
 
         for (int i = 0; i < 8; i++)
           {
