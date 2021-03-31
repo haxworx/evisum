@@ -111,8 +111,8 @@ evisum_size_format(unsigned long long bytes)
    unsigned int precision = 2, powj = 1;
    int i = 0;
    static const char *units[8] = {
-      _("B"), _("K"), _("M"), _("G"),
-      _("T"), _("P"), _("E"), _("Z"),
+      _("B"), _("KiB"), _("MiB"), _("GiB"),
+      _("TiB"), _("PiB"), _("EiB"), _("ZiB"),
    };
 
    value = bytes;

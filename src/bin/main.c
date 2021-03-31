@@ -59,11 +59,11 @@ _background_poller_cb(void *data, Ecore_Thread *thread)
         if (file_system_in_use("ZFS"))
           ui->mem_used += memory.zfs_arc_used;
 
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 16; i++)
           {
              if (ecore_thread_check(thread))
                break;
-             usleep(125000);
+             usleep(62500);
           }
 
        if (cpu_time_prev)
