@@ -29,6 +29,8 @@ typedef struct
 
    Ecore_Thread    *thread;
 
+   Eina_Bool        kthreads_has_rss;
+
    struct
    {
       Evas_Object   *entry_cmd;
@@ -948,14 +950,26 @@ _general_view_update(Win_Data *wd, Proc_Info *proc)
                        eina_slstr_printf("%d", proc->numthreads));
    elm_object_text_set(wd->general.entry_files,
                        eina_slstr_printf("%d", proc->numfiles));
-   elm_object_text_set(wd->general.entry_virt,
-                       evisum_size_format(proc->mem_virt));
-   elm_object_text_set(wd->general.entry_rss,
-                       evisum_size_format(proc->mem_rss));
-   elm_object_text_set(wd->general.entry_shared,
-                       evisum_size_format(proc->mem_shared));
-   elm_object_text_set(wd->general.entry_size,
-                       evisum_size_format(proc->mem_size));
+   if (!proc->is_kernel)
+     elm_object_text_set(wd->general.entry_virt,
+                         evisum_size_format(proc->mem_virt));
+   else elm_object_text_set(wd->general.entry_virt, "-");
+
+   if ((!proc->is_kernel) || (wd->kthreads_has_rss))
+     elm_object_text_set(wd->general.entry_rss,
+                         evisum_size_format(proc->mem_rss));
+   else elm_object_text_set(wd->general.entry_rss, "-");
+
+   if (!proc->is_kernel)
+     elm_object_text_set(wd->general.entry_shared,
+                         evisum_size_format(proc->mem_shared));
+   else elm_object_text_set(wd->general.entry_shared, "-");
+
+   if (!proc->is_kernel)
+     elm_object_text_set(wd->general.entry_size,
+                         evisum_size_format(proc->mem_size));
+   else elm_object_text_set(wd->general.entry_size, "-");
+
    s = _run_time_string(proc->run_time);
    if (s)
      {
@@ -1836,6 +1850,10 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    evas_object_show(win);
 
    _activate(wd, action);
+#if defined(__FreeBSD__)
+    // XXX: you know.
+    wd->kthreads_has_rss = 1;
+#endif
 
    wd->threads.cache = evisum_ui_item_cache_new(wd->threads.glist,
                                                 _item_create, 10);

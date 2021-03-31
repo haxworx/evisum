@@ -619,8 +619,11 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    Evas_Object *rec, *lb, *o, *pb;
    char buf[128];
    Evas_Coord w, ow, bw;
-   Win_Data *wd = _wd;
+   Evisum_Ui *ui;
+   Win_Data *wd;
 
+   wd = _wd;
+   ui = wd->ui;
    proc = (void *) data;
 
    if (strcmp(source, "elm.swallow.content")) return NULL;
@@ -746,7 +749,12 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         evas_object_geometry_get(wd->btn_size, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "size");
-        snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size));
+        if (!proc->is_kernel)
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size));
+        else
+          {
+             buf[0] = '-'; buf[1] = '\0';
+          }
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
         _field_adjust(wd, PROC_FIELD_SIZE, lb, w);
@@ -756,7 +764,12 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         evas_object_geometry_get(wd->btn_virt, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "virt");
-        snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt));
+        if (!proc->is_kernel)
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt));
+        else
+          {
+             buf[0] = '-'; buf[1] = '\0';
+          }
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
         _field_adjust(wd, PROC_FIELD_VIRT, lb, w);
@@ -766,7 +779,12 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         evas_object_geometry_get(wd->btn_rss, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "rss");
-        snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss));
+        if ((!proc->is_kernel) || (ui->kthreads_has_rss))
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss));
+        else
+          {
+             buf[0] = '-'; buf[1] = '\0';
+          }
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
         _field_adjust(wd, PROC_FIELD_RSS, lb, w);
@@ -776,7 +794,12 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      {
         evas_object_geometry_get(wd->btn_shared, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "share");
-        snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared));
+        if (!proc->is_kernel)
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared));
+        else
+          {
+             buf[0] = '-'; buf[1] = '\0';
+          }
         if (strcmp(buf, elm_object_text_get(lb)))
           elm_object_text_set(lb, buf);
         _field_adjust(wd, PROC_FIELD_SHARED, lb, w);
@@ -784,8 +807,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    if (_field_enabled(PROC_FIELD_STATE))
      {
-        Evisum_Ui *ui = wd->ui;
-
         evas_object_geometry_get(wd->btn_state, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "state");
         if ((ui->proc.has_wchan) && (proc->state[0] == 's' && proc->state[1] == 'l'))

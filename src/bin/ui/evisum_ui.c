@@ -655,6 +655,7 @@ _ui_init_system_probe(Evisum_Ui *ui)
 #endif
 #if defined(__FreeBSD__)
    ui->mem.zfs_mounted = file_system_in_use("ZFS");
+   ui->kthreads_has_rss = 1;
 #endif
 #if !defined(__linux__)
    ui->proc.has_wchan = 1;

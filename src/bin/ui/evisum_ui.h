@@ -23,6 +23,7 @@ typedef struct _Evisum_Ui
 
    Eina_Bool            effects;
 
+   Eina_Bool            kthreads_has_rss;
    struct
    {
       Evas_Object  *win;
