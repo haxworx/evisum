@@ -1841,18 +1841,6 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    evas_object_size_hint_align_set(hbx, FILL, FILL);
    evas_object_show(hbx);
 
-   wd->summary.lb = lb = elm_label_add(parent);
-   evas_object_size_hint_weight_set(lb, EXPAND, 0);
-   evas_object_size_hint_align_set(lb, 0.0, FILL);
-   elm_box_pack_end(hbx, lb);
-   evas_object_show(lb);
-
-   bx = elm_box_add(parent);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
-   elm_box_pack_end(hbx, bx);
-
    wd->summary.pb_cpu = pb = elm_progressbar_add(parent);
    elm_progressbar_unit_format_set(pb, "%1.2f %%");
    elm_progressbar_span_size_set(pb, 140);
@@ -1863,6 +1851,18 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    elm_progressbar_span_size_set(pb, 140);
    evas_object_show(pb);
    elm_box_pack_end(hbx, pb);
+
+   bx = elm_box_add(parent);
+   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   evas_object_show(bx);
+   elm_box_pack_end(hbx, bx);
+
+   wd->summary.lb = lb = elm_label_add(parent);
+   evas_object_size_hint_weight_set(lb, EXPAND, 0);
+   evas_object_size_hint_align_set(lb, 1.0, FILL);
+   elm_box_pack_end(hbx, lb);
+   evas_object_show(lb);
 
    elm_object_content_set(fr, hbx);
 
