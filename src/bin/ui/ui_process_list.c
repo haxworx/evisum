@@ -1664,6 +1664,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_CMD);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CMD);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1676,6 +1677,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_UID);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_UID);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1688,6 +1690,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_PID);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PID);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1700,6 +1703,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_THREADS);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_THREADS);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1712,6 +1716,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_CPU);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1724,6 +1729,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_PRI);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PRI);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1736,6 +1742,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_NICE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_NICE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
@@ -1749,6 +1756,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_FILES);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_FILES);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1761,6 +1769,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_SIZE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SIZE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1773,6 +1782,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_VIRT);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_VIRT);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1785,6 +1795,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_RSS);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_RSS);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1797,6 +1808,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_SHARED);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SHARED);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1809,6 +1821,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_STATE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_STATE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1821,6 +1834,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_TIME);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_TIME);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1833,6 +1847,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_type == PROC_SORT_BY_CPU_USAGE);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU_USAGE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);

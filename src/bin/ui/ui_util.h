@@ -9,7 +9,7 @@
 
 #define TAB_BTN_WIDTH   72
 #define TAB_BTN_HEIGHT  24
-#define BTN_WIDTH       68
+#define BTN_WIDTH       62
 #define BTN_HEIGHT      24
 #define LIST_BTN_HEIGHT 24
 
