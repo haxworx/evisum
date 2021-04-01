@@ -1647,7 +1647,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
 {
    Evas_Object *tb, *btn, *glist;
    Evas_Object *fr, *hbx, *ic, *pb, *lb;
-   Evisum_Ui *ui = wd->ui
+   Evisum_Ui *ui = wd->ui;
 
    tb = elm_table_add(parent);
    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
