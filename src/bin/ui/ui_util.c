@@ -523,7 +523,7 @@ evisum_about_window_show(void *data)
 
    rec = evas_object_rectangle_add(evas_object_evas_get(win));
    evas_object_size_hint_align_set(rec, FILL, FILL);
-   evas_object_size_hint_min_set(rec, 320 * elm_config_scale_get(), 64);
+   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(320), ELM_SCALE_SIZE(64));
    evas_object_color_set(rec, 0, 0, 0, 128);
    evas_object_show(rec);
 
