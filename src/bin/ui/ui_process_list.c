@@ -85,6 +85,7 @@ typedef struct
    struct
    {
       Evas_Object         *fr;
+      Evas_Object         *hbx;
       Evas_Object         *pb_cpu;
       Evas_Object         *pb_mem;
       Evas_Object         *lb;
@@ -910,6 +911,8 @@ _summary_update(Win_Data *wd)
 {
    Evisum_Ui *ui;
    Eina_Strbuf *buf;
+   Battery *bat;
+   Eina_List *l;
 
    buf = eina_strbuf_new();
 
@@ -943,6 +946,8 @@ _summary_update(Win_Data *wd)
    eina_strbuf_append_printf(buf, "%s / %s ", evisum_size_format(ui->mem_used), evisum_size_format(ui->mem_total));
    elm_object_part_text_set(wd->summary.pb_mem, "elm.text.status", eina_strbuf_string_get(buf));
 
+   EINA_LIST_FOREACH(ui->batteries, l, bat)
+     elm_progressbar_value_set(bat->pb, bat->usage / 100.0);
    eina_strbuf_free(buf);
 }
 
@@ -964,6 +969,45 @@ _summary_total(Win_Data *wd, Proc_Info *proc)
      wd->summary.dead++;
    else if (!strcmp(proc->state, _("dsleep")))
      wd->summary.dsleep++;
+}
+
+static void
+_first_run_tasks(Win_Data *wd)
+{
+   Evisum_Ui *ui = wd->ui;
+   Battery *bat;
+   Eina_List *l;
+   Evas_Object *hbx, *ic, *pb, *bx;
+
+   hbx = wd->summary.hbx;
+
+   EINA_LIST_FOREACH(ui->batteries, l, bat)
+     {
+        ic = elm_icon_add(wd->win);
+        elm_icon_standard_set(ic, evisum_icon_path_get("sensor"));
+        evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+        evas_object_size_hint_weight_set(ic, 0, EXPAND);
+        elm_box_pack_end(hbx, ic);
+        evas_object_show(ic);
+
+        bat->pb = pb = elm_progressbar_add(wd->win);
+        elm_object_tooltip_text_set(pb, eina_slstr_printf("%s (%s)", bat->model, bat->vendor));
+        elm_progressbar_span_size_set(pb, 140);
+        elm_progressbar_value_set(pb, bat->usage / 100.0);
+        elm_box_pack_end(hbx, pb);
+        evas_object_show(pb);
+     }
+
+   bx = elm_box_add(wd->win);
+   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(bx, FILL, FILL);
+   elm_box_pack_end(hbx, bx);
+   evas_object_show(bx);
+   elm_box_pack_end(hbx, wd->summary.lb);
+
+   wd->first_run = 0;
+
+   ecore_timer_add(2.0, _bring_in, wd);
 }
 
 static Eina_List *
@@ -1189,8 +1233,7 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 #endif
    if (wd->first_run)
      {
-        wd->first_run = 0;
-        ecore_timer_add(2.0, _bring_in, wd);
+        _first_run_tasks(wd);
      }
 
    wd->poll_count++;
@@ -1603,8 +1646,8 @@ static Evas_Object *
 _content_add(Win_Data *wd, Evas_Object *parent)
 {
    Evas_Object *tb, *btn, *glist;
-   Evas_Object *fr, *hbx, *bx, *pb, *lb;
-   Evisum_Ui *ui = wd->ui;
+   Evas_Object *fr, *hbx, *ic, *pb, *lb;
+   Evisum_Ui *ui = wd->ui
 
    tb = elm_table_add(parent);
    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
@@ -1832,33 +1875,40 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    evas_object_size_hint_weight_set(fr, EXPAND, 0);
    evas_object_size_hint_align_set(fr, FILL, FILL);
 
-   hbx = elm_box_add(parent);
+   wd->summary.hbx = hbx = elm_box_add(parent);
    elm_box_horizontal_set(hbx, 1);
    evas_object_size_hint_weight_set(hbx, 1.0, 0);
    evas_object_size_hint_align_set(hbx, FILL, FILL);
    evas_object_show(hbx);
 
+   ic = elm_icon_add(parent);
+   elm_icon_standard_set(ic, evisum_icon_path_get("cpu"));
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_size_hint_weight_set(ic, 0, EXPAND);
+   elm_box_pack_end(hbx, ic);
+   evas_object_show(ic);
+
    wd->summary.pb_cpu = pb = elm_progressbar_add(parent);
    elm_progressbar_unit_format_set(pb, "%1.2f %%");
    elm_progressbar_span_size_set(pb, 140);
-   evas_object_show(pb);
    elm_box_pack_end(hbx, pb);
+   evas_object_show(pb);
+
+   ic = elm_icon_add(parent);
+   elm_icon_standard_set(ic, evisum_icon_path_get("memory"));
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_size_hint_weight_set(ic, 0, EXPAND);
+   elm_box_pack_end(hbx, ic);
+   evas_object_show(ic);
 
    wd->summary.pb_mem = pb= elm_progressbar_add(parent);
    elm_progressbar_span_size_set(pb, 140);
    evas_object_show(pb);
    elm_box_pack_end(hbx, pb);
 
-   bx = elm_box_add(parent);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_show(bx);
-   elm_box_pack_end(hbx, bx);
-
    wd->summary.lb = lb = elm_label_add(parent);
    evas_object_size_hint_weight_set(lb, EXPAND, 0);
    evas_object_size_hint_align_set(lb, 1.0, FILL);
-   elm_box_pack_end(hbx, lb);
    evas_object_show(lb);
 
    elm_object_content_set(fr, hbx);
