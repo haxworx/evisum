@@ -105,6 +105,7 @@ typedef struct
 } Win_Data;
 
 static Win_Data *_wd = NULL;
+static void _content_reset(Win_Data *wd);
 
 typedef struct
 {
@@ -257,10 +258,37 @@ _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
    ui->proc.fields ^= (1 << f->id);
 }
 
+static void
+_field_menu_close_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Win_Data *wd = data;
+
+   elm_ctxpopup_dismiss(wd->fields_menu);
+   wd->fields_menu = NULL;
+}
+
+static void
+_field_menu_apply_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Win_Data *wd = data;
+
+   elm_ctxpopup_dismiss(wd->fields_menu);
+   wd->fields_menu = NULL;
+   if (wd->fields_changed)
+     {
+        if (evisum_ui_effects_enabled_get(wd->ui))
+          {
+             elm_object_signal_emit(wd->indicator, "fields,change", "evisum/indicator");
+          }
+      _content_reset(wd);
+     }
+   wd->fields_menu = NULL;
+}
+
 static Evas_Object *
 _field_menu_create(Win_Data *wd, Evas_Object *parent)
 {
-   Evas_Object *o, *fr, *bx, *ck;
+   Evas_Object *o, *fr, *hbx, *pad, *ic, *btn, *bx, *ck;
 
    fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
@@ -271,6 +299,27 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
    evas_object_show(bx);
    elm_object_content_set(fr, bx);
    evas_object_show(fr);
+
+   hbx = elm_box_add(parent);
+   elm_box_horizontal_set(hbx, 1);
+   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+   evas_object_size_hint_align_set(hbx, FILL, FILL);
+
+   pad = elm_box_add(parent);
+   evas_object_size_hint_weight_set(pad, EXPAND, 0);
+   evas_object_size_hint_align_set(pad, FILL, FILL);
+   elm_box_pack_end(hbx, pad);
+   evas_object_show(pad);
+
+   ic = elm_icon_add(parent);
+   elm_icon_standard_set(ic, evisum_icon_path_get("exit"));
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_smart_callback_add(ic, "clicked", _field_menu_close_clicked_cb, wd);
+   evas_object_show(ic);
+   elm_box_pack_end(hbx, ic);
+
+   elm_box_pack_end(bx, hbx);
+   evas_object_show(hbx);
 
    for (int i = PROC_FIELD_UID; i < PROC_FIELD_MAX; i++)
      {
@@ -284,6 +333,12 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
         elm_box_pack_end(bx, ck);
         evas_object_show(ck);
      }
+
+   btn = elm_button_add(parent);
+   elm_object_text_set(btn, _("Apply"));
+   elm_box_pack_end(bx, btn);
+   evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _field_menu_apply_clicked_cb, wd);
 
    o = elm_ctxpopup_add(parent);
    evas_object_size_hint_weight_set(o, EXPAND, EXPAND);
@@ -1258,29 +1313,22 @@ _btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse,
    evas_object_show(ic);
 }
 
-static void
+static Eina_Bool
 _btn_clicked_state_save(Win_Data *wd, Evas_Object *btn)
 {
    Evisum_Ui *ui = wd->ui;
 
    if (wd->fields_menu)
      {
-        evas_object_del(wd->fields_menu);
+        elm_ctxpopup_dismiss(wd->fields_menu);
         wd->fields_menu = NULL;
-        // Postpone field changes until the user dismisses the popup.
-        if (wd->fields_changed)
-          {
-             if (evisum_ui_effects_enabled_get(wd->ui))
-               {
-                  elm_object_signal_emit(wd->indicator, "fields,change", "evisum/indicator");
-               }
-             _content_reset(wd);
-           }
-        return;
+        return 0;
      }
    _btn_icon_state_update(btn, ui->proc.sort_reverse, 0);
 
    elm_scroller_page_bring_in(wd->glist, 0, 0);
+
+   return 1;
 }
 
 static void
@@ -1298,10 +1346,11 @@ _btn_clicked_cb(void *data, Evas_Object *obj,
    t = (intptr_t) evas_object_data_get(obj, "type");
    type = (t & 0xff);
 
+   if (!_btn_clicked_state_save(wd, obj)) return;
+
    if (ui->proc.sort_type == type)
      ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = type;
-   _btn_clicked_state_save(wd, obj);
    wd->skip_update = 0;
    wd->skip_wait = 1;
 }
