@@ -9,4 +9,5 @@ install_data('go-up.png', 'go-down.png',
              'menu.png','lovethisdogharvey.png', 'application.png',
              'e.png', 'freebsd.png', 'linux.png', 'on.png', 'off.png',
              'proc.png', 'manual.png', 'actions.png', 'threads.png',
+             'apply.png',
              install_dir: join_paths(dir_data, 'evisum/images'))

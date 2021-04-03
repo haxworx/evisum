@@ -105,7 +105,6 @@ typedef struct
 } Win_Data;
 
 static Win_Data *_wd = NULL;
-static void _content_reset(Win_Data *wd);
 
 typedef struct
 {
@@ -116,6 +115,8 @@ typedef struct
 } Field;
 
 static Field _fields[PROC_FIELD_MAX];
+
+static void _content_reset(Win_Data *wd);
 
 static const char *
 _field_desc(Proc_Field id)
@@ -280,7 +281,7 @@ _field_menu_apply_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
           {
              elm_object_signal_emit(wd->indicator, "fields,change", "evisum/indicator");
           }
-      _content_reset(wd);
+        _content_reset(wd);
      }
    wd->fields_menu = NULL;
 }
@@ -288,7 +289,7 @@ _field_menu_apply_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
 static Evas_Object *
 _field_menu_create(Win_Data *wd, Evas_Object *parent)
 {
-   Evas_Object *o, *fr, *hbx, *pad, *ic, *btn, *bx, *ck;
+   Evas_Object *o, *fr, *hbx, *pad, *ic, *bx, *ck;
 
    fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
@@ -312,11 +313,18 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
    evas_object_show(pad);
 
    ic = elm_icon_add(parent);
-   elm_icon_standard_set(ic, evisum_icon_path_get("exit"));
+   elm_icon_standard_set(ic, evisum_icon_path_get("apply"));
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
-   evas_object_smart_callback_add(ic, "clicked", _field_menu_close_clicked_cb, wd);
    evas_object_show(ic);
    elm_box_pack_end(hbx, ic);
+   evas_object_smart_callback_add(ic, "clicked", _field_menu_apply_clicked_cb, wd);
+
+   ic = elm_icon_add(parent);
+   elm_icon_standard_set(ic, evisum_icon_path_get("exit"));
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_show(ic);
+   elm_box_pack_end(hbx, ic);
+   evas_object_smart_callback_add(ic, "clicked", _field_menu_close_clicked_cb, wd);
 
    elm_box_pack_end(bx, hbx);
    evas_object_show(hbx);
@@ -333,12 +341,6 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
         elm_box_pack_end(bx, ck);
         evas_object_show(ck);
      }
-
-   btn = elm_button_add(parent);
-   elm_object_text_set(btn, _("Apply"));
-   elm_box_pack_end(bx, btn);
-   evas_object_show(btn);
-   evas_object_smart_callback_add(btn, "clicked", _field_menu_apply_clicked_cb, wd);
 
    o = elm_ctxpopup_add(parent);
    evas_object_size_hint_weight_set(o, EXPAND, EXPAND);
