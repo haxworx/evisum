@@ -301,6 +301,7 @@ _power_battery_count_get(power_t *power)
 #elif defined(__linux__)
    char *type;
    struct dirent **names;
+   char *buf;
    char path[PATH_MAX];
    int i, n, id;
 
@@ -324,7 +325,14 @@ _power_battery_count_get(power_t *power)
                   power->batteries[id]->vendor = file_contents(path);
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", names[i]->d_name);
                   power->batteries[id]->model = file_contents(path);
-                  power->batteries[id]->present = true;
+                  snprintf(path, sizeof(path), "/sys/class/power_supply/%s/present", names[i]->d_name);
+                  buf = file_contents(path);
+                  if (buf)
+                    {
+                       power->batteries[id]->present = atoi(buf);
+                       free(buf);
+                    }
+
                   power->battery_count++;
                }
              free(type);
