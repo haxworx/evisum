@@ -254,15 +254,19 @@ _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
    ui = wd->ui;
 
    wd->skip_update = 1;
-   wd->fields_changed = 1;
    f = data;
    // Updating here is far too expensive. Maybe in 10 years time. :)
    // f->enabled = !f->enabled;
    // _content_reset(wd);
    ui->proc.fields ^= (1 << f->id);
 
+   wd->fields_changed = (ui->proc.fields != config()->proc.fields);
+
    ic = evas_object_data_get(obj, "icon");
-   evas_object_show(ic);
+   if (!wd->fields_changed)
+     evas_object_hide(ic);
+   else
+     evas_object_show(ic);
 }
 
 static void

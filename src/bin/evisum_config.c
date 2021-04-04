@@ -4,6 +4,8 @@
 #include <Ecore_File.h>
 #include <Efreet.h>
 
+Evisum_Config *_evisum_config;
+
 static const char *
 _config_file_path(void)
 {
@@ -27,6 +29,12 @@ void
 config_shutdown(void)
 {
    efreet_shutdown();
+}
+
+Evisum_Config *
+config(void)
+{
+   return _evisum_config;
 }
 
 static void
@@ -95,6 +103,7 @@ config_load(void)
 
         eet_close(f);
      }
+   _evisum_config = cfg;
 
    return cfg;
 }

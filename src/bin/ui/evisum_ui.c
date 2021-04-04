@@ -14,7 +14,6 @@
 #include "ui/ui_process_view.h"
 #include "ui/ui_process_list.h"
 
-Evisum_Config *_evisum_config;
 int EVISUM_EVENT_CONFIG_CHANGED;
 
 static Evas_Object *_slider_alpha = NULL;
@@ -24,87 +23,87 @@ evisum_ui_config_save(Evisum_Ui *ui)
 {
    Eina_Bool notify = 0;
 
-   if (!_evisum_config) return;
+   if (!config()) return;
 
-   _evisum_config->effects = ui->effects;
-   _evisum_config->backgrounds = 0;
+   config()->effects = ui->effects;
+   config()->backgrounds = 0;
 
    if (ui->proc.win)
      {
-        if ((_evisum_config->proc.poll_delay != ui->proc.poll_delay) ||
-            (_evisum_config->proc.show_kthreads != ui->proc.show_kthreads) ||
-            (_evisum_config->proc.show_user != ui->proc.show_user) ||
-            (_evisum_config->proc.show_scroller != ui->proc.show_scroller) ||
-            (_evisum_config->proc.transparent != ui->proc.transparent) ||
-            (_evisum_config->proc.alpha != ui->proc.alpha)
+        if ((config()->proc.poll_delay != ui->proc.poll_delay) ||
+            (config()->proc.show_kthreads != ui->proc.show_kthreads) ||
+            (config()->proc.show_user != ui->proc.show_user) ||
+            (config()->proc.show_scroller != ui->proc.show_scroller) ||
+            (config()->proc.transparent != ui->proc.transparent) ||
+            (config()->proc.alpha != ui->proc.alpha)
            )
           {
              notify = 1;
           }
 
-        _evisum_config->proc.width = ui->proc.width;
-        _evisum_config->proc.height = ui->proc.height;
-        _evisum_config->proc.x = ui->proc.x;
-        _evisum_config->proc.y = ui->proc.y;
-        _evisum_config->proc.restart = ui->proc.restart;
-        _evisum_config->proc.sort_type = ui->proc.sort_type;
-        _evisum_config->proc.sort_reverse = ui->proc.sort_reverse;
-        _evisum_config->proc.poll_delay = ui->proc.poll_delay;
-        _evisum_config->proc.show_kthreads = ui->proc.show_kthreads;
-        _evisum_config->proc.show_user = ui->proc.show_user;
-        _evisum_config->proc.show_scroller = ui->proc.show_scroller;
-        _evisum_config->proc.transparent = ui->proc.transparent;
-        _evisum_config->proc.alpha = ui->proc.alpha;
-        _evisum_config->proc.fields = ui->proc.fields;
+        config()->proc.width = ui->proc.width;
+        config()->proc.height = ui->proc.height;
+        config()->proc.x = ui->proc.x;
+        config()->proc.y = ui->proc.y;
+        config()->proc.restart = ui->proc.restart;
+        config()->proc.sort_type = ui->proc.sort_type;
+        config()->proc.sort_reverse = ui->proc.sort_reverse;
+        config()->proc.poll_delay = ui->proc.poll_delay;
+        config()->proc.show_kthreads = ui->proc.show_kthreads;
+        config()->proc.show_user = ui->proc.show_user;
+        config()->proc.show_scroller = ui->proc.show_scroller;
+        config()->proc.transparent = ui->proc.transparent;
+        config()->proc.alpha = ui->proc.alpha;
+        config()->proc.fields = ui->proc.fields;
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
      }
 
    if (ui->cpu.win)
      {
-        _evisum_config->cpu.width = ui->cpu.width;
-        _evisum_config->cpu.height = ui->cpu.height;
-        _evisum_config->cpu.x = ui->cpu.x;
-        _evisum_config->cpu.y = ui->cpu.y;
-        _evisum_config->cpu.restart = ui->cpu.restart;
+        config()->cpu.width = ui->cpu.width;
+        config()->cpu.height = ui->cpu.height;
+        config()->cpu.x = ui->cpu.x;
+        config()->cpu.y = ui->cpu.y;
+        config()->cpu.restart = ui->cpu.restart;
      }
 
    if (ui->mem.win)
      {
-        _evisum_config->mem.width = ui->mem.width;
-        _evisum_config->mem.height = ui->mem.height;
-        _evisum_config->mem.x = ui->mem.x;
-        _evisum_config->mem.y = ui->mem.y;
-        _evisum_config->mem.restart = ui->mem.restart;
+        config()->mem.width = ui->mem.width;
+        config()->mem.height = ui->mem.height;
+        config()->mem.x = ui->mem.x;
+        config()->mem.y = ui->mem.y;
+        config()->mem.restart = ui->mem.restart;
      }
 
    if (ui->disk.win)
      {
-        _evisum_config->disk.width = ui->disk.width;
-        _evisum_config->disk.height = ui->disk.height;
-        _evisum_config->disk.x = ui->disk.x;
-        _evisum_config->disk.y = ui->disk.y;
-        _evisum_config->disk.restart = ui->disk.restart;
+        config()->disk.width = ui->disk.width;
+        config()->disk.height = ui->disk.height;
+        config()->disk.x = ui->disk.x;
+        config()->disk.y = ui->disk.y;
+        config()->disk.restart = ui->disk.restart;
      }
 
    if (ui->sensors.win)
      {
-        _evisum_config->sensors.width = ui->sensors.width;
-        _evisum_config->sensors.height = ui->sensors.height;
-        _evisum_config->sensors.x = ui->sensors.x;
-        _evisum_config->sensors.y = ui->sensors.y;
-        _evisum_config->sensors.restart = ui->sensors.restart;
+        config()->sensors.width = ui->sensors.width;
+        config()->sensors.height = ui->sensors.height;
+        config()->sensors.x = ui->sensors.x;
+        config()->sensors.y = ui->sensors.y;
+        config()->sensors.restart = ui->sensors.restart;
      }
 
    if (ui->network.win)
      {
-        _evisum_config->network.width = ui->network.width;
-        _evisum_config->network.height = ui->network.height;
-        _evisum_config->network.x = ui->network.x;
-        _evisum_config->network.y = ui->network.y;
-        _evisum_config->network.restart = ui->network.restart;
+        config()->network.width = ui->network.width;
+        config()->network.height = ui->network.height;
+        config()->network.x = ui->network.x;
+        config()->network.y = ui->network.y;
+        config()->network.restart = ui->network.restart;
      }
 
-   config_save(_evisum_config);
+   config_save(config());
 
    if (notify)
      ecore_event_add(EVISUM_EVENT_CONFIG_CHANGED, NULL, NULL, NULL);
@@ -125,58 +124,56 @@ evisum_ui_effects_enabled_set(Evisum_Ui *ui, Eina_Bool enabled)
 void
 evisum_ui_config_load(Evisum_Ui *ui)
 {
-   _evisum_config = NULL;
+   config_load();
 
-   _evisum_config = config_load();
+   ui->effects           = config()->effects;
 
-   ui->effects           = _evisum_config->effects;
-
-   ui->proc.sort_type    = _evisum_config->proc.sort_type;
-   ui->proc.sort_reverse = _evisum_config->proc.sort_reverse;
-   ui->proc.poll_delay   = _evisum_config->proc.poll_delay;
-   ui->proc.show_kthreads = _evisum_config->proc.show_kthreads;
-   ui->proc.fields = _evisum_config->proc.fields;
+   ui->proc.sort_type    = config()->proc.sort_type;
+   ui->proc.sort_reverse = config()->proc.sort_reverse;
+   ui->proc.poll_delay   = config()->proc.poll_delay;
+   ui->proc.show_kthreads = config()->proc.show_kthreads;
+   ui->proc.fields = config()->proc.fields;
    proc_info_kthreads_show_set(ui->proc.show_kthreads);
-   ui->proc.show_user = _evisum_config->proc.show_user;
-   ui->proc.show_scroller = _evisum_config->proc.show_scroller;
-   ui->proc.transparent = _evisum_config->proc.transparent;
-   ui->proc.alpha = _evisum_config->proc.alpha;
+   ui->proc.show_user = config()->proc.show_user;
+   ui->proc.show_scroller = config()->proc.show_scroller;
+   ui->proc.transparent = config()->proc.transparent;
+   ui->proc.alpha = config()->proc.alpha;
 
-   ui->proc.width = _evisum_config->proc.width;
-   ui->proc.height = _evisum_config->proc.height;
-   ui->proc.x = _evisum_config->proc.x;
-   ui->proc.y = _evisum_config->proc.y;
-   ui->proc.restart = _evisum_config->proc.restart;
+   ui->proc.width = config()->proc.width;
+   ui->proc.height = config()->proc.height;
+   ui->proc.x = config()->proc.x;
+   ui->proc.y = config()->proc.y;
+   ui->proc.restart = config()->proc.restart;
 
-   ui->cpu.width = _evisum_config->cpu.width;
-   ui->cpu.height = _evisum_config->cpu.height;
-   ui->cpu.x = _evisum_config->cpu.x;
-   ui->cpu.y = _evisum_config->cpu.y;
-   ui->cpu.restart = _evisum_config->cpu.restart;
+   ui->cpu.width = config()->cpu.width;
+   ui->cpu.height = config()->cpu.height;
+   ui->cpu.x = config()->cpu.x;
+   ui->cpu.y = config()->cpu.y;
+   ui->cpu.restart = config()->cpu.restart;
 
-   ui->mem.width = _evisum_config->mem.width;
-   ui->mem.height = _evisum_config->mem.height;
-   ui->mem.x = _evisum_config->mem.x;
-   ui->mem.y = _evisum_config->mem.y;
-   ui->mem.restart = _evisum_config->mem.restart;
+   ui->mem.width = config()->mem.width;
+   ui->mem.height = config()->mem.height;
+   ui->mem.x = config()->mem.x;
+   ui->mem.y = config()->mem.y;
+   ui->mem.restart = config()->mem.restart;
 
-   ui->disk.width = _evisum_config->disk.width;
-   ui->disk.height = _evisum_config->disk.height;
-   ui->disk.x = _evisum_config->disk.x;
-   ui->disk.y = _evisum_config->disk.y;
-   ui->disk.restart = _evisum_config->disk.restart;
+   ui->disk.width = config()->disk.width;
+   ui->disk.height = config()->disk.height;
+   ui->disk.x = config()->disk.x;
+   ui->disk.y = config()->disk.y;
+   ui->disk.restart = config()->disk.restart;
 
-   ui->sensors.width = _evisum_config->sensors.width;
-   ui->sensors.height = _evisum_config->sensors.height;
-   ui->sensors.x = _evisum_config->sensors.x;
-   ui->sensors.y = _evisum_config->sensors.y;
-   ui->sensors.restart = _evisum_config->sensors.restart;
+   ui->sensors.width = config()->sensors.width;
+   ui->sensors.height = config()->sensors.height;
+   ui->sensors.x = config()->sensors.x;
+   ui->sensors.y = config()->sensors.y;
+   ui->sensors.restart = config()->sensors.restart;
 
-   ui->network.width = _evisum_config->network.width;
-   ui->network.height = _evisum_config->network.height;
-   ui->network.x = _evisum_config->network.x;
-   ui->network.y = _evisum_config->network.y;
-   ui->network.restart = _evisum_config->network.restart;
+   ui->network.width = config()->network.width;
+   ui->network.height = config()->network.height;
+   ui->network.x = config()->network.x;
+   ui->network.y = config()->network.y;
+   ui->network.restart = config()->network.restart;
 }
 
 void

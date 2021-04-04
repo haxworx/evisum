@@ -78,5 +78,6 @@ void config_init(void);
 void config_shutdown(void);
 Evisum_Config *config_load(void);
 Eina_Bool config_save(Evisum_Config *);
+Evisum_Config *config(void);
 
 #endif
