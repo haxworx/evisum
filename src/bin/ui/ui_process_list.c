@@ -77,6 +77,8 @@ typedef struct
    Evas_Object            *btn_time;
    Evas_Object            *btn_cpu_usage;
 
+   Evas_Object            *btn_selected;
+
    Eina_Bool               fields_changed;
    Proc_Field              field_max;
    Evas_Object            *fields_menu;
@@ -1305,14 +1307,23 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
 
 static void
 _btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse,
-                       Eina_Bool selected EINA_UNUSED)
+                       Eina_Bool selected, Win_Data *wd)
 {
    Evas_Object *ic = elm_icon_add(btn);
+
+   if ((wd->btn_selected) && (selected))
+     evas_object_color_set(wd->btn_selected, 255, 255, 255, 255);
 
    if (reverse)
      elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
    else
      elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
+
+   if (selected)
+     {
+        evas_object_color_set(ic, 128, 128, 128, 255);
+        wd->btn_selected = ic;
+     }
 
    elm_object_part_content_set(btn, "icon", ic);
 
@@ -1320,7 +1331,7 @@ _btn_icon_state_update(Evas_Object *btn, Eina_Bool reverse,
 }
 
 static Eina_Bool
-_btn_clicked_state_save(Win_Data *wd, Evas_Object *btn)
+_btn_clicked_state_save(Win_Data *wd, Evas_Object *btn, Proc_Sort type)
 {
    Evisum_Ui *ui = wd->ui;
 
@@ -1330,7 +1341,10 @@ _btn_clicked_state_save(Win_Data *wd, Evas_Object *btn)
         wd->fields_menu = NULL;
         return 0;
      }
-   _btn_icon_state_update(btn, ui->proc.sort_reverse, 0);
+
+   if (ui->proc.sort_type == type)
+     ui->proc.sort_reverse = !ui->proc.sort_reverse;
+   _btn_icon_state_update(btn, ui->proc.sort_reverse, 1, wd);
 
    elm_scroller_page_bring_in(wd->glist, 0, 0);
 
@@ -1352,10 +1366,8 @@ _btn_clicked_cb(void *data, Evas_Object *obj,
    t = (intptr_t) evas_object_data_get(obj, "type");
    type = (t & 0xff);
 
-   if (!_btn_clicked_state_save(wd, obj)) return;
+   if (!_btn_clicked_state_save(wd, obj, type)) return;
 
-   if (ui->proc.sort_type == type)
-     ui->proc.sort_reverse = !ui->proc.sort_reverse;
    ui->proc.sort_type = type;
    wd->skip_update = 0;
    wd->skip_wait = 1;
@@ -1716,7 +1728,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_CMD ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_CMD);
+            ui->proc.sort_type == PROC_SORT_BY_CMD,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1729,7 +1742,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_UID ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_UID);
+            ui->proc.sort_type == PROC_SORT_BY_UID,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1742,7 +1756,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_PID ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_PID);
+            ui->proc.sort_type == PROC_SORT_BY_PID,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1755,7 +1770,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_THREADS ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_THREADS);
+            ui->proc.sort_type == PROC_SORT_BY_THREADS,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1768,7 +1784,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_CPU ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_CPU);
+            ui->proc.sort_type == PROC_SORT_BY_CPU,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1781,7 +1798,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_PRI ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_PRI);
+            ui->proc.sort_type == PROC_SORT_BY_PRI,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1794,7 +1812,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_NICE ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_NICE);
+            ui->proc.sort_type == PROC_SORT_BY_NICE,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1808,7 +1827,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_FILES ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_FILES);
+            ui->proc.sort_type == PROC_SORT_BY_FILES,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1821,7 +1841,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_SIZE ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_SIZE);
+            ui->proc.sort_type == PROC_SORT_BY_SIZE,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1834,7 +1855,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_VIRT ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_VIRT);
+            ui->proc.sort_type == PROC_SORT_BY_VIRT,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1847,7 +1869,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_RSS ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_RSS);
+            ui->proc.sort_type == PROC_SORT_BY_RSS,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1860,7 +1883,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_SHARED ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_SHARED);
+            ui->proc.sort_type == PROC_SORT_BY_SHARED,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1873,7 +1897,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_STATE ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_STATE);
+            ui->proc.sort_type == PROC_SORT_BY_STATE,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1886,7 +1911,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_TIME ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_TIME);
+            ui->proc.sort_type == PROC_SORT_BY_TIME,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
@@ -1899,7 +1925,8 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    _btn_icon_state_update(btn,
             (ui->proc.sort_type == PROC_SORT_BY_CPU_USAGE ?
             ui->proc.sort_reverse : 0),
-            ui->proc.sort_type == PROC_SORT_BY_CPU_USAGE);
+            ui->proc.sort_type == PROC_SORT_BY_CPU_USAGE,
+            wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
