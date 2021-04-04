@@ -245,6 +245,7 @@ _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
 {
    Evisum_Ui *ui;
    Win_Data *wd;
+   Evas_Object *ic;
    Field *f;
 
    wd = _wd;
@@ -257,6 +258,9 @@ _field_menu_check_changed_cb(void *data, Evas_Object *obj, void *event_info)
    // f->enabled = !f->enabled;
    // _content_reset(wd);
    ui->proc.fields ^= (1 << f->id);
+
+   ic = evas_object_data_get(obj, "icon");
+   evas_object_show(ic);
 }
 
 static void
@@ -289,7 +293,7 @@ _field_menu_apply_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
 static Evas_Object *
 _field_menu_create(Win_Data *wd, Evas_Object *parent)
 {
-   Evas_Object *o, *fr, *hbx, *pad, *ic, *bx, *ck;
+   Evas_Object *o, *fr, *hbx, *pad, *ic, *ic2, *bx, *ck;
 
    fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
@@ -315,16 +319,15 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
    ic = elm_icon_add(parent);
    elm_icon_standard_set(ic, evisum_icon_path_get("apply"));
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
-   evas_object_show(ic);
    elm_box_pack_end(hbx, ic);
    evas_object_smart_callback_add(ic, "clicked", _field_menu_apply_clicked_cb, wd);
 
-   ic = elm_icon_add(parent);
-   elm_icon_standard_set(ic, evisum_icon_path_get("exit"));
-   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
-   evas_object_show(ic);
-   elm_box_pack_end(hbx, ic);
-   evas_object_smart_callback_add(ic, "clicked", _field_menu_close_clicked_cb, wd);
+   ic2 = elm_icon_add(parent);
+   elm_icon_standard_set(ic2, evisum_icon_path_get("exit"));
+   evas_object_size_hint_min_set(ic2, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_show(ic2);
+   elm_box_pack_end(hbx, ic2);
+   evas_object_smart_callback_add(ic2, "clicked", _field_menu_close_clicked_cb, wd);
 
    elm_box_pack_end(bx, hbx);
    evas_object_show(hbx);
@@ -336,6 +339,7 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
         evas_object_size_hint_align_set(ck, FILL, FILL);
         elm_object_text_set(ck, _fields[i].desc);
         elm_check_state_set(ck, _fields[i].enabled);
+        evas_object_data_set(ck, "icon", ic);
         evas_object_smart_callback_add(ck, "changed",
                                        _field_menu_check_changed_cb, &_fields[i]);
         elm_box_pack_end(bx, ck);
