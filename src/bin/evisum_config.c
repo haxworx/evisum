@@ -55,7 +55,7 @@ _config_init()
    cfg->proc.show_kthreads = 0;
    cfg->proc.show_scroller = 1;
    cfg->proc.transparent = 0;
-   cfg->proc.fields = 0xffffffff;
+   cfg->proc.fields = 0xffffe24f;
    cfg->proc.alpha = 100;
 
    return cfg;
