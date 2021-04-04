@@ -7,7 +7,10 @@ Evisum 0.5.12
   * Minor performance improvements.
   * Add a basic network overview tool.
   * Add some more fields to process view.
-  * Process list fields selectablei (right click field headers).
+  * Process list fields selectable (right click field headers).
+  * Improve scrolling performance.
+  * Add small gadgets to the status bar (accurate in menu).
+  * Add some useless effects :)
   * Fix leak.
   * Load manpages in separate thread (no blocking with LARGE docs).
   * Fix search bug.
