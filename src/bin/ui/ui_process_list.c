@@ -949,7 +949,6 @@ static Eina_Bool
 _bring_in(void *data)
 {
    Win_Data *wd;
-   int h_page, v_page;
 
    wd = data;
    evas_object_show(wd->glist);

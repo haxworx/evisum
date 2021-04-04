@@ -676,7 +676,7 @@ ui_disk_win_add(Evisum_Ui *ui)
    if ((ui->disk.width > 0) && (ui->disk.height > 0))
      evas_object_resize(win, ui->disk.width, ui->disk.height);
    else
-     evas_object_resize(win, UI_CHILD_WIN_WIDTH * 1.5, UI_CHILD_WIN_HEIGHT * 1.1);
+     evas_object_resize(win, ELM_SCALE_SIZE(UI_CHILD_WIN_WIDTH * 1.5), ELM_SCALE_SIZE(UI_CHILD_WIN_HEIGHT * 0.5));
 
    if ((ui->disk.x > 0) && (ui->disk.y > 0))
      evas_object_move(win, ui->disk.x, ui->disk.y);
