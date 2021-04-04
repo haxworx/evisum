@@ -1,0 +1,22 @@
+There are none :)
+
+* Some input devices (touchpads) will send far too many events
+  which the scroller respects and that is extremely intensive
+  for the genlist of the process explorer. Fix is either in EFL
+  or configure scrolling behaviour for the device.
+
+* Alignment of some items. Please, for now, find an optimum width
+  manually, which the program will remember on all future runs.
+  Theme constraints (and i'd like to support others than default),
+  and the ability to select various fields means this is a necessity
+  for now until...who knows...
+
+* Memory calculations. These ARE accurate AFAIU, but they are not
+  standard practice of all items aggregated as with other tools.
+
+* Other issues are possibly OS bugs. FreeBSD, for example, depending
+  on the query will list two different times for process CPU time.
+  Some inclusive of interrupts and others exclusive. Not a bug.
+
+* If you are writing an EFL application...copy my practice at your own
+  risk!!!
