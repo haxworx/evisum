@@ -1053,7 +1053,7 @@ _first_run_tasks(Win_Data *wd)
         evas_object_show(ic);
 
         bat->pb = pb = elm_progressbar_add(wd->win);
-        elm_object_tooltip_text_set(pb, eina_slstr_printf("%s (%s)", bat->model, bat->vendor));
+        elm_object_tooltip_text_set(pb, eina_slstr_printf("%s (%s)", bat->vendor, bat->model));
         elm_progressbar_span_size_set(pb, 120);
         elm_progressbar_value_set(pb, bat->usage / 100.0);
         elm_box_pack_end(hbx, pb);
