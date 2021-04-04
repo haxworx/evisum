@@ -952,10 +952,6 @@ _bring_in(void *data)
    int h_page, v_page;
 
    wd = data;
-   elm_scroller_gravity_set(wd->glist, 0.0, 0.0);
-   elm_scroller_last_page_get(wd->glist, &h_page, &v_page);
-   elm_scroller_page_bring_in(wd->glist, h_page, v_page);
-//   elm_genlist_realized_items_update(wd->glist);
    evas_object_show(wd->glist);
 
    return 0;
@@ -1055,7 +1051,7 @@ _first_run_tasks(Win_Data *wd)
 
         bat->pb = pb = elm_progressbar_add(wd->win);
         elm_object_tooltip_text_set(pb, eina_slstr_printf("%s (%s)", bat->model, bat->vendor));
-        elm_progressbar_span_size_set(pb, 140);
+        elm_progressbar_span_size_set(pb, 120);
         elm_progressbar_value_set(pb, bat->usage / 100.0);
         elm_box_pack_end(hbx, pb);
         evas_object_show(pb);
@@ -1732,7 +1728,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
+   evas_object_size_hint_min_set(btn, 2.0 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CMD);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1746,7 +1742,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
+   evas_object_size_hint_min_set(btn, 1.4 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_UID);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -1937,7 +1933,6 @@ _content_add(Win_Data *wd, Evas_Object *parent)
 
    wd->glist = glist = elm_genlist_add(parent);
    elm_genlist_homogeneous_set(glist, 1);
-   elm_scroller_gravity_set(glist, 0.0, 1.0);
    elm_scroller_bounce_set(glist, 0, 0);
    elm_object_focus_allow_set(glist, 1);
    elm_scroller_policy_set(glist, ELM_SCROLLER_POLICY_AUTO,
@@ -1987,7 +1982,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
 
    wd->summary.pb_cpu = pb = elm_progressbar_add(parent);
    elm_progressbar_unit_format_set(pb, "%1.2f %%");
-   elm_progressbar_span_size_set(pb, 140);
+   elm_progressbar_span_size_set(pb, 120);
    elm_box_pack_end(hbx, pb);
    evas_object_show(pb);
 
@@ -1999,7 +1994,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    evas_object_show(ic);
 
    wd->summary.pb_mem = pb= elm_progressbar_add(parent);
-   elm_progressbar_span_size_set(pb, 140);
+   elm_progressbar_span_size_set(pb, 120);
    evas_object_show(pb);
    elm_box_pack_end(hbx, pb);
 
