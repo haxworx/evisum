@@ -1845,7 +1845,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, wd);
    evas_object_event_callback_add(bx, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, wd);
 
-   evas_object_resize(win, -1, -1);
+   evas_object_resize(win, ELM_SCALE_SIZE(460), -1);
    elm_win_center(win, 1, 1);
    evas_object_show(win);
 
