@@ -296,6 +296,18 @@ _field_menu_apply_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *eve
    wd->fields_menu = NULL;
 }
 
+static void
+_icon_mouse_in_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   evas_object_color_set(obj, 128, 128, 128, 255);
+}
+
+static void
+_icon_mouse_out_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   evas_object_color_set(obj, 255, 255, 255, 255);
+}
+
 static Evas_Object *
 _field_menu_create(Win_Data *wd, Evas_Object *parent)
 {
@@ -327,6 +339,8 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    elm_box_pack_end(hbx, ic);
    evas_object_smart_callback_add(ic, "clicked", _field_menu_apply_clicked_cb, wd);
+   evas_object_event_callback_add(ic, EVAS_CALLBACK_MOUSE_IN, _icon_mouse_in_cb, NULL);
+   evas_object_event_callback_add(ic, EVAS_CALLBACK_MOUSE_OUT, _icon_mouse_out_cb, NULL);
 
    ic2 = elm_icon_add(parent);
    elm_icon_standard_set(ic2, evisum_icon_path_get("exit"));
@@ -334,6 +348,8 @@ _field_menu_create(Win_Data *wd, Evas_Object *parent)
    evas_object_show(ic2);
    elm_box_pack_end(hbx, ic2);
    evas_object_smart_callback_add(ic2, "clicked", _field_menu_close_clicked_cb, wd);
+   evas_object_event_callback_add(ic2, EVAS_CALLBACK_MOUSE_IN, _icon_mouse_in_cb, NULL);
+   evas_object_event_callback_add(ic2, EVAS_CALLBACK_MOUSE_OUT, _icon_mouse_out_cb, NULL);
 
    elm_box_pack_end(bx, hbx);
    evas_object_show(hbx);
