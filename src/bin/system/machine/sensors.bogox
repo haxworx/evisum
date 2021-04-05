@@ -326,6 +326,7 @@ _power_battery_count_get(power_t *power)
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", names[i]->d_name);
                   power->batteries[id]->model = file_contents(path);
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/present", names[i]->d_name);
+                  power->batteries[id]->present = 1;
                   buf = file_contents(path);
                   if (buf)
                     {
