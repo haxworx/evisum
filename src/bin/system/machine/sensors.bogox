@@ -470,6 +470,28 @@ _battery_state_get(power_t *power)
              power->batteries[i]->charge_current = atol(buf);
              free(buf);
           }
+        else
+          {
+             // Fallback to "coarse" representation.
+             snprintf(path, sizeof(path), "%s/capacity_level", link);
+             buf = file_contents(path);
+             if (buf)
+               {
+                  power->batteries[i]->charge_full = 100;
+                  if (buf[0] == 'F')
+                    power->batteries[i]->charge_current = 100;
+                  else if (buf[0] == 'H')
+                    power->batteries[i]->charge_current = 75;
+                  else if (buf[0] == 'N')
+                    power->batteries[i]->charge_current = 50;
+                  else if (buf[0] == 'L')
+                    power->batteries[i]->charge_current = 25;
+                  else if (buf[0] == 'C')
+                    power->batteries[i]->charge_current = 5;
+
+                  free(buf);
+               }
+          }
         free(naming);
      }
 done:
