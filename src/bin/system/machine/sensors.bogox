@@ -453,22 +453,23 @@ _battery_state_get(power_t *power)
           }
         closedir(dir);
 
-        if (!naming)
-          continue;
-
-        snprintf(path, sizeof(path), "%s/%s_full", link, naming);
-        buf = file_contents(path);
-        if (buf)
+        if (naming)
           {
-             power->batteries[i]->charge_full = atol(buf);
-             free(buf);
-          }
-        snprintf(path, sizeof(path), "%s/%s_now", link, naming);
-        buf = file_contents(path);
-        if (buf)
-          {
-             power->batteries[i]->charge_current = atol(buf);
-             free(buf);
+             snprintf(path, sizeof(path), "%s/%s_full", link, naming);
+             buf = file_contents(path);
+             if (buf)
+               {
+                  power->batteries[i]->charge_full = atol(buf);
+                  free(buf);
+               }
+             snprintf(path, sizeof(path), "%s/%s_now", link, naming);
+             buf = file_contents(path);
+             if (buf)
+               {
+                  power->batteries[i]->charge_current = atol(buf);
+                  free(buf);
+               }
+             free(naming);
           }
         else
           {
@@ -488,11 +489,9 @@ _battery_state_get(power_t *power)
                     power->batteries[i]->charge_current = 25;
                   else if (buf[0] == 'C')
                     power->batteries[i]->charge_current = 5;
-
                   free(buf);
                }
           }
-        free(naming);
      }
 done:
    if (link) free(link);
