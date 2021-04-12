@@ -1,6 +1,8 @@
 [Desktop Entry]
 Type=Application
 Name=CPU Activity
+Name[fr]=Activité du CPU
+Name[it]=Attività della CPU
 Exec=evisum -c
 Icon=evisum_cpu
 Categories=System;Monitor;

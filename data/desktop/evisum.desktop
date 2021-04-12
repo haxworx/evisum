@@ -2,7 +2,7 @@
 Type=Application
 Name=Evisum
 GenericName=Process Explorer
-GenericName[fr]=Moniteur d'activité système
+GenericName[fr]=Activité des processus
 GenericName[it]=Attività del sistema
 GenericName[ru]=Системная активность
 Exec=evisum
