@@ -93,9 +93,6 @@ _openbsd_generic_network_status(int *n)
           continue;
 
         net_iface_t *iface = malloc(sizeof(net_iface_t));
-        if (!iface) return NULL;
-
-        net_iface_t *iface = malloc(sizeof(net_iface_t));
         if (iface)
           {
              snprintf(iface->name, sizeof(iface->name), "%s",
