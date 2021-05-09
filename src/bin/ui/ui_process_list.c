@@ -27,6 +27,7 @@ typedef struct
 {
    Ecore_Thread          *thread;
    Evisum_Ui_Cache       *cache;
+   Eina_Hash             *icon_cache;
    Ecore_Event_Handler   *handler;
    Eina_Hash             *cpu_times;
    Eina_Bool              skip_wait;
@@ -742,7 +743,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(lb);
 
-   const char *new = evisum_icon_path_get(evisum_icon_cache_find(proc));
+   const char *new = evisum_icon_path_get(evisum_icon_cache_find(wd->icon_cache, proc));
    const char *old = NULL;
    o = evas_object_data_get(it->obj, "icon");
    elm_image_file_get(o, &old, NULL);
@@ -1547,7 +1548,7 @@ _item_menu_create(Win_Data *wd, Proc_Info *proc)
    stopped = !(!strcmp(proc->state, "stop"));
 
    menu_it = elm_menu_item_add(menu, NULL,
-                               evisum_icon_path_get(evisum_icon_cache_find(proc)),
+                               evisum_icon_path_get(evisum_icon_cache_find(wd->icon_cache, proc)),
                                proc->command, NULL, NULL);
 
    menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("actions"),
@@ -2340,6 +2341,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
      ecore_thread_wait(wd->thread, 0.5);
 
    ecore_event_handler_del(wd->handler);
+   evisum_icon_cache_del(wd->icon_cache);
 
    wd->thread = NULL;
    ui->proc.win = NULL;
@@ -2447,6 +2449,7 @@ ui_process_list_win_add(Evisum_Ui *ui)
    elm_object_content_set(win, tb);
 
    wd->cache = evisum_ui_item_cache_new(wd->glist, _item_create, 30);
+   wd->icon_cache = evisum_icon_cache_new();
    wd->cpu_times = eina_hash_int64_new(_cpu_times_free_cb);
 
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL,

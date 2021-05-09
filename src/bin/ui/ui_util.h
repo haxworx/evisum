@@ -16,14 +16,14 @@
 #define UI_CHILD_WIN_WIDTH  360
 #define UI_CHILD_WIN_HEIGHT 360
 
-void
-evisum_icon_cache_init(void);
+Eina_Hash *
+evisum_icon_cache_new(void);
 
 void
-evisum_icon_cache_shutdown(void);
+evisum_icon_cache_del(Eina_Hash *icon_cache);
 
 const char *
-evisum_icon_cache_find(const Proc_Info *proc);
+evisum_icon_cache_find(Eina_Hash *icon_cache, const Proc_Info *proc);
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,

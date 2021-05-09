@@ -5,11 +5,6 @@
 
 #define ARRAY_SIZE(n) sizeof(n) / sizeof(n[0])
 
-#if !defined(__OpenBSD__)
-static
-#endif
-Eina_Hash *_icon_cache;
-
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
                   Evas_Smart_Cb clicked_cb, void *data)
@@ -158,21 +153,24 @@ _icon_cache_free_cb(void *data)
    free(ic_name);
 }
 
-void
-evisum_icon_cache_init(void)
+Eina_Hash *
+evisum_icon_cache_new(void)
 {
-   _icon_cache = NULL;
-   _icon_cache = eina_hash_string_superfast_new(_icon_cache_free_cb);
+   Eina_Hash *icon_cache;
+
+   icon_cache = eina_hash_string_superfast_new(_icon_cache_free_cb);
+
+   return icon_cache;
 }
 
 void
-evisum_icon_cache_shutdown(void)
+evisum_icon_cache_del(Eina_Hash *icon_cache)
 {
-   eina_hash_free(_icon_cache);
+   eina_hash_free(icon_cache);
 }
 
 const char *
-evisum_icon_cache_find(const Proc_Info *proc)
+evisum_icon_cache_find(Eina_Hash *icon_cache, const Proc_Info *proc)
 {
    Efreet_Desktop *e;
    const char *name, *cmd;
@@ -187,7 +185,7 @@ evisum_icon_cache_find(const Proc_Info *proc)
 
    cmd = proc->command;
 
-   exists = eina_hash_find(_icon_cache, cmd);
+   exists = eina_hash_find(icon_cache, cmd);
    if (exists) return exists;
 
    if (!strncmp(cmd, "enlightenment", 13)) return "e";
@@ -201,7 +199,7 @@ evisum_icon_cache_find(const Proc_Info *proc)
    else
      name = cmd;
 
-   eina_hash_add(_icon_cache, cmd, strdup(name));
+   eina_hash_add(icon_cache, cmd, strdup(name));
 
    efreet_desktop_free(e);
 

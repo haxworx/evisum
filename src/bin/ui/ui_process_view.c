@@ -31,6 +31,8 @@ typedef struct
 
    Eina_Bool        kthreads_has_rss;
 
+   Eina_Hash       *icon_cache;
+
    struct
    {
       Evas_Object   *entry_cmd;
@@ -570,14 +572,17 @@ static Evas_Object *
 _children_icon_get(void *data, Evas_Object *obj, const char *part)
 {
    Proc_Info *proc;
+   Win_Data *wd;
    Evas_Object *ic = elm_icon_add(obj);
+
    proc = data;
+   wd = evas_object_data_get(obj, "windata");
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
         elm_icon_standard_set(ic,
                               evisum_icon_path_get(
-                              evisum_icon_cache_find(proc)));
+                              evisum_icon_cache_find(wd->icon_cache, proc)));
      }
 
    evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
@@ -1158,7 +1163,7 @@ _general_tab_add(Evas_Object *parent, Win_Data *wd)
         evas_object_size_hint_align_set(ic, FILL, FILL);
         elm_icon_standard_set(ic,
                               evisum_icon_path_get(
-                              evisum_icon_cache_find(proc)));
+                              evisum_icon_cache_find(wd->icon_cache, proc)));
         evas_object_show(ic);
         proc_info_free(proc);
         elm_table_pack(tb, ic, 0, i, 1, 1);
@@ -1514,7 +1519,7 @@ _children_tab_add(Evas_Object *parent, Win_Data *wd)
    elm_object_content_set(fr, bx);
 
    wd->children.glist = glist = elm_genlist_add(parent);
-   evas_object_data_set(glist, "ui", wd);
+   evas_object_data_set(glist, "windata", wd);
    elm_object_focus_allow_set(glist, 1);
    elm_genlist_homogeneous_set(glist, 1);
    elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_DEFAULT);
@@ -1729,6 +1734,8 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    if (wd->threads.cache)
      evisum_ui_item_cache_free(wd->threads.cache);
 
+   evisum_icon_cache_del(wd->icon_cache);
+
    evas_object_del(win);
 
    free(wd);
@@ -1795,6 +1802,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    wd->threads.cache = NULL;
    wd->threads.sort_reverse = 1;
    wd->threads.sort_cb = _sort_by_cpu_usage;
+   wd->icon_cache = evisum_icon_cache_new();
 
    proc = proc_info_by_pid(pid);
    if (!proc)

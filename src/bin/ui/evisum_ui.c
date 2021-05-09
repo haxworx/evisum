@@ -738,7 +738,6 @@ evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid)
 void
 evisum_ui_shutdown(Evisum_Ui *ui)
 {
-   evisum_icon_cache_shutdown();
    evisum_ui_config_save(ui);
 
    ecore_thread_cancel(ui->background_poll_thread);
@@ -762,8 +761,6 @@ evisum_ui_init(void)
    EVISUM_EVENT_CONFIG_CHANGED = ecore_event_type_new();
 
    evisum_ui_config_load(ui);
-
-   evisum_icon_cache_init();
 
    _ui_init_system_probe(ui);
 
