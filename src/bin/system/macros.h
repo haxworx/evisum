@@ -10,6 +10,6 @@
 #define U8(n)  (uint8_t)  n
 #define I8(n)  (int8_t)   n
 
-#define MEMSZ U64
+#define MEMSIZE U64
 
 #endif

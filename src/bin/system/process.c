@@ -146,10 +146,10 @@ _mem_size(Proc_Info *proc)
                    &size, &resident, &shared, &text,
                    &dummy, &data, &dummy) == 7)
           {
-             proc->mem_rss = MEMSZ(resident) * MEMSZ(pagesize);
-             proc->mem_shared = MEMSZ(shared) * MEMSZ(pagesize);
+             proc->mem_rss = MEMSIZE(resident) * MEMSIZE(pagesize);
+             proc->mem_shared = MEMSIZE(shared) * MEMSIZE(pagesize);
              proc->mem_size = proc->mem_rss - proc->mem_shared;
-             proc->mem_virt = MEMSZ(size) * MEMSZ(pagesize);
+             proc->mem_virt = MEMSIZE(size) * MEMSIZE(pagesize);
           }
      }
 
@@ -477,9 +477,9 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    snprintf(p->state, sizeof(p->state), "%s", state);
    snprintf(p->wchan, sizeof(p->wchan), "%s", kp->p_wmesg);
    p->cpu_time = kp->p_uticks + kp->p_sticks + kp->p_iticks;
-   p->mem_virt = p->mem_size = (MEMSZ(kp->p_vm_tsize) * MEMSZ(pagesize)) +
-      (MEMSZ(kp->p_vm_dsize) * MEMSZ(pagesize)) + (MEMSZ(kp->p_vm_ssize) * MEMSZ(pagesize));
-   p->mem_rss = MEMSZ(kp->p_vm_rssize) * MEMSZ(pagesize);
+   p->mem_virt = p->mem_size = (MEMSIZE(kp->p_vm_tsize) * MEMSIZE(pagesize)) +
+      (MEMSIZE(kp->p_vm_dsize) * MEMSIZE(pagesize)) + (MEMSIZE(kp->p_vm_ssize) * MEMSIZE(pagesize));
+   p->mem_rss = MEMSIZE(kp->p_vm_rssize) * MEMSIZE(pagesize);
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
    p->tid = kp->p_tid;
@@ -983,7 +983,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    snprintf(p->state, sizeof(p->state), "%s", state);
    snprintf(p->wchan, sizeof(p->wchan), "%s", kp->ki_wmesg);
    p->mem_virt = kp->ki_size;
-   p->mem_rss = MEMSZ(kp->ki_rssize) * MEMSZ(pagesize);
+   p->mem_rss = MEMSIZE(kp->ki_rssize) * MEMSIZE(pagesize);
    p->start = kp->ki_start.tv_sec;
    p->mem_size = p->mem_virt;
    p->nice = kp->ki_nice - NZERO;
