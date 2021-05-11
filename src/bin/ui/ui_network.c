@@ -251,8 +251,8 @@ _network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA
           {
              obj = evas_object_data_get(iface->obj, "total");
              elm_object_text_set(obj, eina_slstr_printf("%s / %s",
-                                 evisum_size_format(iface->total_in),
-                                 evisum_size_format(iface->total_out)));
+                                 evisum_size_format(iface->total_in, 0),
+                                 evisum_size_format(iface->total_out, 0)));
 
              obj = evas_object_data_get(iface->obj, "peak");
              s = _network_transfer_format(iface->peak_in);

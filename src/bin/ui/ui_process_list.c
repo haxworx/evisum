@@ -839,7 +839,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         evas_object_geometry_get(wd->btn_size, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "size");
         if (!proc->is_kernel)
-          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size));
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size, 1));
         else
           {
              buf[0] = '-'; buf[1] = '\0';
@@ -854,7 +854,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         evas_object_geometry_get(wd->btn_virt, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "virt");
         if (!proc->is_kernel)
-          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt));
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt, 1));
         else
           {
              buf[0] = '-'; buf[1] = '\0';
@@ -869,7 +869,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         evas_object_geometry_get(wd->btn_rss, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "rss");
         if ((!proc->is_kernel) || (ui->kthreads_has_rss))
-          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss));
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss, 1));
         else
           {
              buf[0] = '-'; buf[1] = '\0';
@@ -884,7 +884,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         evas_object_geometry_get(wd->btn_shared, NULL, NULL, &w, NULL);
         lb = evas_object_data_get(it->obj, "share");
         if (!proc->is_kernel)
-          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared));
+          snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared, 1));
         else
           {
              buf[0] = '-'; buf[1] = '\0';
@@ -1022,7 +1022,7 @@ _summary_update(Win_Data *wd)
    eina_strbuf_reset(buf);
 
    elm_progressbar_value_set(wd->summary.pb_mem, (ui->mem_total / 100) / ui->mem_total);
-   eina_strbuf_append_printf(buf, "%s / %s ", evisum_size_format(ui->mem_used), evisum_size_format(ui->mem_total));
+   eina_strbuf_append_printf(buf, "%s / %s ", evisum_size_format(ui->mem_used, 0), evisum_size_format(ui->mem_total, 0));
    elm_object_part_text_set(wd->summary.pb_mem, "elm.text.status", eina_strbuf_string_get(buf));
 
    EINA_LIST_FOREACH(ui->batteries, l, bat)

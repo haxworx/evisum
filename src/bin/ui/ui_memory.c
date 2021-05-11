@@ -74,31 +74,31 @@ _update_widgets(Data *pd, meminfo_t *memory)
    elm_progressbar_value_set(pb, value / 100);
    elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s",
-                   evisum_size_format(memory->used),
-                   evisum_size_format(memory->total)));
+                   evisum_size_format(memory->used, 0),
+                   evisum_size_format(memory->total, 0)));
 
    pb = pd->cached;
    value = memory->cached / ratio;
    elm_progressbar_value_set(pb, value / 100);
    elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s",
-                   evisum_size_format(memory->cached),
-                   evisum_size_format(memory->total)));
+                   evisum_size_format(memory->cached, 0),
+                   evisum_size_format(memory->total, 0)));
 
    pb = pd->buffered;
    value = memory->buffered / ratio;
    elm_progressbar_value_set(pb, value / 100);
    elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s",
-                   evisum_size_format(memory->buffered),
-                   evisum_size_format(memory->total)));
+                   evisum_size_format(memory->buffered, 0),
+                   evisum_size_format(memory->total, 0)));
    pb = pd->shared;
    value = memory->shared / ratio;
    elm_progressbar_value_set(pb, value / 100);
    elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s",
-                   evisum_size_format(memory->shared),
-                   evisum_size_format(memory->total)));
+                   evisum_size_format(memory->shared, 0),
+                   evisum_size_format(memory->total, 0)));
    pb = pd->swap;
    if (memory->swap_total)
      {
@@ -115,8 +115,8 @@ _update_widgets(Data *pd, meminfo_t *memory)
    elm_progressbar_value_set(pb, value / 100);
    elm_progressbar_unit_format_set(pb,
                    eina_slstr_printf("%s / %s",
-                   evisum_size_format(memory->swap_used),
-                   evisum_size_format(memory->swap_total)));
+                   evisum_size_format(memory->swap_used, 0),
+                   evisum_size_format(memory->swap_total, 0)));
 
    for (int i = 0; i < memory->video_count; i++)
      {
@@ -129,8 +129,8 @@ _update_widgets(Data *pd, meminfo_t *memory)
         elm_progressbar_value_set(pb, value / 100);
         elm_progressbar_unit_format_set(pb,
                         eina_slstr_printf("%s / %s",
-                        evisum_size_format(memory->video[i].used),
-                        evisum_size_format(memory->video[i].total)));
+                        evisum_size_format(memory->video[i].used, 0),
+                        evisum_size_format(memory->video[i].total, 0)));
      }
 }
 

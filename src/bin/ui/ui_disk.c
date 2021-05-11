@@ -146,7 +146,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(wd->btn_total, NULL, NULL, &w, NULL);
    lb = evas_object_data_get(it->obj, "total");
-   elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(inf->usage.total)));
+   elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(inf->usage.total, 0)));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(wd->btn_total, w, 1);
    r = evas_object_data_get(lb, "rec");
@@ -155,7 +155,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
 
    evas_object_geometry_get(wd->btn_used, NULL, NULL, &w, NULL);
    lb = evas_object_data_get(it->obj, "used");
-   elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(inf->usage.used)));
+   elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(inf->usage.used, 0)));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(wd->btn_used, ow, 1);
    r = evas_object_data_get(lb, "rec");
@@ -165,7 +165,7 @@ _content_get(void *data, Evas_Object *obj, const char *source)
    evas_object_geometry_get(wd->btn_free, NULL, NULL, &w, NULL);
    lb = evas_object_data_get(it->obj, "free");
    int64_t avail = inf->usage.total - inf->usage.used;
-   elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(avail)));
+   elm_object_text_set(lb, eina_slstr_printf("%s", evisum_size_format(avail, 0)));
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    if (ow > w) evas_object_size_hint_min_set(wd->btn_free, ow, 1);
    r = evas_object_data_get(lb, "rec");

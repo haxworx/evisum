@@ -691,9 +691,9 @@ _graph_summary_update(Win_Data *wd, Proc_Info *proc)
                        "Virtual: %s"
                        "</>"),
                        proc->cpu_usage,
-                       evisum_size_format(proc->mem_size),
-                       evisum_size_format(proc->mem_rss),
-                       evisum_size_format(proc->mem_virt)));
+                       evisum_size_format(proc->mem_size, 0),
+                       evisum_size_format(proc->mem_rss, 0),
+                       evisum_size_format(proc->mem_virt, 0)));
 }
 
 static void
@@ -957,22 +957,22 @@ _general_view_update(Win_Data *wd, Proc_Info *proc)
                        eina_slstr_printf("%d", proc->numfiles));
    if (!proc->is_kernel)
      elm_object_text_set(wd->general.entry_virt,
-                         evisum_size_format(proc->mem_virt));
+                         evisum_size_format(proc->mem_virt, 0));
    else elm_object_text_set(wd->general.entry_virt, "-");
 
    if ((!proc->is_kernel) || (wd->kthreads_has_rss))
      elm_object_text_set(wd->general.entry_rss,
-                         evisum_size_format(proc->mem_rss));
+                         evisum_size_format(proc->mem_rss, 0));
    else elm_object_text_set(wd->general.entry_rss, "-");
 
    if (!proc->is_kernel)
      elm_object_text_set(wd->general.entry_shared,
-                         evisum_size_format(proc->mem_shared));
+                         evisum_size_format(proc->mem_shared, 0));
    else elm_object_text_set(wd->general.entry_shared, "-");
 
    if (!proc->is_kernel)
      elm_object_text_set(wd->general.entry_size,
-                         evisum_size_format(proc->mem_size));
+                         evisum_size_format(proc->mem_size, 0));
    else elm_object_text_set(wd->general.entry_size, "-");
 
    s = _run_time_string(proc->run_time);

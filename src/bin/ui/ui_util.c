@@ -99,7 +99,7 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
 }
 
 const char *
-evisum_size_format(unsigned long long bytes)
+evisum_size_format(unsigned long long bytes, Eina_Bool simple)
 {
    unsigned long powi = 1;
    unsigned long long value;
@@ -127,6 +127,9 @@ evisum_size_format(unsigned long long bytes)
         if ((value / powi) < powj) break;
         --precision;
      }
+
+   if (simple)
+     return eina_slstr_printf("%1.*f %c", precision, (double) value / powi, units[i][0]);
 
    return eina_slstr_printf("%1.*f %s", precision, (double) value / powi, units[i]);
 }

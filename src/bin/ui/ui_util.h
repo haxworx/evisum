@@ -37,7 +37,7 @@ void
 evisum_ui_icon_size_set(Evas_Object *ic, int size);
 
 const char *
-evisum_size_format(unsigned long long bytes);
+evisum_size_format(unsigned long long bytes, Eina_Bool simple);
 
 const char *
 evisum_icon_path_get(const char *name);
