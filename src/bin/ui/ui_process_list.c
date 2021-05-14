@@ -13,7 +13,6 @@
 #include <pwd.h>
 
 #define DIRTY_GENLIST_HACK    1
-#define SIZING_ADJUST_PERIOD  3
 
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
@@ -651,6 +650,7 @@ _item_create(Evas_Object *obj)
         elm_progressbar_unit_format_set(pb, "%1.1f %%");
         elm_box_pack_end(hbx, pb);
         evas_object_show(hbx);
+        evas_object_show(pb);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(tb));
         evas_object_data_set(pb, "rec", rec);
@@ -929,7 +929,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
              snprintf(buf, sizeof(buf), "%1.1f %%", proc->cpu_usage);
              elm_object_part_text_set(pb, "elm.text.status", buf);
           }
-        evas_object_show(pb);
      }
 
    return it->obj;
@@ -1225,10 +1224,7 @@ _process_list(void *data, Ecore_Thread *thread)
                proc_info_free(proc);
           }
         wd->skip_update = 0;
-        if (wd->poll_count > SIZING_ADJUST_PERIOD)
-          delay = ui->proc.poll_delay;
-        else
-          delay = 1;
+        delay = ui->proc.poll_delay;
      }
 }
 
@@ -1615,14 +1611,8 @@ _glist_scrolled_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Win_Data *wd = data;
 
-   // Update regularly on launch to allow for alignment.
-   if (wd->poll_count > SIZING_ADJUST_PERIOD)
-     wd->skip_update = 1;
-   else
-     {
-        wd->skip_update = 0;
-        wd->skip_wait = 1;
-     }
+   wd->skip_update = 1;
+   wd->skip_wait = 0;
 }
 
 static void
@@ -1640,6 +1630,7 @@ _glist_scroll_stopped_cb(void *data, Evas_Object *obj EINA_UNUSED,
    if (oy != prev_oy)
      {
         wd->skip_wait = 1;
+        wd->skip_update = 0;
         elm_genlist_realized_items_update(wd->glist);
      }
    prev_oy = oy;
