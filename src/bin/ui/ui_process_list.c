@@ -739,9 +739,6 @@ _content_get(void *data, Evas_Object *obj, const char *source)
         evas_object_size_hint_min_set(wd->btn_cmd, ow, 1);
         _alignment_fix(wd);
      }
-   rec = evas_object_data_get(lb, "rec");
-   evas_object_size_hint_min_set(rec, w, 1);
-   evas_object_show(lb);
 
    const char *new = evisum_icon_path_get(evisum_icon_cache_find(wd->icon_cache, proc));
    const char *old = NULL;
