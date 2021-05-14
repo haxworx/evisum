@@ -963,17 +963,6 @@ _glist_ensure_n_items(Evas_Object *glist, unsigned int items,
      }
 }
 
-static Eina_Bool
-_bring_in(void *data)
-{
-   Win_Data *wd;
-
-   wd = data;
-   evas_object_show(wd->glist);
-
-   return 0;
-}
-
 static void
 _summary_reset(Win_Data *wd)
 {
@@ -1082,8 +1071,6 @@ _first_run_tasks(Win_Data *wd)
    elm_box_pack_end(hbx, wd->summary.lb);
 
    wd->first_run = 0;
-
-   ecore_timer_add(2.0, _bring_in, wd);
 }
 
 static Eina_List *
@@ -1959,6 +1946,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
    elm_genlist_multi_select_set(glist, 0);
    evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
    evas_object_size_hint_align_set(glist, FILL, FILL);
+   evas_object_show(glist);
 
    wd->itc.item_style = "full";
    wd->itc.func.text_get = NULL;
