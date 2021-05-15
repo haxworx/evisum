@@ -129,9 +129,9 @@ evisum_size_format(unsigned long long bytes, Eina_Bool simple)
      }
 
    if (simple)
-     return eina_slstr_printf("%1.*f %c", precision, (double) value / powi, units[i][0]);
+     return eina_slstr_printf("%1.*f%c", precision, (double) value / powi, units[i][0]);
 
-   return eina_slstr_printf("%1.*f %s", precision, (double) value / powi, units[i]);
+   return eina_slstr_printf("%1.*f%s", precision, (double) value / powi, units[i]);
 }
 
 static char *

@@ -634,7 +634,7 @@ _item_create(Evas_Object *obj)
    if (_field_enabled(PROC_FIELD_TIME))
      {
         lb = _item_column_add(tb, "time", i++);
-        evas_object_size_hint_align_set(lb, 0.5, FILL);
+        evas_object_size_hint_align_set(lb, 1.0, FILL);
      }
 
    if (_field_enabled(PROC_FIELD_CPU_USAGE))
@@ -1737,7 +1737,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, 1.4 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
+   evas_object_size_hint_min_set(btn, 1.8 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_UID);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
