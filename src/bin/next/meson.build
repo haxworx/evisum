@@ -1,4 +1,4 @@
-src += files([
+src_watch += files([
    'machine.c',
    'machine.h',
 ])

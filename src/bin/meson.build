@@ -26,6 +26,8 @@ src_watch = files([
    'evisum_watcher.h',
 ])
 
+subdir('next')
+
 executable('evisum_watcher', src_watch,
    include_directories  : inc,
    dependencies         : [ deps, deps_os, deps_nls ],

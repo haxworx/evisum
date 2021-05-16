@@ -1,5 +1,5 @@
-#ifndef __MACHINE_H__
-#define __MACHINE_H__
+#ifndef MACHINE_H
+#define MACHINE_H
 
 /* All functions and data types implementing these APIs have no additional
  * system dependencies deliberately.
@@ -7,6 +7,7 @@
  * See machine.c and the files includes in machine/ sub directory.
  */
 
+#include <Eina.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -62,19 +63,16 @@ typedef struct
    char   *model;
    double  charge_full;
    double  charge_current;
-   uint8_t percent;
+   double  percent;
    bool    present;
 #if defined(__OpenBSD__)
    int     mibs[5];
 #endif
-} bat_t;
+} Battery;
 
 typedef struct
 {
    bool     have_ac;
-   int      battery_count;
-
-   bat_t  **batteries;
 #if defined(__OpenBSD__)
    int      mibs[5];
 #endif
@@ -89,6 +87,18 @@ typedef struct
       uint64_t out;
    } xfer;
 } net_iface_t;
+
+Eina_List *
+batteries_find(void);
+
+void
+battery_free(Battery *bat);
+
+void
+battery_check(Battery *bat);
+
+
+
 
 int
 system_cpu_online_count_get(void);

@@ -237,48 +237,62 @@ system_sensors_thermal_get(int *sensor_count)
    return sensors;
 }
 
-static int
-_power_battery_count_get(power_t *power)
+Eina_List *
+batteries_find(void)
 {
+   Eina_List *list = NULL;
 #if defined(__OpenBSD__)
    struct sensordev snsrdev;
    size_t sdlen = sizeof(struct sensordev);
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
-   int i, devn;
+   int devn;
 
-   for (devn = 0;; devn++) {
+   for (devn = 0; ; devn++)
+     {
         mibs[2] = devn;
         if (sysctl(mibs, 3, &snsrdev, &sdlen, NULL, 0) == -1)
           {
-             if (errno == ENXIO)
-               continue;
-             if (errno == ENOENT)
-               break;
+             if (errno == ENXIO) continue;
+             if (errno == ENOENT) break;
           }
-
         if (!strncmp(snsrdev.xname, "acpibat", 7))
           {
-             i = power->battery_count;
-
-             void *t = realloc(power->batteries, 1 +
-                               power->battery_count++ * sizeof(bat_t **));
-             power->batteries = t;
-             power->batteries[i] = calloc(1, sizeof(bat_t));
-             power->batteries[i]->name = strdup(snsrdev.xname);
-             power->batteries[i]->model = strdup("Unknown");
-             power->batteries[i]->vendor = strdup("Unknown");
-             power->batteries[i]->present = true;
-             power->batteries[i]->mibs[0] = mibs[0];
-             power->batteries[i]->mibs[1] = mibs[1];
-             power->batteries[i]->mibs[2] = mibs[2];
-          }
-        if (!strcmp("acpiac0", snsrdev.xname))
-          {
-             power->mibs[0] = mibs[0];
-             power->mibs[1] = mibs[1];
-             power->mibs[2] = mibs[2];
+             Battery *bat = calloc(1, sizeof(Battery));
+             if (bat)
+               {
+                  bat->name = strdup(snsrdev.xname);
+                  bat->model = strdup("Unknown");
+                  bat->vendor = strdup("Unknown");
+                  bat->mibs[0] = mibs[0];
+                  bat->mibs[1] = mibs[1];
+                  bat->mibs[2] = mibs[2];
+                  bat->present = 1;
+                  list = eina_list_append(list, bat);
+               }
           }
      }
+#elif defined(__linux__)
+
+#elif defined(__FreeBSD__)
+
+#endif
+puts("AYE");
+   return list;
+}
+
+void
+battery_free(Battery *bat)
+{
+   free(bat->name);
+   free(bat->model);
+   free(bat->vendor);
+   free(bat);
+}
+
+static int
+_power_battery_count_get(power_t *power)
+{
+#if defined(__OpenBSD__)
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    int n_units, fd;
    char name[256];
@@ -345,52 +359,60 @@ _power_battery_count_get(power_t *power)
    free(names);
 #endif
 
-   return power->battery_count;
+   return 0; 
+}
+
+void
+battery_check(Battery *bat)
+{
+   double charge_full = 0, charge_current = 0;
+#if defined(__OpenBSD__)
+   size_t slen = sizeof(struct sensor);
+   struct sensor snsr;
+
+   bat->mibs[3] = SENSOR_WATTHOUR;
+   bat->mibs[4] = 0;
+
+   if (sysctl(bat->mibs, 5, &snsr, &slen, NULL, 0) != -1)
+     charge_full = (double) snsr.value;
+
+   bat->mibs[4] = 3;
+
+   if (sysctl(bat->mibs, 5, &snsr, &slen, NULL, 0) != -1)
+     charge_current = (double) snsr.value;
+
+   if ((!charge_current) || (!charge_full))
+     {
+
+        bat->mibs[3] = SENSOR_AMPHOUR;
+        bat->mibs[4] = 0;
+
+        if (sysctl(bat->mibs, 5, &snsr, &slen, NULL, 0) != -1)
+          charge_full = (double) snsr.value;
+
+        bat->mibs[4] = 3;
+
+        if (sysctl(bat->mibs, 5, &snsr, &slen, NULL, 0) != -1)
+          charge_current = (double) snsr.value;
+     }
+
+#elif defined(__FreeBSD__)
+
+#elif defined(__linux__)
+
+#else
+#endif
+
+    bat->charge_full = charge_full;
+    bat->charge_current = charge_current;
+
+    bat->percent = 100 * (charge_full / charge_current);
 }
 
 static void
 _battery_state_get(power_t *power)
 {
 #if defined(__OpenBSD__)
-   int *mib;
-   double charge_full, charge_current;
-   size_t slen = sizeof(struct sensor);
-   struct sensor snsr;
-
-   for (int i = 0; i < power->battery_count; i++) {
-        charge_full = charge_current = 0;
-
-        mib = power->batteries[i]->mibs;
-        mib[3] = SENSOR_WATTHOUR;
-        mib[4] = 0;
-
-        if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
-          charge_full = (double)snsr.value;
-
-        mib[3] = SENSOR_WATTHOUR;
-        mib[4] = 3;
-
-        if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
-          charge_current = (double)snsr.value;
-
-        if (charge_current == 0 || charge_full == 0)
-          {
-             mib[3] = SENSOR_AMPHOUR;
-             mib[4] = 0;
-
-             if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
-               charge_full = (double)snsr.value;
-
-             mib[3] = SENSOR_AMPHOUR;
-             mib[4] = 3;
-
-             if (sysctl(mib, 5, &snsr, &slen, NULL, 0) != -1)
-               charge_current = (double)snsr.value;
-          }
-
-        power->batteries[i]->charge_full = charge_full;
-        power->batteries[i]->charge_current = charge_current;
-     }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    int fd, i;
    union acpi_battery_ioctl_arg battio;
@@ -501,7 +523,6 @@ done:
 void
 system_power_state_get(power_t *power)
 {
-   int i;
    memset(power, 0, sizeof(power_t));
 #if defined(__OpenBSD__)
    struct sensor snsr;
@@ -537,27 +558,9 @@ system_power_state_get(power_t *power)
 #endif
 
    _battery_state_get(power);
-
-   for (i = 0; i < power->battery_count; i++) {
-        power->batteries[i]->percent = 100 *
-           (power->batteries[i]->charge_current /
-                                    power->batteries[i]->charge_full);
-     }
 }
 
 void
 system_power_state_free(power_t *power)
 {
-   for (int i = 0; i < power->battery_count; i++)
-     {
-        if (power->batteries[i]->name)
-          free(power->batteries[i]->name);
-        if (power->batteries[i]->model)
-          free(power->batteries[i]->model);
-        if (power->batteries[i]->vendor)
-          free(power->batteries[i]->vendor);
-        free(power->batteries[i]);
-     }
-   if (power->batteries)
-     free(power->batteries);
 }
