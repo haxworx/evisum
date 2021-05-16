@@ -8,7 +8,7 @@ static Eina_List   *batteries = NULL;
 static Eina_List   *sensors = NULL;
 static Eina_List   *network_interfaces = NULL;
 
-static void
+static Eina_Bool
 _cb_background_timer(void *data EINA_UNUSED)
 {
    static int64_t poll_count = 0;
