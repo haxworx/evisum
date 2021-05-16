@@ -2,29 +2,27 @@
 #include <Ecore.h>
 #include "next/machine.h"
 
-static Eina_Thread *background_thread = NULL;
+static Ecore_Timer *background_timer;
 static Eina_List   *cores = NULL;
 static Eina_List   *batteries = NULL;
 static Eina_List   *sensors = NULL;
 static Eina_List   *network_interfaces = NULL;
 
-#define SECOND 1000000
-#define INTERVAL 16
-#define SLEEP_DURATION SECOND / INTERVAL
-#define CHECK_EVERY_SECOND(n) ((!n) || (!(n % INTERVAL))) 
-
 static void
-_cb_background_thread(void *data EINA_UNUSED, Ecore_Thread *thread)
+_cb_background_timer(void *data EINA_UNUSED)
 {
-   int64_t poll_count = 0;
+   static int64_t poll_count = 0;
+   static double t_prev = 0;
+   double t;
 
-   while (!ecore_thread_check(thread))
-     {
-        if (CHECK_EVERY_SECOND(poll_count)) {}
+   poll_count++;
 
-        usleep(SLEEP_DURATION);
-	poll_count++;
-     }
+   t = ecore_loop_time_get();
+
+   if (t_prev) printf("%1.4f\n", t - t_prev);
+   t_prev = t; 
+
+   return 1;
 }
 
 int
@@ -32,7 +30,7 @@ main(int argc, char **argv)
 {
    ecore_init();
 
-   background_thread = ecore_thread_run(_cb_background_thread, NULL, NULL, NULL);
+   background_timer = ecore_timer_add(0.025, _cb_background_timer, NULL);
 
    ecore_main_loop_begin();
 
