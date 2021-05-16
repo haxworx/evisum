@@ -45,7 +45,10 @@ file_contents(const char *path)
      }
    fclose(f);
 
-   buf[len] = 0;
+   if (buf[len - 1] == '\n')
+     buf[len - 1] = 0;
+   else
+     buf[len] = 0;
 
    return buf;
 }

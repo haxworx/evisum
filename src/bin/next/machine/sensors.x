@@ -271,10 +271,49 @@ batteries_find(void)
                }
           }
      }
-#elif defined(__linux__)
-
 #elif defined(__FreeBSD__)
+#elif defined(__linux__)
+   char *type;
+   struct dirent **names;
+   char *buf;
+   char path[PATH_MAX];
+   int i, n;
 
+   n = scandir("/sys/class/power_supply", &names, 0, alphasort);
+   if (n < 0) return 0;
+
+   for (i = 0; i < n; i++) {
+        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", names[i]->d_name);
+        type = file_contents(path);
+        if (type)
+          {
+             if (!strncmp(type, "Battery", 7))
+               {
+                  Battery *bat = calloc(1, sizeof(Battery));
+                  if (bat)
+                    {
+                       bat->name = strdup(names[i]->d_name);
+                       snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", names[i]->d_name);
+                       bat->vendor = file_contents(path);
+                       snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", names[i]->d_name);
+                       bat->model = file_contents(path);
+                       snprintf(path, sizeof(path), "/sys/class/power_supply/%s/present", names[i]->d_name);
+                       bat->present = 1;
+                       buf = file_contents(path);
+                       if (buf)
+                         {
+                            bat->present = atoi(buf);
+                            free(buf);
+                         }
+                       list = eina_list_append(list, bat);
+                    }
+               }
+             free(type);
+          }
+        free(names[i]);
+     }
+
+   free(names);
 #endif
 puts("AYE");
    return list;
@@ -313,50 +352,6 @@ _power_battery_count_get(power_t *power)
         power->batteries[i]->present = true;
      }
 #elif defined(__linux__)
-   char *type;
-   struct dirent **names;
-   char *buf;
-   char path[PATH_MAX];
-   int i, n, id;
-
-   n = scandir("/sys/class/power_supply", &names, 0, alphasort);
-   if (n < 0) return power->battery_count;
-
-   for (i = 0; i < n; i++) {
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/type", names[i]->d_name);
-        type = file_contents(path);
-        if (type)
-          {
-             if (!strncmp(type, "Battery", 7))
-               {
-                  id = power->battery_count;
-                  void *t = realloc(power->batteries, (1 +
-                                    power->battery_count) * sizeof(bat_t **));
-                  power->batteries = t;
-                  power->batteries[id] = calloc(1, sizeof(bat_t));
-                  power->batteries[id]->name = strdup(names[i]->d_name);
-                  snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", names[i]->d_name);
-                  power->batteries[id]->vendor = file_contents(path);
-                  snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", names[i]->d_name);
-                  power->batteries[id]->model = file_contents(path);
-                  snprintf(path, sizeof(path), "/sys/class/power_supply/%s/present", names[i]->d_name);
-                  power->batteries[id]->present = 1;
-                  buf = file_contents(path);
-                  if (buf)
-                    {
-                       power->batteries[id]->present = atoi(buf);
-                       free(buf);
-                    }
-
-                  power->battery_count++;
-               }
-             free(type);
-          }
-
-        free(names[i]);
-     }
-
-   free(names);
 #endif
 
    return 0; 
@@ -399,6 +394,79 @@ battery_check(Battery *bat)
 #elif defined(__FreeBSD__)
 
 #elif defined(__linux__)
+   char path[PATH_MAX];
+   struct dirent *dh;
+   struct stat st;
+   DIR *dir;
+   char *buf, *link = NULL, *naming = NULL;
+
+   naming = NULL;
+
+   snprintf(path, sizeof(path), "/sys/class/power_supply/%s", bat->name);
+
+   if ((stat(path, &st) < 0) || (!S_ISDIR(st.st_mode)))
+     return; 
+
+   link = realpath(path, NULL);
+   if (!link) return;
+
+   dir = opendir(path);
+   if (!dir)
+     goto done;
+
+   while ((dh = readdir(dir)) != NULL)
+     {
+        char *e;
+        if (dh->d_name[0] == '.') continue;
+
+        if ((e = strstr(dh->d_name, "_full\0")))
+         {
+            naming = strndup(dh->d_name, e - dh->d_name);
+            break;
+         }
+     }
+   closedir(dir);
+
+   if (naming)
+     {
+        snprintf(path, sizeof(path), "%s/%s_full", link, naming);
+        buf = file_contents(path);
+        if (buf)
+          {
+             charge_full = atol(buf);
+             free(buf);
+          }
+        snprintf(path, sizeof(path), "%s/%s_now", link, naming);
+        buf = file_contents(path);
+        if (buf)
+          {
+             charge_current = atol(buf);
+             free(buf);
+          }
+        free(naming);
+     }
+   else
+     {
+        // Fallback to "coarse" representation.
+        snprintf(path, sizeof(path), "%s/capacity_level", link);
+        buf = file_contents(path);
+        if (buf)
+          {
+             if (buf[0] == 'F')
+               bat->charge_current = 100;
+             else if (buf[0] == 'H')
+               bat->charge_current = 75;
+             else if (buf[0] == 'N')
+               bat->charge_current = 50;
+             else if (buf[0] == 'L')
+               bat->charge_current = 25;
+             else if (buf[0] == 'C')
+              bat->charge_current = 5;
+             free(buf);
+          }
+     }
+done:
+   if (link) free(link);
 
 #else
 #endif
@@ -406,7 +474,8 @@ battery_check(Battery *bat)
     bat->charge_full = charge_full;
     bat->charge_current = charge_current;
 
-    bat->percent = 100 * (charge_full / charge_current);
+    if (charge_full && charge_current)
+      bat->percent = 100 * (charge_full / charge_current);
 }
 
 static void
@@ -440,83 +509,6 @@ _battery_state_get(power_t *power)
    close(fd);
 
 #elif defined(__linux__)
-   char path[PATH_MAX];
-   struct dirent *dh;
-   struct stat st;
-   DIR *dir;
-   char *buf, *link = NULL, *naming = NULL;
-
-
-   for (int i = 0; i < power->battery_count; i++) {
-        naming = NULL;
-
-        snprintf(path, sizeof(path), "/sys/class/power_supply/%s", power->batteries[i]->name);
-
-        if ((stat(path, &st) < 0) || (!S_ISDIR(st.st_mode)))
-          continue;
-
-        link = realpath(path, NULL);
-        if (!link) return;
-
-        dir = opendir(path);
-        if (!dir)
-          goto done;
-
-        while ((dh = readdir(dir)) != NULL)
-          {
-             char *e;
-             if (dh->d_name[0] == '.') continue;
-
-             if ((e = strstr(dh->d_name, "_full\0")))
-              {
-                 naming = strndup(dh->d_name, e - dh->d_name);
-                 break;
-              }
-          }
-        closedir(dir);
-
-        if (naming)
-          {
-             snprintf(path, sizeof(path), "%s/%s_full", link, naming);
-             buf = file_contents(path);
-             if (buf)
-               {
-                  power->batteries[i]->charge_full = atol(buf);
-                  free(buf);
-               }
-             snprintf(path, sizeof(path), "%s/%s_now", link, naming);
-             buf = file_contents(path);
-             if (buf)
-               {
-                  power->batteries[i]->charge_current = atol(buf);
-                  free(buf);
-               }
-             free(naming);
-          }
-        else
-          {
-             // Fallback to "coarse" representation.
-             snprintf(path, sizeof(path), "%s/capacity_level", link);
-             buf = file_contents(path);
-             if (buf)
-               {
-                  power->batteries[i]->charge_full = 100;
-                  if (buf[0] == 'F')
-                    power->batteries[i]->charge_current = 100;
-                  else if (buf[0] == 'H')
-                    power->batteries[i]->charge_current = 75;
-                  else if (buf[0] == 'N')
-                    power->batteries[i]->charge_current = 50;
-                  else if (buf[0] == 'L')
-                    power->batteries[i]->charge_current = 25;
-                  else if (buf[0] == 'C')
-                    power->batteries[i]->charge_current = 5;
-                  free(buf);
-               }
-          }
-     }
-done:
-   if (link) free(link);
 #endif
 }
 
