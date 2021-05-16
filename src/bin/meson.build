@@ -4,6 +4,7 @@ src = []
 
 subdir('system')
 subdir('ui')
+subdir('background')
 
 src += files([
    'main.c',

@@ -1285,15 +1285,8 @@ _process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
    eina_list_free(real);
 #endif
 
-#if 0
-   printf("active %d and inactive %d => %d (realized)\n",
-           eina_list_count(wd->cache->active),
-           eina_list_count(wd->cache->inactive), n);
-#endif
    if (wd->first_run)
-     {
-        _first_run_tasks(wd);
-     }
+     _first_run_tasks(wd);
 
    wd->poll_count++;
 
