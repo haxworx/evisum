@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2018 Alastair Roy Poole <netstar@gmail.com>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
-
 #if defined(__OpenBSD__)
 # define CPU_STATES      6
 #else
@@ -88,12 +72,12 @@ system_cpu_online_count_get(void)
 }
 
 static void
-_cpu_state_get(cpu_core_t **cores, int ncpu)
+_cpu_state_get(Cpu_Core **cores, int ncpu)
 {
    int diff_total, diff_idle;
    double ratio, percent;
    unsigned long total, idle, used;
-   cpu_core_t *core;
+   Cpu_Core *core;
 #if defined(__FreeBSD__) || defined(__DragonFly__)
    size_t size;
    int i, j;
@@ -131,6 +115,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         core->percent = percent;
         core->total = total;
         core->idle = idle;
+        core->id = i;
      }
 #elif defined(__OpenBSD__)
    static struct cpustats cpu_times[CPU_STATES];
@@ -170,6 +155,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         core->percent = percent;
         core->total = total;
         core->idle = idle;
+        core->id = i;
      }
 #elif defined(__linux__)
    char *buf, name[128];
@@ -208,6 +194,7 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
              core->percent = percent;
              core->total = total;
              core->idle = idle;
+             core->id = i;
           }
      }
    free(buf);
@@ -249,38 +236,43 @@ _cpu_state_get(cpu_core_t **cores, int ncpu)
         core->percent = percent;
         core->total = total;
         core->idle = idle;
+        core->id = i;
      }
 #endif
 }
 
-cpu_core_t **
+Cpu_Core **
 system_cpu_state_get(int *ncpu)
 {
-   cpu_core_t **cores;
+   Cpu_Core **cores;
    int i;
 
    *ncpu = cpu_count();
-   cores = malloc((*ncpu) * sizeof(cpu_core_t *));
+   cores = malloc((*ncpu) * sizeof(Cpu_Core *));
    for (i = 0; i < *ncpu; i++)
-      cores[i] = calloc(1, sizeof(cpu_core_t));
+      cores[i] = calloc(1, sizeof(Cpu_Core));
 
    _cpu_state_get(cores, *ncpu);
 
    return cores;
 }
 
-cpu_core_t **
+Cpu_Core **
 system_cpu_usage_delayed_get(int *ncpu, int usecs)
 {
-   cpu_core_t **cores;
+   Cpu_Core **cores;
    int i;
 
    *ncpu = cpu_count();
 
-   cores = malloc((*ncpu) * sizeof(cpu_core_t *));
+   cores = malloc((*ncpu) * sizeof(Cpu_Core *));
+   if (!cores) return NULL;
 
    for (i = 0; i < *ncpu; i++)
-     cores[i] = calloc(1, sizeof(cpu_core_t));
+     {
+        cores[i] = calloc(1, sizeof(Cpu_Core));
+        if (!cores[i]) return NULL;
+     }
 
    _cpu_state_get(cores, *ncpu);
    usleep(usecs);
@@ -289,7 +281,7 @@ system_cpu_usage_delayed_get(int *ncpu, int usecs)
    return cores;
 }
 
-cpu_core_t **
+Cpu_Core **
 system_cpu_usage_get(int *ncpu)
 {
    return system_cpu_usage_delayed_get(ncpu, 1000000);
@@ -330,7 +322,8 @@ _cpu_n_temperature_read(int n)
 
 #if defined(__linux__)
 
-typedef struct _thermal_drv {
+typedef struct _thermal_drv
+{
    const char *name;
    void (*init)(void);
    char min;

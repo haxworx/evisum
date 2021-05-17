@@ -1,21 +1,5 @@
-/*
- * Copyright (c) 2018 Alastair Roy Poole <netstar@gmail.com>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
-
 void
-system_sensor_thermal_free(sensor_t *sensor)
+sensor_free(Sensor *sensor)
 {
    if (sensor->name)
      free(sensor->name);
@@ -28,20 +12,8 @@ system_sensor_thermal_free(sensor_t *sensor)
    free(sensor);
 }
 
-void
-system_sensors_thermal_free(sensor_t **sensors, int count)
-{
-   for (int i = 0; i < count; i++)
-     {
-        sensor_t *sensor = sensors[i];
-        system_sensor_thermal_free(sensor);
-     }
-   if (sensors)
-     free(sensors);
-}
-
-int
-system_sensor_thermal_get(sensor_t *sensor)
+Eina_Bool
+sensor_check(Sensor *sensor)
 {
 #if defined(__linux__)
    char *d = file_contents(sensor->path);
@@ -75,13 +47,12 @@ system_sensor_thermal_get(sensor_t *sensor)
    return 0;
 }
 
-sensor_t **
-system_sensors_thermal_get(int *sensor_count)
+Eina_List *
+sensors_find(void)
 {
-   sensor_t **sensors = NULL;
-   *sensor_count = 0;
+   Eina_List *sensors = NULL;
 #if defined(__OpenBSD__)
-   sensor_t *sensor;
+   Sensor *sensor;
    int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
    int devn, n;
    struct sensor snsr;
@@ -114,26 +85,31 @@ system_sensors_thermal_get(int *sensor_count)
         if (snsr.type != SENSOR_TEMP)
           continue;
 
-        void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
-        sensors = t;
-        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
-        sensor->name = strdup(snsrdev.xname);
-        sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
-        memcpy(sensor->mibs, &mibs, sizeof(mibs));
+        sensor = calloc(1, sizeof(Sensor));
+        if (sensor)
+          {
+             sensor->name = strdup(snsrdev.xname);
+             sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
+             memcpy(sensor->mibs, &mibs, sizeof(mibs));
+
+             sensors = eina_list_append(sensors, sensor);
+          }
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
-   sensor_t *sensor;
+   Sensor *sensor;
    int value;
    char buf[256];
    size_t len = sizeof(value);
 
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
-        void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
-        sensors = t;
-        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
-        sensor->name = strdup("hw.acpi.thermal.tz0.temperature");
-        sensor->value = (float) (value -  2732) / 10;
+        sensor = calloc(1, sizeof(Sensor));
+        if (sensor)
+          {
+             sensor->name = strdup("hw.acpi.thermal.tz0.temperature");
+             sensor->value = (float) (value -  2732) / 10;
+             sensors = eina_list_append(sensors, sensor);
+          }
      }
 
    int n = system_cpu_count_get();
@@ -144,16 +120,17 @@ system_sensors_thermal_get(int *sensor_count)
         snprintf(buf, sizeof(buf), "dev.cpu.%i.temperature", i);
         if ((sysctlbyname(buf, &value, &len, NULL, 0)) != -1)
           {
-             void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
-             sensors = t;
-             sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
-             sensor->name = strdup(buf);
-             sensor->value = (float) (value - 2732) / 10;
+             sensor = calloc(1, sizeof(Sensor));
+             if (sensor)
+               {
+                  sensor->name = strdup(buf);
+                  sensor->value = (float) (value - 2732) / 10;
+                  sensors = eina_list_append(sensors, sensor);
+               }
           }
      }
-
 #elif defined(__linux__)
-   sensor_t *sensor;
+   Sensor *sensor;
    DIR *dir;
    struct dirent *dh;
    char buf[4096];
@@ -198,29 +175,26 @@ system_sensors_thermal_get(int *sensor_count)
                        continue;
                     }
 
-                  void *t = realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
-                  sensors = t;
-                  sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
-
-                  snprintf(buf, sizeof(buf), "%s/name", link);
-                  sensor->name = file_contents(buf);
-                  if (sensor->name)
-                    strimmer(sensor->name);
-
-                  snprintf(buf, sizeof(buf), "%s/temp%d_label", link, id);
-                  sensor->child_name = file_contents(buf);
-                  if (sensor->child_name)
-                    strimmer(sensor->child_name);
-
-                  snprintf(buf, sizeof(buf), "%s/temp%d_input", link, id);
-                  sensor->path = strdup(buf);
-                  char *d = file_contents(buf);
-                  if (d)
+                  sensor = calloc(1, sizeof(Sensor));
+                  if (sensor)
                     {
-                       sensor->value = atoi(d);
-                       if (sensor->value) sensor->value /= 1000;
-                       free(d);
-                    }
+                       snprintf(buf, sizeof(buf), "%s/name", link);
+                       sensor->name = file_contents(buf);
+
+                       snprintf(buf, sizeof(buf), "%s/temp%d_label", link, id);
+                       sensor->child_name = file_contents(buf);
+
+                       snprintf(buf, sizeof(buf), "%s/temp%d_input", link, id);
+                       sensor->path = strdup(buf);
+                       char *d = file_contents(buf);
+                       if (d)
+                         {
+                            sensor->value = atoi(d);
+                            if (sensor->value) sensor->value /= 1000;
+                            free(d);
+                         }
+                        sensors = eina_list_append(sensors, sensor);
+                     }
                   seen[idx++] = id;
                }
              free(names[i]);
@@ -315,7 +289,6 @@ batteries_find(void)
 
    free(names);
 #endif
-puts("AYE");
    return list;
 }
 
@@ -326,35 +299,6 @@ battery_free(Battery *bat)
    free(bat->model);
    free(bat->vendor);
    free(bat);
-}
-
-static int
-_power_battery_count_get(power_t *power)
-{
-#if defined(__OpenBSD__)
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-   int n_units, fd;
-   char name[256];
-
-   fd = open("/dev/acpi", O_RDONLY);
-   if (fd != -1)
-     {
-        if (ioctl(fd, ACPIIO_BATT_GET_UNITS, &n_units) != -1)
-          power->battery_count = n_units;
-        close(fd);
-     }
-
-   power->batteries = malloc(power->battery_count * sizeof(bat_t **));
-   for (int i = 0; i < power->battery_count; i++) {
-        power->batteries[i] = calloc(1, sizeof(bat_t));
-        snprintf(name, sizeof(name), "hw.acpi.battery.%i", i);
-        power->batteries[i]->name = strdup(name);
-        power->batteries[i]->present = true;
-     }
-#elif defined(__linux__)
-#endif
-
-   return 0; 
 }
 
 void
@@ -405,7 +349,7 @@ battery_check(Battery *bat)
    snprintf(path, sizeof(path), "/sys/class/power_supply/%s", bat->name);
 
    if ((stat(path, &st) < 0) || (!S_ISDIR(st.st_mode)))
-     return; 
+     return;
 
    link = realpath(path, NULL);
    if (!link) return;
@@ -478,58 +422,20 @@ done:
       bat->percent = 100 * (charge_full / charge_current);
 }
 
-static void
-_battery_state_get(power_t *power)
+
+Eina_Bool
+power_ac(void)
 {
-#if defined(__OpenBSD__)
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-   int fd, i;
-   union acpi_battery_ioctl_arg battio;
-
-   if ((fd = open("/dev/acpi", O_RDONLY)) == -1) return;
-
-   for (i = 0; i < power->battery_count; i++) {
-        battio.unit = i;
-        if (ioctl(fd, ACPIIO_BATT_GET_BIX, &battio) != -1)
-          {
-             if (battio.bif.lfcap == 0)
-               power->batteries[i]->charge_full = battio.bif.dcap;
-             else
-               power->batteries[i]->charge_full = battio.bif.lfcap;
-          }
-        power->batteries[i]->vendor = strdup(battio.bix.oeminfo);
-        power->batteries[i]->model = strdup(battio.bix.model);
-        battio.unit = i;
-        if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
-          power->batteries[i]->charge_current = battio.bst.cap;
-
-        if (battio.bst.state == ACPI_BATT_STAT_NOT_PRESENT)
-          power->batteries[i]->present = false;
-     }
-   close(fd);
-
-#elif defined(__linux__)
-#endif
-}
-
-void
-system_power_state_get(power_t *power)
-{
-   memset(power, 0, sizeof(power_t));
+   Eina_Bool have_ac = 0;
 #if defined(__OpenBSD__)
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
-#endif
 
-   if (!_power_battery_count_get(power))
-     return;
-
-#if defined(__OpenBSD__)
    power->mibs[3] = 9;
    power->mibs[4] = 0;
 
    if (sysctl(power->mibs, 5, &snsr, &slen, NULL, 0) != -1)
-     power->have_ac = (int)snsr.value;
+     have_ac = (int)snsr.value;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    int val, fd;
 
@@ -537,22 +443,18 @@ system_power_state_get(power_t *power)
    if (fd != -1)
      {
         if (ioctl(fd, ACPIIO_ACAD_GET_STATUS, &val) != -1)
-          power->have_ac = val;
+          have_ac = val;
         close(fd);
      }
 #elif defined(__linux__)
    char *buf = file_contents("/sys/class/power_supply/AC/online");
    if (buf)
      {
-        power->have_ac = atoi(buf);
+        have_ac = atoi(buf);
         free(buf);
      }
 #endif
 
-   _battery_state_get(power);
+   return have_ac;
 }
 
-void
-system_power_state_free(power_t *power)
-{
-}

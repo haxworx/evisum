@@ -1,21 +1,5 @@
-/*
- * Copyright (c) 2018 Alastair Roy Poole <netstar@gmail.com>
- *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- */
-
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
-static net_iface_t **
+static Eina_List *
 _freebsd_generic_network_status(int *n)
 {
    struct ifmibdata *ifmd;
@@ -30,7 +14,7 @@ _freebsd_generic_network_status(int *n)
    if (!ifmd)
      return NULL;
 
-   net_iface_t **ifaces = NULL;
+   Eina_List *list = NULL;
 
    for (i = 1; i <= count; i++) {
         int mib[] = {
@@ -39,27 +23,25 @@ _freebsd_generic_network_status(int *n)
         len = sizeof(*ifmd);
         if (sysctl(mib, 6, ifmd, &len, NULL, 0) < 0) continue;
 
-        net_iface_t *iface = malloc(sizeof(net_iface_t));
+        Network_Interface *iface = calloc(1, sizeof(Network_Interface));
         if (iface)
           {
              snprintf(iface->name, sizeof(iface->name), "%s",
                       ifmd->ifmd_name);
-             iface->xfer.in = ifmd->ifmd_data.ifi_ibytes;
-             iface->xfer.out = ifmd->ifmd_data.ifi_obytes;
-             void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
-             ifaces = t;
-             ifaces[(*n)++] = iface;
+             iface->total_in = ifmd->ifmd_data.ifi_ibytes;
+             iface->total_out = ifmd->ifmd_data.ifi_obytes;
+             list = eina_list_append(list, iface);
            }
      }
    free(ifmd);
 
-   return ifaces;
+   return list;
 }
 
 #endif
 
 #if defined(__OpenBSD__)
-static net_iface_t **
+static Eina_List *
 _openbsd_generic_network_status(int *n)
 {
    struct ifaddrs *interfaces, *ifa;
@@ -71,7 +53,7 @@ _openbsd_generic_network_status(int *n)
    if (sock < 0)
      return NULL;
 
-   net_iface_t **ifaces = NULL;
+   Eina_List *list = NULL;
 
    for (ifa = interfaces; ifa; ifa = ifa->ifa_next) {
         struct ifreq ifreq;
@@ -92,37 +74,34 @@ _openbsd_generic_network_status(int *n)
         if (!LINK_STATE_IS_UP(ifi->ifi_link_state))
           continue;
 
-        net_iface_t *iface = malloc(sizeof(net_iface_t));
+        Network_Interface *iface = calloc(1, sizeof(Network_Interface));
         if (iface)
           {
              snprintf(iface->name, sizeof(iface->name), "%s",
                       ifa->ifa_name);
-             iface->xfer.in = ifi->ifi_ibytes;
-             iface->xfer.out = ifi->ifi_obytes;
-             void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
-             ifaces = t;
-             ifaces[(*n)++] = iface;
+             iface->total_in = ifi->ifi_ibytes;
+             iface->total_out = ifi->ifi_obytes;
+             list = eina_list_append(list, iface);
           }
      }
    close(sock);
 
-   return ifaces;
+   return list;
 }
 
 #endif
 
 #if defined(__linux__)
-static net_iface_t **
-_linux_generic_network_status(int *n)
+static Eina_List *
+_linux_generic_network_status(void)
 {
    FILE *f;
    char buf[4096], name[128];
    unsigned long int tmp_in, tmp_out, dummy;
+   Eina_List *list = NULL;
 
    f = fopen("/proc/net/dev", "r");
    if (!f) return NULL;
-
-   net_iface_t **ifaces = NULL;
 
    while (fgets(buf, sizeof(buf), f))
      {
@@ -132,37 +111,34 @@ _linux_generic_network_status(int *n)
                          &tmp_out, &dummy, &dummy, &dummy, &dummy, &dummy,
                          &dummy, &dummy))
           {
-             net_iface_t *iface = malloc(sizeof(net_iface_t));
+             Network_Interface *iface = calloc(1, sizeof(Network_Interface));
              if (iface)
                {
                   name[strlen(name)-1] = '\0';
                   snprintf(iface->name, sizeof(iface->name), "%s", name);
-                  iface->xfer.in = tmp_in;
-                  iface->xfer.out = tmp_out;
-                  void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
-                  ifaces = t;
-                  ifaces[(*n)++] = iface;
+                  iface->total_in = tmp_in;
+                  iface->total_out = tmp_out;
+                  list = eina_list_append(list, iface);
                }
           }
      }
 
    fclose(f);
 
-   return ifaces;
+   return list;
 }
 
 #endif
 
-net_iface_t **
-system_network_ifaces_get(int *n)
+Eina_List *
+network_interfaces_find(void)
 {
-   *n = 0;
 #if defined(__linux__)
-   return _linux_generic_network_status(n);
+   return _linux_generic_network_status();
 #elif defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
-   return _freebsd_generic_network_status(n);
+   return _freebsd_generic_network_status();
 #elif defined(__OpenBSD__)
-   return _openbsd_generic_network_status(n);
+   return _openbsd_generic_network_status();
 #else
    return NULL;
 #endif

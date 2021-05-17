@@ -1,12 +1,6 @@
 #ifndef MACHINE_H
 #define MACHINE_H
 
-/* All functions and data types implementing these APIs have no additional
- * system dependencies deliberately.
- *
- * See machine.c and the files includes in machine/ sub directory.
- */
-
 #include <Eina.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -16,9 +10,9 @@ typedef struct
    unsigned long total;
    unsigned long idle;
    float         percent;
-} cpu_core_t;
+   int           id;
+} Cpu_Core;
 
-// Will anyone have more than 8 vdrm/video card devices?
 #define MEM_VIDEO_CARD_MAX 8
 
 typedef struct
@@ -54,7 +48,7 @@ typedef struct
 #endif
    double  value;
    bool    invalid;
-} sensor_t;
+} Sensor;
 
 typedef struct
 {
@@ -76,17 +70,23 @@ typedef struct
 #if defined(__OpenBSD__)
    int      mibs[5];
 #endif
-} power_t;
+} AC_Adapter;
 
 typedef struct
 {
-   char name[255];
-   struct
-   {
-      uint64_t in;
-      uint64_t out;
-   } xfer;
-} net_iface_t;
+   char     name[255];
+   uint64_t total_in;
+   uint64_t total_out;
+
+   uint64_t peak_in;
+   uint64_t peak_out;
+
+   uint64_t in;
+   uint64_t out;
+} Network_Interface;
+
+Eina_Bool
+power_ac(void);
 
 Eina_List *
 batteries_find(void);
@@ -97,8 +97,17 @@ battery_free(Battery *bat);
 void
 battery_check(Battery *bat);
 
+Eina_List *
+sensors_find(void);
 
+void
+sensor_free(Sensor *sensor);
 
+Eina_Bool
+sensor_check(Sensor *sensor);
+
+Eina_List *
+network_interfaces_find(void);
 
 int
 system_cpu_online_count_get(void);
@@ -106,13 +115,13 @@ system_cpu_online_count_get(void);
 int
 system_cpu_count_get(void);
 
-cpu_core_t **
+Cpu_Core **
 system_cpu_usage_get(int *ncpu);
-
-cpu_core_t **
+ 
+Cpu_Core **
 system_cpu_usage_delayed_get(int *ncpu, int usecs);
-
-cpu_core_t **
+ 
+Cpu_Core **
 system_cpu_state_get(int *ncpu);
 
 int
@@ -135,26 +144,5 @@ system_cpu_topology_get(int *ids, int ncpus);
 
 void
 system_memory_usage_get(meminfo_t *memory);
-
-sensor_t **
-system_sensors_thermal_get(int *count);
-
-void
-system_sensors_thermal_free(sensor_t **sensors, int count);
-
-int
-system_sensor_thermal_get(sensor_t *sensor);
-
-void
-system_sensor_thermal_free(sensor_t *sensor);
-
-void
-system_power_state_get(power_t *power);
-
-void
-system_power_state_free(power_t *power);
-
-net_iface_t **
-system_network_ifaces_get(int *n);
 
 #endif
