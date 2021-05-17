@@ -71,6 +71,8 @@ typedef struct
    bool    present;
 #if defined(__OpenBSD__)
    int     mibs[5];
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   char    unit;
 #endif
 } Battery;
 

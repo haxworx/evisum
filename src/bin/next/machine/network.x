@@ -1,6 +1,6 @@
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
 static Eina_List *
-_freebsd_generic_network_status(int *n)
+_freebsd_generic_network_status(void)
 {
    struct ifmibdata *ifmd;
    size_t len;

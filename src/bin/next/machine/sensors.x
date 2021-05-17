@@ -288,6 +288,35 @@ batteries_find(void)
           }
      }
 #elif defined(__FreeBSD__)
+   int n_units, fd;
+   union acpi_battery_ioctl_arg battio;
+
+   fd = open("/dev/acpi", O_RDONLY);
+   if (fd == -1) return NULL;
+
+   if (ioctl(fd, ACPIIO_BATT_GET_UNITS, &n_units) == -1)
+     return NULL;
+
+   for (int i = 0; i < n_units; i++)
+     {
+        battio.unit = i;
+        if (ioctl(fd, ACPIIO_BATT_GET_BIX, &battio) != -1)
+          {
+             Battery *bat = calloc(1, sizeof(Battery));
+             if (bat)
+               {
+                  if (battio.bst.state == ACPI_BATT_STAT_NOT_PRESENT)
+                    bat->present = 0;
+                  else
+                    bat->present = 1;
+                  bat->vendor = strdup(battio.bix.oeminfo);
+                  bat->model = strdup(battio.bix.model);
+                  bat->unit = i;
+                  list = eina_list_append(list, bat);
+               }
+          }
+     }
+   close(fd);
 #elif defined(__linux__)
    char *type;
    struct dirent **names;
@@ -337,9 +366,12 @@ batteries_find(void)
 void
 battery_free(Battery *bat)
 {
-   free(bat->name);
-   free(bat->model);
-   free(bat->vendor);
+   if (bat->name)
+     free(bat->name);
+   if (bat->model)
+     free(bat->model);
+   if (bat->vendor)
+     free(bat->vendor);
    free(bat);
 }
 
@@ -377,8 +409,28 @@ battery_check(Battery *bat)
           charge_current = (double) snsr.value;
      }
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+   int fd;
+   union acpi_battery_ioctl_arg battio;
 
+   if (!bat->present) return;
+
+   fd = open("/dev/acpi", O_RDONLY);
+   if (fd == -1) return;
+
+   battio.unit = bat->unit;
+   if (ioctl(fd, ACPIIO_BATT_GET_BIX, &battio) != -1)
+     {
+        if (battio.bif.lfcap == 0)
+          charge_full = battio.bif.dcap;
+        else
+          charge_full = battio.bif.lfcap;
+        battio.unit = bat->unit;
+        if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
+          charge_current = battio.bst.cap;
+     }
+
+   close(fd);
 #elif defined(__linux__)
    char path[PATH_MAX];
    struct dirent *dh;
@@ -446,7 +498,7 @@ battery_check(Battery *bat)
              else if (buf[0] == 'L')
                bat->charge_current = 25;
              else if (buf[0] == 'C')
-              bat->charge_current = 5;
+               bat->charge_current = 5;
              free(buf);
           }
      }
@@ -459,8 +511,8 @@ done:
     bat->charge_full = charge_full;
     bat->charge_current = charge_current;
 
-    if (charge_full && charge_current)
-      bat->percent = 100 * (charge_full / charge_current);
+    if (charge_full)
+      bat->percent = 100 * (charge_current / charge_full);
     else
       bat->percent = 0;
 }

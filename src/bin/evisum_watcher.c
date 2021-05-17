@@ -32,7 +32,7 @@ main(int argc, char **argv)
    EINA_LIST_FREE(batteries, bat)
      {
         battery_check(bat);
-        printf("battery %s (%s) => %1.2f\n", bat->name, bat->vendor, bat->percent);
+        printf("battery %s (%s) => %1.2f\n", bat->model, bat->vendor, bat->percent);
         battery_free(bat);
      }
 
