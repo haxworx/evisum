@@ -19,35 +19,43 @@ typedef struct
 {
    uint64_t total;
    uint64_t used;
-} meminfo_video_t;
+} Meminfo_Video;
 
 typedef struct
 {
-   uint64_t total;
-   uint64_t used;
-   uint64_t cached;
-   uint64_t buffered;
-   uint64_t shared;
-   uint64_t swap_total;
-   uint64_t swap_used;
+   uint64_t        total;
+   uint64_t        used;
+   uint64_t        cached;
+   uint64_t        buffered;
+   uint64_t        shared;
+   uint64_t        swap_total;
+   uint64_t        swap_used;
 
-   uint64_t zfs_arc_used;
+   uint64_t        zfs_arc_used;
 
    uint64_t        video_count;
-   meminfo_video_t video[MEM_VIDEO_CARD_MAX];
-} meminfo_t;
+   Meminfo_Video video[MEM_VIDEO_CARD_MAX];
+} Meminfo;
+
+typedef enum
+{
+   THERMAL = 0,
+   FANRPM  = 1,
+} Sensor_Type;
 
 typedef struct
 {
-   char   *name;
-   char   *child_name;
+   char       *name;
+   char       *child_name;
 #if defined(__linux__)
-   char   *path;
+   char       *path;
 #elif defined(__OpenBSD__)
-   int     mibs[5];
+   int         mibs[5];
 #endif
-   double  value;
-   bool    invalid;
+   double      value;
+   bool        invalid;
+   int         id;
+   Sensor_Type type;
 } Sensor;
 
 typedef struct
@@ -66,14 +74,6 @@ typedef struct
 
 typedef struct
 {
-   bool     have_ac;
-#if defined(__OpenBSD__)
-   int      mibs[5];
-#endif
-} AC_Adapter;
-
-typedef struct
-{
    char     name[255];
    uint64_t total_in;
    uint64_t total_out;
@@ -86,7 +86,7 @@ typedef struct
 } Network_Interface;
 
 Eina_Bool
-power_ac(void);
+power_ac_check(void);
 
 Eina_List *
 batteries_find(void);
@@ -143,6 +143,6 @@ void
 system_cpu_topology_get(int *ids, int ncpus);
 
 void
-system_memory_usage_get(meminfo_t *memory);
+system_memory_usage_get(Meminfo *memory);
 
 #endif

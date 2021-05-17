@@ -42,7 +42,7 @@ _freebsd_generic_network_status(int *n)
 
 #if defined(__OpenBSD__)
 static Eina_List *
-_openbsd_generic_network_status(int *n)
+_openbsd_generic_network_status(void)
 {
    struct ifaddrs *interfaces, *ifa;
 

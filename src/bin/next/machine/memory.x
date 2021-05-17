@@ -16,9 +16,9 @@ _meminfo_parse_line(const char *line)
 #endif
 
 void
-system_memory_usage_get(meminfo_t *memory)
+system_memory_usage_get(Meminfo *memory)
 {
-   memset(memory, 0, sizeof(meminfo_t));
+   memset(memory, 0, sizeof(Meminfo));
 #if defined(__linux__)
    FILE *f;
    unsigned long swap_free = 0, tmp_free = 0, tmp_slab = 0;

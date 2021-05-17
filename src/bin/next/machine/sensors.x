@@ -30,9 +30,18 @@ sensor_check(Sensor *sensor)
    struct sensor snsr;
    size_t slen = sizeof(struct sensor);
 
+   if (sensor->invalid)
+     {
+        sensor->value = 0;
+        return 0;
+     }
+
    if (sysctl(sensor->mibs, 5, &snsr, &slen, NULL, 0) == -1) return 0;
 
-   sensor->value = (snsr.value - 273150000) / 1000000.0;
+   if (sensor->type == THERMAL)
+     sensor->value = (snsr.value - 273150000) / 1000000.0;
+   else if (sensor->type == FANRPM)
+     sensor->value = snsr.value;
 
    return 1;
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
@@ -59,6 +68,8 @@ sensors_find(void)
    struct sensordev snsrdev;
    size_t slen = sizeof(struct sensor);
    size_t sdlen = sizeof(struct sensordev);
+   char buf[32];
+   enum sensor_type type;
 
    for (devn = 0;; devn++)
       {
@@ -69,30 +80,35 @@ sensors_find(void)
              if (errno == ENOENT) break;
              continue;
           }
-
-        for (n = 0; n < snsrdev.maxnumt[SENSOR_TEMP]; n++) {
-             mibs[4] = n;
-
-             if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
-               continue;
-
-             if (slen > 0 && (snsr.flags & SENSOR_FINVALID) == 0)
-               break;
-          }
-
-        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
-          continue;
-        if (snsr.type != SENSOR_TEMP)
-          continue;
-
-        sensor = calloc(1, sizeof(Sensor));
-        if (sensor)
+        for (type = 0; type < SENSOR_MAX_TYPES; type++)
           {
-             sensor->name = strdup(snsrdev.xname);
-             sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
-             memcpy(sensor->mibs, &mibs, sizeof(mibs));
+             mibs[3] = type;
+             for (n = 0; n < snsrdev.sensors_count; n++) {
+                  mibs[4] = n;
 
-             sensors = eina_list_append(sensors, sensor);
+                  if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) == -1)
+                    continue;
+
+                  if (!slen || ((snsr.type != SENSOR_TEMP) && (snsr.type != SENSOR_FANRPM)))
+                    continue;
+
+                  if ((snsr.flags & SENSOR_FINVALID)) continue;
+
+                  sensor = calloc(1, sizeof(Sensor));
+                  if (sensor)
+                    {
+                       sensor->name = strdup(snsrdev.xname);
+                       snprintf(buf, sizeof(buf), "%i", n);
+                       sensor->child_name = strdup(buf);
+                       if (snsr.type == SENSOR_TEMP)
+                         sensor->type = THERMAL;
+                       else if (snsr.type == SENSOR_FANRPM)
+                         sensor->type = FANRPM;
+                       memcpy(sensor->mibs, &mibs, sizeof(mibs));
+
+                       sensors = eina_list_append(sensors, sensor);
+                    }
+               }
           }
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
@@ -391,7 +407,6 @@ battery_check(Battery *bat)
      }
    else
      {
-        // Fallback to "coarse" representation.
         snprintf(path, sizeof(path), "%s/capacity_level", link);
         buf = file_contents(path);
         if (buf)
@@ -420,22 +435,42 @@ done:
 
     if (charge_full && charge_current)
       bat->percent = 100 * (charge_full / charge_current);
+    else
+      bat->percent = 0;
 }
 
-
 Eina_Bool
-power_ac(void)
+power_ac_check(void)
 {
    Eina_Bool have_ac = 0;
 #if defined(__OpenBSD__)
-   struct sensor snsr;
-   size_t slen = sizeof(struct sensor);
+   struct sensordev snsrdev;
+   size_t sdlen = sizeof(struct sensordev);
+   static int mibs[5] = { CTL_HW, HW_SENSORS, 0, 0, 0 };
+   int devn;
 
-   power->mibs[3] = 9;
-   power->mibs[4] = 0;
-
-   if (sysctl(power->mibs, 5, &snsr, &slen, NULL, 0) != -1)
-     have_ac = (int)snsr.value;
+   for (devn = 0; !mibs[3] ; devn++)
+     {
+        mibs[2] = devn;
+        if (sysctl(mibs, 3, &snsrdev, &sdlen, NULL, 0) == -1)
+          {
+             if (errno == ENXIO) continue;
+             if (errno == ENOENT) break;
+          }
+        if (!strncmp(snsrdev.xname, "acpiac", 6))
+          {
+             mibs[3] = 9;
+             mibs[4] = 0;
+             break;
+          }
+     }
+   if (mibs[3] == 9)
+     {
+        struct sensor snsr;
+        size_t slen = sizeof(struct sensor);
+        if (sysctl(mibs, 5, &snsr, &slen, NULL, 0) != -1)
+          have_ac = (int)snsr.value;
+     }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    int val, fd;
 
