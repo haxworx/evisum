@@ -17,15 +17,19 @@ main(int argc, char **argv)
 
    puts("CORES:");
 
+   printf("total: %i online %i\n", cores_count(), cores_online_count());
+
    cores = cores_find();
+   cores_topology(cores);
    for (int i = 0; i < 10; i++)
      {
         cores_check(cores);
         EINA_LIST_FOREACH(cores, l, core)
           {
-             printf("core %i = %1.2f%%\n", core->id, core->percent);
+             printf("core %i = %1.2f%%\t%1.2fMHz %iC\n", core->id, core->percent,
+                    (double) core_id_frequency(core->id) / 1000, core_id_temperature(core->id));
           }
-	usleep(1000000);
+        usleep(1000000);
      }
    EINA_LIST_FREE(cores, core)
      free(core);

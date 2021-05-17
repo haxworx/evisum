@@ -13,6 +13,7 @@ typedef struct
    unsigned long idle;
    float         percent;
    int           id;
+   int           top_id;
 } Cpu_Core;
 
 #define MEM_VIDEO_CARD_MAX 8
@@ -108,12 +109,6 @@ void
 memory_info(Meminfo *memory);
 
 void
-cores_check(Eina_List *cores);
-
-Eina_List *
-cores_find(void);
-
-void
 sensor_free(Sensor *sensor);
 
 Eina_Bool
@@ -122,24 +117,35 @@ sensor_check(Sensor *sensor);
 Eina_List *
 network_interfaces_find(void);
 
-
-// XXX
-int
-system_cpu_frequency_get(void);
-
-int
-system_cpu_n_frequency_get(int n);
-
-int
-system_cpu_n_temperature_get(int n);
-
-int
-system_cpu_temperature_min_max_get(int *min, int *max);
-
-int
-system_cpu_frequency_min_max_get(int *min, int *max);
+Eina_List *
+cores_find(void);
 
 void
-system_cpu_topology_get(int *ids, int ncpus);
+cores_check(Eina_List *cores);
+
+int
+cores_count(void);
+
+int
+cores_online_count(void);
+
+void
+cores_topology(Eina_List *cores);
+
+int
+cores_frequency(void);
+
+int
+core_id_frequency(int d);
+
+int
+core_id_temperature(int id);
+
+int
+cores_temperature_min_max(int *min, int *max);
+
+int
+cores_frequency_min_max(int *min, int *max);
+
 
 #endif

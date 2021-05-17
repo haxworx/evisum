@@ -4,8 +4,8 @@
 # define CPU_STATES      5
 #endif
 
-static int
-cpu_count(void)
+int
+cores_count(void)
 {
    static int cores = 0;
 
@@ -45,13 +45,7 @@ cpu_count(void)
 }
 
 int
-system_cpu_count_get(void)
-{
-   return cpu_count();
-}
-
-int
-system_cpu_online_count_get(void)
+cores_online_count(void)
 {
 #if defined(__OpenBSD__)
    static int cores = 0;
@@ -63,11 +57,11 @@ system_cpu_online_count_get(void)
 
    len = sizeof(cores);
    if (sysctl(mib, 2, &cores, &len, NULL, 0) < 0)
-     return cpu_count();
+     return cores_count();
 
    return cores;
 #else
-   return cpu_count();
+   return cores_count();
 #endif
 }
 
@@ -201,14 +195,14 @@ cores_check(Eina_List *cores)
    mach_msg_type_number_t count;
    processor_cpu_load_info_t load;
    mach_port_t mach_port;
-   unsigned int cpu_count;
+   unsigned int cores_count;
    int i;
 
-   cpu_count = eina_list_count(cores);
+   cores_count = eina_list_count(cores);
 
    count = HOST_CPU_LOAD_INFO_COUNT;
    mach_port = mach_host_self();
-   if (host_processor_info(mach_port, PROCESSOR_CPU_LOAD_INFO, &cpu_count,
+   if (host_processor_info(mach_port, PROCESSOR_CPU_LOAD_INFO, &cores_count,
                 (processor_info_array_t *)&load, &count) != KERN_SUCCESS)
      exit(-1);
 
@@ -247,7 +241,7 @@ cores_find(void)
    Cpu_Core *core;
    int i, ncpu;
 
-   ncpu = cpu_count();
+   ncpu = cores_count();
    for (i = 0; i < ncpu; i++)
      {
         core = calloc(1, sizeof(Cpu_Core));
@@ -263,7 +257,7 @@ static char _core_temps[256][512];
 static char _hwmon_path[256];
 
 int
-_cpu_n_temperature_read(int n)
+_core_n_temperature_read(int n)
 {
    int temp = -1;
 #if defined(__linux__)
@@ -304,9 +298,9 @@ static void
 _coretemp_init(void)
 {
    char buf[4096];
-   int cpu_count = system_cpu_count_get();
+   int count = cores_count();
 
-   for (int j = 0; j < cpu_count; j++)
+   for (int j = 0; j < count; j++)
      {
         snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%i/topology/core_id", j);
         char *b = file_contents(buf);
@@ -322,16 +316,16 @@ _coretemp_init(void)
 static void
 _generic_init(void)
 {
-   int i, cpu_count = system_cpu_count_get();
+   int i, count = cores_count();
 
-   for (i = 0; i < cpu_count; i++)
+   for (i = 0; i < count; i++)
      snprintf(_core_temps[i], sizeof(_core_temps[i]), "%s/temp1_input", _hwmon_path);
 }
 
 #endif
 
 int
-system_cpu_n_temperature_get(int n)
+core_id_temperature(int id)
 {
 #if defined(__linux__)
    static int init = 0;
@@ -396,7 +390,7 @@ system_cpu_n_temperature_get(int n)
 
    if (!_hwmon_path[0]) return -1;
 
-   return _cpu_n_temperature_read(n);
+   return _core_n_temperature_read(id);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    static int init = 0;
 
@@ -406,13 +400,13 @@ system_cpu_n_temperature_get(int n)
         init = 1;
      }
 
-    return _cpu_n_temperature_read(n);
+    return _core_n_temperature_read(n);
 #endif
    return -1;
 }
 
 int
-system_cpu_temperature_min_max_get(int *min, int *max)
+cores_temperature_min_max(int *min, int *max)
 {
 
    *min = _cpu_temp_min;
@@ -422,7 +416,7 @@ system_cpu_temperature_min_max_get(int *min, int *max)
 }
 
 int
-system_cpu_n_frequency_get(int n)
+core_id_frequency(int id)
 {
 #if defined(__linux__)
    int freq = -1;
@@ -430,7 +424,7 @@ system_cpu_n_frequency_get(int n)
    char buf[4096];
    int tmp;
 
-   snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", n);
+   snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_cur_freq", id);
    f = fopen(buf, "r");
    if (f)
      {
@@ -446,14 +440,14 @@ system_cpu_n_frequency_get(int n)
 
    return freq;
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-   return system_cpu_frequency_get();
+   return core_frequency();
 #endif
 
    return -1;
 }
 
 int
-system_cpu_frequency_min_max_get(int *min, int *max)
+cores_frequency_min_max(int *min, int *max)
 {
    int freq_min = 0x7fffffff, freq_max = 0;
 #if defined(__linux__)
@@ -537,7 +531,7 @@ system_cpu_frequency_min_max_get(int *min, int *max)
 }
 
 int
-system_cpu_frequency_get(void)
+cores_frequency(void)
 {
    int freq = -1;
 
@@ -592,7 +586,8 @@ system_cpu_frequency_get(void)
 
 #if defined(__linux__)
 
-typedef struct {
+typedef struct
+{
    short id;
    short core_id;
 } core_top_t;
@@ -611,31 +606,33 @@ _cmp(const void *a, const void *b)
 #endif
 
 void
-system_cpu_topology_get(int *ids, int ncpu)
+cores_topology(Eina_List *cores)
 {
 #if defined(__linux__)
    char buf[4096];
-   core_top_t *cores = malloc(ncpu * sizeof(core_top_t));
+   int ncpu = eina_list_count(cores);
+   core_top_t *cores_top = malloc(ncpu * sizeof(core_top_t));
 
    for (int i = 0; i < ncpu; i++)
      {
-        cores[i].id = i;
-        cores[i].core_id = i;
+        cores_top[i].id = i;
+        cores_top[i].core_id = i;
         snprintf(buf, sizeof(buf), "/sys/devices/system/cpu/cpu%i/topology/core_id", i);
         char *b = file_contents(buf);
         if (b)
           {
-             cores[i].core_id = atoi(b);
+             cores_top[i].core_id = atoi(b);
              free(b);
           }
      }
 
-   qsort(cores, ncpu, sizeof(core_top_t), _cmp);
+   qsort(cores_top, ncpu, sizeof(core_top_t), _cmp);
 
    for (int i = 0; i < ncpu; i++)
      {
-        ids[i] = cores[i].id;
+        Cpu_Core *core = eina_list_nth(cores, i);
+        core->top_id = cores_top[i].id;
      }
-   free(cores);
+   free(cores_top);
 #endif
 }
