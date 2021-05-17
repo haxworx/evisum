@@ -91,7 +91,7 @@ typedef struct
 } Network_Interface;
 
 Eina_Bool
-power_ac_check(void);
+power_ac_present(void);
 
 Eina_List *
 batteries_find(void);
@@ -100,7 +100,7 @@ void
 battery_free(Battery *bat);
 
 void
-battery_check(Battery *bat);
+battery_update(Battery *bat);
 
 Eina_List *
 sensors_find(void);
@@ -112,7 +112,7 @@ void
 sensor_free(Sensor *sensor);
 
 Eina_Bool
-sensor_check(Sensor *sensor);
+sensor_update(Sensor *sensor);
 
 Eina_List *
 network_interfaces_find(void);

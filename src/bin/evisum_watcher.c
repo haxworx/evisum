@@ -39,12 +39,12 @@ test(void)
    batteries = batteries_find();
    EINA_LIST_FREE(batteries, bat)
      {
-        battery_check(bat);
+        battery_update(bat);
         printf("battery %s (%s) => %1.2f\n", bat->model, bat->vendor, bat->percent);
         battery_free(bat);
      }
 
-   printf("POWER: %i\n", power_ac_check());
+   printf("POWER: %i\n", power_ac_present());
 
    puts("SENSORS:");
    Sensor *sensor;
@@ -52,7 +52,7 @@ test(void)
    sensors = sensors_find();
    EINA_LIST_FREE(sensors, sensor)
      {
-        if (sensor_check(sensor))
+        if (sensor_update(sensor))
           printf("sensor %s (%s) = %1.1f", sensor->name, sensor->child_name, sensor->value);
         if (sensor->type == FANRPM)
           printf("RPM\n");

@@ -13,7 +13,7 @@ sensor_free(Sensor *sensor)
 }
 
 Eina_Bool
-sensor_check(Sensor *sensor)
+sensor_update(Sensor *sensor)
 {
 #if defined(__linux__)
    char *d = file_contents(sensor->path);
@@ -376,7 +376,7 @@ battery_free(Battery *bat)
 }
 
 void
-battery_check(Battery *bat)
+battery_update(Battery *bat)
 {
    double charge_full = 0, charge_current = 0;
 #if defined(__OpenBSD__)
@@ -518,7 +518,7 @@ done:
 }
 
 Eina_Bool
-power_ac_check(void)
+power_ac_present(void)
 {
    Eina_Bool have_ac = 0;
 #if defined(__OpenBSD__)
