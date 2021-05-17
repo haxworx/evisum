@@ -136,7 +136,7 @@ int
 cores_frequency(void);
 
 int
-core_id_frequency(int d);
+core_id_frequency(int id);
 
 int
 core_id_temperature(int id);
