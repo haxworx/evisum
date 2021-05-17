@@ -2,6 +2,8 @@
 #define MACHINE_H
 
 #include <Eina.h>
+#include <Ecore.h>
+#include <Ecore_File.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -34,7 +36,7 @@ typedef struct
    uint64_t        zfs_arc_used;
 
    uint64_t        video_count;
-   Meminfo_Video video[MEM_VIDEO_CARD_MAX];
+   Meminfo_Video   video[MEM_VIDEO_CARD_MAX];
 } Meminfo;
 
 typedef enum

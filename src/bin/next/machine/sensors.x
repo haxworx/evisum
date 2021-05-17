@@ -20,8 +20,10 @@ sensor_check(Sensor *sensor)
    if (d)
      {
         double val = atof(d);
-        if (val)
+        if (sensor->type == THERMAL)
           sensor->value = val /= 1000;
+        else if (sensor->type == FANRPM)
+          sensor->value = val;
         free(d);
         return 1;
      }
@@ -171,7 +173,7 @@ sensors_find(void)
 
         for (int i = 0; i < n; i++)
           {
-             if (!strncmp(names[i]->d_name, "temp", 4))
+             if ((!strncmp(names[i]->d_name, "temp", 4)) || (!strncmp(names[i]->d_name, "fan", 3)))
                {
                   int id = atoi(names[i]->d_name + 4);
                   if ((!id) || (id > sizeof(seen)))
@@ -190,26 +192,50 @@ sensors_find(void)
                        free(names[i]);
                        continue;
                     }
-
-                  sensor = calloc(1, sizeof(Sensor));
-                  if (sensor)
+                  snprintf(buf, sizeof(buf), "%s/fan%i_input", link, id);
+                  if (ecore_file_exists(buf))
                     {
-                       snprintf(buf, sizeof(buf), "%s/name", link);
-                       sensor->name = file_contents(buf);
-
-                       snprintf(buf, sizeof(buf), "%s/temp%d_label", link, id);
-                       sensor->child_name = file_contents(buf);
-
-                       snprintf(buf, sizeof(buf), "%s/temp%d_input", link, id);
-                       sensor->path = strdup(buf);
-                       char *d = file_contents(buf);
-                       if (d)
+                       sensor = calloc(1, sizeof(Sensor));
+                       if (sensor)
                          {
-                            sensor->value = atoi(d);
-                            if (sensor->value) sensor->value /= 1000;
-                            free(d);
+                            sensor->type = FANRPM;
+                            sensor->path = strdup(buf);
+                            snprintf(buf, sizeof(buf), "%s/name", link);
+                            sensor->name = file_contents(buf);
+                            snprintf(buf, sizeof(buf), "%s/fan%i_label", link, id);
+                            if (ecore_file_exists(buf))
+                              sensor->child_name = file_contents(buf);
+                            else
+                              {
+                                 snprintf(buf, sizeof(buf), "fan%i", id);
+                                 sensor->child_name = strdup(buf);
+                              }
+                            sensors = eina_list_append(sensors, sensor);
                          }
-                        sensors = eina_list_append(sensors, sensor);
+                    }
+
+                  snprintf(buf, sizeof(buf), "%s/temp%i_input", link, id);
+                  if (ecore_file_exists(buf))
+                    {
+                       sensor = calloc(1, sizeof(Sensor));
+                       if (sensor)
+                         {
+                            sensor->type = THERMAL;
+                            sensor->path = strdup(buf);
+                            snprintf(buf, sizeof(buf), "%s/name", link);
+                            sensor->name = file_contents(buf);
+
+                            snprintf(buf, sizeof(buf), "%s/temp%i_label", link, id);
+                            if (ecore_file_exists(buf))
+                              sensor->child_name = file_contents(buf);
+                            else
+                              {
+                                 snprintf(buf, sizeof(buf), "%i", id);
+                                 sensor->child_name = strdup(buf);
+                              }
+
+                             sensors = eina_list_append(sensors, sensor);
+                          }
                      }
                   seen[idx++] = id;
                }
