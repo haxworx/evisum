@@ -8,8 +8,8 @@ static Eina_List   *sensors = NULL;
 static Eina_List   *network_interfaces = NULL;
 static Eina_List   *cores = NULL;
 
-int
-main(int argc, char **argv)
+static int
+test(void)
 {
    Eina_List *l;
    Cpu_Core *core;
@@ -81,4 +81,9 @@ main(int argc, char **argv)
    ecore_shutdown();
 
    return 0;
+}
+
+int main(int argc, char **argv)
+{
+   return test();
 }
