@@ -130,7 +130,7 @@ sensors_find(void)
           }
      }
 
-   int n = system_cpu_count_get();
+   int n = cores_count();
 
    for (int i = 0; i < n; i++)
      {

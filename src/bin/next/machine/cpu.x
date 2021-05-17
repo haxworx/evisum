@@ -401,7 +401,7 @@ core_id_temperature(int id)
         init = 1;
      }
 
-    return _core_n_temperature_read(n);
+    return _core_n_temperature_read(id);
 #endif
    return -1;
 }
@@ -441,7 +441,7 @@ core_id_frequency(int id)
 
    return freq;
 #elif defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
-   return core_frequency();
+   return cores_frequency();
 #endif
 
    return -1;
