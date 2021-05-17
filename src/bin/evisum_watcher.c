@@ -6,24 +6,29 @@
 static Eina_List   *batteries = NULL;
 static Eina_List   *sensors = NULL;
 static Eina_List   *network_interfaces = NULL;
+static Eina_List   *cores = NULL;
 
 int
 main(int argc, char **argv)
 {
+   Eina_List *l;
+   Cpu_Core *core;
    ecore_init();
 
    puts("CORES:");
 
-   Cpu_Core **cores;
-
-   int ncpu = 0;
-   cores = system_cpu_usage_delayed_get(&ncpu, 1000000);
-   for (int i = 0; i < ncpu; i++)
+   cores = cores_find();
+   for (int i = 0; i < 10; i++)
      {
-        printf("core %i = %1.2f%%\n", cores[i]->id, cores[i]->percent);
-        free(cores[i]);
+        cores_check(cores);
+        EINA_LIST_FOREACH(cores, l, core)
+          {
+             printf("core %i = %1.2f%%\n", core->id, core->percent);
+          }
+	usleep(1000000);
      }
-   free(cores);
+   EINA_LIST_FREE(cores, core)
+     free(core);
 
    puts("BATTERIES:");
    Battery *bat;

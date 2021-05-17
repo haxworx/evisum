@@ -105,6 +105,15 @@ Eina_List *
 sensors_find(void);
 
 void
+memory_info(Meminfo *memory);
+
+void
+cores_check(Eina_List *cores);
+
+Eina_List *
+cores_find(void);
+
+void
 sensor_free(Sensor *sensor);
 
 Eina_Bool
@@ -113,21 +122,8 @@ sensor_check(Sensor *sensor);
 Eina_List *
 network_interfaces_find(void);
 
-int
-system_cpu_online_count_get(void);
 
-int
-system_cpu_count_get(void);
-
-Cpu_Core **
-system_cpu_usage_get(int *ncpu);
- 
-Cpu_Core **
-system_cpu_usage_delayed_get(int *ncpu, int usecs);
- 
-Cpu_Core **
-system_cpu_state_get(int *ncpu);
-
+// XXX
 int
 system_cpu_frequency_get(void);
 
@@ -145,8 +141,5 @@ system_cpu_frequency_min_max_get(int *min, int *max);
 
 void
 system_cpu_topology_get(int *ids, int ncpus);
-
-void
-system_memory_usage_get(Meminfo *memory);
 
 #endif

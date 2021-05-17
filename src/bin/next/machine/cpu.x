@@ -71,27 +71,29 @@ system_cpu_online_count_get(void)
 #endif
 }
 
-static void
-_cpu_state_get(Cpu_Core **cores, int ncpu)
+void
+cores_check(Eina_List *cores)
 {
    int diff_total, diff_idle;
    double ratio, percent;
    unsigned long total, idle, used;
    Cpu_Core *core;
+   int ncpu = eina_list_count(cores);
+   if (!ncpu) return;
+
 #if defined(__FreeBSD__) || defined(__DragonFly__)
    size_t size;
    int i, j;
 
-   if (!ncpu)
-     return;
    size = sizeof(unsigned long) * (CPU_STATES * ncpu);
    unsigned long cpu_times[ncpu][CPU_STATES];
 
    if (sysctlbyname("kern.cp_times", cpu_times, &size, NULL, 0) < 0)
      return;
 
-   for (i = 0; i < ncpu; i++) {
-        core = cores[i];
+   for (i = 0; i < ncpu; i++)
+     {
+        core = eina_list_nth(cores, i);
         unsigned long *cpu = cpu_times[i];
 
         total = 0;
@@ -115,7 +117,6 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
         core->percent = percent;
         core->total = total;
         core->idle = idle;
-        core->id = i;
      }
 #elif defined(__OpenBSD__)
    static struct cpustats cpu_times[CPU_STATES];
@@ -124,11 +125,10 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
    int i, j;
 
    memset(&cpu_times, 0, CPU_STATES * sizeof(struct cpustats));
-   if (!ncpu)
-     return;
 
-   for (i = 0; i < ncpu; i++) {
-        core = cores[i];
+   for (i = 0; i < ncpu; i++)
+     {
+        core = eina_list_nth(cores, i);
         size = sizeof(struct cpustats);
         cpu_time_mib[2] = i;
         if (sysctl(cpu_time_mib, 3, &cpu_times[i], &size, NULL, 0) < 0)
@@ -155,7 +155,6 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
         core->percent = percent;
         core->total = total;
         core->idle = idle;
-        core->id = i;
      }
 #elif defined(__linux__)
    char *buf, name[128];
@@ -164,8 +163,9 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
    buf = file_contents("/proc/stat");
    if (!buf) return;
 
-   for (i = 0; i < ncpu; i++) {
-        core = cores[i];
+   for (i = 0; i < ncpu; i++)
+     {
+        core = eina_list_nth(cores, i);
         snprintf(name, sizeof(name), "cpu%d", i);
         char *line = strstr(buf, name);
         if (line)
@@ -194,7 +194,6 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
              core->percent = percent;
              core->total = total;
              core->idle = idle;
-             core->id = i;
           }
      }
    free(buf);
@@ -205,7 +204,7 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
    unsigned int cpu_count;
    int i;
 
-   cpu_count = ncpu;
+   cpu_count = eina_list_count(cores);
 
    count = HOST_CPU_LOAD_INFO_COUNT;
    mach_port = mach_host_self();
@@ -213,8 +212,9 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
                 (processor_info_array_t *)&load, &count) != KERN_SUCCESS)
      exit(-1);
 
-   for (i = 0; i < ncpu; i++) {
-        core = cores[i];
+   for (i = 0; i < ncpu; i++)
+     {
+        core = eina_list_nth(cores, i);
 
         total = load[i].cpu_ticks[CPU_STATE_USER] +
            load[i].cpu_ticks[CPU_STATE_SYSTEM] +
@@ -236,55 +236,25 @@ _cpu_state_get(Cpu_Core **cores, int ncpu)
         core->percent = percent;
         core->total = total;
         core->idle = idle;
-        core->id = i;
      }
 #endif
 }
 
-Cpu_Core **
-system_cpu_state_get(int *ncpu)
+Eina_List *
+cores_find(void)
 {
-   Cpu_Core **cores;
-   int i;
+   Eina_List *cores = NULL;
+   Cpu_Core *core;
+   int i, ncpu;
 
-   *ncpu = cpu_count();
-   cores = malloc((*ncpu) * sizeof(Cpu_Core *));
-   for (i = 0; i < *ncpu; i++)
-      cores[i] = calloc(1, sizeof(Cpu_Core));
-
-   _cpu_state_get(cores, *ncpu);
-
-   return cores;
-}
-
-Cpu_Core **
-system_cpu_usage_delayed_get(int *ncpu, int usecs)
-{
-   Cpu_Core **cores;
-   int i;
-
-   *ncpu = cpu_count();
-
-   cores = malloc((*ncpu) * sizeof(Cpu_Core *));
-   if (!cores) return NULL;
-
-   for (i = 0; i < *ncpu; i++)
+   ncpu = cpu_count();
+   for (i = 0; i < ncpu; i++)
      {
-        cores[i] = calloc(1, sizeof(Cpu_Core));
-        if (!cores[i]) return NULL;
+        core = calloc(1, sizeof(Cpu_Core));
+        core->id = i;
+        cores = eina_list_append(cores, core);
      }
-
-   _cpu_state_get(cores, *ncpu);
-   usleep(usecs);
-   _cpu_state_get(cores, *ncpu);
-
    return cores;
-}
-
-Cpu_Core **
-system_cpu_usage_get(int *ncpu)
-{
-   return system_cpu_usage_delayed_get(ncpu, 1000000);
 }
 
 static int  _cpu_temp_min = 0;

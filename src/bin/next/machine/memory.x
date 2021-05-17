@@ -16,7 +16,7 @@ _meminfo_parse_line(const char *line)
 #endif
 
 void
-system_memory_usage_get(Meminfo *memory)
+memory_info(Meminfo *memory)
 {
    memset(memory, 0, sizeof(Meminfo));
 #if defined(__linux__)
