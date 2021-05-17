@@ -20,10 +20,9 @@ test(void)
    printf("total: %i online %i\n", cores_count(), cores_online_count());
 
    cores = cores_find();
-   cores_topology(cores);
    for (int i = 0; i < 10; i++)
      {
-        cores_check(cores);
+        cores_update(cores);
         EINA_LIST_FOREACH(cores, l, core)
           {
              printf("core %i = %1.2f%%\t%1.2fMHz %iC\n", core->id, core->percent,

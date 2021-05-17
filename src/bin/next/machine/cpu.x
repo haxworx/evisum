@@ -66,7 +66,7 @@ cores_online_count(void)
 }
 
 void
-cores_check(Eina_List *cores)
+cores_update(Eina_List *cores)
 {
    int diff_total, diff_idle;
    double ratio, percent;
@@ -248,6 +248,7 @@ cores_find(void)
         core->id = i;
         cores = eina_list_append(cores, core);
      }
+   cores_topology(cores);
    return cores;
 }
 

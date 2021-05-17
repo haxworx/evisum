@@ -121,7 +121,7 @@ Eina_List *
 cores_find(void);
 
 void
-cores_check(Eina_List *cores);
+cores_update(Eina_List *cores);
 
 int
 cores_count(void);
@@ -146,6 +146,5 @@ cores_temperature_min_max(int *min, int *max);
 
 int
 cores_frequency_min_max(int *min, int *max);
-
 
 #endif
