@@ -920,7 +920,7 @@ _general_view_update(Win_Data *wd, Proc_Info *proc)
    struct passwd *pwd_entry;
    char *s;
 
-   if (!strcmp(proc->state, "stop"))
+   if (!strcmp(proc->state, _("stopped")))
      {
         elm_object_disabled_set(wd->general.btn_stop, 1);
         elm_object_disabled_set(wd->general.btn_start, 0);
