@@ -15,7 +15,7 @@ typedef struct  {
    Evas_Object  *video[MEM_VIDEO_CARD_MAX];
 
    Evisum_Ui    *ui;
-} Data;
+} Win_Data;
 
 static Evas_Object *
 _label_mem(Evas_Object *parent, const char *text)
@@ -62,7 +62,7 @@ _mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
 }
 
 static void
-_update_widgets(Data *pd, meminfo_t *memory)
+_update_widgets(Win_Data *pd, meminfo_t *memory)
 {
    Evas_Object *pb;
    double ratio, value;
@@ -137,7 +137,7 @@ _update_widgets(Data *pd, meminfo_t *memory)
 static void
 _mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
 {
-   Data *pd;
+   Win_Data *pd;
    meminfo_t *memory;
 
    pd = data;
@@ -152,7 +152,7 @@ static void
 _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
-   Data *pd;
+   Win_Data *pd;
 
    pd = data;
    ev = event_info;
@@ -167,7 +167,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 static void
 _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Data *pd;
+   Win_Data *pd;
    Evisum_Ui *ui;
 
    pd = data;
@@ -181,7 +181,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
             void *event_info EINA_UNUSED)
 {
    Evisum_Ui *ui;
-   Data *pd = data;
+   Win_Data *pd = data;
 
    ui = pd->ui;
 
@@ -196,7 +196,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 static void
 _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
-   Data *pd = data;
+   Win_Data *pd = data;
    Evisum_Ui *ui = pd->ui;
 
    evas_object_geometry_get(obj, NULL, NULL, &ui->mem.width, &ui->mem.height);
@@ -216,7 +216,7 @@ ui_mem_win_add(Evisum_Ui *ui)
         return;
      }
 
-   Data *pd = calloc(1, sizeof(Data));
+   Win_Data *pd = calloc(1, sizeof(Win_Data));
    if (!pd) return;
    pd->ui = ui;
 
