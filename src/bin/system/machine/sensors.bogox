@@ -534,6 +534,15 @@ system_power_state_get(power_t *power)
         power->have_ac = atoi(buf);
         free(buf);
      }
+   else
+     {
+        char *buf = file_contents("/sys/class/power_supply/ACAD/online");
+        if (buf)
+          {
+             power->have_ac = atoi(buf);
+             free(buf);
+          }
+     }
 #endif
 
    _battery_state_get(power);
