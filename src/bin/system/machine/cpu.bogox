@@ -70,9 +70,7 @@ int
 system_cpu_online_count_get(void)
 {
 #if defined(__OpenBSD__)
-   static int cores = 0;
-
-   if (cores != 0) return cores;
+   int cores = 0;
 
    size_t len;
    int mib[2] = { CTL_HW, HW_NCPUONLINE };
