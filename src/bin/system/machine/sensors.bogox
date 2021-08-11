@@ -528,15 +528,26 @@ system_power_state_get(power_t *power)
         close(fd);
      }
 #elif defined(__linux__)
-   char *buf = file_contents("/sys/class/power_supply/AC/online");
-   if (buf)
+   static const char *found = NULL;
+   static const char *known[] = {
+      "/sys/class/power_supply/AC/online",
+      "/sys/class/power_supply/ACAD/online",
+      "/sys/class/power_supply/ADP0/online",
+   };
+
+   for (int i = 0; (!found) && (i < sizeof(known) / sizeof(char *)); i++)
      {
-        power->have_ac = atoi(buf);
-        free(buf);
+        struct stat st;
+        if (stat(known[i], &st) == 0)
+          {
+             found = known[i];
+             break;
+          }
      }
-   else
+
+   if (found)
      {
-        char *buf = file_contents("/sys/class/power_supply/ACAD/online");
+        char *buf = file_contents(found);
         if (buf)
           {
              power->have_ac = atoi(buf);
