@@ -159,37 +159,46 @@ _mem_size(Proc_Info *proc)
 static void
 _cmd_args(Proc_Info *p, char *name, size_t len)
 {
-   char buf[8192];
+   char path[PATH_MAX];
+   char line[4096];
    int pid = p->pid;
 
-   snprintf(buf, sizeof(buf), "/proc/%d/exe", pid);
-   char *link = ecore_file_readlink(buf);
+   snprintf(path, sizeof(path), "/proc/%i/exe", pid);
+   char *link = ecore_file_readlink(path);
    if (link)
      {
         snprintf(name, len, "%s", ecore_file_file_get(link));
         free(link);
      }
 
-   snprintf(buf, sizeof(buf), "/proc/%d/cmdline", pid);
-   FILE *f = fopen(buf, "r");
+   snprintf(path, sizeof(path), "/proc/%i/cmdline", pid);
+   FILE *f = fopen(path, "r");
    if (f)
      {
-        if (fgets(buf, sizeof(buf), f))
+        if (fgets(line, sizeof(line), f))
           {
-             Eina_Strbuf *b = eina_strbuf_new();
-             const char *n;
+             int sz = ftell(f);
+             Eina_Strbuf *buf = eina_strbuf_new();
 
-             if (ecore_file_exists(buf))
-               snprintf(name, len, "%s", ecore_file_file_get(buf));
+             snprintf(name, len, "%s", ecore_file_file_get(line));
 
-             n = buf;
-             while (n && *n && (*n + 1))
+             const char *cp = line;
+             for (int i = 0; i < sz; i++)
                {
-                  eina_strbuf_append(b, n);
-                  n = strchr(n, '\0') + 1;
-                  if (n && *n && (*n + 1)) eina_strbuf_append(b, " ");
+                  if (line[i] == '\0')
+                    {
+                       if (*cp)
+                         eina_strbuf_append(buf, cp);
+                       if ((i + 1) < sz)
+                         {
+                            i++;
+                            cp = &line[i];
+                            if (*cp)
+                              eina_strbuf_append(buf, " ");
+                         }
+                    }
                }
-             p->arguments = eina_strbuf_release(b);
+             p->arguments = eina_strbuf_release(buf);
           }
         fclose(f);
      }
