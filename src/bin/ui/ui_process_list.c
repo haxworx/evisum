@@ -86,6 +86,7 @@ typedef struct
 
    struct
    {
+      Eina_Bool            visible;
       Evas_Object         *fr;
       Evas_Object         *hbx;
       Evas_Object         *pb_cpu;
@@ -1107,6 +1108,7 @@ summary_add(Win_Data *wd)
    elm_box_pack_end(hbx, wd->summary.lb);
 
    wd->first_run = 0;
+   wd->summary.visible = 1;
 }
 
 static Eina_List *
@@ -2277,10 +2279,13 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
                             ELM_SCROLLER_POLICY_OFF));
    wd->skip_wait = 1;
 
-   if (ui->proc.show_statusbar)
+   if ((!wd->summary.visible) && (ui->proc.show_statusbar))
      summary_add(wd);
-   else
-     elm_box_clear(wd->summary.hbx);
+   else if (wd->summary.visible)
+     {
+        elm_box_clear(wd->summary.hbx);
+        wd->summary.visible = 0;
+     }
 
    _win_alpha_set(wd);
 
