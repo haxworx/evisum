@@ -2281,7 +2281,7 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
 
    if ((!wd->summary.visible) && (ui->proc.show_statusbar))
      summary_add(wd);
-   else if (wd->summary.visible)
+   else if ((wd->summary.visible) && (!ui->proc.show_statusbar))
      {
         elm_box_clear(wd->summary.hbx);
         wd->summary.visible = 0;
