@@ -34,6 +34,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
             (config()->proc.show_kthreads != ui->proc.show_kthreads) ||
             (config()->proc.show_user != ui->proc.show_user) ||
             (config()->proc.show_scroller != ui->proc.show_scroller) ||
+            (config()->proc.show_statusbar != ui->proc.show_statusbar) ||
             (config()->proc.transparent != ui->proc.transparent) ||
             (config()->proc.alpha != ui->proc.alpha)
            )
@@ -52,6 +53,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
         config()->proc.show_kthreads = ui->proc.show_kthreads;
         config()->proc.show_user = ui->proc.show_user;
         config()->proc.show_scroller = ui->proc.show_scroller;
+        config()->proc.show_statusbar = ui->proc.show_statusbar;
         config()->proc.transparent = ui->proc.transparent;
         config()->proc.alpha = ui->proc.alpha;
         config()->proc.fields = ui->proc.fields;
@@ -136,6 +138,7 @@ evisum_ui_config_load(Evisum_Ui *ui)
    proc_info_kthreads_show_set(ui->proc.show_kthreads);
    ui->proc.show_user = config()->proc.show_user;
    ui->proc.show_scroller = config()->proc.show_scroller;
+   ui->proc.show_statusbar = config()->proc.show_statusbar;
    ui->proc.transparent = config()->proc.transparent;
    ui->proc.alpha = config()->proc.alpha;
 
@@ -353,6 +356,17 @@ _main_menu_show_scroller_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
    ui->proc.show_scroller = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
 }
+
+static void
+_main_menu_show_statusbar_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
+                                     void *event_info EINA_UNUSED)
+{
+   Evisum_Ui *ui = data;
+
+   ui->proc.show_statusbar = elm_check_state_get(obj);
+   evisum_ui_config_save(ui);
+}
+
 
 static void
 _main_menu_show_user_changed_cb(void *data EINA_UNUSED, Evas_Object *obj,
@@ -600,6 +614,17 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_smart_callback_add(chk, "changed",
                                   _main_menu_show_scroller_changed_cb, ui);
    elm_box_pack_end(bx, chk);
+
+   chk = elm_check_add(bx);
+   evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(chk, FILL, FILL);
+   elm_object_text_set(chk, _("Display status bar?"));
+   elm_check_state_set(chk, ui->proc.show_statusbar);
+   evas_object_show(chk);
+   evas_object_smart_callback_add(chk, "changed",
+                                  _main_menu_show_statusbar_changed_cb, ui);
+   elm_box_pack_end(bx, chk);
+
 
    hbx = elm_box_add(o);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
