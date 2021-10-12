@@ -1,17 +1,14 @@
 #include "evisum_background.h"
 #include "../system/filesystems.h"
-#include "../ui/evisum_ui.h"
 
 #include <Eina.h>
 
 void
-background_poller_cb(void *data, Ecore_Thread *thread)
+background_init(Evisum_Ui *ui)
 {
    meminfo_t memory;
    power_t power;
-   int32_t poll_count = 0;
    Battery *bat;
-   Evisum_Ui *ui = data;
 
    system_memory_usage_get(&memory);
    ui->mem_total = memory.total;
@@ -33,6 +30,16 @@ background_poller_cb(void *data, Ecore_Thread *thread)
           }
      }
    system_power_state_free(&power);
+}
+
+void
+background_poller_cb(void *data, Ecore_Thread *thread)
+{
+   meminfo_t memory;
+   power_t power;
+   int32_t poll_count = 0;
+   Battery *bat;
+   Evisum_Ui *ui = data;
 
    while (!ecore_thread_check(thread))
      {
