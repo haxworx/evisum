@@ -280,7 +280,7 @@ ui_cpu_win_add(Evisum_Ui *ui)
    evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, pd);
    evas_object_event_callback_add(scr, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ui);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, ui);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,  _win_move_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE,  _win_move_cb, ui);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
 
    if ((ui->cpu.width > 0) && (ui->cpu.height > 0))
