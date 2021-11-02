@@ -1,67 +1,26 @@
 #include "ui_cpu.h"
 #include "config.h"
 
-typedef struct {
-   short id;
-   short percent;
-   unsigned int freq;
-   unsigned int temp;
-} Core;
-
-typedef struct {
-   Ecore_Thread   *thread;
-
-   Evas_Object    *win;
-   Evas_Object    *menu;
-   Elm_Layout     *btn_menu;
-   Eina_Bool       btn_visible;
-   Evas_Object    *bg;
-   Evas_Object    *obj;
-
-   Evas_Object    *colors;
-   int             cpu_count;
-   int            *cpu_order;
-
-   Eina_Bool       show_cpufreq;
-   // Have cpu scaling
-   Eina_Bool       cpu_freq;
-   int             freq_min;
-   int             freq_max;
-
-   Eina_Bool       show_cputemp;
-   // Have temp readings.
-   Eina_Bool       cpu_temp;
-   int             temp_min;
-   int             temp_max;
-
-   Eina_Bool       confused;
-   Eina_List      *explainers;
-
-   Evisum_Ui      *ui;
-} Animate;
-
-typedef struct _Color_Point {
-   unsigned int val;
-   unsigned int color;
-} Color_Point;
+// Templates for visualisations.
+#include "visuals/visuals.x"
 
 // config for colors/sizing
 #define COLOR_CPU_NUM 5
 static const Color_Point cpu_colormap_in[] = {
-   {   0, 0xff202020 }, // 0
-   {  25, 0xff2030a0 }, // 1
-   {  50, 0xffa040a0 }, // 2
-   {  75, 0xffff9040 }, // 3
-   { 100, 0xffffffff }, // 4
-   { 256, 0xffffffff }  // overflow to avoid if's
+   {   0, 0xff202020 },
+   {  25, 0xff2030a0 },
+   {  50, 0xffa040a0 },
+   {  75, 0xffff9040 },
+   { 100, 0xffffffff },
+   { 256, 0xffffffff }
 };
 #define COLOR_FREQ_NUM 4
 static const Color_Point freq_colormap_in[] = {
-   {   0, 0xff202020 }, // 0
-   {  33, 0xff285020 }, // 1
-   {  67, 0xff30a060 }, // 2
-   { 100, 0xffa0ff80 }, // 3
-   { 256, 0xffa0ff80 }  // overflow to avoid if's
+   {   0, 0xff202020 },
+   {  33, 0xff285020 },
+   {  67, 0xff30a060 },
+   { 100, 0xffa0ff80 },
+   { 256, 0xffa0ff80 }
 };
 
 #define COLOR_TEMP_NUM 5
@@ -74,21 +33,102 @@ static const Color_Point temp_colormap_in[] = {
    { 256, 0xffdd776e }
 };
 
-#define BAR_HEIGHT    3
-#define COLORS_HEIGHT 32
-#define CORES_MANY    16
+unsigned int cpu_colormap[256];
+unsigned int freq_colormap[256];
+unsigned int temp_colormap[256];
 
-// stored colormap tables
-static unsigned int cpu_colormap[256];
-static unsigned int freq_colormap[256];
-static unsigned int temp_colormap[256];
+static void
+_win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Coord w, h;
+   Evas_Event_Mouse_Move *ev;
+   Cpu_Visual *vis = data;
 
-// handy macros to access argb values from pixels
-#define AVAL(x) (((x) >> 24) & 0xff)
-#define RVAL(x) (((x) >> 16) & 0xff)
-#define GVAL(x) (((x) >>  8) & 0xff)
-#define BVAL(x) (((x)      ) & 0xff)
-#define ARGB(a, r, g, b) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
+   ev = event_info;
+   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
+
+   if ((ev->cur.canvas.x >= (w - 128)) && (ev->cur.canvas.y <= 128))
+     {
+       if (!vis->btn_visible)
+         {
+            elm_object_signal_emit(vis->btn_menu, "menu,show", "evisum/menu");
+            vis->btn_visible = 1;
+         }
+     }
+   else if ((vis->btn_visible) && (!vis->menu))
+    {
+       elm_object_signal_emit(vis->btn_menu, "menu,hide", "evisum/menu");
+       vis->btn_visible = 0;
+    }
+}
+
+static void
+_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evas_Event_Key_Down *ev;
+   Evisum_Ui *ui;
+
+   ui = data;
+   ev = event_info;
+
+   if (!ev || !ev->keyname)
+     return;
+
+   if (!strcmp(ev->keyname, "Escape"))
+     {
+        evas_object_del(ui->cpu.win);
+     }
+}
+
+static void
+_btn_menu_clicked_cb(void *data, Evas_Object *obj,
+                     void *event_info EINA_UNUSED)
+{
+   Evisum_Ui *ui;
+   Cpu_Visual *vis = data;
+
+   ui = vis->ui;
+   if (!vis->menu)
+     vis->menu = evisum_ui_main_menu_create(ui, ui->cpu.win, obj);
+   else
+     {
+        evas_object_del(vis->menu);
+        vis->menu = NULL;
+     }
+}
+
+static void
+_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+{
+   Evisum_Ui *ui = data;
+
+   evas_object_geometry_get(obj, NULL, NULL, &ui->cpu.width, &ui->cpu.height);
+}
+
+static void
+_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Evisum_Ui *ui = data;
+
+   evas_object_geometry_get(obj, &ui->cpu.x, &ui->cpu.y, NULL, NULL);
+}
+
+static void
+_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Cpu_Visual *vis = data;
+   Evisum_Ui *ui = vis->ui;
+
+   evisum_ui_config_save(ui);
+   ecore_thread_cancel(vis->thread);
+   ecore_thread_wait(vis->thread, 0.5);
+
+   if (vis->ext_free_cb)
+      vis->ext_free_cb(vis->ext);
+
+   free(vis);
+   ui->cpu.win = NULL;
+}
 
 static void
 _color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
@@ -132,668 +172,46 @@ _color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
      }
 }
 
-static void
-_core_times_main_cb(void *data, Ecore_Thread *thread)
+Eina_List *
+ui_cpu_visuals_get(void)
 {
-   Animate *ad = data;
-   int ncpu;
+   Eina_List *l = NULL;
 
-   if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
-     ad->cpu_freq = 1;
-
-   system_cpu_temperature_min_max_get(&ad->temp_min, &ad->temp_max);
-   if ((system_cpu_n_temperature_get(0)) != -1)
-     ad->cpu_temp = 1;
-
-   while (!ecore_thread_check(thread))
+   for (int i = 0; (i < sizeof(visualizations) / sizeof(Visualization)); i++)
      {
-        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 100000);
-        Core *cores_out = calloc(ncpu, sizeof(Core));
-
-        if (cores_out)
-          {
-             for (int n = 0; n < ncpu; n++)
-               {
-                  int id = ad->cpu_order[n];
-                  Core *core = &(cores_out[n]);
-                  core->id = id;
-                  core->percent = cores[id]->percent;
-                  if (ad->cpu_freq)
-                    core->freq = system_cpu_n_frequency_get(id);
-                  if (ad->cpu_temp)
-                    core->temp = system_cpu_n_temperature_get(id);
-                  free(cores[id]);
-               }
-             ecore_thread_feedback(thread, cores_out);
-          }
-        free(cores);
-     }
-}
-
-static void
-_update(Animate *ad, Core *cores)
-{
-   Evas_Object *obj = ad->obj;
-   unsigned int *pixels, *pix;
-   Evas_Coord x, y, w, h;
-   int iw, stride;
-   Eina_Bool clear = 0;
-
-   evas_object_geometry_get(obj, &x, &y, &w, &h);
-   evas_object_image_size_get(obj, &iw, NULL);
-   // if image pixel size doesn't match geom - we need to resize, so set
-   // new size and mark it for clearing when we fill
-   if (iw != w)
-     {
-        evas_object_image_size_set(obj, w, ad->cpu_count * 3);
-        clear = 1;
+        l = eina_list_append(l, strdup(visualizations[i].name));
      }
 
-   // get pixel data ptr
-   pixels = evas_object_image_data_get(obj, 1);
-   if (!pixels) return;
-   // get stride (# of bytes per line)
-   stride = evas_object_image_stride_get(obj);
+   return l;
+}
 
-   for (y = 0; y < ad->cpu_count; y++)
+Visualization *
+ui_cpu_visual_by_name(const char *name)
+{
+   for (int i = 0; (i < sizeof(visualizations) / sizeof(Visualization)); i++)
      {
-        Core *core = &(cores[y]);
-        unsigned int c1, c2;
-
-        // our pix ptr is the pixel row and y is both y pixel coord and core
-        if (clear)
-          {
-             // clear/fill with 0 value from colormap
-             pix = &(pixels[(y * 3) * (stride / 4)]);
-             for (x = 0; x < (w - 1); x++) pix[x] = cpu_colormap[0];
-             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
-             for (x = 0; x < (w - 1); x++) pix[x] = freq_colormap[0];
-             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
-             for (x = 0; x < (w - 1); x++) pix[x] = cpu_colormap[0];
-          }
-        else
-          {
-             // scroll pixels 1 to the left
-             pix = &(pixels[(y * 3) * (stride / 4)]);
-             for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
-             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
-             for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
-             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
-             for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
-          }
-        // final pixel on end of each row... set it to a new value
-        // get color from cpu colormap
-        // last pixel == resulting pixel color
-        c1 = cpu_colormap[core->percent & 0xff];
-        pix = &(pixels[(y * 3) * (stride / 4)]);
-        pix[x] = c1;
-        // 2nd row of pixles for freq
-        if ((ad->show_cpufreq) && (ad->cpu_freq))
-          {
-             int v = core->freq - ad->freq_min;
-             int d = ad->freq_max - ad->freq_min;
-
-             // if there is a difference between min and max ... a range
-             if (d > 0)
-               {
-                  v = (100 * v) / d;
-                  if (v < 0) v = 0;
-                  else if (v > 100) v = 100;
-                  // v now is 0->100 as a percentage of possible frequency
-                  // the cpu can do
-                  c2 = freq_colormap[v & 0xff];
-               }
-             else c2 = freq_colormap[0];
-             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
-             pix[x] = c2;
-          }
-
-        if (ad->show_cputemp && ad->cpu_temp)
-          {
-             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
-             pix[x] = temp_colormap[core->temp & 0xff];
-          }
-
-        if (!ad->show_cpufreq)
-          {
-             // no freq show - then just repeat cpu usage color
-             pix = &(pixels[((y * 3) + 1) * (stride / 4)]);
-             pix[x] = c1;
-          }
-        if (!ad->show_cputemp)
-          {
-             pix = &(pixels[((y * 3) + 2) * (stride / 4)]);
-             pix[x] = c1;
-          }
+        if (!strcmp(name, visualizations[i].name))
+          return &visualizations[i];
      }
-   // hand back pixel data ptr so evas knows we are done with it
-   evas_object_image_data_set(obj, pixels);
-   // now add update region for all pixels in the image at the end as we
-   // changed everything
-   evas_object_image_data_update_add(obj, 0, 0, w, ad->cpu_count * 3);
+   return NULL;
 }
 
-typedef struct
+void
+ui_cpu_win_restart(Evisum_Ui *ui)
 {
-   Evas_Object *lb;
-   Evas_Object *rec;
-} Explainer;
-
-static void
-_explain(Animate *ad, Core *cores)
-{
-   Eina_Strbuf *buf;
-   Explainer *exp;
-   Evas_Object *lb, *rec;
-
-   if (!ad->explainers) return;
-
-   buf = eina_strbuf_new();
-
-   for (int i = 0; i < ad->cpu_count; i++)
-     {
-        Core *core = &(cores[i]);
-        exp = eina_list_nth(ad->explainers, i);
-
-        lb = exp->lb;
-        rec = exp->rec;
-        if (!ad->confused)
-          {
-             evas_object_hide(rec);
-             evas_object_hide(lb);
-          }
-        else
-          {
-             eina_strbuf_append_printf(buf, "<b><color=#fff>%i%% ", core->percent);
-             if (ad->cpu_freq)
-               eina_strbuf_append_printf(buf, "%1.1fGHz ", (double) core->freq / 1000000);
-             if (ad->cpu_temp)
-               eina_strbuf_append_printf(buf, "%i°C", core->temp);
-             eina_strbuf_append(buf, "</></>");
-
-             elm_object_text_set(lb, eina_strbuf_string_get(buf));
-             eina_strbuf_reset(buf);
-             evas_object_show(rec);
-             evas_object_show(lb);
-          }
-     }
-   eina_strbuf_free(buf);
-}
-
-static void
-_core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
-{
-   Animate *ad;
-   Core *cores;
-   static Eina_Bool was_confused = 0;
-
-   ad = data;
-   cores = msgdata;
-
-   _update(ad, cores);
-
-   if (ad->confused || was_confused)
-     {
-        _explain(ad, cores);
-        was_confused = 1;
-     }
-
-   free(cores);
-}
-
-static void
-_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
-{
-   Animate *ad;
-   Evisum_Ui *ui;
-
-   ad = data;
-   ui = ad->ui;
-
-   evas_object_geometry_get(obj, &ui->cpu.x, &ui->cpu.y, NULL, NULL);
-}
-
-static void
-_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
-{
-   Explainer *exp;
-   Animate *ad = data;
-   Evisum_Ui *ui = ad->ui;
-
-   evisum_ui_config_save(ui);
-   ecore_thread_cancel(ad->thread);
-   ecore_thread_wait(ad->thread, 0.5);
-
-   EINA_LIST_FREE(ad->explainers, exp)
-     {
-        free(exp);
-     }
-
-   ad->explainers = NULL;
-   free(ad->cpu_order);
-   free(ad);
-   ui->cpu.win = NULL;
-}
-
-static void
-_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                  void *event_info EINA_UNUSED)
-{
-   Animate *ad = data;
-
-   ad->show_cpufreq = elm_check_state_get(obj);
-}
-
-static void
-_temp_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                       void *event_info EINA_UNUSED)
-{
-   Animate *ad = data;
-
-   ad->show_cputemp = elm_check_state_get(obj);
-}
-
-static void
-_confused_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                           void *event_info EINA_UNUSED)
-{
-   Animate *ad = data;
-
-   ad->confused = elm_check_state_get(obj);
-}
-
-static void
-_colors_fill(Evas_Object *colors)
-{
-   // fill a 3 pixel high (and 100 wide) image with 3 gradients matching
-   // the colormaps we calculated as a legend
-   int x, stride;
-   unsigned int *pixels;
-
-   evas_object_image_size_set(colors, 101, 3);
-   pixels = evas_object_image_data_get(colors, 1);
-   if (!pixels) return;
-   stride = evas_object_image_stride_get(colors);
-   // cpu percent (first row)
-   for (x = 0; x <= 100; x++) pixels[x] = cpu_colormap[x];
-   // cpu freq (next row)
-   for (x = 0; x <= 100; x++) pixels[x + (stride / 4)] = freq_colormap[x];
-   // cpu temp (next row)
-   for (x = 0; x <= 100; x++) pixels[x + (stride / 2)] = temp_colormap[x];
-
-   evas_object_image_data_set(colors, pixels);
-   evas_object_image_data_update_add(colors, 0, 0, 101, 1);
-}
-
-static void
-_win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-   Evas_Coord w, h;
-   Evas_Event_Mouse_Move *ev;
-   Animate *ad = data;
-
-   ev = event_info;
-   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
-
-   if ((ev->cur.canvas.x >= (w - 128)) && (ev->cur.canvas.y <= 128))
-     {
-       if (!ad->btn_visible)
-         {
-            elm_object_signal_emit(ad->btn_menu, "menu,show", "evisum/menu");
-            ad->btn_visible = 1;
-         }
-     }
-   else if ((ad->btn_visible) && (!ad->menu))
-    {
-       elm_object_signal_emit(ad->btn_menu, "menu,hide", "evisum/menu");
-       ad->btn_visible = 0;
-    }
-}
-
-static void
-_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-   Evas_Event_Key_Down *ev;
-   Animate *ad;
-
-   ad = data;
-   ev = event_info;
-
-   if (!ev || !ev->keyname)
-     return;
-
-   if (!strcmp(ev->keyname, "Escape"))
-     evas_object_del(ad->ui->cpu.win);
-}
-
-static void
-_btn_menu_clicked_cb(void *data, Evas_Object *obj,
-                     void *event_info EINA_UNUSED)
-{
-   Evisum_Ui *ui;
-   Animate *ad = data;
-
-   ui = ad->ui;
-   if (!ad->menu)
-     ad->menu = evisum_ui_main_menu_create(ui, ui->cpu.win, obj);
-   else
-     {
-        evas_object_del(ad->menu);
-        ad->menu = NULL;
-     }
-}
-
-static Animate *
-_graph(Evisum_Ui *ui, Evas_Object *parent)
-{
-   Evas_Object *tbl, *tbl2, *box, *obj, *ic, *lb, *rec;
-   Evas_Object *fr, *bx, *hbx, *colors, *check, *btn;
-   Elm_Layout *lay;
-   int i, f;
-   char buf[128];
-   Eina_Bool show_icons = 1;
-
-   Animate *ad = calloc(1, sizeof(Animate));
-   if (!ad) return NULL;
-
-   ad->win = ui->cpu.win;
-   ad->cpu_count = system_cpu_count_get();
-   if (!system_cpu_frequency_min_max_get(&ad->freq_min, &ad->freq_max))
-     ad->cpu_freq = 1;
-
-   system_cpu_temperature_min_max_get(&ad->temp_min, &ad->temp_max);
-   if ((system_cpu_n_temperature_get(0)) != -1)
-     ad->cpu_temp = 1;
-
-   ad->cpu_order = malloc((ad->cpu_count) * sizeof(int));
-   for (i = 0; i < ad->cpu_count; i++)
-     ad->cpu_order[i] = i;
-   system_cpu_topology_get(ad->cpu_order, ad->cpu_count);
-
-   // init colormaps from a small # of points
-   _color_init(cpu_colormap_in, COLOR_CPU_NUM, cpu_colormap);
-   _color_init(freq_colormap_in, COLOR_FREQ_NUM, freq_colormap);
-   _color_init(temp_colormap_in, COLOR_TEMP_NUM, temp_colormap);
-
-   box = parent;
-
-   tbl = elm_table_add(box);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_size_hint_weight_set(tbl, EXPAND, EXPAND);
-   evas_object_show(tbl);
-
-   obj = evas_object_image_add(evas_object_evas_get(parent));
-   evas_object_size_hint_align_set(obj, FILL, FILL);
-   evas_object_size_hint_weight_set(obj, EXPAND, EXPAND);
-   evas_object_image_smooth_scale_set(obj, 0);
-   evas_object_image_filled_set(obj, 1);
-   evas_object_image_alpha_set(obj, 0);
-   evas_object_show(obj);
-
-   elm_table_pack(tbl, obj, 0, 0, 5, ad->cpu_count);
-
-   if (ad->cpu_count > CORES_MANY)
-     show_icons = 0;
-
-   if (show_icons)
-     {
-        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-        evas_object_size_hint_align_set(rec, FILL, FILL);
-        evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-        evas_object_color_set(rec, 0, 0, 0, 64);
-        evas_object_show(rec);
-        elm_table_pack(tbl, rec, 0, 0, 4, ad->cpu_count);
-     }
-
-   for (i = 0; show_icons && (i < ad->cpu_count); i++)
-     {
-        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-        evas_object_color_set(rec, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
-        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
-        elm_table_pack(tbl, rec, 0, i, 1, 1);
-
-        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-        evas_object_color_set(rec, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
-        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
-        elm_table_pack(tbl, rec, 1, i, 1, 1);
-
-        ic = elm_icon_add(parent);
-        elm_icon_standard_set(ic, evisum_icon_path_get("cpu"));
-        evas_object_size_hint_align_set(ic, FILL, FILL);
-        evas_object_size_hint_weight_set(ic, 0.0, EXPAND);
-        elm_table_pack(tbl, ic, 1, i, 1, 1);
-        evas_object_show(ic);
-
-        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-        evas_object_color_set(rec, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
-        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
-        elm_table_pack(tbl, rec, 2, i, 1, 1);
-
-        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-        evas_object_color_set(rec, 0, 0, 0, 0);
-        evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
-        evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
-        elm_table_pack(tbl, rec, 3, i, 1, 1);
-
-        lb = elm_label_add(parent);
-        snprintf(buf, sizeof(buf), "<b><color=#fff>%i</></>", ad->cpu_order[i]);
-        elm_object_text_set(lb, buf);
-        evas_object_size_hint_align_set(lb, 0.0, 0.5);
-        evas_object_size_hint_weight_set(lb, 0.0, EXPAND);
-        elm_table_pack(tbl, lb, 3, i, 1, 1);
-        evas_object_show(lb);
-
-        // Begin explainer label overlay.
-
-        tbl2 = elm_table_add(parent);
-        evas_object_size_hint_align_set(tbl2, 0.7, 0.5);
-        evas_object_size_hint_weight_set(tbl2, EXPAND, EXPAND);
-        evas_object_show(tbl2);
-
-        rec = evas_object_rectangle_add(evas_object_evas_get(parent));
-        evas_object_color_set(rec, 0, 0, 0, 128);
-        evas_object_size_hint_align_set(rec, FILL, FILL);
-        evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-        elm_table_pack(tbl2, rec, 0, 0, 1, 1);
-
-        lb = elm_label_add(parent);
-        evas_object_size_hint_align_set(lb, FILL, FILL);
-        evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-        elm_object_text_set(lb, buf);
-        elm_table_pack(tbl2, lb, 0, 0, 1, 1);
-        elm_table_pack(tbl, tbl2, 4, i, 1, 1);
-
-        Explainer *exp = malloc(sizeof(Explainer));
-        exp->rec = rec;
-        exp->lb = lb;
-
-        ad->explainers = eina_list_append(ad->explainers, exp);
-     }
-
-   btn = elm_button_add(parent);
-   ic = elm_icon_add(btn);
-   elm_icon_standard_set(ic, evisum_icon_path_get("menu"));
-   elm_object_part_content_set(btn, "icon", ic);
-   evas_object_show(ic);
-   elm_object_focus_allow_set(btn, 0);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-   evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, ad);
-
-   ad->btn_menu = lay = elm_layout_add(parent);
-   evas_object_size_hint_weight_set(lay, 1.0, 1.0);
-   evas_object_size_hint_align_set(lay, 0.99, 0.01);
-   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
-   elm_layout_content_set(lay, "evisum/menu", btn);
-   elm_table_pack(tbl, lay, 0, 0, 5, ad->cpu_count);
-   evas_object_show(lay);
-
-   bx = elm_box_add(box);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-   evas_object_show(bx);
-   elm_box_pack_end(bx, tbl);
-
-   // Set the main content.
-   elm_box_pack_end(box, bx);
-
-   tbl = elm_table_add(box);
-   evas_object_size_hint_align_set(tbl, FILL, FILL);
-   evas_object_size_hint_weight_set(tbl, EXPAND, 0);
-   evas_object_show(tbl);
-
-   fr = elm_frame_add(box);
-   evas_object_size_hint_align_set(fr, FILL, FILL);
-   evas_object_size_hint_weight_set(fr, EXPAND, 0);
-   evas_object_show(fr);
-   elm_object_text_set(fr, _("Legend"));
-   elm_object_content_set(fr, tbl);
-
-   colors = evas_object_image_add(evas_object_evas_get(fr));
-   evas_object_size_hint_min_set
-     (colors, 100, COLORS_HEIGHT * elm_config_scale_get());
-   evas_object_size_hint_align_set(colors, FILL, FILL);
-   evas_object_size_hint_weight_set(colors, EXPAND, EXPAND);
-   evas_object_image_smooth_scale_set(colors, 0);
-   evas_object_image_filled_set(colors, 1);
-   evas_object_image_alpha_set(colors, 0);
-   _colors_fill(colors);
-   elm_table_pack(tbl, colors, 0, 0, 2, 3);
-   evas_object_show(colors);
-
-   lb = elm_label_add(parent);
-   elm_object_text_set(lb, "<b><color=#fff> 0%</></>");
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   elm_table_pack(tbl, lb, 0, 0, 1, 1);
-   evas_object_show(lb);
-
-   lb = elm_label_add(parent);
-   f = (ad->freq_min + 500) / 1000;
-   if (f < 1000)
-     snprintf(buf, sizeof(buf), "<b><color=#fff> %iMHz</></>", f);
-   else
-     snprintf(buf, sizeof(buf), "<b><color=#fff> %1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
-   elm_object_text_set(lb, buf);
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   elm_table_pack(tbl, lb, 0, 1, 1, 1);
-   evas_object_show(lb);
-
-   lb = elm_label_add(parent);
-   elm_object_text_set(lb, "<b><color=#fff>100%</></>");
-   evas_object_size_hint_align_set(lb, 0.99, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   elm_table_pack(tbl, lb, 1, 0, 1, 1);
-   evas_object_show(lb);
-
-   lb = elm_label_add(parent);
-   f = (ad->freq_max + 500) / 1000;
-   if (f < 1000)
-     snprintf(buf, sizeof(buf), "<b><color=#fff>%iMHz</></>", f);
-   else
-     snprintf(buf, sizeof(buf), "<b><color=#fff>%1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
-   elm_object_text_set(lb, buf);
-   evas_object_size_hint_align_set(lb, 0.99, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   elm_table_pack(tbl, lb, 1, 1, 1, 1);
-   evas_object_show(lb);
-
-   lb = elm_label_add(parent);
-   snprintf(buf, sizeof(buf), "<b><color=#fff> %i°C</></>", ad->temp_min);
-   elm_object_text_set(lb, buf);
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   elm_table_pack(tbl, lb, 0, 2, 1, 1);
-   evas_object_show(lb);
-
-   lb = elm_label_add(parent);
-   snprintf(buf, sizeof(buf), "<b><color=#fff>%i°C</></>", ad->temp_max);
-   elm_object_text_set(lb, buf);
-   evas_object_size_hint_align_set(lb, 0.99, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   elm_table_pack(tbl, lb, 1, 2, 1, 1);
-   evas_object_show(lb);
-
-   elm_box_pack_end(box, fr);
-
-   fr = elm_frame_add(box);
-   elm_frame_autocollapse_set(fr, 1);
-   evas_object_size_hint_align_set(fr, FILL, FILL);
-   evas_object_size_hint_weight_set(fr, EXPAND, 0);
-   evas_object_show(fr);
-   elm_frame_collapse_set(fr, 0);
-   elm_object_text_set(fr, _("Options"));
-   elm_box_pack_end(box, fr);
-
-   hbx = elm_box_add(fr);
-   evas_object_size_hint_align_set(hbx, FILL, FILL);
-   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
-   elm_box_horizontal_set(hbx, 1);
-   evas_object_show(hbx);
-   elm_object_content_set(fr, hbx);
-
-   check = elm_check_add(fr);
-   evas_object_size_hint_align_set(check, FILL, FILL);
-   evas_object_size_hint_weight_set(check, EXPAND, 0);
-   elm_object_text_set(check, _("Overlay CPU frequency?"));
-   if (!ad->cpu_freq) elm_object_disabled_set(check, 1);
-   evas_object_show(check);
-   elm_box_pack_end(hbx, check);
-   evas_object_smart_callback_add(check, "changed", _check_changed_cb, ad);
-
-   check = elm_check_add(fr);
-   evas_object_size_hint_align_set(check, FILL, FILL);
-   evas_object_size_hint_weight_set(check, EXPAND, 0);
-   elm_object_text_set(check, _("Overlay CPU temperatures?"));
-   if (!ad->cpu_temp) elm_object_disabled_set(check, 1);
-   evas_object_smart_callback_add(check, "changed", _temp_check_changed_cb, ad);
-   evas_object_show(check);
-   elm_box_pack_end(hbx, check);
-
-   check = elm_check_add(fr);
-   evas_object_size_hint_align_set(check, FILL, FILL);
-   evas_object_size_hint_weight_set(check, EXPAND, 0);
-   elm_object_text_set(check, _("Confused?"));
-   evas_object_smart_callback_add(check, "changed", _confused_check_changed_cb, ad);
-   evas_object_show(check);
-   elm_box_pack_end(hbx, check);
-
-   ad->obj = obj;
-   ad->ui = ui;
-   ad->colors = colors;
-
-   // min size of cpu color graph to show all cores.
-   evas_object_size_hint_min_set
-     (obj, 100, (BAR_HEIGHT * ad->cpu_count) * elm_config_scale_get());
-
-   evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_DEL, _win_del_cb, ad);
-   evas_object_event_callback_add(ui->cpu.win, EVAS_CALLBACK_MOVE, _win_move_cb, ad);
-
-   // run a feedback thread that sends feedback to the mainloop
-   ad->thread = ecore_thread_feedback_run(_core_times_main_cb,
-                                          _core_times_feedback_cb,
-                                          NULL,
-                                          NULL,
-                                          ad, 1);
-   return ad;
-}
-
- static void
-_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-   Evisum_Ui *ui = data;
-
-   evas_object_geometry_get(obj, NULL, NULL, &ui->cpu.width, &ui->cpu.height);
+   evas_object_del(ui->cpu.win);
+   ui_cpu_win_add(ui);
 }
 
 void
 ui_cpu_win_add(Evisum_Ui *ui)
 {
-   Animate *ad;
-   Evas_Object *win, *box, *scr;
+   Cpu_Visual *vis;
+   Evas_Object *win, *box, *scr, *btn, *ic;
+   Evas_Object *tb;
+   Elm_Layout *lay;
+   Visualization *visualization;
+   static Eina_Bool init = 0;
 
    if (ui->cpu.win)
      {
@@ -801,13 +219,20 @@ ui_cpu_win_add(Evisum_Ui *ui)
         return;
      }
 
+   if (!init)
+     {
+        // init colormaps from a small # of points
+        _color_init(cpu_colormap_in, COLOR_CPU_NUM, cpu_colormap);
+        _color_init(freq_colormap_in, COLOR_FREQ_NUM, freq_colormap);
+        _color_init(temp_colormap_in, COLOR_TEMP_NUM, temp_colormap);
+        init = 1;
+     }
+
    ui->cpu.win = win = elm_win_util_standard_add("evisum",
                    _("CPU Activity"));
    elm_win_autodel_set(win, 1);
    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
    evas_object_size_hint_align_set(win, FILL, FILL);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,
-                                  _win_resize_cb, ui);
 
    scr = elm_scroller_add(win);
    evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
@@ -816,16 +241,47 @@ ui_cpu_win_add(Evisum_Ui *ui)
                            ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    evas_object_show(scr);
 
+   tb = elm_table_add(win);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_show(tb);
+
    box = elm_box_add(win);
    evas_object_size_hint_align_set(box, FILL, FILL);
    evas_object_size_hint_weight_set(box, EXPAND, EXPAND);
    evas_object_show(box);
 
-   ad = _graph(ui, box);
-   evas_object_event_callback_add(scr, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ad);
-   evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, ad);
-   elm_object_content_set(scr, box);
+   elm_table_pack(tb, box, 0, 0, 1, 1);
+
+   visualization = ui_cpu_visual_by_name(ui->cpu.visual);
+   vis = visualization->func(box);
+   vis->ui = ui;
+
+   elm_object_content_set(scr, tb);
    elm_object_content_set(win, scr);
+
+   btn = elm_button_add(win);
+   ic = elm_icon_add(btn);
+   elm_icon_standard_set(ic, evisum_icon_path_get("menu"));
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
+   elm_object_focus_allow_set(btn, 0);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
+   evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, vis);
+
+   vis->btn_menu = lay = elm_layout_add(win);
+   evas_object_size_hint_weight_set(lay, 1.0, 1.0);
+   evas_object_size_hint_align_set(lay, 0.99, 0.01);
+   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
+   elm_layout_content_set(lay, "evisum/menu", btn);
+   elm_table_pack(tb, lay, 0, 0, 1, 1);
+   evas_object_show(lay);
+
+   evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, vis);
+   evas_object_event_callback_add(scr, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,  _win_move_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, vis);
 
    if ((ui->cpu.width > 0) && (ui->cpu.height > 0))
      evas_object_resize(win, ui->cpu.width, ui->cpu.height);

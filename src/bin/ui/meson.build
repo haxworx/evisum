@@ -1,3 +1,5 @@
+subdir('visuals')
+
 src += files([
    'gettext.h',
    'evisum_ui.h',

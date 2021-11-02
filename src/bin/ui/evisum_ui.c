@@ -67,6 +67,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
         config()->cpu.x = ui->cpu.x;
         config()->cpu.y = ui->cpu.y;
         config()->cpu.restart = ui->cpu.restart;
+        config()->cpu.visual = ui->cpu.visual;
      }
 
    if (ui->mem.win)
@@ -153,6 +154,7 @@ evisum_ui_config_load(Evisum_Ui *ui)
    ui->cpu.x = config()->cpu.x;
    ui->cpu.y = config()->cpu.y;
    ui->cpu.restart = config()->cpu.restart;
+   ui->cpu.visual = strdup(config()->cpu.visual);
 
    ui->mem.width = config()->mem.width;
    ui->mem.height = config()->mem.height;
@@ -408,6 +410,21 @@ _main_menu_focus_timer_cb(void *data)
    return 0;
 }
 
+static void
+_cpu_visual_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
+                       void *event_info EINA_UNUSED)
+{
+   Evisum_Ui *ui;
+   const char *txt;
+
+   ui = data;
+   txt = elm_object_text_get(obj);
+
+   if (ui->cpu.visual) free(ui->cpu.visual);
+   ui->cpu.visual = strdup(txt);
+   evisum_ui_restart(ui);
+}
+
 Evas_Object *
 evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
 {
@@ -529,6 +546,40 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
                                        ELM_CTXPOPUP_DIRECTION_RIGHT);
    evas_object_move(o, ox + (ow / 2), oy + oh);
    evas_object_show(o);
+
+
+   if (parent == ui->cpu.win)
+     {
+        fr = elm_frame_add(o);
+        evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(fr, FILL, FILL);
+        elm_object_text_set(fr, _("Visuals"));
+        elm_box_pack_end(obx, fr);
+        evas_object_show(fr);
+
+        bx = elm_box_add(o);
+        evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(bx, FILL, FILL);
+        elm_object_content_set(fr, bx);
+        evas_object_show(bx);
+
+        Eina_List *visuals = ui_cpu_visuals_get();
+        char *name;
+
+        EINA_LIST_FREE(visuals, name)
+          {
+             btn = elm_button_add(o);
+             evas_object_size_hint_weight_set(btn, EXPAND, 0);
+             evas_object_size_hint_align_set(btn, FILL, FILL);
+             elm_object_text_set(btn, name);
+             if (!strcmp(name, ui->cpu.visual)) elm_object_disabled_set(btn, 1);
+             elm_box_pack_end(bx, btn);
+             evas_object_show(btn);
+             evas_object_smart_callback_add(btn, "clicked", _cpu_visual_clicked_cb, ui);
+          }
+
+        return o;
+     }
 
    if (parent != ui->proc.win) return o;
 
@@ -768,6 +819,7 @@ evisum_ui_shutdown(Evisum_Ui *ui)
    ecore_thread_cancel(ui->background_poll_thread);
    ecore_thread_wait(ui->background_poll_thread, 0.5);
 
+   if (ui->cpu.visual) free(ui->cpu.visual);
    free(ui);
 }
 
@@ -785,6 +837,7 @@ evisum_ui_init(void)
 
    EVISUM_EVENT_CONFIG_CHANGED = ecore_event_type_new();
 
+   config_init();
    evisum_ui_config_load(ui);
 
    _ui_init_system_probe(ui);

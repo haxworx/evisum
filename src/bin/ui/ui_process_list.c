@@ -2317,6 +2317,9 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED,
 
    evisum_ui_config_save(ui);
 
+   if (wd->fields_timer)
+     ecore_timer_del(wd->fields_timer);
+
    if (wd->search.timer)
      ecore_timer_del(wd->search.timer);
 

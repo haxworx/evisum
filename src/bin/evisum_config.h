@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x0012
+#define CONFIG_VERSION 0x0013
 
 typedef struct _Evisum_Config
 {
@@ -39,6 +39,7 @@ typedef struct _Evisum_Config
       int height;
       int x, y;
       Eina_Bool    restart;
+      char        *visual;
    } cpu;
 
    struct

@@ -6,6 +6,8 @@
 
 Evisum_Config *_evisum_config;
 
+static Eet_Data_Descriptor *_evisum_conf_descriptor = NULL;
+
 static const char *
 _config_file_path(void)
 {
@@ -22,7 +24,60 @@ _config_file_path(void)
 void
 config_init(void)
 {
+   Eet_Data_Descriptor_Class eddc;
    efreet_init();
+
+   EET_EINA_STREAM_DATA_DESCRIPTOR_CLASS_SET(&eddc, Evisum_Config);
+   _evisum_conf_descriptor = eet_data_descriptor_stream_new(&eddc);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "version", version, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "effects", effects, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "backgrounds", backgrounds, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.width", proc.width, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.height", proc.height, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.x", proc.x, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.y", proc.y, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.restart", proc.restart, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_kthreads", proc.show_kthreads, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_user", proc.show_user, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_type", proc.sort_type, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_reverse", proc.sort_reverse, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.poll_delay", proc.poll_delay, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.fields", proc.fields, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_statusbar", proc.show_statusbar, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_scroller", proc.show_scroller, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.transparent", proc.transparent, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.alpha", proc.alpha, EET_T_UCHAR);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "cpu.width", cpu.width, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "cpu.height", cpu.height, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "cpu.x", cpu.x, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "cpu.y", cpu.y, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "cpu.restart", cpu.restart, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "cpu.visual", cpu.visual, EET_T_STRING);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "mem.width", mem.width, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "mem.height", mem.height, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "mem.x", mem.x, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "mem.y", mem.y, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "mem.restart", mem.restart, EET_T_UCHAR);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.width", disk.width, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.height", disk.height, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.x", disk.x, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.y", disk.y, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.restart", disk.restart, EET_T_UCHAR);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "sensors.width", sensors.width, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "sensors.height", sensors.height, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "sensors.x", sensors.x, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "sensors.y", sensors.y, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "sensors.restart", sensors.restart, EET_T_UCHAR);
+
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "network.width", network.width, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "network.height", network.height, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "network.x", network.x, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "network.y", network.y, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "network.restart", network.restart, EET_T_UCHAR);
 }
 
 void
@@ -67,6 +122,8 @@ _config_init()
    cfg->proc.fields = 0xffffe24f;
    cfg->proc.alpha = 100;
 
+   cfg->cpu.visual = strdup("default");
+
    return cfg;
 }
 
@@ -74,7 +131,6 @@ Evisum_Config *
 config_load(void)
 {
    Eet_File *f;
-   int size;
    Evisum_Config *cfg = NULL;
 
    const char *path = _config_file_path();
@@ -84,14 +140,14 @@ config_load(void)
 
         f = eet_open(path, EET_FILE_MODE_WRITE);
         if (!f) _config_fail("create");
-        eet_write(f, "Config", cfg, sizeof(Evisum_Config), 0);
+        eet_data_write(f, _evisum_conf_descriptor, "Config", cfg, EINA_TRUE);
         eet_close(f);
      }
    else
      {
         f = eet_open(path, EET_FILE_MODE_READ);
         if (!f) _config_fail("read");
-        cfg = eet_read(f, "Config", &size);
+        cfg = eet_data_read(f, _evisum_conf_descriptor, "Config");
 
         if (cfg->version < CONFIG_VERSION)
           {
@@ -116,7 +172,7 @@ config_save(Evisum_Config *cfg)
    const char *path = _config_file_path();
    f = eet_open(path, EET_FILE_MODE_WRITE);
    if (!f) exit(127);
-   eet_write(f, "Config", cfg, sizeof(Evisum_Config), 0);
+   eet_data_write(f, _evisum_conf_descriptor, "Config", cfg, EINA_TRUE);
    eet_close(f);
 
    return 1;

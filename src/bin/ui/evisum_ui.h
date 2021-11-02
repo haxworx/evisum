@@ -65,6 +65,7 @@ typedef struct _Evisum_Ui
       int           height;
       int           x, y;
       Eina_Bool     restart;
+      char         *visual;
    } cpu;
 
    struct
