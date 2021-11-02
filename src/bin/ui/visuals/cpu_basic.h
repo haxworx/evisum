@@ -3,7 +3,7 @@
 
 #include "ui/ui_cpu.h"
 
-Cpu_Visual *
+Ui_Cpu_Data *
 cpu_visual_basic(Evas_Object *parent);
 
 #endif

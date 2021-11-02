@@ -30,9 +30,9 @@ typedef struct {
 static void
 _core_times_main_cb(void *data, Ecore_Thread *thread)
 {
-   Cpu_Visual *vis = data;
+   Ui_Cpu_Data *pd = data;
    int ncpu;
-   Ext *ext = vis->ext;
+   Ext *ext = pd->ext;
 
    if (!system_cpu_frequency_min_max_get(&ext->freq_min, &ext->freq_max))
      ext->cpu_freq = 1;
@@ -67,14 +67,14 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
 }
 
 static void
-_update(Cpu_Visual *vis, Core *cores)
+_update(Ui_Cpu_Data *pd, Core *cores)
 {
    Evas_Object *obj;
    unsigned int *pixels, *pix;
    Evas_Coord x, y, w, h;
    int iw, stride;
    Eina_Bool clear = 0;
-   Ext *ext = vis->ext;
+   Ext *ext = pd->ext;
    obj = ext->obj;
 
    evas_object_geometry_get(obj, &x, &y, &w, &h);
@@ -166,7 +166,7 @@ _update(Cpu_Visual *vis, Core *cores)
      }
    // hand back pixel data ptr so evas knows we are done with it
    evas_object_image_data_set(obj, pixels);
-   // now visd update region for all pixels in the image at the end as we
+   // now update region for all pixels in the image at the end as we
    // changed everything
    evas_object_image_data_update_add(obj, 0, 0, w, ext->cpu_count * 3);
 }
@@ -178,14 +178,14 @@ typedef struct
 } Explainer;
 
 static void
-_explain(Cpu_Visual *vis, Core *cores)
+_explain(Ui_Cpu_Data *pd, Core *cores)
 {
    Eina_Strbuf *buf;
    Explainer *exp;
    Ext *ext;
    Evas_Object *lb, *rec;
 
-   ext = vis->ext;
+   ext = pd->ext;
 
    if (!ext->explainers) return;
 
@@ -224,20 +224,20 @@ _explain(Cpu_Visual *vis, Core *cores)
 static void
 _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
 {
-   Cpu_Visual *vis;
+   Ui_Cpu_Data *pd;
    Core *cores;
    Ext *ext;
    static Eina_Bool was_confused = 0;
 
-   vis = data;
-   ext = vis->ext;
+   pd = data;
+   ext = pd->ext;
    cores = msgdata;
 
-   _update(vis, cores);
+   _update(pd, cores);
 
    if (ext->confused || was_confused)
      {
-        _explain(vis, cores);
+        _explain(pd, cores);
         was_confused = 1;
      }
 
@@ -262,8 +262,8 @@ static void
 _check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                   void *event_info EINA_UNUSED)
 {
-   Cpu_Visual *vis = data;
-   Ext *ext = vis->ext;
+   Ui_Cpu_Data *pd = data;
+   Ext *ext = pd->ext;
 
    ext->show_cpufreq = elm_check_state_get(obj);
 }
@@ -272,8 +272,8 @@ static void
 _temp_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                        void *event_info EINA_UNUSED)
 {
-   Cpu_Visual *vis = data;
-   Ext *ext = vis->ext;
+   Ui_Cpu_Data *pd = data;
+   Ext *ext = pd->ext;
 
    ext->show_cputemp = elm_check_state_get(obj);
 }
@@ -282,8 +282,8 @@ static void
 _confused_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                            void *event_info EINA_UNUSED)
 {
-   Cpu_Visual *vis = data;
-   Ext *ext = vis->ext;
+   Ui_Cpu_Data *pd = data;
+   Ext *ext = pd->ext;
 
    ext->confused = elm_check_state_get(obj);
 }
@@ -291,7 +291,7 @@ _confused_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 static void
 _colors_fill(Evas_Object *colors)
 {
-   // fill a 3 pixel high (and 100 wide) image with 3 grvisients matching
+   // fill a 3 pixel high (and 100 wide) image with 3 grpdients matching
    // the colormaps we calculated as a legend
    int x, stride;
    unsigned int *pixels;
@@ -311,7 +311,7 @@ _colors_fill(Evas_Object *colors)
    evas_object_image_data_update_add(colors, 0, 0, 101, 1);
 }
 
-Cpu_Visual *
+Ui_Cpu_Data *
 cpu_visual_default(Evas_Object *parent_box)
 {
    Evas_Object *tbl, *tbl2, *box, *obj, *ic, *lb, *rec;
@@ -322,10 +322,10 @@ cpu_visual_default(Evas_Object *parent_box)
    char buf[128];
    Eina_Bool show_icons = 1;
 
-   Cpu_Visual *vis = calloc(1, sizeof(Cpu_Visual));
-   if (!vis) return NULL;
+   Ui_Cpu_Data *pd = calloc(1, sizeof(Ui_Cpu_Data));
+   if (!pd) return NULL;
 
-   vis->ext = ext = calloc(1, sizeof(Ext));
+   pd->ext = ext = calloc(1, sizeof(Ext));
    EINA_SAFETY_ON_NULL_RETURN_VAL(ext, NULL);
 
    ext->cpu_count = system_cpu_count_get();
@@ -439,8 +439,8 @@ cpu_visual_default(Evas_Object *parent_box)
         ext->explainers = eina_list_append(ext->explainers, exp);
      }
 
-   // Callback to free anything extra we pass around via the ext pointer in (Cpu_Visual *).
-   vis->ext_free_cb = _cb_free;
+   // Callback to free anything extra we pass around via the ext pointer in (Ui_Cpu_Data *).
+   pd->ext_free_cb = _cb_free;
 
    bx = elm_box_add(box);
    evas_object_size_hint_align_set(bx, FILL, FILL);
@@ -554,14 +554,14 @@ cpu_visual_default(Evas_Object *parent_box)
    if (!ext->cpu_freq) elm_object_disabled_set(check, 1);
    evas_object_show(check);
    elm_box_pack_end(hbx, check);
-   evas_object_smart_callback_add(check, "changed", _check_changed_cb, vis);
+   evas_object_smart_callback_add(check, "changed", _check_changed_cb, pd);
 
    check = elm_check_add(fr);
    evas_object_size_hint_align_set(check, FILL, FILL);
    evas_object_size_hint_weight_set(check, EXPAND, 0);
    elm_object_text_set(check, _("Overlay CPU temperatures?"));
    if (!ext->cpu_temp) elm_object_disabled_set(check, 1);
-   evas_object_smart_callback_add(check, "changed", _temp_check_changed_cb, vis);
+   evas_object_smart_callback_add(check, "changed", _temp_check_changed_cb, pd);
    evas_object_show(check);
    elm_box_pack_end(hbx, check);
 
@@ -569,7 +569,7 @@ cpu_visual_default(Evas_Object *parent_box)
    evas_object_size_hint_align_set(check, FILL, FILL);
    evas_object_size_hint_weight_set(check, EXPAND, 0);
    elm_object_text_set(check, _("Confused?"));
-   evas_object_smart_callback_add(check, "changed", _confused_check_changed_cb, vis);
+   evas_object_smart_callback_add(check, "changed", _confused_check_changed_cb, pd);
    evas_object_show(check);
    elm_box_pack_end(hbx, check);
 
@@ -581,11 +581,11 @@ cpu_visual_default(Evas_Object *parent_box)
      (obj, 100, (BAR_HEIGHT * ext->cpu_count) * elm_config_scale_get());
 
    // run a feedback thread that sends feedback to the mainloop
-   vis->thread = ecore_thread_feedback_run(_core_times_main_cb,
+   pd->thread = ecore_thread_feedback_run(_core_times_main_cb,
                                            _core_times_feedback_cb,
                                            NULL,
                                            NULL,
-                                           vis, 1);
-   return vis;
+                                           pd, 1);
+   return pd;
 }
 

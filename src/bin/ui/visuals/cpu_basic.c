@@ -10,8 +10,8 @@ static void
 _core_times_main_cb(void *data, Ecore_Thread *thread)
 {
    int ncpu;
-   Cpu_Visual *vis = data;
-   Ext *ext = vis->ext;
+   Ui_Cpu_Data *pd = data;
+   Ext *ext = pd->ext;
 
    while (!ecore_thread_check(thread))
      {
@@ -37,12 +37,12 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
 static void
 _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
 {
-   Cpu_Visual *vis;
+   Ui_Cpu_Data *pd;
    Core *cores;
    Ext *ext;
 
-   vis = data;
-   ext = vis->ext;
+   pd = data;
+   ext = pd->ext;
    cores = msgdata;
 
    for (int i = 0; i < ext->cpu_count; i++)
@@ -70,18 +70,18 @@ _cb_free(void *data)
    free(ext);
 }
 
-Cpu_Visual *
+Ui_Cpu_Data *
 cpu_visual_basic(Evas_Object *parent_bx)
 {
    Evas_Object *tb;
    Ext *ext;
 
-   Cpu_Visual *vis = calloc(1, sizeof(Cpu_Visual));
-   if (!vis) return NULL;
+   Ui_Cpu_Data *pd = calloc(1, sizeof(Ui_Cpu_Data));
+   if (!pd) return NULL;
 
-   vis->ext = ext = calloc(1, sizeof(Ext));
+   pd->ext = ext = calloc(1, sizeof(Ext));
    EINA_SAFETY_ON_NULL_RETURN_VAL(ext, NULL);
-   vis->ext_free_cb = _cb_free;
+   pd->ext_free_cb = _cb_free;
 
    /* Populate lookup table to match id with topology core id */
    ext->cpu_count = system_cpu_count_get();
@@ -120,11 +120,11 @@ cpu_visual_basic(Evas_Object *parent_bx)
 
    elm_box_pack_end(parent_bx, tb);
 
-   vis->thread = ecore_thread_feedback_run(_core_times_main_cb,
+   pd->thread = ecore_thread_feedback_run(_core_times_main_cb,
                                            _core_times_feedback_cb,
                                            NULL,
                                            NULL,
-                                           vis, 1);
-   return vis;
+                                           pd, 1);
+   return pd;
 }
 

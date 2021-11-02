@@ -42,23 +42,23 @@ _win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Coord w, h;
    Evas_Event_Mouse_Move *ev;
-   Cpu_Visual *vis = data;
+   Ui_Cpu_Data *pd = data;
 
    ev = event_info;
    evas_object_geometry_get(obj, NULL, NULL, &w, &h);
 
    if ((ev->cur.canvas.x >= (w - 128)) && (ev->cur.canvas.y <= 128))
      {
-       if (!vis->btn_visible)
+       if (!pd->btn_visible)
          {
-            elm_object_signal_emit(vis->btn_menu, "menu,show", "evisum/menu");
-            vis->btn_visible = 1;
+            elm_object_signal_emit(pd->btn_menu, "menu,show", "evisum/menu");
+            pd->btn_visible = 1;
          }
      }
-   else if ((vis->btn_visible) && (!vis->menu))
+   else if ((pd->btn_visible) && (!pd->menu))
     {
-       elm_object_signal_emit(vis->btn_menu, "menu,hide", "evisum/menu");
-       vis->btn_visible = 0;
+       elm_object_signal_emit(pd->btn_menu, "menu,hide", "evisum/menu");
+       pd->btn_visible = 0;
     }
 }
 
@@ -85,15 +85,15 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
    Evisum_Ui *ui;
-   Cpu_Visual *vis = data;
+   Ui_Cpu_Data *pd = data;
 
-   ui = vis->ui;
-   if (!vis->menu)
-     vis->menu = evisum_ui_main_menu_create(ui, ui->cpu.win, obj);
+   ui = pd->ui;
+   if (!pd->menu)
+     pd->menu = evisum_ui_main_menu_create(ui, ui->cpu.win, obj);
    else
      {
-        evas_object_del(vis->menu);
-        vis->menu = NULL;
+        evas_object_del(pd->menu);
+        pd->menu = NULL;
      }
 }
 
@@ -116,17 +116,17 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 static void
 _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
-   Cpu_Visual *vis = data;
-   Evisum_Ui *ui = vis->ui;
+   Ui_Cpu_Data *pd = data;
+   Evisum_Ui *ui = pd->ui;
 
    evisum_ui_config_save(ui);
-   ecore_thread_cancel(vis->thread);
-   ecore_thread_wait(vis->thread, 0.5);
+   ecore_thread_cancel(pd->thread);
+   ecore_thread_wait(pd->thread, 0.5);
 
-   if (vis->ext_free_cb)
-      vis->ext_free_cb(vis->ext);
+   if (pd->ext_free_cb)
+      pd->ext_free_cb(pd->ext);
 
-   free(vis);
+   free(pd);
    ui->cpu.win = NULL;
 }
 
@@ -177,7 +177,7 @@ ui_cpu_visuals_get(void)
 {
    Eina_List *l = NULL;
 
-   for (int i = 0; (i < sizeof(visualizations) / sizeof(Visualization)); i++)
+   for (int i = 0; (i < sizeof(visualizations) / sizeof(Cpu_Visual)); i++)
      {
         l = eina_list_append(l, strdup(visualizations[i].name));
      }
@@ -185,10 +185,10 @@ ui_cpu_visuals_get(void)
    return l;
 }
 
-Visualization *
+Cpu_Visual *
 ui_cpu_visual_by_name(const char *name)
 {
-   for (int i = 0; (i < sizeof(visualizations) / sizeof(Visualization)); i++)
+   for (int i = 0; (i < sizeof(visualizations) / sizeof(Cpu_Visual)); i++)
      {
         if (!strcmp(name, visualizations[i].name))
           return &visualizations[i];
@@ -206,11 +206,11 @@ ui_cpu_win_restart(Evisum_Ui *ui)
 void
 ui_cpu_win_add(Evisum_Ui *ui)
 {
-   Cpu_Visual *vis;
+   Ui_Cpu_Data *pd;
    Evas_Object *win, *box, *scr, *btn, *ic;
    Evas_Object *tb;
    Elm_Layout *lay;
-   Visualization *visualization;
+   Cpu_Visual *vis;
    static Eina_Bool init = 0;
 
    if (ui->cpu.win)
@@ -253,9 +253,9 @@ ui_cpu_win_add(Evisum_Ui *ui)
 
    elm_table_pack(tb, box, 0, 0, 1, 1);
 
-   visualization = ui_cpu_visual_by_name(ui->cpu.visual);
-   vis = visualization->func(box);
-   vis->ui = ui;
+   vis = ui_cpu_visual_by_name(ui->cpu.visual);
+   pd = vis->func(box);
+   pd->ui = ui;
 
    elm_object_content_set(scr, tb);
    elm_object_content_set(win, scr);
@@ -267,9 +267,9 @@ ui_cpu_win_add(Evisum_Ui *ui)
    evas_object_show(ic);
    elm_object_focus_allow_set(btn, 0);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-   evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, vis);
+   evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, pd);
 
-   vis->btn_menu = lay = elm_layout_add(win);
+   pd->btn_menu = lay = elm_layout_add(win);
    evas_object_size_hint_weight_set(lay, 1.0, 1.0);
    evas_object_size_hint_align_set(lay, 0.99, 0.01);
    elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
@@ -277,11 +277,11 @@ ui_cpu_win_add(Evisum_Ui *ui)
    elm_table_pack(tb, lay, 0, 0, 1, 1);
    evas_object_show(lay);
 
-   evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, vis);
+   evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, pd);
    evas_object_event_callback_add(scr, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ui);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, ui);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE,  _win_move_cb, ui);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, vis);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
 
    if ((ui->cpu.width > 0) && (ui->cpu.height > 0))
      evas_object_resize(win, ui->cpu.width, ui->cpu.height);

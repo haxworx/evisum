@@ -38,12 +38,12 @@ typedef struct {
    void (*ext_free_cb)(void *);
    void               *ext;
 
-} Cpu_Visual;
+} Ui_Cpu_Data;
 
 typedef struct {
    const char *name;
-   Cpu_Visual *(*func)(Evas_Object *parent);
-} Visualization;
+   Ui_Cpu_Data *(*func)(Evas_Object *parent);
+} Cpu_Visual;
 
 void
 ui_cpu_win_add(Evisum_Ui *ui);
@@ -54,7 +54,7 @@ ui_cpu_win_restart(Evisum_Ui *ui);
 Eina_List *
 ui_cpu_visuals_get(void);
 
-Visualization *
+Cpu_Visual *
 ui_cpu_visual_by_name(const char *name);
 
 #endif
