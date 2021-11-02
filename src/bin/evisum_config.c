@@ -148,6 +148,11 @@ config_load(void)
         f = eet_open(path, EET_FILE_MODE_READ);
         if (!f) _config_fail("read");
         cfg = eet_data_read(f, _evisum_conf_descriptor, "Config");
+        if (!cfg)
+          {
+             fprintf(stderr, "FATAL: Corrupt config?\n");
+             exit(1);
+          }
 
         if (cfg->version < CONFIG_VERSION)
           {

@@ -1,5 +1,3 @@
-subdir('visuals')
-
 src += files([
    'gettext.h',
    'evisum_ui.h',
@@ -15,11 +13,18 @@ src += files([
    'ui_disk.c',
    'ui_disk.h',
    'ui_memory.h',
-   'ui_memory.c',
+   'ui_memory.c'
+])
+
+# IDK, OpenBSD aarch64...
+subdir('visuals')
+
+src += files([
    'ui_cpu.c',
    'ui_cpu.h',
    'ui_process_view.c',
    'ui_process_view.h',
    'ui_process_list.c',
    'ui_process_list.h',
+
 ])
