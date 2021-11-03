@@ -422,7 +422,7 @@ _cpu_visual_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    if (ui->cpu.visual) free(ui->cpu.visual);
    ui->cpu.visual = strdup(txt);
-   evisum_ui_restart(ui);
+   ui_cpu_win_restart(ui);
 }
 
 Evas_Object *

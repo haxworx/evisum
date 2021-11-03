@@ -199,7 +199,9 @@ ui_cpu_visual_by_name(const char *name)
 void
 ui_cpu_win_restart(Evisum_Ui *ui)
 {
+   elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_NONE);
    evas_object_del(ui->cpu.win);
+   elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
    ui_cpu_win_add(ui);
 }
 
