@@ -65,9 +65,9 @@
 
 #include "macros.h"
 #include "machine.h"
-#include "machine/machine.bogox"
-#include "machine/cpu.bogox"
-#include "machine/memory.bogox"
-#include "machine/sensors.bogox"
-#include "machine/network.bogox"
+#include "machine/machine.x"
+#include "machine/cpu.x"
+#include "machine/memory.x"
+#include "machine/sensors.x"
+#include "machine/network.x"
 
