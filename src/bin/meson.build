@@ -20,20 +20,6 @@ executable('evisum', src,
    gui_app              : true,
    install              : true)
 
-
-src_watch = files([
-   'evisum_watcher.c',
-   'evisum_watcher.h',
-])
-
-subdir('next')
-
-executable('evisum_watcher', src_watch,
-   include_directories  : inc,
-   dependencies         : [ deps, deps_os, deps_nls ],
-   gui_app              : false,
-   install              : true)
-
 if host_os == 'freebsd' or host_os == 'dragonfly'
    meson.add_install_script('perms.sh')
 endif
