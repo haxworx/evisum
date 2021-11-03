@@ -19,7 +19,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
 
    while (!ecore_thread_check(thread))
      {
-        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 400000);
+        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 100000);
         Core *cores_out = calloc(ncpu, sizeof(Core));
 
         if (cores_out)
@@ -62,9 +62,11 @@ _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgd
         Evas_Object *rec = eina_list_nth(ext->objects, i);
         evas_object_geometry_get(rec, &ox, NULL, NULL, NULL);
         int c = temp_colormap[core->percent & 0xff];
+        int h = core->percent * step;
+        if (!h) h = 1;
         evas_object_color_set(rec, RVAL(c), GVAL(c), BVAL(c), AVAL(c));
-        evas_object_resize(rec, ELM_SCALE_SIZE(BAR_WIDTH), ELM_SCALE_SIZE(core->percent * step));
-        evas_object_move(rec, ox, oy - ELM_SCALE_SIZE(core->percent * step));
+        evas_object_resize(rec, ELM_SCALE_SIZE(BAR_WIDTH), ELM_SCALE_SIZE(h));
+        evas_object_move(rec, ox, oy - ELM_SCALE_SIZE(h));
         elm_table_align_set(ext->tb, 0.0, 1.0);
      }
 
