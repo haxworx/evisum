@@ -260,6 +260,7 @@ ui_cpu_win_add(Evisum_Ui *ui)
         exit(1);
      }
    pd = vis->func(box);
+   pd->win = win;
    pd->ui = ui;
 
    elm_object_content_set(scr, tb);

@@ -31,6 +31,7 @@ typedef struct {
    Ecore_Thread   *thread;
 
    Evas_Object    *menu;
+   Evas_Object    *win;
    Elm_Layout     *btn_menu;
    Eina_Bool       btn_visible;
 
