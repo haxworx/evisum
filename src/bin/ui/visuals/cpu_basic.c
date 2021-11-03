@@ -70,6 +70,15 @@ _cb_free(void *data)
    free(ext);
 }
 
+static int
+_row_fit(int n)
+{
+   double i, f, value = sqrt(n);
+   f = modf(value, &i);
+   if (EINA_DBL_EQ(f, 0.0)) return value;
+   return value + 1;
+}
+
 Ui_Cpu_Data *
 cpu_visual_basic(Evas_Object *parent_bx)
 {
@@ -95,8 +104,8 @@ cpu_visual_basic(Evas_Object *parent_bx)
    evas_object_size_hint_align_set(tb, 0.5, 0.5);
    evas_object_show(tb);
 
-   int row = 0, col = 0;
-   int w = sqrt(ext->cpu_count);
+   int row = 0, col = 0, w = _row_fit(ext->cpu_count);
+
    for (int i = 0; i < ext->cpu_count; i++)
      {
         if (!(i % w))
