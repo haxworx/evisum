@@ -254,6 +254,11 @@ ui_cpu_win_add(Evisum_Ui *ui)
    elm_table_pack(tb, box, 0, 0, 1, 1);
 
    vis = ui_cpu_visual_by_name(ui->cpu.visual);
+   if (!vis)
+     {
+        fprintf(stderr, "FATAL: unknown CPU visual (check your config)\n");
+        exit(1);
+     }
    pd = vis->func(box);
    pd->ui = ui;
 
