@@ -63,6 +63,9 @@
 # include <sys/resource.h>
 #endif
 
+#include <Ecore.h>
+#include <Ecore_File.h>
+
 #include "macros.h"
 #include "machine.h"
 #include "machine/machine.x"

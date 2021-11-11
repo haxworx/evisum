@@ -1,4 +1,4 @@
-#include "filesystems.h"
+#include "file_systems.h"
 
 #include <stdio.h>
 #include <limits.h>
@@ -29,7 +29,7 @@
 #endif
 
 Eina_List *
-file_system_info_all_get(void)
+file_systems_find(void)
 {
    Eina_List *list = NULL;
 # if defined(__linux__)
@@ -45,7 +45,7 @@ file_system_info_all_get(void)
      {
         mount = strchr(buf, ' ') + 1;
         if (!mount) continue;
-        dev = strndup(buf, mount - buf);
+        dev = strndup(buf, mount - buf - 1);
         cp = strchr(mount, ' ');
         if (!cp) continue;
         end = cp;
@@ -55,7 +55,7 @@ file_system_info_all_get(void)
         if (!end) continue;
         type_name = strndup(cp, end - cp);
 
-        if ((strstr(cp, "nodev")) || (statfs(mount, &stats) < 0) ||
+        if ((statfs(mount, &stats) < 0) ||
             (stats.f_blocks == 0 && stats.f_bfree == 0))
           {
              free(dev);
@@ -64,12 +64,16 @@ file_system_info_all_get(void)
           }
 
         File_System *fs = calloc(1, sizeof(File_System));
-        fs->mount = strdup(mount);
-        fs->path = dev;
-        fs->type_name = type_name;
-        fs->usage.total = stats.f_bsize * stats.f_blocks;
-        fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
-        list = eina_list_append(list, fs);
+        if (fs)
+          {
+             snprintf(fs->mount, sizeof(fs->mount), "%s", mount);
+             snprintf(fs->path, sizeof(fs->path), "%s", dev);
+             snprintf(fs->type_name, sizeof(fs->type_name), "%s", type_name);
+             fs->usage.total = stats.f_bsize * stats.f_blocks;
+             fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
+             free(dev); free(type_name);
+             list = eina_list_append(list, fs);
+          }
      }
    fclose(f);
 # else
@@ -80,30 +84,24 @@ file_system_info_all_get(void)
    for (i = 0; i < count; i++)
      {
         File_System *fs = calloc(1, sizeof(File_System));
-        fs->mount = strdup(mounts[i].f_mntonname);
-        fs->path  = strdup(mounts[i].f_mntfromname);
+        if (fs)
+          {
+             snprintf(fs->mount, sizeof(fs->mount), "%s", mounts[i].f_mntonname);
+             snprintf(fs->path, sizeof(fs->path), "%s", mounts[i].f_mntfromname);
 #if defined(__OpenBSD__)
 #else
-        fs->type  = mounts[i].f_type;
+             fs->type  = mounts[i].f_type;
 #endif
-        fs->type_name = strdup(mounts[i].f_fstypename);
-        fs->usage.total = mounts[i].f_bsize * mounts[i].f_blocks;
-        fs->usage.used  = fs->usage.total - (mounts[i].f_bsize * mounts[i].f_bfree);
+             snprintf(fs->type_name, sizeof(fs->type_name), "%s", mounts[i].f_fstypename);
 
-        list = eina_list_append(list, fs);
+             fs->usage.total = mounts[i].f_bsize * mounts[i].f_blocks;
+             fs->usage.used  = fs->usage.total - (mounts[i].f_bsize * mounts[i].f_bfree);
+
+             list = eina_list_append(list, fs);
+          }
      }
 # endif
    return list;
-}
-
-void
-file_system_info_free(File_System *fs)
-{
-   free(fs->mount);
-   free(fs->path);
-   if (fs->type_name)
-     free(fs->type_name);
-   free(fs);
 }
 
 Eina_Bool
@@ -115,13 +113,13 @@ file_system_in_use(const char *name)
 
    if (!name) return 0;
 
-   list = file_system_info_all_get();
+   list = file_systems_find();
    EINA_LIST_FREE(list, fs)
      {
-        if (fs->type_name && (!strcasecmp(fs->type_name, name)))
+        if ((fs->type_name[0]) && (!strcasecmp(fs->type_name, name)))
           mounted = 1;
 
-        file_system_info_free(fs);
+        free(fs);
      }
 
    return mounted;

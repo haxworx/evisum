@@ -1,17 +1,3 @@
-void
-sensor_free(Sensor *sensor)
-{
-   if (sensor->name)
-     free(sensor->name);
-   if (sensor->child_name)
-     free(sensor->child_name);
-#if defined(__linux__)
-   if (sensor->path)
-     free(sensor->path);
-#endif
-   free(sensor);
-}
-
 Eina_Bool
 sensor_update(Sensor *sensor)
 {
@@ -70,7 +56,6 @@ sensors_find(void)
    struct sensordev snsrdev;
    size_t slen = sizeof(struct sensor);
    size_t sdlen = sizeof(struct sensordev);
-   char buf[32];
    enum sensor_type type;
 
    for (devn = 0;; devn++)
@@ -99,13 +84,17 @@ sensors_find(void)
                   sensor = calloc(1, sizeof(Sensor));
                   if (sensor)
                     {
-                       sensor->name = strdup(snsrdev.xname);
-                       snprintf(buf, sizeof(buf), "%i", n);
-                       sensor->child_name = strdup(buf);
+                       strlcpy(sensor->name, snsrdev.xname, sizeof(sensor->name));
                        if (snsr.type == SENSOR_TEMP)
-                         sensor->type = THERMAL;
+                         {
+                            snprintf(sensor->child_name, sizeof(sensor->child_name), "temp%i", n);
+                            sensor->type = THERMAL;
+                         }
                        else if (snsr.type == SENSOR_FANRPM)
-                         sensor->type = FANRPM;
+                         {
+                            snprintf(sensor->child_name, sizeof(sensor->child_name), "fan%i", n);
+                            sensor->type = FANRPM;
+                         }
                        memcpy(sensor->mibs, &mibs, sizeof(mibs));
 
                        sensors = eina_list_append(sensors, sensor);
@@ -124,7 +113,8 @@ sensors_find(void)
         sensor = calloc(1, sizeof(Sensor));
         if (sensor)
           {
-             sensor->name = strdup("hw.acpi.thermal.tz0.temperature");
+             strlcpy(sensor->name, "hw.acpi.thermal.tz0.temperature", sizeof(sensor->name));
+             strlcpy(sensor->child_name, "0", sizeof(sensor->child_name));
              sensor->value = (float) (value -  2732) / 10;
              sensors = eina_list_append(sensors, sensor);
           }
@@ -141,7 +131,8 @@ sensors_find(void)
              sensor = calloc(1, sizeof(Sensor));
              if (sensor)
                {
-                  sensor->name = strdup(buf);
+                  strlcpy(sensor->name, buf, sizeof(sensor->name));
+                  snprintf(sensor->child_name, sizeof(sensor->child_name), "%i", i);
                   sensor->value = (float) (value - 2732) / 10;
                   sensors = eina_list_append(sensors, sensor);
                }
@@ -198,18 +189,29 @@ sensors_find(void)
                        sensor = calloc(1, sizeof(Sensor));
                        if (sensor)
                          {
+                            char *d;
                             sensor->type = FANRPM;
-                            sensor->path = strdup(buf);
+                            eina_strlcpy(sensor->path, buf, sizeof(sensor->path));
                             snprintf(buf, sizeof(buf), "%s/name", link);
-                            sensor->name = file_contents(buf);
+                            d = file_contents(buf);
+                            if (d)
+                              {
+                                 eina_strlcpy(sensor->name, d, sizeof(sensor->name));
+                                 free(d);
+                              }
                             snprintf(buf, sizeof(buf), "%s/fan%i_label", link, id);
                             if (ecore_file_exists(buf))
-                              sensor->child_name = file_contents(buf);
-                            else
                               {
-                                 snprintf(buf, sizeof(buf), "fan%i", id);
-                                 sensor->child_name = strdup(buf);
+                                 d = file_contents(buf);
+                                 if (d)
+                                   {
+                                      eina_strlcpy(sensor->child_name, d, sizeof(sensor->child_name));
+                                      free(d);
+                                   }
                               }
+                            else
+                              snprintf(sensor->child_name, sizeof(sensor->child_name), "fan%i", id);
+
                             sensors = eina_list_append(sensors, sensor);
                          }
                     }
@@ -220,19 +222,28 @@ sensors_find(void)
                        sensor = calloc(1, sizeof(Sensor));
                        if (sensor)
                          {
+                            char *d;
                             sensor->type = THERMAL;
-                            sensor->path = strdup(buf);
+                            eina_strlcpy(sensor->path, buf, sizeof(sensor->path));
                             snprintf(buf, sizeof(buf), "%s/name", link);
-                            sensor->name = file_contents(buf);
-
+                            d = file_contents(buf);
+                            if (d)
+                              {
+                                 eina_strlcpy(sensor->name, d, sizeof(sensor->name));
+                                 free(d);
+                              }
                             snprintf(buf, sizeof(buf), "%s/temp%i_label", link, id);
                             if (ecore_file_exists(buf))
-                              sensor->child_name = file_contents(buf);
-                            else
                               {
-                                 snprintf(buf, sizeof(buf), "%i", id);
-                                 sensor->child_name = strdup(buf);
+                                 d = file_contents(buf);
+                                 if (d)
+                                   {
+                                      eina_strlcpy(sensor->child_name, d, sizeof(sensor->child_name));
+                                      free(d);
+                                   }
                               }
+                             else
+                               snprintf(sensor->child_name, sizeof(sensor->child_name), "temp%i", id);
 
                              sensors = eina_list_append(sensors, sensor);
                           }
@@ -251,6 +262,16 @@ sensors_find(void)
 #elif defined(__MacOS__)
 #endif
    return sensors;
+}
+
+void
+sensors_update(Eina_List *sensors)
+{
+   Eina_List *l;
+   Sensor *sensor;
+
+   EINA_LIST_FOREACH(sensors, l, sensor)
+     sensor_update(sensor);
 }
 
 Eina_List *
@@ -276,9 +297,9 @@ batteries_find(void)
              Battery *bat = calloc(1, sizeof(Battery));
              if (bat)
                {
-                  bat->name = strdup(snsrdev.xname);
-                  bat->model = strdup("Unknown");
-                  bat->vendor = strdup("Unknown");
+                  strlcpy(bat->name, snsrdev.xname, sizeof(bat->name));
+                  strlcpy(bat->model, "Unknown", sizeof(bat->model));
+                  strlcpy(bat->vendor, "Unknown", sizeof(bat->vendor));
                   bat->mibs[0] = mibs[0];
                   bat->mibs[1] = mibs[1];
                   bat->mibs[2] = mibs[2];
@@ -305,12 +326,13 @@ batteries_find(void)
              Battery *bat = calloc(1, sizeof(Battery));
              if (bat)
                {
+                  snprintf(bat->name, sizeof(bat->name), "bat%i", i);
                   if (battio.bst.state == ACPI_BATT_STAT_NOT_PRESENT)
                     bat->present = 0;
                   else
                     bat->present = 1;
-                  bat->vendor = strdup(battio.bix.oeminfo);
-                  bat->model = strdup(battio.bix.model);
+                  strlcpy(bat->vendor, battio.bix.oeminfo, sizeof(bat->vendor));
+                  strlcpy(bat->model, battio.bix.model, sizeof(bat->model));
                   bat->unit = i;
                   list = eina_list_append(list, bat);
                }
@@ -320,7 +342,6 @@ batteries_find(void)
 #elif defined(__linux__)
    char *type;
    struct dirent **names;
-   char *buf;
    char path[PATH_MAX];
    int i, n;
 
@@ -337,18 +358,29 @@ batteries_find(void)
                   Battery *bat = calloc(1, sizeof(Battery));
                   if (bat)
                     {
-                       bat->name = strdup(names[i]->d_name);
+                       char *d;
+                       eina_strlcpy(bat->name, names[i]->d_name, sizeof(bat->name));
                        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", names[i]->d_name);
-                       bat->vendor = file_contents(path);
+                       d = file_contents(path);
+                       if (d)
+                         {
+                            eina_strlcpy(bat->vendor, d, sizeof(bat->vendor));
+                            free(d);
+                         }
                        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", names[i]->d_name);
-                       bat->model = file_contents(path);
+                       d = file_contents(path);
+                       if (d)
+                         {
+                            eina_strlcpy(bat->model, d, sizeof(bat->model));
+                            free(d);
+                         }
                        snprintf(path, sizeof(path), "/sys/class/power_supply/%s/present", names[i]->d_name);
                        bat->present = 1;
-                       buf = file_contents(path);
-                       if (buf)
+                       d = file_contents(path);
+                       if (d)
                          {
-                            bat->present = atoi(buf);
-                            free(buf);
+                            bat->present = atoi(d);
+                            free(d);
                          }
                        list = eina_list_append(list, bat);
                     }
@@ -361,18 +393,6 @@ batteries_find(void)
    free(names);
 #endif
    return list;
-}
-
-void
-battery_free(Battery *bat)
-{
-   if (bat->name)
-     free(bat->name);
-   if (bat->model)
-     free(bat->model);
-   if (bat->vendor)
-     free(bat->vendor);
-   free(bat);
 }
 
 void
@@ -560,14 +580,43 @@ power_ac_present(void)
         close(fd);
      }
 #elif defined(__linux__)
-   char *buf = file_contents("/sys/class/power_supply/AC/online");
-   if (buf)
+   static const char *found = NULL;
+   static const char *known[] = {
+      "/sys/class/power_supply/AC/online",
+      "/sys/class/power_supply/ACAD/online",
+      "/sys/class/power_supply/ADP0/online",
+   };
+
+   for (int i = 0; (!found) && (i < sizeof(known) / sizeof(char *)); i++)
      {
-        have_ac = atoi(buf);
-        free(buf);
+        if (ecore_file_exists(known[i]))
+          {
+             found = known[i];
+             break;
+          }
+     }
+
+   if (found)
+     {
+        char *buf = file_contents(found);
+        if (buf)
+          {
+             have_ac = atoi(buf);
+             free(buf);
+          }
      }
 #endif
 
    return have_ac;
+}
+
+void
+batteries_update(Eina_List *batteries)
+{
+   Eina_List *l;
+   Battery *bat;
+
+   EINA_LIST_FOREACH(batteries, l, bat)
+      battery_update(bat);
 }
 

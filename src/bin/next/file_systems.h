@@ -4,20 +4,22 @@
 #include <Eina.h>
 
 typedef struct {
-   unsigned long long total;
-   unsigned long long used;
+   uint64_t total;
+   uint64_t used;
 } _Usage;
 
 typedef struct _File_System {
-   char         *path;
-   char         *mount;
-   char         *type_name;
-   unsigned int  type;
-   _Usage        usage;
+   char         path[PATH_MAX];
+   char         mount[PATH_MAX];
+   char         type_name[64];
+   unsigned int type;
+   _Usage       usage;
+
+   int          unique_id;
 } File_System;
 
 Eina_List *
-file_system_info_all_get(void);
+file_systems_find(void);
 
 void
 file_system_info_free(File_System *fs);

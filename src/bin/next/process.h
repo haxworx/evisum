@@ -21,7 +21,7 @@ typedef struct _Proc_Info
    int64_t     cpu_time;
    double      cpu_usage;
    int64_t     run_time;
-   int64_t     start;
+   int64_t     start_time;
 
    uint64_t    mem_size;
    uint64_t    mem_virt;
@@ -36,7 +36,9 @@ typedef struct _Proc_Info
    Eina_List   *fds;
    int         numfiles;
 
-   short       is_kernel;
+   Eina_Bool   was_zero;
+   Eina_Bool   is_kernel;
+   Eina_Bool   is_new;
    int         tid;
    char       *thread_name;
 

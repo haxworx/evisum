@@ -48,10 +48,7 @@ int
 cores_online_count(void)
 {
 #if defined(__OpenBSD__)
-   static int cores = 0;
-
-   if (cores != 0) return cores;
-
+   int cores = 0;
    size_t len;
    int mib[2] = { CTL_HW, HW_NCPUONLINE };
 
@@ -68,9 +65,7 @@ cores_online_count(void)
 void
 cores_update(Eina_List *cores)
 {
-   int diff_total, diff_idle;
-   double ratio, percent;
-   unsigned long total, idle, used;
+   unsigned long total, idle;
    Cpu_Core *core;
    int ncpu = eina_list_count(cores);
    if (!ncpu) return;
@@ -96,21 +91,10 @@ cores_update(Eina_List *cores)
 
         idle = cpu[CP_IDLE];
 
-        diff_total = total - core->total;
-        diff_idle = idle - core->idle;
-        if (diff_total == 0) diff_total = 1;
-
-        ratio = diff_total / 100.0;
-        used = diff_total - diff_idle;
-        percent = used / ratio;
-
-        if (percent > 100) percent = 100;
-        else if (percent < 0)
-          percent = 0;
-
-        core->percent = percent;
         core->total = total;
         core->idle = idle;
+        core->freq = core_id_frequency(core->id);
+        core->temp = core_id_temperature(core->id);
      }
 #elif defined(__OpenBSD__)
    static struct cpustats cpu_times[CPU_STATES];
@@ -134,21 +118,10 @@ cores_update(Eina_List *cores)
 
         idle = cpu_times[i].cs_time[CP_IDLE];
 
-        diff_total = total - core->total;
-        if (diff_total == 0) diff_total = 1;
-
-        diff_idle = idle - core->idle;
-        ratio = diff_total / 100.0;
-        used = diff_total - diff_idle;
-        percent = used / ratio;
-
-        if (percent > 100) percent = 100;
-        else if (percent < 0)
-          percent = 0;
-
-        core->percent = percent;
         core->total = total;
         core->idle = idle;
+        core->freq = core_id_frequency(core->id);
+        core->temp = core_id_temperature(core->id);
      }
 #elif defined(__linux__)
    char *buf, name[128];
@@ -173,21 +146,11 @@ cores_update(Eina_List *cores)
 
              total = cpu_times[0] + cpu_times[1] + cpu_times[2] + cpu_times[3];
              idle = cpu_times[3];
-             diff_total = total - core->total;
-             if (diff_total == 0) diff_total = 1;
 
-             diff_idle = idle - core->idle;
-             ratio = diff_total / 100.0;
-             used = diff_total - diff_idle;
-             percent = used / ratio;
-
-             if (percent > 100) percent = 100;
-             else if (percent < 0)
-               percent = 0;
-
-             core->percent = percent;
              core->total = total;
              core->idle = idle;
+             core->freq = core_id_frequency(core->id);
+             core->temp = core_id_temperature(core->id);
           }
      }
    free(buf);
@@ -216,18 +179,6 @@ cores_update(Eina_List *cores)
            load[i].cpu_ticks[CPU_STATE_NICE];
         idle = load[i].cpu_ticks[CPU_STATE_IDLE];
 
-        diff_total = total - core->total;
-        if (diff_total == 0) diff_total = 1;
-        diff_idle = idle - core->idle;
-        ratio = diff_total / 100.0;
-        used = diff_total - diff_idle;
-        percent = used / ratio;
-
-        if (percent > 100) percent = 100;
-        else if (percent < 0)
-          percent = 0;
-
-        core->percent = percent;
         core->total = total;
         core->idle = idle;
      }
@@ -246,6 +197,7 @@ cores_find(void)
      {
         core = calloc(1, sizeof(Cpu_Core));
         core->id = i;
+        snprintf(core->name, sizeof(core->name), "cpu%i", i);
         cores = eina_list_append(cores, core);
      }
    cores_topology(cores);
@@ -260,7 +212,7 @@ static char _hwmon_path[256];
 int
 _core_n_temperature_read(int n)
 {
-   int temp = -1;
+   int temp = THERMAL_INVALID;
 #if defined(__linux__)
 
    char *b = file_contents(_core_temps[n]);
@@ -357,7 +309,7 @@ core_id_temperature(int id)
         if (!dir)
           {
              init = 1;
-             return -1;
+             return THERMAL_INVALID;
           }
 
         while ((dh = readdir(dir)) != NULL)
@@ -389,7 +341,7 @@ core_id_temperature(int id)
         init = 1;
      }
 
-   if (!_hwmon_path[0]) return -1;
+   if (!_hwmon_path[0]) return THERMAL_INVALID;
 
    return _core_n_temperature_read(id);
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
@@ -403,7 +355,7 @@ core_id_temperature(int id)
 
     return _core_n_temperature_read(id);
 #endif
-   return -1;
+   return THERMAL_INVALID;
 }
 
 int
@@ -420,7 +372,7 @@ int
 core_id_frequency(int id)
 {
 #if defined(__linux__)
-   int freq = -1;
+   int freq = CPUFREQ_INVALID;
    FILE *f;
    char buf[4096];
    int tmp;
@@ -436,7 +388,7 @@ core_id_frequency(int id)
                freq = tmp;
           }
         fclose(f);
-        if (freq != -1) return freq;
+        if (freq != CPUFREQ_INVALID) return freq;
      }
 
    return freq;
@@ -444,7 +396,7 @@ core_id_frequency(int id)
    return cores_frequency();
 #endif
 
-   return -1;
+   return CPUFREQ_INVALID;
 }
 
 int
@@ -534,7 +486,7 @@ cores_frequency_min_max(int *min, int *max)
 int
 cores_frequency(void)
 {
-   int freq = -1;
+   int freq = CPUFREQ_INVALID;
 
 #if defined(__FreeBSD__) || defined(__DragonFly__)
    size_t len = sizeof(freq);
@@ -560,7 +512,7 @@ cores_frequency(void)
                freq = tmp;
           }
         fclose(f);
-        if (freq != -1) return freq;
+        if (freq != CPUFREQ_INVALID) return freq;
      }
 
    f = fopen("/proc/cpuinfo", "r");
@@ -635,5 +587,12 @@ cores_topology(Eina_List *cores)
         core->top_id = cores_top[i].id;
      }
    free(cores_top);
+#else
+   Cpu_Core *core;
+   Eina_List *l;
+
+   EINA_LIST_FOREACH(cores, l, core)
+     core->top_id = core->id;
 #endif
+
 }

@@ -2,7 +2,7 @@
 # define __MacOS__
 #endif
 
-#include "ui/gettext.h"
+#include "intl/gettext.h"
 #define _(STR) gettext(STR)
 
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__OpenBSD__)
@@ -53,7 +53,7 @@
 
 #include "macros.h"
 
-static Eina_Bool _show_kthreads = 1;
+static Eina_Bool _show_kthreads = 0;
 
 void
 proc_info_kthreads_show_set(Eina_Bool enabled)
@@ -98,8 +98,10 @@ _states_init(void)
 #endif
 #endif
 }
-
-static const char *
+#ifndef __OpenBSD__
+static
+#endif
+const char *
 _process_state_name(char state)
 {
    static int init = 0;
@@ -159,37 +161,47 @@ _mem_size(Proc_Info *proc)
 static void
 _cmd_args(Proc_Info *p, char *name, size_t len)
 {
-   char buf[8192];
+   char path[PATH_MAX];
+   char line[4096];
    int pid = p->pid;
 
-   snprintf(buf, sizeof(buf), "/proc/%d/exe", pid);
-   char *link = ecore_file_readlink(buf);
+   snprintf(path, sizeof(path), "/proc/%d/exe", pid);
+   char *link = ecore_file_readlink(path);
    if (link)
      {
         snprintf(name, len, "%s", ecore_file_file_get(link));
         free(link);
      }
 
-   snprintf(buf, sizeof(buf), "/proc/%d/cmdline", pid);
-   FILE *f = fopen(buf, "r");
+   snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
+   FILE *f = fopen(path, "r");
    if (f)
      {
-        if (fgets(buf, sizeof(buf), f))
+        if (fgets(line, sizeof(line), f))
           {
-             Eina_Strbuf *b = eina_strbuf_new();
-             const char *n;
+             int sz = ftell(f);
+             Eina_Strbuf *buf = eina_strbuf_new();
 
-             if (ecore_file_exists(buf))
-               snprintf(name, len, "%s", ecore_file_file_get(buf));
+             if (ecore_file_exists(line))
+               snprintf(name, len, "%s", ecore_file_file_get(line));
 
-             n = buf;
-             while (n && *n && (*n + 1))
+             const char *cp = line;
+             for (int i = 0; i < sz; i++)
                {
-                  eina_strbuf_append(b, n);
-                  n = strchr(n, '\0') + 1;
-                  if (n && *n && (*n + 1)) eina_strbuf_append(b, " ");
+                  if (line[i] == '\0')
+                    {
+                       if (*cp)
+                         eina_strbuf_append(buf, cp);
+                       if ((i + 1) < sz)
+                         {
+                            i++;
+                            cp = &line[i];
+                            if (*cp)
+                              eina_strbuf_append(buf, " ");
+                         }
+                    }
                }
-             p->arguments = eina_strbuf_release(b);
+             p->arguments = eina_strbuf_release(buf);
           }
         fclose(f);
      }
@@ -360,7 +372,7 @@ _process_list_linux_get(void)
         p->ppid = st.ppid;
         p->uid = _uid(pid);
         p->cpu_id = st.psr;
-        p->start = st.start_time;
+        p->start_time = st.start_time;
         p->run_time = st.run_time;
         state = _process_state_name(st.state);
         snprintf(p->state, sizeof(p->state), "%s", state);
@@ -436,7 +448,7 @@ proc_info_by_pid(int pid)
    p->ppid = st.ppid;
    p->uid = _uid(pid);
    p->cpu_id = st.psr;
-   p->start = st.start_time;
+   p->start_time = st.start_time;
    p->run_time = st.run_time;
    state = _process_state_name(st.state);
    snprintf(p->state, sizeof(p->state), "%s", state);
@@ -470,7 +482,7 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    p->ppid = kp->p_ppid;
    p->uid = kp->p_uid;
    p->cpu_id = kp->p_cpuid;
-   p->start = kp->p_ustart_sec;
+   p->start_time = kp->p_ustart_sec;
    p->run_time = kp->p_uutime_sec + kp->p_ustime_sec +
                  (kp->p_uutime_usec / 1000000) + (kp->p_ustime_usec / 1000000);
 
@@ -751,7 +763,7 @@ _proc_pidinfo(size_t pid)
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
-   p->start = taskinfo.pbsd.pbi_start_tvsec;
+   p->start_time = taskinfo.pbsd.pbi_start_tvsec;
    state = _process_state_name(taskinfo.pbsd.pbi_status);
    snprintf(p->state, sizeof(p->state), "%s", state);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
@@ -840,7 +852,7 @@ proc_info_by_pid(int pid)
    p->cpu_time = taskinfo.ptinfo.pti_total_user +
       taskinfo.ptinfo.pti_total_system;
    p->cpu_time /= 10000000;
-   p->start = taskinfo.pbsd.pbi_start_tvsec;
+   p->start_time = taskinfo.pbsd.pbi_start_tvsec;
    state = _process_state_name(taskinfo.pbsd.pbi_status);
    snprintf(p->state, sizeof(p->state), "%s", state);
    p->mem_size = p->mem_virt = taskinfo.ptinfo.pti_virtual_size;
@@ -985,7 +997,7 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    snprintf(p->wchan, sizeof(p->wchan), "%s", kp->ki_wmesg);
    p->mem_virt = kp->ki_size;
    p->mem_rss = MEMSIZE(kp->ki_rssize) * MEMSIZE(pagesize);
-   p->start = kp->ki_start.tv_sec;
+   p->start_time = kp->ki_start.tv_sec;
    p->mem_size = p->mem_virt;
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;
@@ -1494,6 +1506,6 @@ proc_sort_by_age(const void *p1, const void *p2)
 {
    const Proc_Info *c1 = p1, *c2 = p2;
 
-   return c1->start - c2->start;
+   return c1->start_time - c2->start_time;
 }
 
