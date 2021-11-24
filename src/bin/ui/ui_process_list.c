@@ -2233,17 +2233,19 @@ _win_alpha_set(Win_Data *wd)
    // FIXME: Base window colour from theme.
    if (ui->proc.transparent)
      {
-        r = b = g = 128; a = 255;
-        evas_object_color_set(bg, r * fade, g * fade, b * fade, fade * a);
         r = b = g = a = 255;
         evas_object_color_set(wd->tb_main, r * fade, g * fade, b * fade, fade * a);
+        r = b = g =  a = 255;
+        evas_object_color_set(bg, r * fade, g * fade, b * fade, fade * a);
+        elm_bg_color_set(bg, -1, -1, -1);
      }
    else
      {
         r = b = g = a = 255;
         evas_object_color_set(wd->tb_main, r, g, b, a);
-        r = b = g = 128;  a = 255;
+        r = b = g = a = 255;
         evas_object_color_set(bg, r, g, b, a);
+        elm_bg_color_set(bg, -1, -1, -1);
      }
 
    if (ui->proc.transparent != wd->transparent)
