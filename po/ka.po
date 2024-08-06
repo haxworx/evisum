@@ -1,0 +1,607 @@
+# Georgian translation for evisum.
+# Copyright (C) 2023 evisum's authors.
+# This file is distributed under the same license as the evisum package.
+# Temuri Doghonadze <temuri.doghonadze@gmail.com>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: evisum\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-04-02 13:16+0200\n"
+"PO-Revision-Date: 2023-02-10 15:43+0100\n"
+"Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
+"Language-Team: Georgian <(nothing)>\n"
+"Language: ka\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#: src/bin/system/process.c:76 src/bin/ui/ui_process_list.c:927
+msgid "dsleep"
+msgstr "dsleep"
+
+#: src/bin/system/process.c:77 src/bin/system/process.c:84
+#: src/bin/ui/ui_process_list.c:921
+msgid "idle"
+msgstr "უქმე"
+
+#: src/bin/system/process.c:78 src/bin/system/process.c:85
+#: src/bin/system/process.c:96 src/bin/ui/ui_process_list.c:915
+msgid "running"
+msgstr "გაშვებულია"
+
+#: src/bin/system/process.c:79 src/bin/system/process.c:86
+#: src/bin/ui/ui_process_list.c:917
+msgid "sleeping"
+msgstr "სძინავს"
+
+#: src/bin/system/process.c:80 src/bin/system/process.c:87
+#: src/bin/ui/ui_process_list.c:919
+msgid "stopped"
+msgstr "შეჩერებულია"
+
+#: src/bin/system/process.c:81 src/bin/ui/ui_process_list.c:925
+msgid "dead"
+msgstr "მკვდარი"
+
+#: src/bin/system/process.c:82 src/bin/system/process.c:92
+#: src/bin/system/process.c:95 src/bin/ui/ui_process_list.c:923
+msgid "zombie"
+msgstr "ზომბი"
+
+#: src/bin/system/process.c:90
+msgid "wait"
+msgstr "wait"
+
+#: src/bin/system/process.c:91
+msgid "lock"
+msgstr "ჩაკეტვა"
+
+#: src/bin/ui/evisum_ui.c:308 src/bin/ui/evisum_ui.c:541
+#, c-format
+msgid "%1.0f secs"
+msgstr "%1.0f წამი"
+
+#: src/bin/ui/evisum_ui.c:310
+#, c-format
+msgid "%1.0f sec"
+msgstr "%1.0f წამი"
+
+#: src/bin/ui/evisum_ui.c:420 src/bin/ui/ui_process_list.c:1384
+msgid "Actions"
+msgstr "მოქმედებები"
+
+#: src/bin/ui/evisum_ui.c:437
+msgid "Processes"
+msgstr "პროცესები"
+
+#: src/bin/ui/evisum_ui.c:444
+msgid "CPU"
+msgstr "პროცესორი"
+
+#: src/bin/ui/evisum_ui.c:451
+msgid "Memory"
+msgstr "მეხსიერება"
+
+#: src/bin/ui/evisum_ui.c:458 src/bin/ui/ui_disk.c:566
+msgid "Storage"
+msgstr "საცავი"
+
+#: src/bin/ui/evisum_ui.c:465 src/bin/ui/ui_sensors.c:270
+msgid "Sensors"
+msgstr "სენსორები"
+
+#: src/bin/ui/evisum_ui.c:472 src/bin/ui/ui_network.c:351
+msgid "Network"
+msgstr "ქსელი"
+
+#: src/bin/ui/evisum_ui.c:486
+msgid "Effects"
+msgstr "ეფექტები"
+
+#: src/bin/ui/evisum_ui.c:500 src/bin/ui/ui_util.c:421
+msgid "About"
+msgstr "შესახებ"
+
+#: src/bin/ui/evisum_ui.c:525 src/bin/ui/ui_cpu.c:728
+msgid "Options"
+msgstr "გამართვა"
+
+#: src/bin/ui/evisum_ui.c:544
+msgid "Poll delay"
+msgstr "გამოთხოვის დაყოვნება"
+
+#: src/bin/ui/evisum_ui.c:565
+msgid "Show kernel threads?"
+msgstr "ვაჩვენო ბირთვის ნაკადები?"
+
+#: src/bin/ui/evisum_ui.c:576
+msgid "User only?"
+msgstr "მხოლოდ მომხმარებლის?"
+
+#: src/bin/ui/evisum_ui.c:587
+msgid "Display"
+msgstr "დროის ჩვენება"
+
+#: src/bin/ui/evisum_ui.c:600
+msgid "Display scroll bar?"
+msgstr "ვაჩვენო ჩოჩიას ზოლი?"
+
+#: src/bin/ui/evisum_ui.c:616
+msgid "Alpha"
+msgstr "ალფა"
+
+#: src/bin/ui/evisum_ui.c:628
+#, c-format
+msgid "%1.0f %%"
+msgstr "%1.0f %%"
+
+#: src/bin/ui/ui_cpu.c:651
+msgid "Legend"
+msgstr "შინაარსი"
+
+#: src/bin/ui/ui_cpu.c:741
+msgid "Overlay CPU frequency?"
+msgstr "ვაჩვენო ზემოდან CPU-ის სიხშირე?"
+
+#: src/bin/ui/ui_cpu.c:750
+msgid "Overlay CPU temperatures?"
+msgstr "ვაჩვენო ზემოდან CPU-ის ტემპერატურა?"
+
+#: src/bin/ui/ui_cpu.c:759
+msgid "Confused?"
+msgstr "დაიბენით?"
+
+#: src/bin/ui/ui_cpu.c:805
+msgid "CPU Activity"
+msgstr "CPU-ის აქტივობა"
+
+#: src/bin/ui/ui_disk.c:588
+msgid "device"
+msgstr "მოწყობილობა"
+
+#: src/bin/ui/ui_disk.c:597
+msgid "mount"
+msgstr "მიმაგრება"
+
+#: src/bin/ui/ui_disk.c:606
+msgid "type"
+msgstr "ტიპი"
+
+#: src/bin/ui/ui_disk.c:615
+msgid "total"
+msgstr "ჯამში"
+
+#: src/bin/ui/ui_disk.c:626
+msgid "used"
+msgstr "გამოყენებულია"
+
+#: src/bin/ui/ui_disk.c:637
+msgid "free"
+msgstr "თავისუფალია"
+
+#: src/bin/ui/ui_disk.c:648
+msgid "usage"
+msgstr "გამოყენება"
+
+#: src/bin/ui/ui_memory.c:226
+msgid "Memory Usage"
+msgstr "მეხსიერების გამოყენება"
+
+#: src/bin/ui/ui_memory.c:253
+msgid "Used"
+msgstr "გამოყენებულია"
+
+#: src/bin/ui/ui_memory.c:260
+msgid "Cached"
+msgstr "დაქეშილი"
+
+#: src/bin/ui/ui_memory.c:267
+msgid "Buffered"
+msgstr "ბუფერი"
+
+#: src/bin/ui/ui_memory.c:274
+msgid "Shared"
+msgstr "გაზიარებული"
+
+#: src/bin/ui/ui_memory.c:281
+msgid "Swapped"
+msgstr "სვოპში"
+
+#: src/bin/ui/ui_memory.c:290
+msgid "Video"
+msgstr "ვიდეო"
+
+#: src/bin/ui/ui_network.c:163
+msgid "<hilight>Total In/Out</>"
+msgstr "<hilight>სულ შეყვანა/გატანა</>"
+
+#: src/bin/ui/ui_network.c:174
+msgid "<hilight>Peak In/Out</>"
+msgstr "<hilight>პიკური შეტანა/გატანა</>"
+
+#: src/bin/ui/ui_network.c:185
+msgid "<hilight>In/Out</>"
+msgstr "<hilight>შეტანა/გატანა</>"
+
+#: src/bin/ui/ui_process_list.c:121
+msgid "Command"
+msgstr "ბრძანება"
+
+#: src/bin/ui/ui_process_list.c:123
+msgid "User"
+msgstr "მომხმარებელი"
+
+#: src/bin/ui/ui_process_list.c:125
+msgid "Process ID"
+msgstr "პროცესის ID"
+
+#: src/bin/ui/ui_process_list.c:127 src/bin/ui/ui_process_list.c:1355
+#: src/bin/ui/ui_process_view.c:1669
+msgid "Threads"
+msgstr "ნაკადები"
+
+#: src/bin/ui/ui_process_list.c:129
+msgid "CPU #"
+msgstr "CPU #"
+
+#: src/bin/ui/ui_process_list.c:131
+msgid "Priority"
+msgstr "პრიორიტეტი"
+
+#: src/bin/ui/ui_process_list.c:133
+msgid "Nice"
+msgstr "ნისი"
+
+#: src/bin/ui/ui_process_list.c:135
+msgid "Open Files"
+msgstr "ფაილების გახსნა"
+
+#: src/bin/ui/ui_process_list.c:137
+msgid "Memory Size"
+msgstr "მეხსიერების ზომა"
+
+#: src/bin/ui/ui_process_list.c:139
+msgid "Memory Virtual"
+msgstr "ვირტუალური მეხსიერება"
+
+#: src/bin/ui/ui_process_list.c:141
+msgid "Memory Reserved"
+msgstr "დარეზერვებულია მეხსიერება"
+
+#: src/bin/ui/ui_process_list.c:143
+msgid "Memory Shared"
+msgstr "გაზიარებული მეხსიერება"
+
+#: src/bin/ui/ui_process_list.c:145
+msgid "State"
+msgstr "მდგომარეობა"
+
+#: src/bin/ui/ui_process_list.c:147
+msgid "Time"
+msgstr "დრო"
+
+#: src/bin/ui/ui_process_list.c:149
+msgid "CPU Usage"
+msgstr "CPU -ის გამოყენება"
+
+#: src/bin/ui/ui_process_list.c:162
+msgid "command"
+msgstr "ბრძანება"
+
+#: src/bin/ui/ui_process_list.c:164
+msgid "user"
+msgstr "მომხმარებელი"
+
+#: src/bin/ui/ui_process_list.c:166
+msgid "pid"
+msgstr "pid"
+
+#: src/bin/ui/ui_process_list.c:168
+msgid "thr"
+msgstr "ნკდ"
+
+#: src/bin/ui/ui_process_list.c:170
+msgid "cpu"
+msgstr "პროცესორი"
+
+#: src/bin/ui/ui_process_list.c:172
+msgid "pri"
+msgstr "პრი"
+
+#: src/bin/ui/ui_process_list.c:174
+msgid "nice"
+msgstr "პრიორიტეტი"
+
+#: src/bin/ui/ui_process_list.c:176
+msgid "files"
+msgstr "ფაილები"
+
+#: src/bin/ui/ui_process_list.c:178
+msgid "size"
+msgstr "ზომა"
+
+#: src/bin/ui/ui_process_list.c:180
+msgid "virt"
+msgstr "ვირტ"
+
+#: src/bin/ui/ui_process_list.c:182
+msgid "res"
+msgstr "რეს"
+
+#: src/bin/ui/ui_process_list.c:184
+msgid "shr"
+msgstr "გაზ"
+
+#: src/bin/ui/ui_process_list.c:186 src/bin/ui/ui_process_view.c:1440
+msgid "state"
+msgstr "მდგომარეობა"
+
+#: src/bin/ui/ui_process_list.c:188
+msgid "time"
+msgstr "დრო"
+
+#: src/bin/ui/ui_process_list.c:190 src/bin/ui/ui_process_view.c:1461
+msgid "cpu %"
+msgstr "cpu %"
+
+#: src/bin/ui/ui_process_list.c:888
+#, c-format
+msgid "%i processes: "
+msgstr "%i პროცესი: "
+
+#: src/bin/ui/ui_process_list.c:890
+#, c-format
+msgid "%i running, "
+msgstr "%i გაშვებულია, "
+
+#: src/bin/ui/ui_process_list.c:892
+#, c-format
+msgid "%i sleeping, "
+msgstr "%i-ს სძინავს, "
+
+#: src/bin/ui/ui_process_list.c:894
+#, c-format
+msgid "%i stopped, "
+msgstr "%i გაჩერებულია, "
+
+#: src/bin/ui/ui_process_list.c:896
+#, c-format
+msgid "%i idle, "
+msgstr "%i უქმეა, "
+
+#: src/bin/ui/ui_process_list.c:898
+#, c-format
+msgid "%i dead, "
+msgstr "%i მკვდარია, "
+
+#: src/bin/ui/ui_process_list.c:900
+#, c-format
+msgid "%i dsleep, "
+msgstr "%i ღრმძილი, "
+
+#: src/bin/ui/ui_process_list.c:902
+#, c-format
+msgid "%i zombie, "
+msgstr "%i ზომბი, "
+
+#: src/bin/ui/ui_process_list.c:1300
+msgid "Debug"
+msgstr "პროგრამის შეცდომის პოვნა"
+
+#: src/bin/ui/ui_process_list.c:1351
+msgid "General"
+msgstr "ზოგადი"
+
+#: src/bin/ui/ui_process_list.c:1353 src/bin/ui/ui_process_view.c:1658
+msgid "Children"
+msgstr "ბავშვები"
+
+#: src/bin/ui/ui_process_list.c:1357 src/bin/ui/ui_process_view.c:1680
+msgid "Manual"
+msgstr "ხელით"
+
+#: src/bin/ui/ui_process_list.c:1389
+msgid "Start"
+msgstr "გაშვება"
+
+#: src/bin/ui/ui_process_list.c:1393
+msgid "Stop"
+msgstr "შეჩერება"
+
+#: src/bin/ui/ui_process_list.c:1401
+msgid "Info"
+msgstr "ინფორმაცია"
+
+#: src/bin/ui/ui_process_list.c:1406
+msgid "Cancel"
+msgstr "გაუქმება"
+
+#: src/bin/ui/ui_process_list.c:1569
+msgid "Menu"
+msgstr "მენიუ"
+
+#: src/bin/ui/ui_process_list.c:1879
+msgid "Search"
+msgstr "ძებნა"
+
+#: src/bin/ui/ui_process_list.c:2196
+msgid "Process Explorer"
+msgstr "პროცესების ბრაუზერი"
+
+#: src/bin/ui/ui_process_view.c:680
+#, c-format
+msgid "<b>CPU: %.0f%%<br>Size: %s<br>Reserved: %s<br>Virtual: %s</>"
+msgstr "<b>CPU: %.0f%%<br>ზომა: %s<br>დარეზერვებული: %s<br>ვირტუალური: %s</>"
+
+#: src/bin/ui/ui_process_view.c:857
+#, c-format
+msgid "No documentation found for %s."
+msgstr "%s-სთვის დოკუმენტაცია ვერ ვიპოვე."
+
+#: src/bin/ui/ui_process_view.c:986
+#, c-format
+msgid "%s (%d) - Not running"
+msgstr "%s (%d) - გაშვებული არაა"
+
+#: src/bin/ui/ui_process_view.c:1153
+msgid "Command:"
+msgstr "ბრძანება:"
+
+#: src/bin/ui/ui_process_view.c:1162
+msgid "Command line:"
+msgstr "ბრძანების სტრიქონი:"
+
+#: src/bin/ui/ui_process_view.c:1167
+msgid "PID:"
+msgstr "PID:"
+
+#: src/bin/ui/ui_process_view.c:1172
+msgid "Username:"
+msgstr "მომხმარებელი:"
+
+#: src/bin/ui/ui_process_view.c:1177
+msgid "UID:"
+msgstr "UID:"
+
+#: src/bin/ui/ui_process_view.c:1182
+msgid "PPID:"
+msgstr "PPID:"
+
+#: src/bin/ui/ui_process_view.c:1188
+msgid "WQ #:"
+msgstr "WQ #:"
+
+#: src/bin/ui/ui_process_view.c:1190
+msgid "CPU #:"
+msgstr "CPU #:"
+
+#: src/bin/ui/ui_process_view.c:1196
+msgid "Threads:"
+msgstr "ნაკადები:"
+
+#: src/bin/ui/ui_process_view.c:1201
+msgid "Open Files:"
+msgstr "ღია ფაილები:"
+
+#: src/bin/ui/ui_process_view.c:1206
+msgid " Memory :"
+msgstr " მეხსიერება:"
+
+#: src/bin/ui/ui_process_view.c:1211
+msgid " Shared memory:"
+msgstr " გაზიარებული მეხსიერება:"
+
+#: src/bin/ui/ui_process_view.c:1216
+msgid " Resident memory:"
+msgstr " რეზიდენტული მეხსიერება:"
+
+#: src/bin/ui/ui_process_view.c:1221
+msgid " Virtual memory:"
+msgstr " ვირტუალური მეხსიერება:"
+
+#: src/bin/ui/ui_process_view.c:1226
+msgid " Start time:"
+msgstr " დაწყების დრო:"
+
+#: src/bin/ui/ui_process_view.c:1231
+msgid " Run time:"
+msgstr " გაშვებულობის დრო:"
+
+#: src/bin/ui/ui_process_view.c:1236
+msgid "Nice:"
+msgstr "პრიო:"
+
+#: src/bin/ui/ui_process_view.c:1241
+msgid "Priority:"
+msgstr "პრიორიტეტი:"
+
+#: src/bin/ui/ui_process_view.c:1246
+msgid "State:"
+msgstr "მდგომარეობა:"
+
+#: src/bin/ui/ui_process_view.c:1251
+msgid "CPU %:"
+msgstr "CPU %:"
+
+#: src/bin/ui/ui_process_view.c:1275
+msgid "stop"
+msgstr "stop"
+
+#: src/bin/ui/ui_process_view.c:1281
+msgid "start"
+msgstr "გაშვება"
+
+#: src/bin/ui/ui_process_view.c:1287
+msgid "kill"
+msgstr "მოკვლა"
+
+#: src/bin/ui/ui_process_view.c:1422
+msgid "id"
+msgstr "id"
+
+#: src/bin/ui/ui_process_view.c:1431
+msgid "name"
+msgstr "სახელი"
+
+#: src/bin/ui/ui_process_view.c:1449
+msgid "cpu id"
+msgstr "cpu id"
+
+#: src/bin/ui/ui_process_view.c:1647
+msgid "Process"
+msgstr "პროცესი"
+
+#: src/bin/ui/ui_process_view.c:1787
+msgid "Unknown"
+msgstr "უცნობი"
+
+#: src/bin/ui/ui_sensors.c:292
+msgid "Power"
+msgstr "კვება"
+
+#: src/bin/ui/ui_sensors.c:347
+msgid "Select..."
+msgstr "აირჩიეთ..."
+
+#: src/bin/ui/ui_sensors.c:358
+msgid "Thermal"
+msgstr "თერმალი"
+
+#: src/bin/ui/ui_util.c:114
+msgid "B"
+msgstr "სი"
+
+#: src/bin/ui/ui_util.c:114
+msgid "K"
+msgstr "K"
+
+#: src/bin/ui/ui_util.c:114
+msgid "M"
+msgstr "ს"
+
+#: src/bin/ui/ui_util.c:114
+msgid "G"
+msgstr "გ"
+
+#: src/bin/ui/ui_util.c:115
+msgid "T"
+msgstr "სა"
+
+#: src/bin/ui/ui_util.c:115
+msgid "P"
+msgstr "P"
+
+#: src/bin/ui/ui_util.c:115
+msgid "E"
+msgstr "მი"
+
+#: src/bin/ui/ui_util.c:115
+msgid "Z"
+msgstr "ზეტა"
+
+#: src/bin/ui/ui_util.c:511
+msgid "Close"
+msgstr "დაკეტვა"

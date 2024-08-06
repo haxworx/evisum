@@ -23,6 +23,22 @@ INSTALL:
 
 $ ninja -C build install
 
+EXAMPLES:
+
+Open process view:
+
+$ evisum
+
+Open individual process:
+
+$ evisum <pid>
+
+Open CPU monitor:
+
+$ evisum -c
+
+See --help for further options.
+
 CONTRIBUTIONS:
 
 Patches with bug fixes are more than welcome. If you do wish to add a

@@ -7,6 +7,7 @@
 typedef struct
 {
    Evas_Object     *win;
+   Evas_Object     *tb_content;
 
    Evas_Object     *tab_general;
    Evas_Object     *tab_children;
@@ -1573,7 +1574,8 @@ _manual_tab_add(Evas_Object *parent, Win_Data *wd)
 static void
 _tab_change(Win_Data *wd, Evas_Object *view, Evas_Object *obj)
 {
-   Elm_Transit *trans;
+   // Elm_Transit *trans;
+   // static Eina_Bool first_run = EINA_TRUE;
 
    elm_object_disabled_set(wd->tab_general, 0);
    elm_object_disabled_set(wd->tab_children, 0);
@@ -1584,17 +1586,23 @@ _tab_change(Win_Data *wd, Evas_Object *view, Evas_Object *obj)
    evas_object_hide(wd->manual_view);
    evas_object_hide(wd->thread_view);
 
-   trans = elm_transit_add();
-   elm_transit_object_add(trans, wd->current_view);
-   elm_transit_object_add(trans, view);
-   elm_transit_duration_set(trans, 0.15);
-   elm_transit_effect_blend_add(trans);
-
+   /*
+   if (!first_run)
+     {
+        trans = elm_transit_add();
+        elm_transit_object_add(trans, wd->current_view);
+        elm_transit_object_add(trans, view);
+        elm_transit_duration_set(trans, 0.15);
+        elm_transit_effect_blend_add(trans);
+     }
+   */
    wd->current_view = view;
    evas_object_show(view);
-   elm_transit_go(trans);
+
+   //if (!first_run) elm_transit_go(trans);
 
    elm_object_disabled_set(obj, 1);
+   //first_run = EINA_FALSE;
 }
 
 static void
@@ -1831,7 +1839,7 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
    evas_object_show(bx);
    elm_box_pack_end(bx, tabs);
 
-   tb = elm_table_add(bx);
+   wd->tb_content = tb = elm_table_add(bx);
    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
    evas_object_size_hint_align_set(tb, FILL, 0.0);
    evas_object_show(tb);

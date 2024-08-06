@@ -1,9 +1,9 @@
 ##### Project
 project('evisum', 'c',
-        version       : '0.5.99',
+        version       : '0.6.1',
         meson_version : '>= 0.40.0')
 
-efl_version = '>= 1.22.0'
+efl_version = '>= 1.27.0'
 
 cfg = configuration_data()
 

@@ -107,11 +107,13 @@ system_memory_usage_get(meminfo_t *memory)
      {
         struct stat st;
         char buf[256];
+        bool found = false;
 
-        // if no more drm devices exist - end of card list
+        // Card numbering does not always start at zero.
+        // Keep iterating until a device is found.
         snprintf(buf, sizeof(buf),
                  "/sys/class/drm/card%i/device", i);
-        if (stat(buf, &st) != 0) break;
+        if (stat(buf, &st) != 0) continue;
         // not all drivers expose this, so video devices with no exposed video
         // ram info will appear as 0 sized... much like swap.
         snprintf(buf, sizeof(buf),
@@ -120,8 +122,9 @@ system_memory_usage_get(meminfo_t *memory)
         if (f)
           {
              if (fgets(buf, sizeof(buf), f))
-               memory->video[i].total = atoll(buf);
+               memory->video[memory->video_count].total = atoll(buf);
              fclose(f);
+             found = true;
           }
         snprintf(buf, sizeof(buf),
                  "/sys/class/drm/card%i/device/mem_info_vram_used", i);
@@ -129,11 +132,13 @@ system_memory_usage_get(meminfo_t *memory)
         if (f)
           {
              if (fgets(buf, sizeof(buf), f))
-               memory->video[i].used = atoll(buf);
+               memory->video[memory->video_count].used = atoll(buf);
              fclose(f);
+             found = true;
           }
+        if (found)
+          memory->video_count++;
      }
-   memory->video_count = i;
 
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    unsigned int free = 0, active = 0, inactive = 0, wired = 0;

@@ -75,16 +75,16 @@ _states_init(void)
 #if defined(__linux__)
    _states['D']     = _("dsleep");
    _states['I']     = _("idle");
-   _states['R']     = _("running");
-   _states['S']     = _("sleeping");
-   _states['T']     = _("stopped");
+   _states['R']     = _("run");
+   _states['S']     = _("sleep");
+   _states['T']     = _("stop");
    _states['X']     = _("dead");
    _states['Z']     = _("zombie");
 #else
    _states[SIDL]    = _("idle");
-   _states[SRUN]    = _("running");
-   _states[SSLEEP]  = _("sleeping");
-   _states[SSTOP]   = _("stopped");
+   _states[SRUN]    = _("run");
+   _states[SSLEEP]  = _("sleep");
+   _states[SSTOP]   = _("stop");
 #if !defined(__MacOS__)
 #if !defined(__OpenBSD__)
    _states[SWAIT]   = _("wait");
@@ -93,7 +93,7 @@ _states_init(void)
 #endif
 #if defined(__OpenBSD__)
    _states[SDEAD]   = _("zombie");
-   _states[SONPROC] = _("running");
+   _states[SONPROC] = _("run");
 #endif
 #endif
 #endif
@@ -204,6 +204,8 @@ _cmd_args(Proc_Info *p, char *name, size_t len)
      }
 
    char *end = strchr(name, ' ');
+   if (end) *end = '\0';
+   end = strchr(name, ':');
    if (end) *end = '\0';
 
    p->command = strdup(name);

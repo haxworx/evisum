@@ -378,17 +378,17 @@ evisum_about_window_show(void *data)
    Evas_Coord x, y, w, h;
    Evas_Coord iw, ih;
    const char *msg[] = {
-      "monitor like it's 1999...",
-      "works for me!",
-      "killed by a Turtle!",
-      "logged in, base gone!",
-      "pancakes!",
+      "The greatest of all time...",
+      "Remember to take your medication!",
+      "Choose love!",
+      "I endorse this message!",
+      "Hack the planet!",
    };
    const char *copyright =
       "<font color=#ffffff>"
       "<align=center>"
       "<b>"
-      "Copyright &copy; 2019-2021 Alastair Poole &lt;netstar@gmail.com&gt;<br>"
+      "Copyright &copy; 2019-2021, 2024. Alastair Poole &lt;netstar@gmail.com&gt;<br>"
       "<br>"
       "</b>"
       "</>"

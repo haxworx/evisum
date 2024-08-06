@@ -1,4 +1,20 @@
-=============
+============
+Evisum 0.6.1
+============
+
+  * Fix reporting of video RAM usage on Linux.
+  * Fix a horrible bug rendering in process view.
+    Thanks for finding that raster :)
+  * Fix parsing of command arguments edge case.
+  * Remove unused code.
+  * Revert back to the original icon.
+
+============
+Evisum 0.6.0
+============
+
+  * God knows. Carsten did a release. :)
+
 Evisum 0.5.13
 =============
 
