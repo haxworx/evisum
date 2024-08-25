@@ -1,22 +1,23 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# Portuguese translation for Evisum.
+# Copyright (C) 2020 Alastair "netstar" Poole
 # This file is distributed under the same license as the evisum package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Alastair Poole <netstar@gmail.com>, 2020.
+# Hugo Carvalho <hugokarvalho@hotmail.com>, 2023, 2024.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: evisum\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-12 09:44+0200\n"
-"PO-Revision-Date: 2024-04-17 22:10+0100\n"
+"Report-Msgid-Bugs-To: enlightenment-devel@lists.sourceforge.net\n"
+"POT-Creation-Date: 2024-07-26 09:17+0200\n"
+"PO-Revision-Date: 2024-08-05 17:03+0100\n"
 "Last-Translator: Hugo Carvalho <hugokarvalho@hotmail.com>\n"
-"Language-Team: \n"
+"Language-Team: Portuguese\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.4.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.0.1\n"
 
 #: src/bin/next/process.c:76 src/bin/system/process.c:76
 #: src/bin/ui/ui_process_list.c:1039
@@ -40,11 +41,11 @@ msgstr "em execução"
 #: src/bin/system/process.c:79 src/bin/system/process.c:86
 #: src/bin/ui/ui_process_list.c:1029
 msgid "sleeping"
-msgstr "a dormir"
+msgstr "dormente"
 
 #: src/bin/next/process.c:80 src/bin/next/process.c:87
 #: src/bin/system/process.c:80 src/bin/system/process.c:87
-#: src/bin/ui/ui_process_list.c:1031 src/bin/ui/ui_process_view.c:923
+#: src/bin/ui/ui_process_list.c:1031 src/bin/ui/ui_process_view.c:924
 msgid "stopped"
 msgstr "parado"
 
@@ -242,7 +243,7 @@ msgid "Process ID"
 msgstr "Processo ID"
 
 #: src/bin/ui/ui_process_list.c:136 src/bin/ui/ui_process_list.c:1538
-#: src/bin/ui/ui_process_view.c:1688
+#: src/bin/ui/ui_process_view.c:1693
 msgid "Threads"
 msgstr "Fios"
 
@@ -343,7 +344,7 @@ msgstr "res."
 msgid "shr"
 msgstr "part."
 
-#: src/bin/ui/ui_process_list.c:195 src/bin/ui/ui_process_view.c:1459
+#: src/bin/ui/ui_process_list.c:195 src/bin/ui/ui_process_view.c:1464
 msgid "state"
 msgstr "estado"
 
@@ -351,7 +352,7 @@ msgstr "estado"
 msgid "time"
 msgstr "hora"
 
-#: src/bin/ui/ui_process_list.c:199 src/bin/ui/ui_process_view.c:1480
+#: src/bin/ui/ui_process_list.c:199 src/bin/ui/ui_process_view.c:1485
 msgid "cpu %"
 msgstr "cpu %"
 
@@ -368,7 +369,7 @@ msgstr "%i em execução, "
 #: src/bin/ui/ui_process_list.c:993
 #, c-format
 msgid "%i sleeping, "
-msgstr "%i a dormir, "
+msgstr "%i dormente, "
 
 #: src/bin/ui/ui_process_list.c:995
 #, c-format
@@ -403,11 +404,11 @@ msgstr "Depurar"
 msgid "General"
 msgstr "Geral"
 
-#: src/bin/ui/ui_process_list.c:1536 src/bin/ui/ui_process_view.c:1677
+#: src/bin/ui/ui_process_list.c:1536 src/bin/ui/ui_process_view.c:1682
 msgid "Children"
 msgstr "Subprocesso"
 
-#: src/bin/ui/ui_process_list.c:1540 src/bin/ui/ui_process_view.c:1699
+#: src/bin/ui/ui_process_list.c:1540 src/bin/ui/ui_process_view.c:1704
 msgid "Manual"
 msgstr "Manual"
 
@@ -439,130 +440,130 @@ msgstr "Pesquisar"
 msgid "Process Explorer"
 msgstr "Explorador de processos"
 
-#: src/bin/ui/ui_process_view.c:687
+#: src/bin/ui/ui_process_view.c:688
 #, c-format
 msgid "<b>CPU: %.0f%%<br>Size: %s<br>Reserved: %s<br>Virtual: %s</>"
 msgstr "<b>CPU: %.0f%%<br>Tamanho: %s<br>Reservado: %s<br>Virtual: %s</>"
 
-#: src/bin/ui/ui_process_view.c:864
+#: src/bin/ui/ui_process_view.c:865
 #, c-format
 msgid "No documentation found for %s."
 msgstr "Não foi encontrada documentação para %s."
 
-#: src/bin/ui/ui_process_view.c:1005
+#: src/bin/ui/ui_process_view.c:1006
 #, c-format
 msgid "%s (%d) - Not running"
 msgstr "%s (%d) - Não está em execução"
 
-#: src/bin/ui/ui_process_view.c:1172
+#: src/bin/ui/ui_process_view.c:1177
 msgid "Command:"
 msgstr "Comando:"
 
-#: src/bin/ui/ui_process_view.c:1181
+#: src/bin/ui/ui_process_view.c:1186
 msgid "Command line:"
 msgstr "Linha de comandos:"
 
-#: src/bin/ui/ui_process_view.c:1186
+#: src/bin/ui/ui_process_view.c:1191
 msgid "PID:"
 msgstr "PID:"
 
-#: src/bin/ui/ui_process_view.c:1191
+#: src/bin/ui/ui_process_view.c:1196
 msgid "Username:"
 msgstr "Nome de utilizador:"
 
-#: src/bin/ui/ui_process_view.c:1196
+#: src/bin/ui/ui_process_view.c:1201
 msgid "UID:"
 msgstr "UID:"
 
-#: src/bin/ui/ui_process_view.c:1201
+#: src/bin/ui/ui_process_view.c:1206
 msgid "PPID:"
 msgstr "PPID:"
 
-#: src/bin/ui/ui_process_view.c:1207
+#: src/bin/ui/ui_process_view.c:1212
 msgid "WQ #:"
 msgstr "WQ #:"
 
-#: src/bin/ui/ui_process_view.c:1209
+#: src/bin/ui/ui_process_view.c:1214
 msgid "CPU #:"
 msgstr "CPU #:"
 
-#: src/bin/ui/ui_process_view.c:1215
+#: src/bin/ui/ui_process_view.c:1220
 msgid "Threads:"
 msgstr "Fios:"
 
-#: src/bin/ui/ui_process_view.c:1220
+#: src/bin/ui/ui_process_view.c:1225
 msgid "Open Files:"
 msgstr "Abrir ficheiros:"
 
-#: src/bin/ui/ui_process_view.c:1225
+#: src/bin/ui/ui_process_view.c:1230
 msgid " Memory :"
 msgstr " Memória :"
 
-#: src/bin/ui/ui_process_view.c:1230
+#: src/bin/ui/ui_process_view.c:1235
 msgid " Shared memory:"
 msgstr " Memória partilhada:"
 
-#: src/bin/ui/ui_process_view.c:1235
+#: src/bin/ui/ui_process_view.c:1240
 msgid " Resident memory:"
 msgstr " Memória residente:"
 
-#: src/bin/ui/ui_process_view.c:1240
+#: src/bin/ui/ui_process_view.c:1245
 msgid " Virtual memory:"
 msgstr " Memória virtual:"
 
-#: src/bin/ui/ui_process_view.c:1245
+#: src/bin/ui/ui_process_view.c:1250
 msgid " Start time:"
 msgstr " Hora de início:"
 
-#: src/bin/ui/ui_process_view.c:1250
+#: src/bin/ui/ui_process_view.c:1255
 msgid " Run time:"
 msgstr " Tempo de execução:"
 
-#: src/bin/ui/ui_process_view.c:1255
+#: src/bin/ui/ui_process_view.c:1260
 msgid "Nice:"
 msgstr "Nice:"
 
-#: src/bin/ui/ui_process_view.c:1260
+#: src/bin/ui/ui_process_view.c:1265
 msgid "Priority:"
 msgstr "Prioridade:"
 
-#: src/bin/ui/ui_process_view.c:1265
+#: src/bin/ui/ui_process_view.c:1270
 msgid "State:"
 msgstr "Estado:"
 
-#: src/bin/ui/ui_process_view.c:1270
+#: src/bin/ui/ui_process_view.c:1275
 msgid "CPU %:"
 msgstr "CPU %:"
 
-#: src/bin/ui/ui_process_view.c:1294
+#: src/bin/ui/ui_process_view.c:1299
 msgid "stop"
 msgstr "parar"
 
-#: src/bin/ui/ui_process_view.c:1300
+#: src/bin/ui/ui_process_view.c:1305
 msgid "start"
 msgstr "iniciar"
 
-#: src/bin/ui/ui_process_view.c:1306
+#: src/bin/ui/ui_process_view.c:1311
 msgid "kill"
-msgstr "matar"
+msgstr "terminar"
 
-#: src/bin/ui/ui_process_view.c:1441
+#: src/bin/ui/ui_process_view.c:1446
 msgid "id"
 msgstr "id"
 
-#: src/bin/ui/ui_process_view.c:1450
+#: src/bin/ui/ui_process_view.c:1455
 msgid "name"
 msgstr "nome"
 
-#: src/bin/ui/ui_process_view.c:1468
+#: src/bin/ui/ui_process_view.c:1473
 msgid "cpu id"
 msgstr "cpu id"
 
-#: src/bin/ui/ui_process_view.c:1666
+#: src/bin/ui/ui_process_view.c:1671
 msgid "Process"
 msgstr "Processo"
 
-#: src/bin/ui/ui_process_view.c:1809
+#: src/bin/ui/ui_process_view.c:1814
 msgid "Unknown"
 msgstr "Desconhecido"
 
@@ -629,3 +630,108 @@ msgstr "Sobrepor as temperaturas da CPU?"
 #: src/bin/ui/visuals/cpu_default.c:571
 msgid "Confused?"
 msgstr "Confundido?"
+
+msgid "K"
+msgstr "K"
+
+msgid "M"
+msgstr "M"
+
+msgid "G"
+msgstr "G"
+
+msgid "T"
+msgstr "T"
+
+msgid "P"
+msgstr "P"
+
+msgid "E"
+msgstr "E"
+
+msgid "Z"
+msgstr "Z"
+
+msgid "%s"
+msgstr "%s"
+
+msgid "%s (plugged in)"
+msgstr "%s (ligado)"
+
+msgid "Decrease"
+msgstr "Diminuir"
+
+msgid "Documentation"
+msgstr "Documentação"
+
+msgid "EFL System Monitor"
+msgstr "Monitor do sistema EFL"
+
+msgid "File"
+msgstr "Ficheiro"
+
+msgid "Help"
+msgstr "Ajuda"
+
+msgid "Increase"
+msgstr "Aumentar"
+
+msgid "Kill"
+msgstr "Terminar"
+
+msgid "Misc"
+msgstr "Diversos"
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "Okay!"
+msgstr "Okay!"
+
+msgid "Properties"
+msgstr "Propriedades"
+
+msgid "Quit"
+msgstr "Sair"
+
+msgid "Size"
+msgstr "Tamanho"
+
+msgid "Stuff"
+msgstr "Coisas"
+
+msgid "System CPU"
+msgstr "CPU do sistema"
+
+msgid "View"
+msgstr "Ver"
+
+#, fuzzy
+#~| msgid "CPU %:"
+#~ msgid "CPU %"
+#~ msgstr "CPU %:"
+
+#, fuzzy
+#~| msgid "CPU #"
+#~ msgid "CPU ID"
+#~ msgstr "CPU #"
+
+#, fuzzy
+#~| msgid "PID:"
+#~ msgid "ID"
+#~ msgstr "PID:"
+
+#, fuzzy
+#~| msgid "Network"
+#~ msgid "Network Outgoing"
+#~ msgstr "Rede"
+
+#, fuzzy
+#~| msgid "PID:"
+#~ msgid "PID"
+#~ msgstr "PID:"
+
+#, fuzzy
+#~| msgid " Memory :"
+#~ msgid "System Memory"
+#~ msgstr " Memória :"
