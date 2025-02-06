@@ -195,7 +195,12 @@ evisum_icon_cache_find(Eina_Hash *icon_cache, const Proc_Info *proc)
 
    e = efreet_util_desktop_exec_find(cmd);
    if (!e)
-     return "application";
+     {
+        Proc_Info *pproc = proc_info_by_pid(proc->ppid);
+
+        if (!pproc) return "application";
+        return evisum_icon_cache_find(icon_cache, pproc);
+     }
 
    if (e->icon)
      name = e->icon;

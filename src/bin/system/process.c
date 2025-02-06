@@ -179,8 +179,41 @@ _cmd_args(Proc_Info *p, char *name, size_t len)
           {
              int sz = ftell(f);
              Eina_Strbuf *buf = eina_strbuf_new();
+             char *line2 = strdup(line);
 
-             snprintf(name, len, "%s", ecore_file_file_get(line));
+             if (line2)
+               { // copy line up to first blank into line2 then 0 terminate
+                  char *p, *p2, *file;
+
+                  for (p = line, p2 = line2; *p; p++, p2++)
+                    {
+                       if (isblank(*p))
+                         {
+                            *p2 = '\0';
+                            break;
+                         }
+                       p2[0] = p[0];
+                       p2[1] = '\0';
+                    }
+                  // use file portion of this path as the name
+                  if ((line2[0] >= 'A') && (line2[0] <= 'Z') &&
+                      (line2[1] == ':') && (line2[2] == '\\'))
+                   { // special case what looks like as wine/proton windows
+                     // exe cmdline. fine last backslash similar to below
+                     file = strrchr(line2, '\\');
+                     if (file) file++;
+                     else file = line2;
+                   }
+                  else
+                   { // get last / and use name of file after that if / exists
+                     file = strrchr(line2, '/');
+                     if (file) file++;
+                     else file = line2;
+                   }
+                  snprintf(name, len, "%s", file);
+                  free(line2);
+               }
+             else name[0] = '\0';
 
              const char *cp = line;
              for (int i = 0; i < sz; i++)
