@@ -1,22 +1,3 @@
 Migrate to Enigmatic:
 
 See https://git.enlightenment.org/netstar/enigmatic.git
-
-Memory:
-
-Something pretty for memory usage over time. Work in progress might need to
-comment out the code for release.
-
-CPU:
-
-Something for 16 cores+ I have some ideas. Anything pretty. Suggestions.
-
-Process List:
-
-Maybe the genlist/buttons widget can be a widget with other features also.
-Some issue with scrolling CPU after some time. Not the cache.
-
-Engine:
-
-Have one process polling and writing to disk and mapping to memory some IPC
-for real-time stats for a UI.

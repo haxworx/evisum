@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x0013
+#define CONFIG_VERSION 0x0014
 
 typedef struct _Evisum_Config
 {
@@ -28,7 +28,6 @@ typedef struct _Evisum_Config
       unsigned int  fields;
 
       Eina_Bool     show_statusbar;
-      Eina_Bool     show_scroller;
       Eina_Bool     transparent;
       unsigned char alpha;
    } proc;

@@ -1,8 +1,8 @@
 # Evisum - The Greatest System Monitor Ever Written
 
-Evisum is a **powerful, efficient, and feature-rich** process and system monitor for **Linux, OpenBSD, FreeBSD, and DragonFlyBSD**. Unlike other system monitors, Evisum provides a **server-client architecture** with a sleek and responsive interface. It offers robust tools for monitoring **processes, CPU usage, memory consumption, network activity, storage health, and system sensors**.
+Evisum is a **powerful, efficient, and feature-rich** process and system monitor for **Linux, OpenBSD, FreeBSD, macOS and DragonFlyBSD**. Unlike other system monitors, Evisum provides a **server-client architecture** with a sleek and responsive interface. It offers robust tools for monitoring **processes, CPU usage, memory consumption, network activity, storage health, and system sensors**.
 
-If you're looking for the **ultimate** Unix-like system monitoring experience, look no further—**Evisum is the best there is**. It is also the **mother of all reference implementations** for **portability**.
+If you're looking for the **ultimate** Unix-like system monitoring experience, look no further—**Evisum is the best there is**. It is also the **mother of all reference implementations** for multi-platform system monitoring.
 
 ## 📚 Table of Contents
 - [🔥 Features](#-features)
@@ -13,7 +13,7 @@ If you're looking for the **ultimate** Unix-like system monitoring experience, l
 - [🤝 Contributions](#-contributions)
 
 ## 🔥 Features
-- Cross-platform support for **Linux, FreeBSD, OpenBSD, and DragonFlyBSD**.
+- Cross-platform support for **Linux, FreeBSD, OpenBSD, macOS and DragonFlyBSD**.
 - A **server-client** architecture for efficient system monitoring.
 - Tools to monitor:
   - **Processes** 🛠️
@@ -25,7 +25,7 @@ If you're looking for the **ultimate** Unix-like system monitoring experience, l
 - Designed for **speed, reliability, and usability**.
 
 ## 📌 Requirements
-Evisum requires an installation of **EFL (v1.19.0+)**.
+Evisum requires an installation of **EFL (v1.27.0+)**.
 
 Ensure your `PKG_CONFIG_PATH` environment variable is set correctly if EFL is installed in a custom location (e.g., `/opt`):
 
@@ -38,7 +38,7 @@ export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/opt/libdata/pkgconfig"
 Compile Evisum using `meson` and `ninja`:
 
 ```sh
-meson build
+meson setup build
 ninja -C build
 ```
 

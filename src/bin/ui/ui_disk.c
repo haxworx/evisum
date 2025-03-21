@@ -371,14 +371,14 @@ static int
 _sort_by_cpu_usage(const void *p1, const void *p2)
 {
    const File_System *fs1, *fs2;
-   int64_t used1 = 0, used2 = 0;
+   double used1 = 0, used2 = 0;
 
    fs1 = p1; fs2 = p2;
 
    if (fs1->usage.used && fs1->usage.total)
-     used1 = fs1->usage.used / (fs1->usage.total / 100);
+     used1 = (double) fs1->usage.used / (fs1->usage.total / 100);
    if (fs2->usage.used && fs2->usage.total)
-     used2 = fs2->usage.used / (fs2->usage.total / 100);
+     used2 = (double) fs2->usage.used / (fs2->usage.total / 100);
 
    if (used1 > used2) return 1;
    if (used1 < used2) return -1;

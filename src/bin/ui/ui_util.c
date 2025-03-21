@@ -388,12 +388,13 @@ evisum_about_window_show(void *data)
       "Choose love!",
       "I endorse this message!",
       "Hack the planet!",
+      "Remember what you need to carry!"
    };
    const char *copyright =
       "<font color=#ffffff>"
       "<align=center>"
       "<b>"
-      "Copyright &copy; 2019-2021, 2024. Alastair Poole &lt;netstar@gmail.com&gt;<br>"
+      "Copyright &copy; 2019-2021, 2024-2025. Alastair Poole &lt;netstar@gmail.com&gt;<br>"
       "<br>"
       "</b>"
       "</>"

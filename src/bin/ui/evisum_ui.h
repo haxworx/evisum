@@ -27,8 +27,6 @@ typedef struct _Evisum_Ui
    double               cpu_usage;
    uint64_t             mem_total;
    uint64_t             mem_used;
-   Eina_List           *batteries;
-   Eina_Bool            have_power;
 
    Eina_Bool            kthreads_has_rss;
    struct

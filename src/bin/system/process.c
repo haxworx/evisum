@@ -273,7 +273,7 @@ static int64_t
 _boot_time(void)
 {
    FILE *f;
-   int64_t boot_time;
+   int64_t boot_time = 0;
    char buf[4096];
    double uptime = 0.0;
 
@@ -282,7 +282,6 @@ _boot_time(void)
 
    if (fgets(buf, sizeof(buf), f))
      sscanf(buf, "%lf", &uptime);
-   else boot_time = 0;
 
    fclose(f);
 

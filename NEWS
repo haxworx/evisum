@@ -1,4 +1,24 @@
 ============
+Evisum 0.6.3
+============
+
+  * NOTHING YET.
+
+============
+Evisum 0.6.2
+============
+
+  * Remove horrible desktop files.
+  * Update README use markdown.
+  * Allow parent process selection from process view.
+  * Fix disk usage CPU usage edge case.
+  * Update meson to remove deprecated use.
+  * Debugging terminal fallback fix.
+  * Don't stretch process list fields unnecessarily.
+  * Remove show/hide scrollbar option.
+  * Bump up config version (will reinitialise).
+
+============
 Evisum 0.6.1
 ============
 

@@ -541,6 +541,23 @@ _threads_cpu_usage(Win_Data *wd, Proc_Info *proc)
 }
 
 static void
+_btn_ppid_clicked_cb(void *data, Evas_Object *obj, void *event_info)
+{
+   Evas_Object *entry;
+   const char *txt;
+   Proc_Info *proc;
+
+   entry = data;
+   txt = elm_object_text_get(entry);
+   proc = proc_info_by_pid(atoll(txt));
+
+   if (!proc) return;
+
+   ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
+   proc_info_free(proc);
+}
+
+static void
 _item_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
                           void *event_info)
 {
@@ -1199,9 +1216,14 @@ _general_tab_add(Evas_Object *parent, Win_Data *wd)
    wd->general.entry_uid = entry = _entry_add(parent);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
-   lb = _lb_add(parent, _("PPID:"));
-   elm_table_pack(tb, lb, 0, i, 1, 1);
+   btn = elm_button_add(parent);
+   evas_object_size_hint_weight_set(btn, 0, EXPAND);
+   elm_object_text_set(btn, _("PPID:"));
+   elm_table_pack(tb, btn, 0, i, 1, 1);
+   evas_object_show(btn);
+
    wd->general.entry_ppid = entry = _entry_add(parent);
+   evas_object_smart_callback_add(btn, "clicked", _btn_ppid_clicked_cb, entry);
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
 #if defined(__MacOS__)
@@ -1574,9 +1596,6 @@ _manual_tab_add(Evas_Object *parent, Win_Data *wd)
 static void
 _tab_change(Win_Data *wd, Evas_Object *view, Evas_Object *obj)
 {
-   // Elm_Transit *trans;
-   // static Eina_Bool first_run = EINA_TRUE;
-
    elm_object_disabled_set(wd->tab_general, 0);
    elm_object_disabled_set(wd->tab_children, 0);
    elm_object_disabled_set(wd->tab_thread, 0);
@@ -1586,23 +1605,10 @@ _tab_change(Win_Data *wd, Evas_Object *view, Evas_Object *obj)
    evas_object_hide(wd->manual_view);
    evas_object_hide(wd->thread_view);
 
-   /*
-   if (!first_run)
-     {
-        trans = elm_transit_add();
-        elm_transit_object_add(trans, wd->current_view);
-        elm_transit_object_add(trans, view);
-        elm_transit_duration_set(trans, 0.15);
-        elm_transit_effect_blend_add(trans);
-     }
-   */
    wd->current_view = view;
    evas_object_show(view);
 
-   //if (!first_run) elm_transit_go(trans);
-
    elm_object_disabled_set(obj, 1);
-   //first_run = EINA_FALSE;
 }
 
 static void
@@ -1867,7 +1873,6 @@ ui_process_view_win_add(int pid, Evisum_Proc_Action action)
 
    _activate(wd, action);
 #if defined(__FreeBSD__)
-    // XXX: you know.
     wd->kthreads_has_rss = 1;
 #endif
 

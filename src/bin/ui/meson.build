@@ -26,5 +26,4 @@ src += files([
    'ui_process_view.h',
    'ui_process_list.c',
    'ui_process_list.h',
-
 ])

@@ -1,7 +1,7 @@
 ##### Project
 project('evisum', 'c',
-        version       : '0.6.1',
-        meson_version : '>= 0.40.0')
+        version       : '0.6.3',
+        meson_version : '>= 0.56.0')
 
 efl_version = '>= 1.27.0'
 
@@ -43,7 +43,6 @@ else
   '''
   if cc.links(gettext_code)
     translate_enabled = true
-    message('Intl Support Enabled')
   endif
 endif
 
@@ -54,6 +53,7 @@ cfg.set_quoted('PACKAGE_VERSION', meson.project_version())
 cfg.set_quoted('PACKAGE_DATA_DIR', join_paths(dir_data, 'evisum'))
 
 if translate_enabled
+  message('Intl Support Enabled')
   subdir('po')
 endif
 
