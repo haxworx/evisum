@@ -1,4 +1,5 @@
 #include "ui_process_view.h"
+#include "evisum_ui_colors.h"
 #include "../system/process.h"
 #include "util.c"
 #define __STDC_FORMAT_MACROS
@@ -70,7 +71,6 @@ typedef struct
       struct
       {
          int           cpu_count;
-         unsigned int  cpu_colormap[256];
          unsigned int  cores[256];
          Evas_Object   *obj;
          Evas_Object   *lb;
@@ -96,71 +96,6 @@ typedef struct
    } manual;
 
 } Win_Data;
-
-typedef struct _Color_Point {
-   unsigned int val;
-   unsigned int color;
-} Color_Point;
-
-#define COLOR_CPU_NUM 5
-static const Color_Point cpu_colormap_in[] = {
-   {   0, 0xff202020 },
-   {  25, 0xff2030a0 },
-   {  50, 0xffa040a0 },
-   {  75, 0xffff9040 },
-   { 100, 0xffffffff },
-   { 256, 0xffffffff }
-};
-
-#define AVAL(x) (((x) >> 24) & 0xff)
-#define RVAL(x) (((x) >> 16) & 0xff)
-#define GVAL(x) (((x) >>  8) & 0xff)
-#define BVAL(x) (((x)      ) & 0xff)
-#define ARGB(a, r, g, b) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
-
-#define BAR_HEIGHT 2
-
-static void
-_color_init(const Color_Point *col_in, unsigned int n, unsigned int *col)
-{
-   unsigned int pos, interp, val, dist, d;
-   unsigned int a, r, g, b;
-   unsigned int a1, r1, g1, b1, v1;
-   unsigned int a2, r2, g2, b2, v2;
-
-   // walk colormap_in until colormap table is full
-   for (pos = 0, val = 0; pos < n; pos++)
-     {
-        // get first color and value position
-        v1 = col_in[pos].val;
-        a1 = AVAL(col_in[pos].color);
-        r1 = RVAL(col_in[pos].color);
-        g1 = GVAL(col_in[pos].color);
-        b1 = BVAL(col_in[pos].color);
-        // get second color and valuje position
-        v2 = col_in[pos + 1].val;
-        a2 = AVAL(col_in[pos + 1].color);
-        r2 = RVAL(col_in[pos + 1].color);
-        g2 = GVAL(col_in[pos + 1].color);
-        b2 = BVAL(col_in[pos + 1].color);
-        // get distance between values (how many entires to fill)
-        dist = v2 - v1;
-        // walk over the span of colors from point a to point b
-        for (interp = v1; interp < v2; interp++)
-          {
-             // distance from starting point
-             d = interp - v1;
-             // calculate linear interpolation between start and given d
-             a = ((d * a2) + ((dist - d) * a1)) / dist;
-             r = ((d * r2) + ((dist - d) * r1)) / dist;
-             g = ((d * g2) + ((dist - d) * g1)) / dist;
-             b = ((d * b2) + ((dist - d) * b1)) / dist;
-             // write out resulting color value
-             col[val] = ARGB(a, r, g, b);
-             val++;
-          }
-     }
-}
 
 typedef struct
 {
@@ -743,7 +678,7 @@ _graph_update(Win_Data *wd, Proc_Info *proc)
           {
              pix = &(pixels[y * (stride / 4)]);
              for (x = 0; x < (w - 1); x++)
-               pix[x] = wd->threads.graph.cpu_colormap[0];
+               pix[x] = cpu_colormap[0];
           }
         else
           {
@@ -751,7 +686,7 @@ _graph_update(Win_Data *wd, Proc_Info *proc)
              for (x = 0; x < (w - 1); x++) pix[x] = pix[x + 1];
           }
         unsigned int c1;
-        c1 = wd->threads.graph.cpu_colormap[wd->threads.graph.cores[y] & 0xff];
+        c1 = cpu_colormap[wd->threads.graph.cores[y] & 0xff];
         pix = &(pixels[y * (stride / 4)]);
         pix[x] = c1;
      }
@@ -787,11 +722,9 @@ _graph(Evas_Object *parent, Win_Data *wd)
    evas_object_show(obj);
 
    evas_object_size_hint_min_set(obj, 100,
-                                 (BAR_HEIGHT * wd->threads.graph.cpu_count)
+                                 (2 * wd->threads.graph.cpu_count)
                                   * elm_config_scale_get());
    elm_object_content_set(scr, obj);
-
-   _color_init(cpu_colormap_in, COLOR_CPU_NUM, wd->threads.graph.cpu_colormap);
 
    // Overlay
    fr = elm_frame_add(parent);

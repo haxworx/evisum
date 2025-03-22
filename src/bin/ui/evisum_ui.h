@@ -50,7 +50,6 @@ typedef struct _Evisum_Ui
 
       unsigned char alpha;
       Eina_Bool     transparent;
-      Eina_Bool     show_scroller;
       Eina_Bool     show_statusbar;
    } proc;
 

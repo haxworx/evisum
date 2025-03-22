@@ -6,6 +6,7 @@
 #include "system/filesystems.h"
 
 #include "evisum_ui.h"
+#include "ui/evisum_ui_colors.h"
 #include "ui/ui_cpu.h"
 #include "ui/ui_memory.h"
 #include "ui/ui_disk.h"
@@ -815,6 +816,7 @@ evisum_ui_init(void)
    EVISUM_EVENT_CONFIG_CHANGED = ecore_event_type_new();
 
    config_init();
+   evisum_ui_colors_init();
    evisum_ui_config_load(ui);
 
    _ui_init_system_probe(ui);

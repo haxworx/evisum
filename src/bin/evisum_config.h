@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x0014
+#define CONFIG_VERSION 0x0015
 
 typedef struct _Evisum_Config
 {
@@ -14,7 +14,6 @@ typedef struct _Evisum_Config
 
    struct
    {
-      Evas_Object  *win;
       int           width;
       int           height;
       int           x, y;

@@ -2,7 +2,8 @@
 Evisum 0.6.3
 ============
 
-  * NOTHING YET.
+  * Fix bug with scroller.
+  * Refactor our colour code a little.
 
 ============
 Evisum 0.6.2

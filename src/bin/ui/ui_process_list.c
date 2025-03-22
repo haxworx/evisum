@@ -2254,9 +2254,7 @@ _evisum_config_changed_cb(void *data, int type EINA_UNUSED,
    eina_iterator_free(it);
 
    elm_scroller_policy_set(wd->glist, ELM_SCROLLER_POLICY_OFF,
-                           (ui->proc.show_scroller ?
-                            ELM_SCROLLER_POLICY_AUTO :
-                            ELM_SCROLLER_POLICY_OFF));
+                           ELM_SCROLLER_POLICY_AUTO);
    wd->skip_wait = 1;
 
    if ((!wd->summary.visible) && (ui->proc.show_statusbar))

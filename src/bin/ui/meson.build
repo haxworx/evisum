@@ -2,6 +2,8 @@ src += files([
    'gettext.h',
    'evisum_ui.h',
    'evisum_ui.c',
+   'evisum_ui_colors.c',
+   'evisum_ui_colors.h',
    'ui_util.h',
    'ui_util.c',
    'ui_cache.c',
