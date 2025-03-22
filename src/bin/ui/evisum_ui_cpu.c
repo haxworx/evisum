@@ -1,4 +1,4 @@
-#include "ui_cpu.h"
+#include "evisum_ui_cpu.h"
 #include "config.h"
 
 // Templates for visualisations.
@@ -99,7 +99,7 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void 
 }
 
 Eina_List *
-ui_cpu_visuals_get(void)
+evisum_ui_cpu_visuals_get(void)
 {
    Eina_List *l = NULL;
 
@@ -112,7 +112,7 @@ ui_cpu_visuals_get(void)
 }
 
 Cpu_Visual *
-ui_cpu_visual_by_name(const char *name)
+evisum_ui_cpu_visual_by_name(const char *name)
 {
    for (int i = 0; (i < sizeof(visualizations) / sizeof(Cpu_Visual)); i++)
      {
@@ -123,16 +123,16 @@ ui_cpu_visual_by_name(const char *name)
 }
 
 void
-ui_cpu_win_restart(Evisum_Ui *ui)
+evisum_ui_cpu_win_restart(Evisum_Ui *ui)
 {
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_NONE);
    evas_object_del(ui->cpu.win);
    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
-   ui_cpu_win_add(ui);
+   evisum_ui_cpu_win_add(ui);
 }
 
 void
-ui_cpu_win_add(Evisum_Ui *ui)
+evisum_ui_cpu_win_add(Evisum_Ui *ui)
 {
    Ui_Cpu_Data *pd;
    Evas_Object *win, *box, *scr, *btn, *ic;
@@ -171,7 +171,7 @@ ui_cpu_win_add(Evisum_Ui *ui)
 
    elm_table_pack(tb, box, 0, 0, 1, 1);
 
-   vis = ui_cpu_visual_by_name(ui->cpu.visual);
+   vis = evisum_ui_cpu_visual_by_name(ui->cpu.visual);
    if (!vis)
      {
         fprintf(stderr, "FATAL: unknown CPU visual (check your config)\n");

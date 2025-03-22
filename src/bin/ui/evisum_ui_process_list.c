@@ -2,8 +2,8 @@
 #include "evisum_config.h"
 
 #include "evisum_ui.h"
-#include "ui/ui_process_list.h"
-#include "ui/ui_process_view.h"
+#include "ui/evisum_ui_process_list.h"
+#include "ui/evisum_ui_process_view.h"
 
 #include <stdio.h>
 #define __STDC_FORMAT_MACROS
@@ -1471,7 +1471,7 @@ _item_menu_manual_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _item_menu_cancel_cb(wd, NULL, NULL);
 
-   ui_process_view_win_add(wd->selected_pid, PROC_VIEW_MANUAL);
+   evisum_ui_process_view_win_add(wd->selected_pid, PROC_VIEW_MANUAL);
 }
 
 static void
@@ -1482,7 +1482,7 @@ _item_menu_threads_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _item_menu_cancel_cb(wd, NULL, NULL);
 
-   ui_process_view_win_add(wd->selected_pid, PROC_VIEW_THREADS);
+   evisum_ui_process_view_win_add(wd->selected_pid, PROC_VIEW_THREADS);
 }
 
 static void
@@ -1493,7 +1493,7 @@ _item_menu_children_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _item_menu_cancel_cb(wd, NULL, NULL);
 
-   ui_process_view_win_add(wd->selected_pid, PROC_VIEW_CHILDREN);
+   evisum_ui_process_view_win_add(wd->selected_pid, PROC_VIEW_CHILDREN);
 }
 
 static void
@@ -1504,7 +1504,7 @@ _item_menu_general_cb(void *data, Evas_Object *obj EINA_UNUSED,
 
    _item_menu_cancel_cb(wd, NULL, NULL);
 
-   ui_process_view_win_add(wd->selected_pid, PROC_VIEW_DEFAULT);
+   evisum_ui_process_view_win_add(wd->selected_pid, PROC_VIEW_DEFAULT);
 }
 
 static void
@@ -1614,7 +1614,7 @@ _item_pid_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
    if (!proc) return;
 
    wd->selected_pid = proc->pid;
-   ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
+   evisum_ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
 }
 
 static void
@@ -2371,7 +2371,7 @@ _init(Win_Data *wd)
 }
 
 void
-ui_process_list_win_add(Evisum_Ui *ui)
+evisum_ui_process_list_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *icon;
    Evas_Object *tb;

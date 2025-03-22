@@ -1,4 +1,4 @@
-#include "ui_disk.h"
+#include "evisum_ui_disk.h"
 #include "../system/filesystems.h"
 
 typedef struct
@@ -551,7 +551,7 @@ _btn_min_size(Evas_Object *parent)
 }
 
 void
-ui_disk_win_add(Evisum_Ui *ui)
+evisum_ui_disk_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *tb, *scr;
    Evas_Object *glist, *rec, *btn;

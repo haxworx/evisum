@@ -1,4 +1,4 @@
-#include "ui_process_view.h"
+#include "evisum_ui_process_view.h"
 #include "evisum_ui_colors.h"
 #include "../system/process.h"
 #include "util.c"
@@ -488,7 +488,7 @@ _btn_ppid_clicked_cb(void *data, Evas_Object *obj, void *event_info)
 
    if (!proc) return;
 
-   ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
+   evisum_ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
    proc_info_free(proc);
 }
 
@@ -506,7 +506,7 @@ _item_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
    proc = elm_object_item_data_get(it);
    if (!proc) return;
 
-   ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
+   evisum_ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
 }
 
 static char *
@@ -1738,7 +1738,7 @@ _activate(Win_Data *wd, Evisum_Proc_Action action)
 }
 
 void
-ui_process_view_win_add(int pid, Evisum_Proc_Action action)
+evisum_ui_process_view_win_add(int pid, Evisum_Proc_Action action)
 {
    Evas_Object *win, *ic, *bx, *tabs, *tb;
    Proc_Info *proc;

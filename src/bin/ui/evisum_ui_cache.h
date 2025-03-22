@@ -1,5 +1,5 @@
-#ifndef __UI_CACHE_H__
-#define __UI_CACHE_H__
+#ifndef __EVISUM_UI_CACHE_H__
+#define __EVISUM_UI_CACHE_H__
 
 #include <Eina.h>
 #include <Evas.h>

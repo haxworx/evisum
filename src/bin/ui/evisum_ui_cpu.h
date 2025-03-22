@@ -1,5 +1,5 @@
-#ifndef __UI_CPU_H__
-#define __UI_CPU_H__
+#ifndef __EVISUM_UI_CPU_H__
+#define __EVISUM_UI_CPU_H__
 
 #include "evisum_ui.h"
 #include "evisum_ui_colors.h"
@@ -33,15 +33,15 @@ typedef struct {
 } Cpu_Visual;
 
 void
-ui_cpu_win_add(Evisum_Ui *ui);
+evisum_ui_cpu_win_add(Evisum_Ui *ui);
 
 void
-ui_cpu_win_restart(Evisum_Ui *ui);
+evisum_ui_cpu_win_restart(Evisum_Ui *ui);
 
 Eina_List *
-ui_cpu_visuals_get(void);
+evisum_ui_cpu_visuals_get(void);
 
 Cpu_Visual *
-ui_cpu_visual_by_name(const char *name);
+evisum_ui_cpu_visual_by_name(const char *name);
 
 #endif

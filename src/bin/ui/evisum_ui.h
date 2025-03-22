@@ -8,8 +8,8 @@
 
 #include "system/machine.h"
 #include "system/process.h"
-#include "ui/ui_util.h"
-#include "ui/ui_cache.h"
+#include "ui/evisum_ui_util.h"
+#include "ui/evisum_ui_cache.h"
 
 #define _(STR) gettext(STR)
 

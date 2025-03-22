@@ -4,28 +4,28 @@ src += files([
    'evisum_ui.c',
    'evisum_ui_colors.c',
    'evisum_ui_colors.h',
-   'ui_util.h',
-   'ui_util.c',
-   'ui_cache.c',
-   'ui_cache.h',
-   'ui_network.c',
-   'ui_network.h',
-   'ui_sensors.c',
-   'ui_sensors.h',
-   'ui_disk.c',
-   'ui_disk.h',
-   'ui_memory.h',
-   'ui_memory.c'
+   'evisum_ui_util.h',
+   'evisum_ui_util.c',
+   'evisum_ui_cache.c',
+   'evisum_ui_cache.h',
+   'evisum_ui_network.c',
+   'evisum_ui_network.h',
+   'evisum_ui_sensors.c',
+   'evisum_ui_sensors.h',
+   'evisum_ui_disk.c',
+   'evisum_ui_disk.h',
+   'evisum_ui_memory.h',
+   'evisum_ui_memory.c'
 ])
 
 # IDK, OpenBSD aarch64...
 subdir('visuals')
 
 src += files([
-   'ui_cpu.c',
-   'ui_cpu.h',
-   'ui_process_view.c',
-   'ui_process_view.h',
-   'ui_process_list.c',
-   'ui_process_list.h',
+   'evisum_ui_cpu.c',
+   'evisum_ui_cpu.h',
+   'evisum_ui_process_view.c',
+   'evisum_ui_process_view.h',
+   'evisum_ui_process_list.c',
+   'evisum_ui_process_list.h',
 ])

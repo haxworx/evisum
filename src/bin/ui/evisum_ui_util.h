@@ -1,5 +1,5 @@
-#ifndef __UI_UTIL_H__
-#define __UI_UTIL_H__
+#ifndef __EVISUM_UI_UTIL_H__
+#define __EVISUM_UI_UTIL_H__
 
 #include <Evas.h>
 #include "system/process.h"

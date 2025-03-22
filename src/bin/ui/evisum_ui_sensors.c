@@ -1,4 +1,4 @@
-#include "ui_sensors.h"
+#include "evisum_ui_sensors.h"
 #include "system/machine.h"
 
 typedef struct
@@ -249,7 +249,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_sensors_win_add(Evisum_Ui *ui)
+evisum_ui_sensors_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *content, *tbl, *bx, *fr;
    Evas_Object *glist, *pb;

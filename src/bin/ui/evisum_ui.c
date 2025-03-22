@@ -7,13 +7,13 @@
 
 #include "evisum_ui.h"
 #include "ui/evisum_ui_colors.h"
-#include "ui/ui_cpu.h"
-#include "ui/ui_memory.h"
-#include "ui/ui_disk.h"
-#include "ui/ui_sensors.h"
-#include "ui/ui_network.h"
-#include "ui/ui_process_view.h"
-#include "ui/ui_process_list.h"
+#include "ui/evisum_ui_cpu.h"
+#include "ui/evisum_ui_memory.h"
+#include "ui/evisum_ui_disk.h"
+#include "ui/evisum_ui_sensors.h"
+#include "ui/evisum_ui_network.h"
+#include "ui/evisum_ui_process_view.h"
+#include "ui/evisum_ui_process_list.h"
 
 int EVISUM_EVENT_CONFIG_CHANGED;
 
@@ -210,7 +210,7 @@ _menu_memory_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Evisum_Ui *ui = data;
 
-   ui_mem_win_add(ui);
+   evisum_ui_mem_win_add(ui);
 }
 
 static void
@@ -219,7 +219,7 @@ _menu_network_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Evisum_Ui *ui = data;
 
-   ui_network_win_add(ui);
+   evisum_ui_network_win_add(ui);
 }
 
 static void
@@ -228,7 +228,7 @@ _menu_disk_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Evisum_Ui *ui = data;
 
-   ui_disk_win_add(ui);
+   evisum_ui_disk_win_add(ui);
 }
 
 static void
@@ -237,7 +237,7 @@ _menu_sensors_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Evisum_Ui *ui = data;
 
-   ui_sensors_win_add(ui);
+   evisum_ui_sensors_win_add(ui);
 }
 
 static void
@@ -246,7 +246,7 @@ _menu_cpu_activity_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Evisum_Ui *ui = data;
 
-   ui_cpu_win_add(ui);
+   evisum_ui_cpu_win_add(ui);
 }
 
 static void
@@ -255,7 +255,7 @@ _menu_process_view_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Evisum_Ui *ui = data;
 
-   ui_process_list_win_add(ui);
+   evisum_ui_process_list_win_add(ui);
 }
 
 static void
@@ -410,7 +410,7 @@ _cpu_visual_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj,
 
    if (ui->cpu.visual) free(ui->cpu.visual);
    ui->cpu.visual = strdup(txt);
-   ui_cpu_win_restart(ui);
+   evisum_ui_cpu_win_restart(ui);
 }
 
 Evas_Object *
@@ -551,7 +551,7 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
         elm_object_content_set(fr, bx);
         evas_object_show(bx);
 
-        Eina_List *visuals = ui_cpu_visuals_get();
+        Eina_List *visuals = evisum_ui_cpu_visuals_get();
         char *name;
 
         EINA_LIST_FREE(visuals, name)
@@ -720,37 +720,37 @@ evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid)
 
    if (ui->proc.restart)
      {
-        ui_process_list_win_add(ui);
+        evisum_ui_process_list_win_add(ui);
         restart = 1;
      }
 
    if (ui->cpu.restart)
      {
-        ui_cpu_win_add(ui);
+        evisum_ui_cpu_win_add(ui);
         restart = 1;
      }
 
    if (ui->mem.restart)
      {
-        ui_mem_win_add(ui);
+        evisum_ui_mem_win_add(ui);
         restart = 1;
      }
 
    if (ui->disk.restart)
      {
-        ui_disk_win_add(ui);
+        evisum_ui_disk_win_add(ui);
         restart = 1;
      }
 
    if (ui->sensors.restart)
      {
-        ui_sensors_win_add(ui);
+        evisum_ui_sensors_win_add(ui);
         restart = 1;
      }
 
    if (ui->network.restart)
      {
-        ui_network_win_add(ui);
+        evisum_ui_network_win_add(ui);
         restart = 1;
      }
 
@@ -766,25 +766,25 @@ evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid)
    switch (action)
      {
        case EVISUM_ACTION_DEFAULT:
-         ui_process_list_win_add(ui);
+         evisum_ui_process_list_win_add(ui);
          break;
        case EVISUM_ACTION_PROCESS:
-         ui_process_view_win_add(pid, PROC_VIEW_DEFAULT);
+         evisum_ui_process_view_win_add(pid, PROC_VIEW_DEFAULT);
          break;
        case EVISUM_ACTION_CPU:
-         ui_cpu_win_add(ui);
+         evisum_ui_cpu_win_add(ui);
          break;
        case EVISUM_ACTION_MEM:
-         ui_mem_win_add(ui);
+         evisum_ui_mem_win_add(ui);
          break;
        case EVISUM_ACTION_STORAGE:
-         ui_disk_win_add(ui);
+         evisum_ui_disk_win_add(ui);
          break;
        case EVISUM_ACTION_SENSORS:
-         ui_sensors_win_add(ui);
+         evisum_ui_sensors_win_add(ui);
          break;
        case EVISUM_ACTION_NETWORK:
-         ui_network_win_add(ui);
+         evisum_ui_network_win_add(ui);
          break;
      }
 }

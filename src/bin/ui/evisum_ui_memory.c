@@ -1,4 +1,4 @@
-#include "ui_memory.h"
+#include "evisum_ui_memory.h"
 #include "system/filesystems.h"
 
 #include <Elementary.h>
@@ -203,7 +203,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 void
-ui_mem_win_add(Evisum_Ui *ui)
+evisum_ui_mem_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *lb, *bx, *tb, *pb;
    Evas_Object *fr;

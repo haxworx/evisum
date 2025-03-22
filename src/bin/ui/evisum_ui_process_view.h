@@ -1,5 +1,5 @@
-#ifndef __UI_PROCESS_H__
-#define __UI_PROCESS_H__
+#ifndef __EVISUM_UI_PROCESS_H__
+#define __EVISUM_UI_PROCESS_H__
 
 #include "evisum_ui.h"
 
@@ -12,6 +12,6 @@ typedef enum
 } Evisum_Proc_Action;
 
 void
-ui_process_view_win_add(int pid, Evisum_Proc_Action action);
+evisum_ui_process_view_win_add(int pid, Evisum_Proc_Action action);
 
 #endif
