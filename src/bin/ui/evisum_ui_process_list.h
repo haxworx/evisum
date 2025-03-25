@@ -41,7 +41,7 @@ typedef enum
    PROC_FIELD_STATE     = 13,
    PROC_FIELD_TIME      = 14,
    PROC_FIELD_CPU_USAGE = 15,
-   PROC_FIELD_MAX = 16,
+   PROC_FIELD_MAX       = 16,
 } Proc_Field;
 
 void

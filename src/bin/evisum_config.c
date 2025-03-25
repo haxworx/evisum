@@ -117,7 +117,7 @@ _config_init()
    cfg->proc.show_kthreads = 0;
    cfg->proc.show_statusbar = 0;
    cfg->proc.transparent = 0;
-   cfg->proc.fields = 0xffffe24f;
+   cfg->proc.fields = 0xffffc31f;
    cfg->proc.alpha = 100;
 
    cfg->cpu.visual = strdup("default");

@@ -199,7 +199,9 @@ evisum_icon_cache_find(Eina_Hash *icon_cache, const Proc_Info *proc)
         Proc_Info *pproc = proc_info_by_pid(proc->ppid);
 
         if (!pproc) return "application";
-        return evisum_icon_cache_find(icon_cache, pproc);
+        const char *command = evisum_icon_cache_find(icon_cache, pproc);
+        proc_info_free(pproc);
+        return command;
      }
 
    if (e->icon)
@@ -386,6 +388,7 @@ evisum_about_window_show(void *data)
       "The greatest of all time...",
       "Remember to take your medication!",
       "Choose love!",
+      "Schizophrenia!!!",
       "I endorse this message!",
       "Hack the planet!",
       "Remember what you need to carry!"

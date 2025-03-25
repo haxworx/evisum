@@ -1,9 +1,24 @@
 ============
+Evisum 0.6.5
+============
+
+  * Remove status line on process stats.
+
+============
+Evisum 0.6.4
+============
+
+  * Fix memory leak.
+  * Improve some visuals.
+  * Improve defaults.
+
+============
 Evisum 0.6.3
 ============
 
   * Fix bug with scroller.
   * Refactor our colour code a little.
+  * Refactor our UI code to be more presentable.
 
 ============
 Evisum 0.6.2

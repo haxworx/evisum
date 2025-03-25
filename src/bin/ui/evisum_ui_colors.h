@@ -39,12 +39,12 @@ static const Color_Point freq_colormap_in[] = {
 
 #define COLOR_TEMP_NUM 5
 static const Color_Point temp_colormap_in[] = {
-   {  0,  0xff57bb8a },
-   {  25, 0xffa4c073 },
-   {  50, 0xfff5ce62 },
-   {  75, 0xffe9a268 },
-   { 100, 0xffdd776e },
-   { 256, 0xffdd776e }
+   {   0, 0xff44ce1b},
+   {  25, 0xffbddb44 },
+   {  50, 0xfff7e379 },
+   {  75, 0xfff2a134 },
+   { 100, 0xffe51f1f },
+   { 256, 0xffe51f1f }
 };
 
 void evisum_ui_colors_init();

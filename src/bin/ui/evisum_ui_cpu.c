@@ -210,7 +210,7 @@ evisum_ui_cpu_win_add(Evisum_Ui *ui)
    if ((ui->cpu.width > 0) && (ui->cpu.height > 0))
      evas_object_resize(win, ui->cpu.width, ui->cpu.height);
    else
-     evas_object_resize(win, ELM_SCALE_SIZE(UI_CHILD_WIN_WIDTH * 1.8), ELM_SCALE_SIZE(UI_CHILD_WIN_HEIGHT));
+     evas_object_resize(win, ELM_SCALE_SIZE(UI_CHILD_WIN_WIDTH * 1.8), ELM_SCALE_SIZE(UI_CHILD_WIN_HEIGHT * 1.2));
 
    if ((ui->cpu.x > 0) && (ui->cpu.y > 0))
      evas_object_move(win, ui->cpu.x, ui->cpu.y);

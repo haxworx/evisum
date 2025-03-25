@@ -600,13 +600,6 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
    _main_menu_slider_changed_cb(ui, sli, NULL);
    elm_box_pack_end(bx, sli);
 
-   sep = elm_separator_add(bx);
-   evas_object_size_hint_align_set(sep, FILL, FILL);
-   evas_object_size_hint_weight_set(sep, EXPAND, EXPAND);
-   elm_separator_horizontal_set(sep, 1);
-   evas_object_show(sep);
-   elm_box_pack_end(bx, sep);
-
    if (ui->proc.has_kthreads)
      {
         chk = elm_check_add(bx);

@@ -13,8 +13,8 @@
 
 #define _(STR) gettext(STR)
 
-#define EVISUM_WIN_WIDTH  900
-#define EVISUM_WIN_HEIGHT 600
+#define EVISUM_WIN_WIDTH  640
+#define EVISUM_WIN_HEIGHT 800
 
 typedef struct _Evisum_Ui
 {

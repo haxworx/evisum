@@ -91,15 +91,6 @@ typedef struct
       Evas_Object         *hbx;
       Evas_Object         *pb_cpu;
       Evas_Object         *pb_mem;
-      Evas_Object         *lb;
-      int                  total;
-      int                  running;
-      int                  sleeping;
-      int                  stopped;
-      int                  idle;
-      int                  dead;
-      int                  zombie;
-      int                  dsleep;
    } summary;
 
    Elm_Layout             *indicator;
@@ -563,7 +554,7 @@ _item_create(Evas_Object *obj)
    if (_field_enabled(PROC_FIELD_UID))
      {
         lb = _item_column_add(tb, "uid", i++);
-        evas_object_size_hint_align_set(lb, 1.0, FILL);
+        evas_object_size_hint_align_set(lb, 0.0, FILL);
      }
 
    if (_field_enabled(PROC_FIELD_PID))
@@ -964,14 +955,6 @@ _glist_ensure_n_items(Evas_Object *glist, unsigned int items,
 }
 
 static void
-_summary_reset(Win_Data *wd)
-{
-   wd->summary.total = wd->summary.running = wd->summary.sleeping = 0;
-   wd->summary.stopped = wd->summary.idle  = wd->summary.zombie = 0;
-   wd->summary.dsleep = wd->summary.dead = 0;
-}
-
-static void
 _summary_update(Win_Data *wd)
 {
    Evisum_Ui *ui;
@@ -983,28 +966,7 @@ _summary_update(Win_Data *wd)
 
    buf = eina_strbuf_new();
 
-   if (wd->summary.running)
-     eina_strbuf_append_printf(buf, _("%i running, "), wd->summary.running);
-   if (wd->summary.sleeping)
-     eina_strbuf_append_printf(buf, _("%i sleeping, "), wd->summary.sleeping);
-   if (wd->summary.stopped)
-     eina_strbuf_append_printf(buf, _("%i stopped, "), wd->summary.stopped);
-   if (wd->summary.idle)
-     eina_strbuf_append_printf(buf, _("%i idle, "), wd->summary.idle);
-   if (wd->summary.dead)
-     eina_strbuf_append_printf(buf, _("%i dead, "), wd->summary.dead);
-   if (wd->summary.dsleep)
-     eina_strbuf_append_printf(buf, _("%i dsleep, "), wd->summary.dsleep);
-   if (wd->summary.zombie)
-     eina_strbuf_append_printf(buf, _("%i zombie, "), wd->summary.zombie);
-
-   eina_strbuf_replace_last(buf, ",", ".");
-
-   elm_object_text_set(wd->summary.lb, eina_strbuf_string_get(buf));
-
    elm_progressbar_value_set(wd->summary.pb_cpu, ui->cpu_usage / 100.0);
-
-   eina_strbuf_reset(buf);
 
    elm_progressbar_value_set(wd->summary.pb_mem, (ui->mem_total / 100) / ui->mem_total);
    eina_strbuf_append_printf(buf, "%s / %s ", evisum_size_format(ui->mem_used, 0), evisum_size_format(ui->mem_total, 0));
@@ -1014,30 +976,10 @@ _summary_update(Win_Data *wd)
 }
 
 static void
-_summary_total(Win_Data *wd, Proc_Info *proc)
-{
-   wd->summary.total++;
-   if (!strcmp(proc->state, _("run")))
-     wd->summary.running++;
-   else if (!strcmp(proc->state, _("sleep")))
-     wd->summary.sleeping++;
-   else if (!strcmp(proc->state, _("stop")))
-     wd->summary.stopped++;
-   else if (!strcmp(proc->state, _("idle")))
-     wd->summary.idle++;
-   else if (!strcmp(proc->state, _("zombie")))
-     wd->summary.zombie++;
-   else if (!strcmp(proc->state, _("dead")))
-     wd->summary.dead++;
-   else if (!strcmp(proc->state, _("dsleep")))
-     wd->summary.dsleep++;
-}
-
-static void
 summary_add(Win_Data *wd)
 {
    Evisum_Ui *ui = wd->ui;
-   Evas_Object *hbx, *ic, *pb, *bx, *lb;
+   Evas_Object *hbx, *ic, *pb, *bx;
 
    if (!ui->proc.show_statusbar) return;
 
@@ -1068,17 +1010,11 @@ summary_add(Win_Data *wd)
    evas_object_show(pb);
    elm_box_pack_end(hbx, pb);
 
-   wd->summary.lb = lb = elm_label_add(hbx);
-   evas_object_size_hint_weight_set(lb, EXPAND, 0);
-   evas_object_size_hint_align_set(lb, 1.0, FILL);
-   evas_object_show(lb);
-
    bx = elm_box_add(wd->win);
    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
    evas_object_size_hint_align_set(bx, FILL, FILL);
    elm_box_pack_end(hbx, bx);
    evas_object_show(bx);
-   elm_box_pack_end(hbx, wd->summary.lb);
 
    wd->first_run = 0;
    wd->summary.visible = 1;
@@ -1148,8 +1084,6 @@ _process_list_search_trim(Eina_List *list, Win_Data *wd)
    Eina_List *l, *l_next;
    Proc_Info *proc;
 
-   _summary_reset(wd);
-
    EINA_LIST_FOREACH_SAFE(list, l, l_next, proc)
      {
         if (_process_ignore(wd, proc))
@@ -1177,7 +1111,6 @@ _process_list_search_trim(Eina_List *list, Win_Data *wd)
                        eina_hash_add(wd->cpu_times, &id, cpu_time);
                     }
                }
-             _summary_total(wd, proc);
           }
      }
 
@@ -1747,7 +1680,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             ui->proc.sort_reverse : 0),
             ui->proc.sort_type == PROC_SORT_BY_UID,
             wd);
-   evas_object_size_hint_weight_set(btn, 1.0, 0);
+   evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
    evas_object_size_hint_min_set(btn, 1.8 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_UID);
@@ -1932,7 +1865,7 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, 1.5 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
+   evas_object_size_hint_min_set(btn, 1.75 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU_USAGE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
@@ -2187,6 +2120,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
                             &ui->proc.width, &ui->proc.height);
 
    if (!evisum_ui_effects_enabled_get(ui)) return;
+
    evas_object_move(wd->indicator, ui->proc.width - ELM_SCALE_SIZE(32),
                     ui->proc.height - ELM_SCALE_SIZE(32));
    evas_object_show(wd->indicator);
@@ -2394,7 +2328,7 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui)
 
    ui->proc.win = wd->win = win = elm_win_add(NULL, "evisum", ELM_WIN_BASIC);
    elm_win_autodel_set(win, 1);
-   elm_win_title_set(win, _("Process Explorer"));
+   elm_win_title_set(win, _("Evisum"));
    icon = elm_icon_add(win);
    elm_icon_standard_set(icon, "evisum");
    elm_win_icon_object_set(win, icon);
