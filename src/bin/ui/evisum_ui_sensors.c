@@ -134,7 +134,7 @@ _sensors_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata)
         evas_object_show(wd->power_ic);
      }
    l = eina_list_nth_list(wd->batteries, 0);
-   while (l && msg->power.battery_count)
+   while (l && i < msg->power.battery_count)
      {
         if (msg->power.batteries[i]->present)
           {

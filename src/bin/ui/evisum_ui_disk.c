@@ -420,15 +420,32 @@ _sort_by_total(const void *p1, const void *p2)
    return 0;
 }
 
+static int
+_sort_by_mount_length(const void *p1, const void *p2)
+{
+   const File_System *fs1, *fs2;
+   ssize_t len1, len2;
+
+   fs1 = p1; fs2 = p2;
+
+   len1 = strlen(fs1->mount);
+   len2 = strlen(fs2->mount);
+
+   if (len1 > len2) return 1;
+   if (len1 < len2) return -1;
+
+   return 0;
+}
+
 static void
 _btn_icon_state_set(Evas_Object *button, Eina_Bool reverse)
 {
    Evas_Object *ic = elm_icon_add(button);
 
    if (reverse)
-     elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
+     elm_icon_standard_set(ic, "go-down");
    else
-     elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
+     elm_icon_standard_set(ic, "go-up");
    elm_object_part_content_set(button, "icon", ic);
    evas_object_show(ic);
 }
@@ -571,6 +588,7 @@ evisum_ui_disk_win_add(Evisum_Ui *ui)
    Win_Data *wd = calloc(1, sizeof(Win_Data));
    wd->ui = ui;
    wd->skip_wait = 1;
+   wd->sort_cb = _sort_by_mount_length;
 
    tb = elm_table_add(win);
    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);

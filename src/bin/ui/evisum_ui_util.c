@@ -391,13 +391,14 @@ evisum_about_window_show(void *data)
       "Schizophrenia!!!",
       "I endorse this message!",
       "Hack the planet!",
-      "Remember what you need to carry!"
+      "Remember what you need to carry!",
+      "Well done my son."
    };
    const char *copyright =
       "<font color=#ffffff>"
       "<align=center>"
       "<b>"
-      "Copyright &copy; 2019-2021, 2024-2025. Alastair Poole &lt;netstar@gmail.com&gt;<br>"
+      "Copyright &copy; 2019-2021, 2024-2026. Alastair Poole &lt;alastair.poole@pm.me&gt;<br>"
       "<br>"
       "</b>"
       "</>"

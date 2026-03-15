@@ -1,8 +1,16 @@
-# Evisum - The Greatest System Monitor Ever Written
+# Evisum - An Enlightened System Monitor
 
-Evisum is a **powerful, efficient, and feature-rich** process and system monitor for **Linux, OpenBSD, FreeBSD, macOS and DragonFlyBSD**. Unlike other system monitors, Evisum provides a **server-client architecture** with a sleek and responsive interface. It offers robust tools for monitoring **processes, CPU usage, memory consumption, network activity, storage health, and system sensors**.
+I sincerely hope you can enjoy this application. It's fairly comprehensive and very
+portable. The user interface is designed with my personal preferences in mind.
+Having gotten into computer science in the early 90s there is a nostalgic feel to
+the program and also some homage is paid to EFL and Enlightenment.
 
-If you're looking for the **ultimate** Unix-like system monitoring experience, look no further—**Evisum is the best there is**. It is also the **mother of all reference implementations** for multi-platform system monitoring.
+It does not rely on any third-party libraries outside of EFL which was quite some
+undertaking.
+
+Moreover it's hand-made. I'd like to express that schizophrenia doesn't exclude
+anyone from following their dreams as long as you hold onto a touch of realism and
+your expectations aren't too high.
 
 ## 📚 Table of Contents
 - [🔥 Features](#-features)
@@ -74,7 +82,4 @@ evisum --help
 
 ## 🤝 Contributions
 We welcome contributions! Bug fixes and patches are greatly appreciated. However, if you want to introduce a substantial new feature, **please ensure it functions reliably on Linux, OpenBSD, and FreeBSD** before submitting a patch.
-
----
-**Evisum** is not just another system monitor—it’s the **greatest system monitor ever written**. It is also the **mother of all reference implementations** for **portability**. Get started today and experience system monitoring at its finest! 🚀
 

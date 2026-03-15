@@ -2,7 +2,7 @@
 
 #define BAR_HEIGHT    3
 #define COLORS_HEIGHT 32
-#define CORES_MANY    16
+#define CORES_MANY    12
 
 typedef struct {
    Evas_Object    *obj;
@@ -565,13 +565,16 @@ cpu_visual_default(Evas_Object *parent_box)
    evas_object_show(check);
    elm_box_pack_end(hbx, check);
 
-   check = elm_check_add(fr);
-   evas_object_size_hint_align_set(check, FILL, FILL);
-   evas_object_size_hint_weight_set(check, EXPAND, 0);
-   elm_object_text_set(check, _("Confused?"));
-   evas_object_smart_callback_add(check, "changed", _confused_check_changed_cb, pd);
-   evas_object_show(check);
-   elm_box_pack_end(hbx, check);
+   if (show_icons)
+     {
+        check = elm_check_add(fr);
+        evas_object_size_hint_align_set(check, FILL, FILL);
+        evas_object_size_hint_weight_set(check, EXPAND, 0);
+        elm_object_text_set(check, _("Confused?"));
+        evas_object_smart_callback_add(check, "changed", _confused_check_changed_cb, pd);
+        evas_object_show(check);
+        elm_box_pack_end(hbx, check);
+     }
 
    ext->obj = obj;
    ext->colors = colors;

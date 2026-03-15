@@ -1,7 +1,7 @@
 # French translation for Evisum.
 # Copyright (C) 2020 Alastair "netstar" Poole
 # This file is distributed under the same license as the evisum package.
-# Alastair Poole <netstar@gmail.com>, 2020.
+# Alastair Poole <alastair.poole@pm.me>, 2020.
 # similar <similar@orange.fr>, 2020, 2021, 2024.
 #
 msgid ""

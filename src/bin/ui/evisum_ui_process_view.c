@@ -1150,6 +1150,7 @@ _general_tab_add(Evas_Object *parent, Win_Data *wd)
    elm_table_pack(tb, entry, 1, i++, 1, 1);
 
    btn = elm_button_add(parent);
+   elm_object_style_set(btn, "anchor");
    evas_object_size_hint_weight_set(btn, 0, EXPAND);
    elm_object_text_set(btn, _("PPID:"));
    elm_table_pack(tb, btn, 0, i, 1, 1);
@@ -1273,9 +1274,9 @@ _btn_icon_state_set(Evas_Object *btn, Eina_Bool reverse)
 {
    Evas_Object *ic = elm_icon_add(btn);
    if (reverse)
-     elm_icon_standard_set(ic, evisum_icon_path_get("go-down"));
+     elm_icon_standard_set(ic, "go-down");
    else
-     elm_icon_standard_set(ic, evisum_icon_path_get("go-up"));
+     elm_icon_standard_set(ic, "go-up");
    elm_object_part_content_set(btn, "icon", ic);
    evas_object_show(ic);
 }

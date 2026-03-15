@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alastair Roy Poole <netstar@gmail.com>
+ * Copyright (c) 2018 Alastair Roy Poole <alastair.poole@pm.me>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
 
 #if defined(__linux__)
 static unsigned long
-_meminfo_parse_line(const char *line)
+_meminfo_parse_line(char *line)
 {
    char *p, *tok;
 

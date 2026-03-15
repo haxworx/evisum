@@ -1,4 +1,18 @@
 ============
+Evisum 1.0.0
+============
+
+  * Update contact address.
+  * Add support for more batteries (Linux).
+  * Remove redundant options (cpu default ui).
+  * Visual change to PPID button in process list view. Cleaner.
+  * Use theme buttons.
+  * Fix storage initial sorting.
+  * Fix a rare crash.
+  * Ensure we get sensor name.
+  * Ensure we list fuse storage.
+
+============
 Evisum 0.6.5
 ============
 

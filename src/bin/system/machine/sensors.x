@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Alastair Roy Poole <netstar@gmail.com>
+ * Copyright (c) 2018 Alastair Roy Poole <alastair.poole@pm.me>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -316,15 +316,27 @@ _power_battery_count_get(power_t *power)
              if (!strncmp(type, "Battery", 7))
                {
                   id = power->battery_count;
+                  char *s;
                   void *t = realloc(power->batteries, (1 +
                                     power->battery_count) * sizeof(bat_t **));
                   power->batteries = t;
                   power->batteries[id] = calloc(1, sizeof(bat_t));
                   power->batteries[id]->name = strdup(names[i]->d_name);
+
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", names[i]->d_name);
-                  power->batteries[id]->vendor = file_contents(path);
+                  s = file_contents(path);
+                  if (s)
+                    power->batteries[id]->vendor = s;
+                  else
+                    power->batteries[id]->vendor = strdup(names[i]->d_name);
+
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/model_name", names[i]->d_name);
-                  power->batteries[id]->model = file_contents(path);
+                  s = file_contents(path);
+                  if (s)
+                    power->batteries[id]->model = s;
+                  else
+                    power->batteries[id]->model = strdup("");
+
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/present", names[i]->d_name);
                   power->batteries[id]->present = 1;
                   buf = file_contents(path);
@@ -489,6 +501,14 @@ _battery_state_get(power_t *power)
                     power->batteries[i]->charge_current = 25;
                   else if (buf[0] == 'C')
                     power->batteries[i]->charge_current = 5;
+                  free(buf);
+               }
+             snprintf(path, sizeof(path), "%s/capacity", link);
+             buf = file_contents(path);
+             if (buf)
+               {
+                  power->batteries[i]->charge_full = 100;
+                  power->batteries[i]->charge_current = atoi(buf);
                   free(buf);
                }
           }

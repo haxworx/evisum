@@ -186,7 +186,7 @@ evisum_ui_cpu_win_add(Evisum_Ui *ui)
 
    btn = elm_button_add(win);
    ic = elm_icon_add(btn);
-   elm_icon_standard_set(ic, evisum_icon_path_get("menu"));
+   elm_icon_standard_set(ic, "menu");
    elm_object_part_content_set(btn, "icon", ic);
    evas_object_show(ic);
    elm_object_focus_allow_set(btn, 0);

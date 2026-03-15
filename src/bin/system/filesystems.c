@@ -55,7 +55,7 @@ file_system_info_all_get(void)
         if (!end) continue;
         type_name = strndup(cp, end - cp);
 
-        if ((strstr(cp, "nodev")) || (statfs(mount, &stats) < 0) ||
+        if (((strcmp(type_name, "fuseblk")) && (strstr(cp, "nodev"))) || (statfs(mount, &stats) < 0) ||
             (stats.f_blocks == 0 && stats.f_bfree == 0))
           {
              free(dev);

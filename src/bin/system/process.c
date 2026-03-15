@@ -114,7 +114,7 @@ _process_state_name(char state)
 #if defined(__linux__)
 
 static unsigned long
-_parse_line(const char *line)
+_parse_line(char *line)
 {
    char *p, *tok;
 
