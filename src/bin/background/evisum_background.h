@@ -5,9 +5,9 @@
 #include <Ecore.h>
 
 void
-background_poller_cb(void *data, Ecore_Thread *thread);
+evisum_background_poller_cb(void *data, Ecore_Thread *thread);
 
 void
-background_init(Evisum_Ui *ui);
+evisum_background_init(Evisum_Ui *ui);
 
 #endif

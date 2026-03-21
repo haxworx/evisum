@@ -109,8 +109,8 @@ elm_main(int argc, char **argv)
    evisum_server_init(ui);
    evisum_ui_activate(ui, action, pid);
 
-   background_init(ui);
-   ui->background_poll_thread = ecore_thread_run(background_poller_cb, NULL, NULL, ui);
+   evisum_background_init(ui);
+   ui->background_poll_thread = ecore_thread_run(evisum_background_poller_cb, NULL, NULL, ui);
 
    ecore_main_loop_begin();
 

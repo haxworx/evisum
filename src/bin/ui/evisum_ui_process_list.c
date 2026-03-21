@@ -959,7 +959,7 @@ _summary_update(Win_Data *wd)
 
    ui = wd->ui;
 
-   if (!ui->proc.show_statusbar) return;
+   if ((!ui->proc.show_statusbar) || (!wd->summary.pb_cpu)) return;
 
    buf = eina_strbuf_new();
 

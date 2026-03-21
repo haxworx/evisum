@@ -1,4 +1,10 @@
 ============
+Evisum 1.0.1
+============
+
+  * Fix thread parsing (Linux only).
+
+============
 Evisum 1.0.0
 ============
 

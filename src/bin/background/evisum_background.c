@@ -4,7 +4,7 @@
 #include <Eina.h>
 
 void
-background_init(Evisum_Ui *ui)
+evisum_background_init(Evisum_Ui *ui)
 {
    meminfo_t memory;
 
@@ -14,7 +14,7 @@ background_init(Evisum_Ui *ui)
 }
 
 void
-background_poller_cb(void *data, Ecore_Thread *thread)
+evisum_background_poller_cb(void *data, Ecore_Thread *thread)
 {
    meminfo_t memory;
    Evisum_Ui *ui = data;

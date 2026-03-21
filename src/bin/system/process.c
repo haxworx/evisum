@@ -305,9 +305,9 @@ static Eina_Bool
 _stat(const char *path, Stat *st)
 {
    FILE *f;
+   char *p;
    char line[4096];
-   char name[1024];
-   int dummy, len = 0;
+   int dummy, i, slen, len = 0;
    static long tck = 0;
    static int64_t boot_time = 0;
 
@@ -320,10 +320,28 @@ _stat(const char *path, Stat *st)
 
    if (fgets(line, sizeof(line), f))
      {
+        slen = strlen(line);
+        for (i = 0; i < slen; i++)
+          {
+             Eina_Bool found = EINA_FALSE;
+             const char states[] = {'D', 'I', 'R', 'X', 'T', 'S', 'Z'};
+             // Get the index of state value.
+             for (int j = 0; j < sizeof(states); j++)
+               {
+                  if (line[i] == states[j])
+                    {
+                        found = EINA_TRUE;
+                        break;
+                    }
+               }
+             if ((i < (slen + 1)) && (found) && (line[i+1] == ' '))
+               break;
+          }
 
-        len = sscanf(line, "%d %s %c %d %d %d %d %d %u %u %u %u %u %d %d %d"
+        // Scan from index of state value.
+        len = sscanf(&line[i], "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
               " %d %d %d %u %u %lld %lu %u %u %u %u %u %u %u %d %d %d %d %u"
-              " %d %d %d %d %d %d %d %d %d", &dummy, name,
+              " %d %d %d %d %d %d %d %d %d",
               &st->state, &st->ppid, &dummy, &dummy, &dummy, &dummy, &st->flags,
               &dummy, &dummy, &dummy, &dummy, &st->utime, &st->stime, &st->cutime,
               &st->cstime, &st->pri, &st->nice, &st->numthreads, &dummy, &st->start_time,
@@ -333,14 +351,12 @@ _stat(const char *path, Stat *st)
      }
    fclose(f);
 
-   if (len != 44) return 0;
+   if (len != 42 || i == slen) return 0;
 
-   len = strlen(name);
-   if (len)
-     {
-        name[len-1] = '\0';
-        snprintf(st->name, sizeof(st->name), "%s", &name[1]);
-     }
+   p = strchr(line, ' ') + 2;
+   if ((!p) || (i < 2)) return 0;
+   line[i - 2] = '\0';
+   snprintf(st->name, sizeof(st->name), "%s", p);
 
    if (!tck) tck = sysconf(_SC_CLK_TCK);
 

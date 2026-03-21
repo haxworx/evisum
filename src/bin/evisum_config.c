@@ -115,9 +115,10 @@ _config_init()
    cfg->version = CONFIG_VERSION;
    cfg->proc.poll_delay = 3;
    cfg->proc.show_kthreads = 0;
-   cfg->proc.show_statusbar = 0;
+   cfg->proc.show_statusbar = 1;
+   cfg->proc.show_user = 1;
    cfg->proc.transparent = 0;
-   cfg->proc.fields = 0xffffc31f;
+   cfg->proc.fields = 0xffff871b;
    cfg->proc.alpha = 100;
 
    cfg->cpu.visual = strdup("default");
