@@ -59,6 +59,8 @@ _network_update(void *data, Ecore_Thread *thread)
    Eina_List *interfaces = NULL;
    Network_Interface *iface;
 
+   ecore_thread_name_set(thread, "network");
+
    while (!ecore_thread_check(thread))
      {
         int n;

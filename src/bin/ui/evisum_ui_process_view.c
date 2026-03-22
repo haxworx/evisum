@@ -621,6 +621,8 @@ _proc_info_main(void *data, Ecore_Thread *thread)
 {
    Win_Data *wd = data;
 
+   ecore_thread_name_set(thread, "process_view");
+
    while (!ecore_thread_check(thread))
      {
         Proc_Info *proc = proc_info_by_pid(wd->selected_pid);

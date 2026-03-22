@@ -80,6 +80,8 @@ _sensors_update(void *data, Ecore_Thread *thread)
    Sensor_Win_Data *msg = malloc(sizeof(Win_Data));
    if (!msg) return;
 
+   ecore_thread_name_set(thread, "sensors");
+
    while (!ecore_thread_check(thread))
      {
         system_power_state_get(&msg->power);

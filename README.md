@@ -9,8 +9,9 @@ It does not rely on any third-party libraries outside of EFL which was quite som
 undertaking.
 
 Moreover it's hand-made. I'd like to express that schizophrenia doesn't exclude
-anyone from following their dreams as long as you hold onto a touch of realism and
-your expectations aren't too high.
+anyone from following their dreams as long as you hold onto a touch of realism and your expectations aren't too high.
+
+![Evisum Screenshot](data/images/ss.jpg "Evisum on Debian GNU/Linux")
 
 ## 📚 Table of Contents
 - [🔥 Features](#-features)

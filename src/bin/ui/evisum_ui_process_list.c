@@ -1145,6 +1145,8 @@ _process_list(void *data, Ecore_Thread *thread)
    wd = data;
    ui = wd->ui;
 
+   ecore_thread_name_set(thread, "process_list");
+
    while (!ecore_thread_check(thread))
      {
         for (int i = 0; i < delay * 8; i++)

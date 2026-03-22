@@ -44,6 +44,8 @@ _mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
 {
    static meminfo_t memory;
 
+   ecore_thread_name_set(thread, "memory");
+
    while (!ecore_thread_check(thread))
      {
         memset(&memory, 0, sizeof(memory));

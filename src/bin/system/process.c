@@ -334,7 +334,7 @@ _stat(const char *path, Stat *st)
                         break;
                     }
                }
-             if ((i < (slen + 1)) && (found) && (line[i+1] == ' '))
+             if ((i < (slen - 1)) && (found) && (line[i+1] == ' '))
                break;
           }
 

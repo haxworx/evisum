@@ -13,6 +13,8 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
    Ui_Cpu_Data *pd = data;
    Ext *ext = pd->ext;
 
+   ecore_thread_name_set(thread, "cpu");
+
    while (!ecore_thread_check(thread))
      {
         cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 100000);

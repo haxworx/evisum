@@ -41,6 +41,8 @@ _core_times_main_cb(void *data, Ecore_Thread *thread)
    if ((system_cpu_n_temperature_get(0)) != -1)
      ext->cpu_temp = 1;
 
+   ecore_thread_name_set(thread, "cpu");
+
    while (!ecore_thread_check(thread))
      {
         cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 100000);
