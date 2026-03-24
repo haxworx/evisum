@@ -4,6 +4,10 @@
 #include "config.h"
 
 #define ARRAY_SIZE(n) sizeof(n) / sizeof(n[0])
+#define EVISUM_THEME_FILE PACKAGE_DATA_DIR "/themes/evisum.edj"
+#define EVISUM_THEME_ICON_GROUP_PREFIX "evisum/icons/"
+#define EVISUM_ABOUT_BG_WIDTH 560
+#define EVISUM_ABOUT_BG_HEIGHT 540
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text,
@@ -72,7 +76,7 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
    evas_object_show(hbx);
 
    ic = elm_icon_add(parent);
-   elm_icon_standard_set(ic, evisum_icon_path_get(icon));
+   evisum_ui_icon_set(ic, icon);
    evas_object_size_hint_weight_set(ic, EXPAND, EXPAND);
    evas_object_size_hint_align_set(ic, FILL, FILL);
    evas_object_show(ic);
@@ -132,20 +136,6 @@ evisum_size_format(unsigned long long bytes, Eina_Bool simple)
      return eina_slstr_printf("%1.*f %c", precision, (double) value / powi, units[i][0]);
 
    return eina_slstr_printf("%1.*f %s", precision, (double) value / powi, units[i]);
-}
-
-static char *
-_path_append(const char *path, const char *file)
-{
-   char *concat;
-   int len;
-   char separator = '/';
-
-   len = strlen(path) + strlen(file) + 2;
-   concat = malloc(len * sizeof(char));
-   snprintf(concat, len, "%s%c%s", path, separator, file);
-
-   return concat;
 }
 
 void
@@ -217,22 +207,51 @@ evisum_icon_cache_find(Eina_Hash *icon_cache, const Proc_Info *proc)
 }
 
 const char *
-evisum_icon_path_get(const char *name)
+evisum_ui_icon_name_get(const char *name)
 {
-   char *path;
-   const char *icon_path, *directory = PACKAGE_DATA_DIR "/images";
-   icon_path = name;
+   const char *group;
 
-   path = _path_append(directory, eina_slstr_printf("%s.png", name));
-   if (path)
+   if (!name) return NULL;
+
+   group = eina_slstr_printf(EVISUM_THEME_ICON_GROUP_PREFIX "%s", name);
+   if (edje_file_group_exists(EVISUM_THEME_FILE, group))
+     return group;
+
+   return name;
+}
+
+void
+evisum_ui_icon_set(Evas_Object *ic, const char *name)
+{
+   const char *icon;
+   Evas_Object *img;
+
+   if (!ic || !name) return;
+
+   icon = evisum_ui_icon_name_get(name);
+   if (!icon) return;
+
+   if (!strncmp(icon, EVISUM_THEME_ICON_GROUP_PREFIX,
+                strlen(EVISUM_THEME_ICON_GROUP_PREFIX)))
      {
-        if (ecore_file_exists(path))
-          icon_path = eina_slstr_printf("%s", path);
-
-        free(path);
+        if (elm_image_file_set(ic, EVISUM_THEME_FILE, icon))
+          {
+             elm_image_resizable_set(ic, EINA_TRUE, EINA_TRUE);
+             elm_image_smooth_set(ic, EINA_TRUE);
+             evas_object_color_set(ic, 255, 255, 255, 255);
+             img = elm_image_object_get(ic);
+             if (img)
+               {
+                  const char *type = evas_object_type_get(img);
+                  evas_object_color_set(img, 255, 255, 255, 255);
+                  if (type && !strcmp(type, "image"))
+                    evas_object_image_alpha_set(img, EINA_TRUE);
+               }
+             return;
+          }
      }
 
-   return icon_path;
+   elm_icon_standard_set(ic, icon);
 }
 
 void
@@ -289,6 +308,8 @@ typedef struct {
    Evas_Object    *im;
    Ecore_Animator *animator;
    double          pos;
+   int             w;
+   int             h;
 } Animate_Data;
 
 static void
@@ -328,7 +349,11 @@ _about_resize_cb(void *data, Evas *e, Evas_Object *obj EINA_UNUSED,
                  void *event_info EINA_UNUSED)
 {
    Animate_Data *ad = data;
+   Evas_Coord w, h;
 
+   evas_object_geometry_get(ad->win, NULL, NULL, &w, &h);
+   if ((w != ad->w) || (h != ad->h))
+     evas_object_resize(ad->win, ad->w, ad->h);
    evas_object_hide(ad->obj);
 }
 
@@ -346,8 +371,11 @@ about_anim(void *data)
    if (ad->pos <= h)
      evas_object_show(ad->obj);
 
-   evas_object_move(ad->im, ELM_SCALE_SIZE(4), h - ELM_SCALE_SIZE(64));
-   evas_object_show(ad->im);
+   if (ad->im)
+     {
+        evas_object_move(ad->im, ELM_SCALE_SIZE(4), h - ELM_SCALE_SIZE(64));
+        evas_object_show(ad->im);
+     }
 
    ad->pos -= 0.5;
 
@@ -380,10 +408,10 @@ evisum_about_window_show(void *data)
 {
    Evisum_Ui *ui;
    Animate_Data *about;
-   Evas_Object *win, *bg, *tb, *version, *lb, *btn, *im;
-   Evas_Object *hbx, *rec, *pad, *br;
-   Evas_Coord x, y, w, h;
-   Evas_Coord iw, ih;
+   Evas_Object *win, *bg, *tb, *version, *lb, *btn;
+   Evas_Object *hbx, *rec, *pad, *pad_left, *pad_right;
+   Evas_Object *hdr_bg;
+   int about_w, about_h, bg_w, bg_h, hdr_h;
    const char *msg[] = {
       "The greatest of all time...",
       "Remember to take your medication!",
@@ -419,6 +447,9 @@ evisum_about_window_show(void *data)
       "<align=center>%s</></></>";
 
    ui = data;
+   about_w = EVISUM_ABOUT_BG_WIDTH;
+   about_h = EVISUM_ABOUT_BG_HEIGHT;
+   hdr_h = ELM_SCALE_SIZE(BTN_HEIGHT + 16);
 
    if (ui->win_about)
      {
@@ -426,25 +457,34 @@ evisum_about_window_show(void *data)
         return;
      }
 
-   ui->win_about = win = elm_win_util_standard_add("evisum", "evisum");
+   ui->win_about = win = elm_win_util_dialog_add(ui->proc.win, "evisum", _("About"));
    elm_win_autodel_set(win, 1);
+   elm_win_size_base_set(win, about_w, about_h);
+   evas_object_size_hint_min_set(win, about_w, about_h);
+   evas_object_size_hint_max_set(win, about_w, about_h);
+   evas_object_resize(win, about_w, about_h);
    elm_win_center(win, 1, 1);
    elm_win_title_set(win, _("About"));
 
    /* All that moves */
 
+   bg_w = about_w + (about_w / 10);
+   bg_h = about_h + (about_h / 10);
+
    bg = elm_bg_add(win);
-   evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(bg, FILL, FILL);
-   elm_bg_file_set(bg, evisum_icon_path_get("ladyhand"), NULL);
+   evas_object_size_hint_weight_set(bg, 0.0, 0.0);
+   evas_object_size_hint_align_set(bg, 0.5, 0.5);
+   elm_bg_option_set(bg, ELM_BG_OPTION_STRETCH);
+   elm_bg_file_set(bg, EVISUM_THEME_FILE, evisum_ui_icon_name_get("ladyhand"));
    elm_win_resize_object_add(win, bg);
-   evas_object_show(bg);
-   evas_object_size_hint_min_set(bg, ELM_SCALE_SIZE(320),
-                                 ELM_SCALE_SIZE(400));
-   evas_object_size_hint_max_set(bg, ELM_SCALE_SIZE(320),
-                                 ELM_SCALE_SIZE(400));
+    evas_object_show(bg);
+
+   evas_object_size_hint_min_set(bg, bg_w, bg_h);
+   evas_object_size_hint_max_set(bg, bg_w, bg_h);
 
    tb = elm_table_add(win);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
    evas_object_show(tb);
    elm_win_resize_object_add(win, tb);
    elm_table_align_set(tb, 0, 0);
@@ -469,23 +509,15 @@ evisum_about_window_show(void *data)
    evas_object_show(lb);
    elm_object_content_set(pad, lb);
 
-   evas_object_geometry_get(win, &x, &y, &w, &h);
-
-   im = evas_object_image_filled_add(evas_object_evas_get(bg));
-   evas_object_image_file_set(im, evisum_icon_path_get("lovethisdogharvey"), NULL);
-   evas_object_image_size_get(im, &iw, &ih);
-   evas_object_size_hint_min_set(im, ELM_SCALE_SIZE(iw) * 0.5, ELM_SCALE_SIZE(ih) * 0.5);
-   evas_object_resize(im, ELM_SCALE_SIZE(iw) * 0.5, ELM_SCALE_SIZE(ih) * 0.5);
-   evas_object_show(im);
-   evas_object_pass_events_set(im, 1);
-
    about = malloc(sizeof(Animate_Data));
    about->win = win;
    about->bg = bg;
    about->obj = pad;
    about->pos = ELM_SCALE_SIZE(400);
    about->ui = ui;
-   about->im = im;
+   about->im = NULL;
+   about->w = about_w;
+   about->h = about_h;
    about->animator = ecore_animator_add(about_anim, about);
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, about);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _about_resize_cb, about);
@@ -494,55 +526,64 @@ evisum_about_window_show(void *data)
 
    hbx = elm_box_add(win);
    elm_box_horizontal_set(hbx, 1);
-   evas_object_size_hint_align_set(hbx, FILL, 0.5);
+   evas_object_size_hint_align_set(hbx, FILL, 0.0);
    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+   evas_object_size_hint_min_set(hbx, about_w, hdr_h);
    evas_object_show(hbx);
 
    version = elm_label_add(win);
-   evas_object_size_hint_weight_set(version, EXPAND, 0);
-   evas_object_size_hint_align_set(version, 0.1, 0.5);
+   evas_object_size_hint_weight_set(version, 0, 0);
+   evas_object_size_hint_align_set(version, 0.0, 0.5);
    evas_object_show(version);
    elm_object_text_set(version,
                    eina_slstr_printf("<font color=#ffffff><big>%s</>",
                    PACKAGE_VERSION));
 
-   br = elm_table_add(win);
-   evas_object_size_hint_weight_set(br, EXPAND, 0);
-   evas_object_size_hint_align_set(br, 0.9, 0.5);
-   evas_object_show(br);
-
-   rec = evas_object_rectangle_add(evas_object_evas_get(win));
-   evas_object_size_hint_align_set(rec, FILL, FILL);
-   evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(BTN_WIDTH), 1);
-
    btn = elm_button_add(win);
-   evas_object_size_hint_weight_set(btn, EXPAND, 0);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
+   evas_object_size_hint_weight_set(btn, 0, 0);
+   evas_object_size_hint_align_set(btn, 1.0, 0.5);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), ELM_SCALE_SIZE(BTN_HEIGHT));
    elm_object_text_set(btn, _("Close"));
    evas_object_show(btn);
-   elm_table_pack(br, btn, 0, 0, 1, 1);
-   elm_table_pack(br, rec, 0, 0, 1, 1);
 
    rec = evas_object_rectangle_add(evas_object_evas_get(win));
    evas_object_size_hint_align_set(rec, FILL, FILL);
    evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+   evas_object_color_set(rec, 0, 0, 0, 0);
+   evas_object_show(rec);
 
+   pad_left = evas_object_rectangle_add(evas_object_evas_get(win));
+   evas_object_size_hint_align_set(pad_left, FILL, FILL);
+   evas_object_size_hint_weight_set(pad_left, 0, EXPAND);
+   evas_object_size_hint_min_set(pad_left, ELM_SCALE_SIZE(8), 1);
+   evas_object_color_set(pad_left, 0, 0, 0, 0);
+   evas_object_show(pad_left);
+
+   pad_right = evas_object_rectangle_add(evas_object_evas_get(win));
+   evas_object_size_hint_align_set(pad_right, FILL, FILL);
+   evas_object_size_hint_weight_set(pad_right, 0, EXPAND);
+   evas_object_size_hint_min_set(pad_right, ELM_SCALE_SIZE(8), 1);
+   evas_object_color_set(pad_right, 0, 0, 0, 0);
+   evas_object_show(pad_right);
+
+   elm_box_pack_end(hbx, pad_left);
    elm_box_pack_end(hbx, version);
    elm_box_pack_end(hbx, rec);
-   elm_box_pack_end(hbx, br);
+   elm_box_pack_end(hbx, btn);
+   elm_box_pack_end(hbx, pad_right);
 
-   rec = evas_object_rectangle_add(evas_object_evas_get(win));
-   evas_object_size_hint_align_set(rec, FILL, FILL);
-   evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(320), ELM_SCALE_SIZE(64));
-   evas_object_color_set(rec, 0, 0, 0, 128);
-   evas_object_show(rec);
+   hdr_bg = evas_object_rectangle_add(evas_object_evas_get(win));
+   evas_object_size_hint_align_set(hdr_bg, FILL, 0.0);
+   evas_object_size_hint_weight_set(hdr_bg, EXPAND, 0);
+   evas_object_size_hint_min_set(hdr_bg, about_w, 1);//hdr_h * 2);
+   evas_object_color_set(hdr_bg, 0, 0, 0, 128);
+   evas_object_show(hdr_bg);
 
    evas_object_smart_callback_add(btn, "clicked", _btn_close_cb, about);
 
    elm_object_part_content_set(bg, "elm.swallow.content", pad);
-   elm_table_pack(tb, im, 0, 1, 1, 1);
-   elm_table_pack(tb, rec, 0, 0, 1, 1);
+   elm_table_pack(tb, bg, 0, 0, 1, 1);
+   elm_table_pack(tb, hdr_bg, 0, 0, 1, 1);
    elm_table_pack(tb, hbx, 0, 0, 1, 1);
    elm_object_content_set(win, tb);
    evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, about);
@@ -553,19 +594,15 @@ evisum_about_window_show(void *data)
 const char *
 evisum_image_path_get(const char *name)
 {
-   char *path;
-   const char *icon_path = NULL, *directory = PACKAGE_DATA_DIR "/images";
+   const char *group;
 
-   path = _path_append(directory, eina_slstr_printf("%s.jpg", name));
-   if (path)
-     {
-        if (ecore_file_exists(path))
-          icon_path = eina_slstr_printf("%s", path);
+   if (!name) return NULL;
 
-        free(path);
-     }
+   group = eina_slstr_printf(EVISUM_THEME_ICON_GROUP_PREFIX "%s", name);
+   if (edje_file_group_exists(EVISUM_THEME_FILE, group))
+     return group;
 
-   return icon_path;
+   return NULL;
 }
 
 Evas_Object *

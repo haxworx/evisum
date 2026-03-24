@@ -3,6 +3,7 @@
 
 #include "evisum_ui.h"
 #include "../system/machine.h"
+#include <stdint.h>
 
 typedef struct _Color_Point {
    unsigned int val;
@@ -48,5 +49,8 @@ static const Color_Point temp_colormap_in[] = {
 };
 
 void evisum_ui_colors_init();
+
+void
+evisum_graph_color_get(const char *key, uint8_t *r, uint8_t *g, uint8_t *b);
 
 #endif

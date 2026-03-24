@@ -8,6 +8,25 @@ Evisum_Config *_evisum_config;
 
 static Eet_Data_Descriptor *_evisum_conf_descriptor = NULL;
 
+enum
+{
+   PROC_FIELD_WIDTH_CMD = 1,
+   PROC_FIELD_WIDTH_UID = 2,
+   PROC_FIELD_WIDTH_PID = 3,
+   PROC_FIELD_WIDTH_THREADS = 4,
+   PROC_FIELD_WIDTH_CPU = 5,
+   PROC_FIELD_WIDTH_PRI = 6,
+   PROC_FIELD_WIDTH_NICE = 7,
+   PROC_FIELD_WIDTH_FILES = 8,
+   PROC_FIELD_WIDTH_SIZE = 9,
+   PROC_FIELD_WIDTH_VIRT = 10,
+   PROC_FIELD_WIDTH_RSS = 11,
+   PROC_FIELD_WIDTH_SHARED = 12,
+   PROC_FIELD_WIDTH_STATE = 13,
+   PROC_FIELD_WIDTH_TIME = 14,
+   PROC_FIELD_WIDTH_CPU_USAGE = 15
+};
+
 static const char *
 _config_file_path(void)
 {
@@ -43,6 +62,21 @@ config_init(void)
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_reverse", proc.sort_reverse, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.poll_delay", proc.poll_delay, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.fields", proc.fields, EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.cmd", proc.field_widths[PROC_FIELD_WIDTH_CMD], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.uid", proc.field_widths[PROC_FIELD_WIDTH_UID], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.pid", proc.field_widths[PROC_FIELD_WIDTH_PID], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.threads", proc.field_widths[PROC_FIELD_WIDTH_THREADS], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.cpu", proc.field_widths[PROC_FIELD_WIDTH_CPU], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.pri", proc.field_widths[PROC_FIELD_WIDTH_PRI], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.nice", proc.field_widths[PROC_FIELD_WIDTH_NICE], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.files", proc.field_widths[PROC_FIELD_WIDTH_FILES], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.size", proc.field_widths[PROC_FIELD_WIDTH_SIZE], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.virt", proc.field_widths[PROC_FIELD_WIDTH_VIRT], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.rss", proc.field_widths[PROC_FIELD_WIDTH_RSS], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.shared", proc.field_widths[PROC_FIELD_WIDTH_SHARED], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.state", proc.field_widths[PROC_FIELD_WIDTH_STATE], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.time", proc.field_widths[PROC_FIELD_WIDTH_TIME], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.cpu_usage", proc.field_widths[PROC_FIELD_WIDTH_CPU_USAGE], EET_T_INT);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_statusbar", proc.show_statusbar, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.transparent", proc.transparent, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.alpha", proc.alpha, EET_T_UCHAR);

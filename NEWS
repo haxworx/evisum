@@ -1,4 +1,13 @@
 ============
+Evisum 1.0.2
+============
+
+  * Implement new UI for network window.
+  * Implement new UI for storage window (simpler w/graph).
+  * Allow columns to be resized and remember the changes.
+  * Implement an evisum_ui_graph API.
+
+============
 Evisum 1.0.1
 ============
 

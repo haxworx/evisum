@@ -533,9 +533,7 @@ _children_icon_get(void *data, Evas_Object *obj, const char *part)
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
-        elm_icon_standard_set(ic,
-                              evisum_icon_path_get(
-                              evisum_icon_cache_find(wd->icon_cache, proc)));
+        evisum_ui_icon_set(ic, evisum_icon_cache_find(wd->icon_cache, proc));
      }
 
    evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
@@ -1114,9 +1112,7 @@ _general_tab_add(Evas_Object *parent, Win_Data *wd)
         ic = elm_icon_add(parent);
         evas_object_size_hint_weight_set(ic, EXPAND, EXPAND);
         evas_object_size_hint_align_set(ic, FILL, FILL);
-        elm_icon_standard_set(ic,
-                              evisum_icon_path_get(
-                              evisum_icon_cache_find(wd->icon_cache, proc)));
+        evisum_ui_icon_set(ic, evisum_icon_cache_find(wd->icon_cache, proc));
         evas_object_show(ic);
         proc_info_free(proc);
         elm_table_pack(tb, ic, 0, i, 1, 1);
@@ -1821,4 +1817,3 @@ evisum_ui_process_view_win_add(int pid, Evisum_Proc_Action action)
                                           NULL,
                                           wd, 0);
 }
-

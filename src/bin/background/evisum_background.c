@@ -14,7 +14,7 @@ evisum_background_init(Evisum_Ui *ui)
 }
 
 void
-evisum_background_poller_cb(void *data, Ecore_Thread *thread)
+evisum_background_poller(void *data, Ecore_Thread *thread)
 {
    meminfo_t memory;
    Evisum_Ui *ui = data;

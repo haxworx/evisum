@@ -1,7 +1,4 @@
 #define EVISUM_ICON(icon_code, minw, minh, maxw, maxh, a) \
-images { \
-   image: icon_code".png" COMP; \
-} \
 group { \
    name: "evisum/icons/"icon_code; \
    min: minw minh; \
@@ -22,6 +19,45 @@ group { \
          } \
       } \
    } \
+}
+
+images {
+   image: "actions.png" COMP;
+   image: "application.png" COMP;
+   image: "apply.png" COMP;
+   image: "battery.png" COMP;
+   image: "bug.png" COMP;
+   image: "cancel.png" COMP;
+   image: "cpu.png" COMP;
+   image: "decrease.png" COMP;
+   image: "e.png" COMP;
+   image: "effects.png" COMP;
+   image: "evisum.png" COMP;
+   image: "exit.png" COMP;
+   image: "find.png" COMP;
+   image: "freebsd.png" COMP;
+   image: "go-down.png" COMP;
+   image: "go-up.png" COMP;
+   image: "increase.png" COMP;
+   image: "info.png" COMP;
+   image: "kill.png" COMP;
+   image: "ladyhand.png" COMP;
+   image: "linux.png" COMP;
+   image: "lovethisdogharvey.png" COMP;
+   image: "manual.png" COMP;
+   image: "memory.png" COMP;
+   image: "menu.png" COMP;
+   image: "misc.png" COMP;
+   image: "mount.png" COMP;
+   image: "network.png" COMP;
+   image: "off.png" COMP;
+   image: "on.png" COMP;
+   image: "proc.png" COMP;
+   image: "sensor.png" COMP;
+   image: "start.png" COMP;
+   image: "stop.png" COMP;
+   image: "storage.png" COMP;
+   image: "threads.png" COMP;
 }
 
 collections {
@@ -178,4 +214,40 @@ collections {
             }
         }
     }
+    EVISUM_ICON(actions, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(application, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(apply, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(battery, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(bug, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(cancel, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(cpu, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(decrease, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(e, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(effects, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(evisum, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(exit, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(find, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(freebsd, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(go-down, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(go-up, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(increase, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(info, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(kill, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(ladyhand, 560, 540, 0, 0, 1.037)
+    EVISUM_ICON(linux, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(lovethisdogharvey, 167, 220, 0, 0, 0.759)
+    EVISUM_ICON(manual, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(memory, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(menu, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(misc, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(mount, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(network, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(off, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(on, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(proc, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(sensor, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(start, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(stop, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(storage, 16, 16, 0, 0, 1.0)
+    EVISUM_ICON(threads, 16, 16, 0, 0, 1.0)
 }

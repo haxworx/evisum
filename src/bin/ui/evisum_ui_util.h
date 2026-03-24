@@ -36,11 +36,14 @@ evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text,
 void
 evisum_ui_icon_size_set(Evas_Object *ic, int size);
 
+void
+evisum_ui_icon_set(Evas_Object *ic, const char *name);
+
 const char *
 evisum_size_format(unsigned long long bytes, Eina_Bool simple);
 
 const char *
-evisum_icon_path_get(const char *name);
+evisum_ui_icon_name_get(const char *name);
 
 const char *
 evisum_image_path_get(const char *name);

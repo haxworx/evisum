@@ -1,19 +1,40 @@
 #include "evisum_ui_network.h"
+#include "evisum_ui_graph.h"
 #include "system/machine.h"
+#include "evisum_ui_colors.h"
+#include "config.h"
+
+/* It seems appropriate to note AI has modified this file.
+   Authored by Alastair Poole and Codex AI Agent.
+*/
 
 typedef struct
 {
-   Ecore_Thread           *thread;
-   Evas_Object            *win;
-   Evas_Object            *glist;
-   Elm_Genlist_Item_Class *itc, *itc2;
+   Ecore_Thread *thread;
+   Evas_Object  *win;
+   Evas_Object  *menu;
+   Evas_Object  *graph_bg;
+   Evas_Object  *graph_img;
+   Evas_Object  *legend_bx;
+   Elm_Layout   *btn_menu;
+   Eina_Bool     btn_visible;
 
-   Evisum_Ui              *ui;
+   Eina_List    *interfaces;
+   double        graph_peak;
+
+   Evisum_Ui    *ui;
 } Win_Data;
 
+#define NETWORK_GRAPH_SAMPLES 120
+#define NETWORK_POLL_USEC 1000000
+#define WIN_WIDTH 320
+#define WIN_HEIGHT 480
+
+
 typedef struct
 {
-   char     name[255];
+   char name[255];
+
    uint64_t total_in;
    uint64_t total_out;
 
@@ -23,179 +44,76 @@ typedef struct
    uint64_t in;
    uint64_t out;
 
-   Evas_Object     *obj;
-   Elm_Object_Item *it, *it2;
-   Eina_Bool        is_new;
-   Eina_Bool        delete_me;
+   double history[NETWORK_GRAPH_SAMPLES];
+   int    history_count;
+
+   uint8_t color_r;
+   uint8_t color_g;
+   uint8_t color_b;
+
+   Evas_Object *legend_row;
+   Evas_Object *legend_label;
+
+   Eina_Bool is_new;
+   Eina_Bool delete_me;
 } Network_Interface;
 
-static void
-_interface_gone(net_iface_t **ifaces, int n, Eina_List *list, Win_Data *wd)
-{
-   Eina_List *l;
-   Network_Interface *iface;
-
-   EINA_LIST_FOREACH(list, l, iface)
-     {
-        Eina_Bool found = 0;
-        for (int i = 0; i < n; i++)
-          {
-             net_iface_t *nwif = ifaces[i];
-             if (!strcmp(nwif->name, iface->name))
-               {
-                  found = 1;
-                  break;
-               }
-          }
-        if (!found)
-          iface->delete_me = 1;
-     }
-}
+static void _graph_redraw(Win_Data *wd, Eina_List *interfaces);
+static const Evisum_Ui_Graph_Layer _network_layers[] = {
+   { -0.6, 0.28 },
+   {  0.6, 0.28 },
+   { -1.2, 0.14 },
+   {  1.2, 0.14 },
+   {  0.0, 0.95 },
+};
 
 static void
-_network_update(void *data, Ecore_Thread *thread)
+_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
 {
    Win_Data *wd = data;
-   Eina_List *interfaces = NULL;
-   Network_Interface *iface;
+   Evas_Coord w, h;
+   Evas_Event_Mouse_Move *ev;
 
-   ecore_thread_name_set(thread, "network");
+   ev = event_info;
+   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
 
-   while (!ecore_thread_check(thread))
+   if ((ev->cur.canvas.x >= (w - 128)) && (ev->cur.canvas.y <= 128))
      {
-        int n;
-        net_iface_t *nwif, **ifaces = system_network_ifaces_get(&n);
-
-        _interface_gone(ifaces, n, interfaces, wd);
-
-        for (int i = 0; i < n; i++)
-           {
-             Network_Interface *iface2;
-             Eina_List *l;
-
-             nwif = ifaces[i];
-             iface = NULL;
-             EINA_LIST_FOREACH(interfaces, l, iface2)
-               {
-                  if (!strcmp(nwif->name, iface2->name))
-                    {
-                       iface = iface2;
-                       break;
-                    }
-               }
-             if (!iface)
-               {
-                  iface = calloc(1, sizeof(Network_Interface));
-                  iface->is_new = 1;
-                  snprintf(iface->name, sizeof(iface->name), "%s", nwif->name);
-                  interfaces = eina_list_append(interfaces, iface);
-               }
-             else
-               {
-                  iface->is_new = 0;
-                  if ((nwif->xfer.in == iface->total_in) || (iface->total_in == 0))
-                    iface->in = 0;
-                  else
-                    iface->in =  (nwif->xfer.in - iface->total_in);
-                  if ((nwif->xfer.out == iface->total_out) || (iface->total_out == 0))
-                    iface->out = 0;
-                  else
-                    iface->out = (nwif->xfer.out - iface->total_out);
-
-                  if (iface->in > iface->peak_in)
-                    iface->peak_in = iface->in;
-                  if (iface->out > iface->peak_out)
-                    iface->peak_out = iface->out;
-                  iface->total_in = nwif->xfer.in;
-                  iface->total_out = nwif->xfer.out;
-               }
-             free(nwif);
-          }
-        free(ifaces);
-
-        ecore_thread_feedback(thread, interfaces);
-        for (int i = 0; i < 8; i++)
+        if (!wd->btn_visible)
           {
-             if (ecore_thread_check(thread))
-               break;
-             usleep(250000);
+             elm_object_signal_emit(wd->btn_menu, "menu,show", "evisum/menu");
+             wd->btn_visible = 1;
           }
      }
-   EINA_LIST_FREE(interfaces, iface)
-     free(iface);
+   else if ((wd->btn_visible) && (!wd->menu))
+     {
+        elm_object_signal_emit(wd->btn_menu, "menu,hide", "evisum/menu");
+        wd->btn_visible = 0;
+     }
 }
 
-static Evas_Object *
-_lb_add(Evas_Object *obj, const char *txt)
+static void
+_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
-   Evas_Object *lb = elm_label_add(obj);
-   elm_object_text_set(lb, txt);
-   return lb;
+   Win_Data *wd = data;
+   Evisum_Ui *ui = wd->ui;
+
+   if (!wd->menu)
+     wd->menu = evisum_ui_main_menu_create(ui, ui->network.win, obj);
+   else
+     {
+        evas_object_del(wd->menu);
+        wd->menu = NULL;
+     }
 }
 
-static char *
-_text_get(void *data, Evas_Object *obj, const char *part)
+static void
+_iface_color_apply(Network_Interface *iface)
 {
-   char *buf;
-
-   if (strcmp(part, "elm.text")) return NULL;
-
-   buf = data;
-
-   return strdup(buf);
-}
-
-static Evas_Object *
-_iface_obj_add(void *data, Evas_Object *obj, const char *part)
-{
-   Evas_Object *tb, *lb;
-   Network_Interface *iface;
-
-   if (strcmp(part, "elm.swallow.content")) return NULL;
-
-   iface = data;
-
-   iface->obj = tb = elm_table_add(obj);
-   elm_table_padding_set(tb,
-                         8 * elm_config_scale_get(),
-                         4 * elm_config_scale_get());
-   evas_object_size_hint_weight_set(tb, 1.0, 0);
-   evas_object_size_hint_align_set(tb, FILL, 0.0);
-
-   lb = _lb_add(obj, _("<hilight>Total In/Out</>"));
-   evas_object_size_hint_align_set(lb, 1.0, 0.5);
-   elm_table_pack(tb, lb, 0, 0, 1, 1);
-   evas_object_show(lb);
-   lb = _lb_add(obj, "");
-   evas_object_size_hint_weight_set(lb, 1.0, 0.0);
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_data_set(tb, "total", lb);
-   elm_table_pack(tb, lb, 1, 0, 1, 1);
-   evas_object_show(lb);
-
-   lb = _lb_add(obj, _("<hilight>Peak In/Out</>"));
-   evas_object_size_hint_align_set(lb, 1.0, 0.5);
-   elm_table_pack(tb, lb, 0, 1, 1, 1);
-   evas_object_show(lb);
-   lb = _lb_add(obj, "");
-   evas_object_size_hint_weight_set(lb, 1.0, 0.0);
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_data_set(tb, "peak", lb);
-   elm_table_pack(tb, lb, 1, 1, 1, 1);
-   evas_object_show(lb);
-
-   lb = _lb_add(obj, _("<hilight>In/Out</>"));
-   evas_object_size_hint_align_set(lb, 1.0, 0.5);
-   elm_table_pack(tb, lb, 0, 2, 1, 1);
-   evas_object_show(lb);
-   lb = _lb_add(obj, "");
-   evas_object_size_hint_weight_set(lb, 1.0, 0.0);
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_data_set(tb, "inout", lb);
-   elm_table_pack(tb, lb, 1, 2, 1, 1);
-   evas_object_show(lb);
-
-   return tb;
+   evisum_graph_color_get(iface->name,
+                          &iface->color_r,
+                          &iface->color_g,
+                          &iface->color_b);
 }
 
 static char *
@@ -220,74 +138,268 @@ _network_transfer_format(double rate)
 }
 
 static void
-_network_update_feedback_cb(void *data, Ecore_Thread *thread, void *msgdata EINA_UNUSED)
+_iface_legend_add(Win_Data *wd, Network_Interface *iface)
 {
-   Eina_List *interfaces;
-   Network_Interface *iface;
-   Win_Data *wd;
-   Evas_Object *obj;
-   Eina_List *l, *l2;
-   char *s;
-   Eina_Strbuf *buf;
+   Evas_Object *row, *swatch, *lb;
+   Evas *evas;
 
-   interfaces = msgdata;
-   wd = data;
+   if (!wd->legend_bx || iface->legend_row)
+     return;
 
-   buf = eina_strbuf_new();
+   row = elm_box_add(wd->legend_bx);
+   elm_box_horizontal_set(row, EINA_TRUE);
+   elm_box_padding_set(row, 4 * elm_config_scale_get(), 0);
+   evas_object_size_hint_weight_set(row, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(row, EVAS_HINT_FILL, 0.5);
+   elm_box_pack_end(wd->legend_bx, row);
+   evas_object_show(row);
 
-   EINA_LIST_FOREACH_SAFE(interfaces, l, l2, iface)
-     {
-        if (iface->delete_me)
-          {
-             elm_object_item_del(iface->it);
-             elm_object_item_del(iface->it2);
-             free(iface);
-             interfaces = eina_list_remove_list(interfaces, l);
-          }
-        else if (iface->is_new)
-          {
-             iface->it = elm_genlist_item_append(wd->glist, wd->itc2, iface->name, NULL, ELM_GENLIST_ITEM_GROUP, NULL, NULL);
-             iface->it2 = elm_genlist_item_append(wd->glist, wd->itc, iface, NULL, ELM_GENLIST_ITEM_NONE, NULL, NULL);
-          }
-        else
-          {
-             obj = evas_object_data_get(iface->obj, "total");
-             elm_object_text_set(obj, eina_slstr_printf("%s / %s",
-                                 evisum_size_format(iface->total_in, 0),
-                                 evisum_size_format(iface->total_out, 0)));
+   evas = evas_object_evas_get(row);
+   swatch = evas_object_rectangle_add(evas);
+   evas_object_color_set(swatch, iface->color_r, iface->color_g, iface->color_b, 255);
+   evas_object_size_hint_min_set(swatch,
+                                 12 * elm_config_scale_get(),
+                                 12 * elm_config_scale_get());
+   evas_object_size_hint_align_set(swatch, 0.0, 0.5);
+   elm_box_pack_end(row, swatch);
+   evas_object_show(swatch);
 
-             obj = evas_object_data_get(iface->obj, "peak");
-             s = _network_transfer_format(iface->peak_in);
-             eina_strbuf_append(buf, s);
-             free(s);
-             s = _network_transfer_format(iface->peak_out);
-             eina_strbuf_append_printf(buf, " / %s", s);
-             free(s);
-             elm_object_text_set(obj, eina_strbuf_string_get(buf));
-             eina_strbuf_reset(buf);
+   lb = elm_label_add(row);
+   evas_object_size_hint_weight_set(lb, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
+   elm_object_text_set(lb, iface->name);
+   elm_box_pack_end(row, lb);
+   evas_object_show(lb);
 
-             obj = evas_object_data_get(iface->obj, "inout");
-             s = _network_transfer_format(iface->in);
-             eina_strbuf_append(buf, s);
-             free(s);
-             s = _network_transfer_format(iface->out);
-             eina_strbuf_append_printf(buf, " / %s", s);
-             free(s);
-             elm_object_text_set(obj, eina_strbuf_string_get(buf));
-             eina_strbuf_reset(buf);
-          }
-     }
-   eina_strbuf_free(buf);
+   iface->legend_row = row;
+   iface->legend_label = lb;
 }
 
 static void
-_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_iface_legend_del(Network_Interface *iface)
 {
-   Evas_Event_Key_Down *ev;
-   Win_Data *wd;
+   if (iface->legend_row)
+     evas_object_del(iface->legend_row);
+   if (iface->legend_label)
+     evas_object_del(iface->legend_label);
+   iface->legend_row = NULL;
+   iface->legend_label = NULL;
+}
 
-   wd = data;
-   ev = event_info;
+static void
+_iface_legend_update(Network_Interface *iface)
+{
+   char *s1, *s2;
+
+   if (!iface->legend_label)
+     return;
+
+   s1 = _network_transfer_format(iface->in);
+   s2 = _network_transfer_format(iface->out);
+   elm_object_text_set(iface->legend_label,
+                       eina_slstr_printf("%s (%s / %s)", iface->name, s1, s2));
+   free(s1);
+   free(s2);
+}
+
+static void
+_iface_history_add(Network_Interface *iface, double value)
+{
+   if (iface->history_count < NETWORK_GRAPH_SAMPLES)
+     iface->history[iface->history_count++] = value;
+   else
+     {
+        memmove(&iface->history[0], &iface->history[1],
+                sizeof(double) * (NETWORK_GRAPH_SAMPLES - 1));
+        iface->history[NETWORK_GRAPH_SAMPLES - 1] = value;
+     }
+}
+
+static void
+_interface_gone(net_iface_t **ifaces, int n, Eina_List *list)
+{
+   Eina_List *l;
+   Network_Interface *iface;
+
+   EINA_LIST_FOREACH(list, l, iface)
+     {
+        Eina_Bool found = EINA_FALSE;
+        for (int i = 0; i < n; i++)
+          {
+             net_iface_t *nwif = ifaces[i];
+             if (!strcmp(nwif->name, iface->name))
+               {
+                  found = EINA_TRUE;
+                  break;
+               }
+          }
+        if (!found)
+          iface->delete_me = EINA_TRUE;
+     }
+}
+
+static void
+_graph_redraw(Win_Data *wd, Eina_List *interfaces)
+{
+   Eina_List *l;
+   Network_Interface *iface;
+   double peak;
+   int total, nseries;
+   Evisum_Ui_Graph_Series *series;
+
+   peak = wd->graph_peak;
+   if (peak < 1.0)
+     peak = 1.0;
+
+   total = eina_list_count(interfaces);
+   nseries = 0;
+   series = calloc(total, sizeof(Evisum_Ui_Graph_Series));
+   if ((total > 0) && (!series))
+     return;
+
+   EINA_LIST_FOREACH(interfaces, l, iface)
+     {
+        if (iface->delete_me || (iface->history_count < 2))
+          continue;
+        series[nseries].history = iface->history;
+        series[nseries].history_count = iface->history_count;
+        series[nseries].color_r = iface->color_r;
+        series[nseries].color_g = iface->color_g;
+        series[nseries].color_b = iface->color_b;
+        nseries++;
+     }
+
+   evisum_ui_graph_draw(wd->graph_bg, wd->graph_img,
+                        NETWORK_GRAPH_SAMPLES, peak,
+                        series, nseries,
+                        _network_layers, EINA_C_ARRAY_LENGTH(_network_layers));
+   free(series);
+}
+
+static void
+_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                    void *event_info EINA_UNUSED)
+{
+   Win_Data *wd = data;
+
+   _graph_redraw(wd, wd->interfaces);
+}
+
+static void
+_network_update(void *data EINA_UNUSED, Ecore_Thread *thread)
+{
+   Eina_List *interfaces = NULL;
+   Network_Interface *iface;
+
+   ecore_thread_name_set(thread, "network");
+
+   while (!ecore_thread_check(thread))
+     {
+        int n;
+        net_iface_t *nwif, **ifaces = system_network_ifaces_get(&n);
+
+        _interface_gone(ifaces, n, interfaces);
+
+        for (int i = 0; i < n; i++)
+          {
+             Network_Interface *iface2;
+             Eina_List *l;
+
+             nwif = ifaces[i];
+             iface = NULL;
+             EINA_LIST_FOREACH(interfaces, l, iface2)
+               {
+                  if (!strcmp(nwif->name, iface2->name))
+                    {
+                       iface = iface2;
+                       break;
+                    }
+               }
+
+             if (!iface)
+               {
+                  iface = calloc(1, sizeof(Network_Interface));
+                  iface->is_new = EINA_TRUE;
+                  snprintf(iface->name, sizeof(iface->name), "%s", nwif->name);
+                  iface->total_in = nwif->xfer.in;
+                  iface->total_out = nwif->xfer.out;
+                  interfaces = eina_list_append(interfaces, iface);
+               }
+             else
+               {
+                  iface->is_new = EINA_FALSE;
+                  iface->in = (iface->total_in == 0) ? 0 : (nwif->xfer.in - iface->total_in);
+                  iface->out = (iface->total_out == 0) ? 0 : (nwif->xfer.out - iface->total_out);
+
+                  if (iface->in > iface->peak_in)
+                    iface->peak_in = iface->in;
+                  if (iface->out > iface->peak_out)
+                    iface->peak_out = iface->out;
+
+                  iface->total_in = nwif->xfer.in;
+                  iface->total_out = nwif->xfer.out;
+               }
+
+             free(nwif);
+          }
+
+        free(ifaces);
+        ecore_thread_feedback(thread, interfaces);
+
+        if (!ecore_thread_check(thread))
+          usleep(NETWORK_POLL_USEC);
+     }
+
+   EINA_LIST_FREE(interfaces, iface)
+     free(iface);
+}
+
+static void
+_network_update_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED,
+                            void *msgdata)
+{
+   Win_Data *wd = data;
+   Eina_List *interfaces = msgdata;
+   Eina_List *l, *l2;
+   Network_Interface *iface;
+
+   wd->interfaces = interfaces;
+
+   EINA_LIST_FOREACH_SAFE(interfaces, l, l2, iface)
+     {
+        double rate = (double) iface->in + (double) iface->out;
+
+        _iface_history_add(iface, rate);
+        if (rate > wd->graph_peak)
+          wd->graph_peak = rate;
+
+        if (iface->delete_me)
+          {
+             _iface_legend_del(iface);
+             free(iface);
+             interfaces = eina_list_remove_list(interfaces, l);
+             wd->interfaces = interfaces;
+             continue;
+          }
+
+        if (iface->is_new)
+          {
+             _iface_color_apply(iface);
+             _iface_legend_add(wd, iface);
+          }
+
+        _iface_legend_update(iface);
+     }
+
+   _graph_redraw(wd, interfaces);
+}
+
+static void
+_win_key_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                 void *event_info)
+{
+   Win_Data *wd = data;
+   Evas_Event_Key_Down *ev = event_info;
 
    if (!ev || !ev->keyname)
      return;
@@ -297,15 +409,24 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
+             void *event_info EINA_UNUSED)
 {
-   Win_Data *wd;
-   Evisum_Ui *ui;
-
-   wd = data;
-   ui = wd->ui;
+   Win_Data *wd = data;
+   Evisum_Ui *ui = wd->ui;
 
    evas_object_geometry_get(obj, &ui->network.x, &ui->network.y, NULL, NULL);
+}
+
+static void
+_win_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
+               void *event_info EINA_UNUSED)
+{
+   Win_Data *wd = data;
+   Evisum_Ui *ui = wd->ui;
+
+   evas_object_geometry_get(obj, NULL, NULL, &ui->network.width, &ui->network.height);
+   _graph_redraw(wd, wd->interfaces);
 }
 
 static void
@@ -315,8 +436,17 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    Win_Data *wd = data;
    Evisum_Ui *ui = wd->ui;
 
-   elm_genlist_item_class_free(wd->itc);
-   elm_genlist_item_class_free(wd->itc2);
+   if (wd->menu)
+     evas_object_del(wd->menu);
+
+   if (wd->interfaces)
+     {
+        Eina_List *l;
+        Network_Interface *iface;
+
+        EINA_LIST_FOREACH(wd->interfaces, l, iface)
+          _iface_legend_del(iface);
+     }
 
    evisum_ui_config_save(ui);
    ecore_thread_cancel(wd->thread);
@@ -325,20 +455,14 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
    free(wd);
 }
 
-static void
-_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
-{
-   Win_Data *wd = data;
-   Evisum_Ui *ui = wd->ui;
-
-   evas_object_geometry_get(obj, NULL, NULL, &ui->network.width, &ui->network.height);
-}
-
 void
 evisum_ui_network_win_add(Evisum_Ui *ui)
 {
-   Evas_Object *win, *bx, *glist;;
-   Elm_Genlist_Item_Class *itc;
+   Evas_Object *win, *root_bx, *graph_bx, *graph_tb, *legend_fr;
+   Evas_Object *tb, *btn, *ic;
+   Elm_Layout *lay;
+   Evas *evas;
+   int scale;
 
    if (ui->network.win)
      {
@@ -357,45 +481,91 @@ evisum_ui_network_win_add(Evisum_Ui *ui)
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, wd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, wd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, wd);
 
-   bx = elm_box_add(win);
-   evas_object_size_hint_weight_set(bx, 1.0, 1.0);
-   evas_object_size_hint_align_set(bx, FILL, FILL);
-   evas_object_event_callback_add(bx, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, wd);
+   scale = elm_config_scale_get();
+   evas = evas_object_evas_get(win);
 
-   wd->glist = glist = elm_genlist_add(win);
-   elm_genlist_homogeneous_set(glist, 1);
-   evas_object_size_hint_weight_set(glist, 1.0, 1.0);
-   evas_object_size_hint_align_set(glist, FILL, FILL);
-   elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_NONE);
-   elm_box_pack_end(bx, glist);
-   evas_object_show(glist);
+   tb = elm_table_add(win);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_show(tb);
+   elm_win_resize_object_add(win, tb);
 
-   itc = elm_genlist_item_class_new();
-   wd->itc = itc;
-   itc->item_style = "full";
-   itc->func.text_get = NULL;
-   itc->func.content_get = _iface_obj_add;
-   itc->func.filter_get = NULL;
-   itc->func.state_get = NULL;
-   itc->func.del = NULL;
+   root_bx = elm_box_add(win);
+   elm_box_padding_set(root_bx, 0, 6 * scale);
+   evas_object_size_hint_weight_set(root_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(root_bx, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_pack(tb, root_bx, 0, 0, 1, 1);
+   evas_object_show(root_bx);
 
-   itc = elm_genlist_item_class_new();
-   wd->itc2 = itc;
-   itc->item_style = "group_index";
-   itc->func.text_get = _text_get;
-   itc->func.content_get = NULL;
-   itc->func.filter_get = NULL;
-   itc->func.state_get = NULL;
-   itc->func.del = NULL;
+   graph_bx = elm_box_add(win);
+   elm_box_padding_set(graph_bx, 0, 6 * scale);
+   evas_object_size_hint_weight_set(graph_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(graph_bx, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_pack_end(root_bx, graph_bx);
+   evas_object_show(graph_bx);
 
-   elm_win_resize_object_add(win, bx);
-   evas_object_show(bx);
+   graph_tb = elm_table_add(win);
+   evas_object_size_hint_weight_set(graph_tb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(graph_tb, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_min_set(graph_tb, 420 * scale, 260 * scale);
+   elm_box_pack_end(graph_bx, graph_tb);
+   evas_object_show(graph_tb);
 
-   if ((ui->network.width) > 0 && (ui->network.height > 0))
+   wd->graph_bg = evas_object_rectangle_add(evas);
+   evas_object_color_set(wd->graph_bg, 32, 32, 32, 255);
+   evas_object_size_hint_weight_set(wd->graph_bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(wd->graph_bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_pack(graph_tb, wd->graph_bg, 0, 0, 1, 1);
+   evas_object_show(wd->graph_bg);
+   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_RESIZE, _graph_bg_resize_cb, wd);
+   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_MOVE, _graph_bg_resize_cb, wd);
+
+   wd->graph_img = evas_object_image_filled_add(evas);
+   evas_object_image_alpha_set(wd->graph_img, EINA_FALSE);
+   evas_object_size_hint_weight_set(wd->graph_img, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(wd->graph_img, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_pack(graph_tb, wd->graph_img, 0, 0, 1, 1);
+   evas_object_show(wd->graph_img);
+   evas_object_stack_above(wd->graph_img, wd->graph_bg);
+
+   legend_fr = elm_frame_add(win);
+   elm_object_text_set(legend_fr, _("Interfaces"));
+   evas_object_size_hint_weight_set(legend_fr, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(legend_fr, EVAS_HINT_FILL, 0.0);
+   elm_box_pack_end(root_bx, legend_fr);
+   evas_object_show(legend_fr);
+
+   wd->legend_bx = elm_box_add(legend_fr);
+   elm_box_padding_set(wd->legend_bx, 0, 2 * scale);
+   evas_object_size_hint_weight_set(wd->legend_bx, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(wd->legend_bx, EVAS_HINT_FILL, 0.0);
+   evas_object_size_hint_min_set(wd->legend_bx, 420 * scale, 0);
+   elm_object_content_set(legend_fr, wd->legend_bx);
+   evas_object_show(wd->legend_bx);
+
+   btn = elm_button_add(win);
+   ic = elm_icon_add(btn);
+   elm_icon_standard_set(ic, "menu");
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
+   elm_object_focus_allow_set(btn, 0);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
+   evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, wd);
+
+   wd->btn_menu = lay = elm_layout_add(win);
+   evas_object_size_hint_weight_set(lay, 1.0, 1.0);
+   evas_object_size_hint_align_set(lay, 0.99, 0.01);
+   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
+   elm_layout_content_set(lay, "evisum/menu", btn);
+   elm_table_pack(tb, lay, 0, 0, 1, 1);
+   evas_object_show(lay);
+
+   if ((ui->network.width > 0) && (ui->network.height > 0))
      evas_object_resize(win, ui->network.width, ui->network.height);
    else
-     evas_object_resize(win, UI_CHILD_WIN_WIDTH, UI_CHILD_WIN_HEIGHT);
+     evas_object_resize(win, WIN_WIDTH, WIN_HEIGHT);
 
    if ((ui->network.x > 0) && (ui->network.y > 0))
      evas_object_move(win, ui->network.x, ui->network.y);
@@ -403,6 +573,7 @@ evisum_ui_network_win_add(Evisum_Ui *ui)
      elm_win_center(win, 1, 1);
 
    evas_object_show(win);
+   evas_object_event_callback_add(root_bx, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, wd);
 
    wd->thread = ecore_thread_feedback_run(_network_update,
                                           _network_update_feedback_cb,
@@ -410,4 +581,3 @@ evisum_ui_network_win_add(Evisum_Ui *ui)
                                           NULL,
                                           wd, 1);
 }
-

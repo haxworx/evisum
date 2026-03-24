@@ -388,7 +388,7 @@ cpu_visual_default(Evas_Object *parent_box)
         elm_table_pack(tbl, rec, 1, i, 1, 1);
 
         ic = elm_icon_add(box);
-        elm_icon_standard_set(ic, evisum_icon_path_get("cpu"));
+        evisum_ui_icon_set(ic, "cpu");
         evas_object_size_hint_align_set(ic, FILL, FILL);
         evas_object_size_hint_weight_set(ic, 0.0, EXPAND);
         elm_table_pack(tbl, ic, 1, i, 1, 1);

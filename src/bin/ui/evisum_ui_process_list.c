@@ -83,6 +83,13 @@ typedef struct
    Proc_Field              fields_max;
    Evas_Object            *fields_menu;
    Ecore_Timer            *fields_timer;
+   Evas_Object            *resize_btn;
+   Proc_Field              resize_field;
+   Eina_Bool               resizing;
+   Eina_Bool               ignore_sort_click;
+   Evas_Coord              resize_start_x;
+   Evas_Coord              resize_start_w;
+   int                     resize_dir;
 
    struct
    {
@@ -98,6 +105,9 @@ typedef struct
 
 } Win_Data;
 
+#define PROC_COL_RESIZE_HIT_WIDTH 8
+#define PROC_COL_MIN_WIDTH       48
+
 static Win_Data *_wd = NULL;
 
 typedef struct
@@ -111,6 +121,7 @@ typedef struct
 static Field _fields[PROC_FIELD_MAX];
 
 static void _content_reset(Win_Data *wd);
+static void _content_update_all(Win_Data *wd);
 
 static const char *
 _fields_desc(Proc_Field id)
@@ -198,6 +209,123 @@ static Eina_Bool
 _fields_enabled(Proc_Field id)
 {
    return _fields[id].enabled;
+}
+
+static int
+_field_default_width_get(Proc_Field id)
+{
+   if (id == PROC_FIELD_CMD)
+     return 2.0 * ELM_SCALE_SIZE(BTN_WIDTH);
+   if (id == PROC_FIELD_UID)
+     return 1.8 * ELM_SCALE_SIZE(BTN_WIDTH);
+   if (id == PROC_FIELD_CPU_USAGE)
+     return 1.75 * ELM_SCALE_SIZE(BTN_WIDTH);
+
+   return ELM_SCALE_SIZE(BTN_WIDTH);
+}
+
+static int
+_field_min_width_get(Proc_Field id)
+{
+   if (id == PROC_FIELD_CMD)
+     return ELM_SCALE_SIZE(BTN_WIDTH);
+
+   return ELM_SCALE_SIZE(PROC_COL_MIN_WIDTH);
+}
+
+static Evas_Object *
+_field_btn_get(Win_Data *wd, Proc_Field id)
+{
+   switch (id)
+     {
+      case PROC_FIELD_CMD: return wd->btn_cmd;
+      case PROC_FIELD_UID: return wd->btn_uid;
+      case PROC_FIELD_PID: return wd->btn_pid;
+      case PROC_FIELD_THREADS: return wd->btn_threads;
+      case PROC_FIELD_CPU: return wd->btn_cpu;
+      case PROC_FIELD_PRI: return wd->btn_pri;
+      case PROC_FIELD_NICE: return wd->btn_nice;
+      case PROC_FIELD_FILES: return wd->btn_files;
+      case PROC_FIELD_SIZE: return wd->btn_size;
+      case PROC_FIELD_VIRT: return wd->btn_virt;
+      case PROC_FIELD_RSS: return wd->btn_rss;
+      case PROC_FIELD_SHARED: return wd->btn_shared;
+      case PROC_FIELD_STATE: return wd->btn_state;
+      case PROC_FIELD_TIME: return wd->btn_time;
+      case PROC_FIELD_CPU_USAGE: return wd->btn_cpu_usage;
+      default: return NULL;
+     }
+}
+
+static void
+_field_width_apply(Win_Data *wd, Proc_Field id)
+{
+   Evas_Object *btn = _field_btn_get(wd, id);
+   int width;
+
+   if (!btn) return;
+
+   width = wd->ui->proc.field_widths[id];
+   if (width < _field_min_width_get(id))
+     width = _field_default_width_get(id);
+
+   evas_object_size_hint_min_set(btn, width, 1);
+}
+
+static void
+_field_proportions_apply(Win_Data *wd)
+{
+   double total = 0.0;
+
+   for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
+     {
+        if (!_fields_enabled(i)) continue;
+        if (!wd->ui->proc.field_widths[i])
+          wd->ui->proc.field_widths[i] = _field_default_width_get(i);
+        total += wd->ui->proc.field_widths[i];
+     }
+   if (total <= 0.0) total = 1.0;
+
+   for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
+     {
+        Evas_Object *btn = _field_btn_get(wd, i);
+        if (!btn) continue;
+        if (_fields_enabled(i))
+          evas_object_size_hint_weight_set(btn,
+                                           wd->ui->proc.field_widths[i] / total,
+                                           0.0);
+        else
+          evas_object_size_hint_weight_set(btn, 0.0, 0.0);
+     }
+}
+
+static void
+_cmd_width_sync(Win_Data *wd, Evas_Coord width)
+{
+   int minw = _field_min_width_get(PROC_FIELD_CMD);
+
+   if (width < minw)
+     width = minw;
+
+   if (wd->ui->proc.field_widths[PROC_FIELD_CMD] >= width)
+     return;
+
+   wd->ui->proc.field_widths[PROC_FIELD_CMD] = width;
+   _field_width_apply(wd, PROC_FIELD_CMD);
+   _field_proportions_apply(wd);
+   _content_update_all(wd);
+}
+
+static Proc_Field
+_prev_visible_field_get(Proc_Field id)
+{
+   for (int i = id - 1; i >= PROC_FIELD_CMD; i--)
+     {
+        if (_fields_enabled(i))
+          return i;
+     }
+
+   return 0;
 }
 
 static Eina_Bool
@@ -327,7 +455,7 @@ _fields_menu_create(Win_Data *wd, Evas_Object *parent)
    evas_object_show(pad);
 
    ic = elm_icon_add(parent);
-   elm_icon_standard_set(ic, evisum_icon_path_get("apply"));
+   evisum_ui_icon_set(ic, "apply");
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    elm_box_pack_end(hbx, ic);
    evas_object_smart_callback_add(ic, "clicked", _fields_menu_apply_clicked_cb, wd);
@@ -335,7 +463,7 @@ _fields_menu_create(Win_Data *wd, Evas_Object *parent)
    evas_object_event_callback_add(ic, EVAS_CALLBACK_MOUSE_OUT, _fields_icon_mouse_out_cb, NULL);
 
    ic2 = elm_icon_add(parent);
-   elm_icon_standard_set(ic2, evisum_icon_path_get("exit"));
+   evisum_ui_icon_set(ic2, "exit");
    evas_object_size_hint_min_set(ic2, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_show(ic2);
    elm_box_pack_end(hbx, ic2);
@@ -426,6 +554,7 @@ _content_reset(Win_Data *wd)
 
    // Update fields from bitmask.
    _fields_update(wd);
+   _field_proportions_apply(wd);
 
    elm_table_clear(wd->tb_main, 0);
    elm_table_pack(wd->tb_main, wd->btn_menu, j++, 0, 1, 1);
@@ -723,18 +852,15 @@ _content_get(void *data, Evas_Object *obj, const char *source)
      elm_object_text_set(lb, buf);
    evas_object_geometry_get(lb, NULL, NULL, &ow, NULL);
    ow += bw;
-   if (ow > w)
-     {
-        evas_object_size_hint_min_set(wd->btn_cmd, ow, 1);
-        _content_update_all(wd);
-     }
+   _cmd_width_sync(wd, ow);
 
-   const char *new = evisum_icon_path_get(evisum_icon_cache_find(wd->icon_cache, proc));
+   const char *icon_name = evisum_icon_cache_find(wd->icon_cache, proc);
+   const char *new = evisum_ui_icon_name_get(icon_name);
    const char *old = NULL;
    o = evas_object_data_get(it->obj, "icon");
    elm_image_file_get(o, &old, NULL);
    if ((!old) || (strcmp(old, new)))
-     elm_icon_standard_set(o, new);
+     evisum_ui_icon_set(o, icon_name);
    rec = evas_object_data_get(o, "rec");
    evas_object_size_hint_min_set(rec, w, 1);
    evas_object_show(o);
@@ -983,7 +1109,7 @@ summary_add(Win_Data *wd)
    hbx = wd->summary.hbx;
 
    ic = elm_icon_add(hbx);
-   elm_icon_standard_set(ic, evisum_icon_path_get("cpu"));
+   evisum_ui_icon_set(ic, "cpu");
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_size_hint_weight_set(ic, 0, EXPAND);
    elm_box_pack_end(hbx, ic);
@@ -996,7 +1122,7 @@ summary_add(Win_Data *wd)
    evas_object_show(pb);
 
    ic = elm_icon_add(hbx);
-   elm_icon_standard_set(ic, evisum_icon_path_get("memory"));
+   evisum_ui_icon_set(ic, "memory");
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    evas_object_size_hint_weight_set(ic, 0, EXPAND);
    elm_box_pack_end(hbx, ic);
@@ -1261,6 +1387,12 @@ _btn_clicked_state_save(Win_Data *wd, Evas_Object *btn, Proc_Sort type)
 {
    Evisum_Ui *ui = wd->ui;
 
+   if (wd->ignore_sort_click)
+     {
+        wd->ignore_sort_click = 0;
+        return 0;
+     }
+
    if (wd->fields_menu)
      {
         elm_ctxpopup_dismiss(wd->fields_menu);
@@ -1275,6 +1407,94 @@ _btn_clicked_state_save(Win_Data *wd, Evas_Object *btn, Proc_Sort type)
    elm_scroller_page_bring_in(wd->glist, 0, 0);
 
    return 1;
+}
+
+static void
+_field_header_mouse_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
+{
+   Win_Data *wd = data;
+   Evas_Event_Mouse_Down *ev = event_info;
+   Evas_Coord x, w;
+   Proc_Field field, prev;
+
+   if (ev->button != 1) return;
+
+   evas_object_geometry_get(obj, &x, NULL, &w, NULL);
+   field = (Proc_Field) (intptr_t) evas_object_data_get(obj, "field_id");
+   if ((field < PROC_FIELD_CMD) || (field >= PROC_FIELD_MAX)) return;
+
+   if (ev->canvas.x >= (x + w - ELM_SCALE_SIZE(PROC_COL_RESIZE_HIT_WIDTH)))
+     {
+        wd->resizing = 1;
+        wd->resize_btn = obj;
+        wd->resize_field = field;
+        wd->resize_start_x = ev->canvas.x;
+        wd->resize_start_w = w;
+        wd->resize_dir = 1;
+        return;
+     }
+
+   if (ev->canvas.x <= (x + ELM_SCALE_SIZE(PROC_COL_RESIZE_HIT_WIDTH)))
+     {
+        prev = _prev_visible_field_get(field);
+        if (!prev) return;
+
+        wd->resize_btn = _field_btn_get(wd, prev);
+        if (!wd->resize_btn) return;
+
+        evas_object_geometry_get(wd->resize_btn, NULL, NULL, &wd->resize_start_w, NULL);
+        wd->resizing = 1;
+        wd->resize_field = prev;
+        wd->resize_start_x = ev->canvas.x;
+        wd->resize_dir = 1;
+     }
+}
+
+static void
+_field_header_mouse_up_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+   Win_Data *wd = data;
+   Evas_Event_Mouse_Up *ev = event_info;
+   Evas_Coord w;
+
+   if (ev->button != 1) return;
+   if (!wd->resizing || !wd->resize_btn) return;
+
+   evas_object_geometry_get(wd->resize_btn, NULL, NULL, &w, NULL);
+   wd->ui->proc.field_widths[wd->resize_field] = w;
+   _field_proportions_apply(wd);
+   evisum_ui_config_save(wd->ui);
+
+   wd->resizing = 0;
+   wd->resize_btn = NULL;
+   wd->ignore_sort_click = 1;
+}
+
+static void
+_field_header_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+   Win_Data *wd = data;
+   Evas_Event_Mouse_Move *ev = event_info;
+   Evas_Coord width;
+
+   if (!wd->resizing || !wd->resize_btn) return;
+
+   width = wd->resize_start_w + (wd->resize_dir * (ev->cur.canvas.x - wd->resize_start_x));
+   if (width < _field_min_width_get(wd->resize_field))
+     width = _field_min_width_get(wd->resize_field);
+
+   evas_object_size_hint_min_set(wd->resize_btn, width, 1);
+   wd->ui->proc.field_widths[wd->resize_field] = width;
+   _field_proportions_apply(wd);
+   elm_genlist_realized_items_update(wd->glist);
+}
+
+static void
+_field_resize_attach(Win_Data *wd, Evas_Object *btn, Proc_Field field)
+{
+   evas_object_data_set(btn, "field_id", (void *) (intptr_t) field);
+   evas_object_event_callback_add(btn, EVAS_CALLBACK_MOUSE_DOWN,
+                                  _field_header_mouse_down_cb, wd);
 }
 
 static void
@@ -1388,11 +1608,41 @@ _item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED,
    proc_info_free(proc);
 }
 
+static Elm_Object_Item *
+_item_menu_add(Evas_Object *menu, Elm_Object_Item *parent, const char *icon,
+               const char *label, Evas_Smart_Cb func, const void *data)
+{
+   Elm_Object_Item *it;
+   Evas_Object *ic;
+   const char *theme_icon;
+
+   if (!icon)
+     return elm_menu_item_add(menu, parent, NULL, label, func, data);
+
+   theme_icon = evisum_ui_icon_name_get(icon);
+   if ((!theme_icon) || strncmp(theme_icon, "evisum/icons/", 13))
+     theme_icon = evisum_ui_icon_name_get("application");
+
+   it = elm_menu_item_add(menu, parent, NULL, label, func, data);
+
+   ic = elm_icon_add(menu);
+   evisum_ui_icon_set(ic, theme_icon);
+   evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
+   evas_object_show(ic);
+
+   elm_object_item_part_content_set(it, "elm.swallow.icon", ic);
+   if (!elm_object_item_part_content_get(it, "elm.swallow.icon"))
+     elm_object_item_part_content_set(it, "icon", ic);
+   if (!elm_object_item_part_content_get(it, "icon"))
+     elm_object_item_part_content_set(it, "elm.swallow.start", ic);
+
+   return it;
+}
+
 static void
 _item_menu_actions_add(Evas_Object *menu, Elm_Object_Item *menu_it, Win_Data *wd)
 {
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("bug"),
-                     _("Debug"), _item_menu_debug_cb, wd);
+   _item_menu_add(menu, menu_it, "bug", _("Debug"), _item_menu_debug_cb, wd);
 }
 
 static void
@@ -1442,14 +1692,10 @@ _item_menu_general_cb(void *data, Evas_Object *obj EINA_UNUSED,
 static void
 _item_menu_info_add(Evas_Object *menu, Elm_Object_Item *menu_it, Win_Data *wd)
 {
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("info"),
-                     _("General"), _item_menu_general_cb, wd);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("proc"),
-                     _("Children"), _item_menu_children_cb, wd);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("threads"),
-                     _("Threads"), _item_menu_threads_cb, wd);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("manual"),
-                     _("Manual"), _item_menu_manual_cb, wd);
+   _item_menu_add(menu, menu_it, "info", _("General"), _item_menu_general_cb, wd);
+   _item_menu_add(menu, menu_it, "proc", _("Children"), _item_menu_children_cb, wd);
+   _item_menu_add(menu, menu_it, "threads", _("Threads"), _item_menu_threads_cb, wd);
+   _item_menu_add(menu, menu_it, "manual", _("Manual"), _item_menu_manual_cb, wd);
 }
 
 static Evas_Object *
@@ -1471,34 +1717,27 @@ _item_menu_create(Win_Data *wd, Proc_Info *proc)
 
    stopped = !(!strcmp(proc->state, "stop"));
 
-   menu_it = elm_menu_item_add(menu, NULL,
-                               evisum_icon_path_get(evisum_icon_cache_find(wd->icon_cache, proc)),
-                               proc->command, NULL, NULL);
+   menu_it = _item_menu_add(menu, NULL, evisum_icon_cache_find(wd->icon_cache, proc),
+                            proc->command, NULL, NULL);
 
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("actions"),
-                                _("Actions"), NULL, NULL);
+   menu_it2 = _item_menu_add(menu, menu_it, "actions", _("Actions"), NULL, NULL);
    _item_menu_actions_add(menu, menu_it2, wd);
    elm_menu_item_separator_add(menu, menu_it);
 
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("start"),
-                                _("Start"), _item_menu_start_cb, wd);
+   menu_it2 = _item_menu_add(menu, menu_it, "start", _("Start"), _item_menu_start_cb, wd);
 
    elm_object_item_disabled_set(menu_it2, stopped);
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("stop"),
-                                _("Stop"), _item_menu_stop_cb, wd);
+   menu_it2 = _item_menu_add(menu, menu_it, "stop", _("Stop"), _item_menu_stop_cb, wd);
 
    elm_object_item_disabled_set(menu_it2, !stopped);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("kill"), "Kill",
-                     _item_menu_kill_cb, wd);
+   _item_menu_add(menu, menu_it, "kill", "Kill", _item_menu_kill_cb, wd);
 
    elm_menu_item_separator_add(menu, menu_it);
-   menu_it2 = elm_menu_item_add(menu, menu_it, evisum_icon_path_get("info"),
-                                _("Info"), NULL, wd);
+   menu_it2 = _item_menu_add(menu, menu_it, "info", _("Info"), NULL, wd);
    _item_menu_info_add(menu, menu_it2, wd);
 
    elm_menu_item_separator_add(menu, menu_it);
-   elm_menu_item_add(menu, menu_it, evisum_icon_path_get("cancel"),
-                     _("Cancel"), _item_menu_cancel_cb, wd);
+   _item_menu_add(menu, menu_it, "cancel", _("Cancel"), _item_menu_cancel_cb, wd);
 
    return menu;
 }
@@ -1617,7 +1856,10 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb,
    evas_object_show(btn);
 
    ic = elm_icon_add(btn);
-   elm_icon_standard_set(ic, icon);
+   if (!strcmp(icon, "menu"))
+     elm_icon_standard_set(ic, "menu");
+   else
+     evisum_ui_icon_set(ic, icon);
    evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
    elm_object_part_content_set(btn, "icon", ic);
    evas_object_show(ic);
@@ -1667,11 +1909,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 1.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, 2.0 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CMD);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_CMD].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_CMD);
+   _field_resize_attach(wd, btn, PROC_FIELD_CMD);
 
    wd->btn_uid = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1681,11 +1924,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, 1.8 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_UID);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_UID].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_UID);
+   _field_resize_attach(wd, btn, PROC_FIELD_UID);
 
    wd->btn_pid = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1695,11 +1939,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PID);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_PID].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_PID);
+   _field_resize_attach(wd, btn, PROC_FIELD_PID);
 
    wd->btn_threads = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1709,11 +1954,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_THREADS);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_THREADS].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_THREADS);
+   _field_resize_attach(wd, btn, PROC_FIELD_THREADS);
 
    wd->btn_cpu = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1723,11 +1969,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_CPU].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_CPU);
+   _field_resize_attach(wd, btn, PROC_FIELD_CPU);
 
    wd->btn_pri = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1737,11 +1984,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_PRI);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_PRI].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_PRI);
+   _field_resize_attach(wd, btn, PROC_FIELD_PRI);
 
    wd->btn_nice = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1751,12 +1999,13 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_NICE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked",
                                   _btn_clicked_cb, wd);
    _fields[PROC_FIELD_NICE].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_NICE);
+   _field_resize_attach(wd, btn, PROC_FIELD_NICE);
 
    wd->btn_files = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1766,11 +2015,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_FILES);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_FILES].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_FILES);
+   _field_resize_attach(wd, btn, PROC_FIELD_FILES);
 
    wd->btn_size = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1780,11 +2030,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SIZE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_SIZE].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_SIZE);
+   _field_resize_attach(wd, btn, PROC_FIELD_SIZE);
 
    wd->btn_virt = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1794,11 +2045,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_VIRT);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_VIRT].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_VIRT);
+   _field_resize_attach(wd, btn, PROC_FIELD_VIRT);
 
    wd->btn_rss = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1808,11 +2060,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_RSS);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_RSS].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_RSS);
+   _field_resize_attach(wd, btn, PROC_FIELD_RSS);
 
    wd->btn_shared = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1822,11 +2075,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_SHARED);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_SHARED].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_SHARED);
+   _field_resize_attach(wd, btn, PROC_FIELD_SHARED);
 
    wd->btn_state = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1836,11 +2090,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_STATE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_STATE].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_STATE);
+   _field_resize_attach(wd, btn, PROC_FIELD_STATE);
 
    wd->btn_time = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1850,11 +2105,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_TIME);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_TIME].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_TIME);
+   _field_resize_attach(wd, btn, PROC_FIELD_TIME);
 
    wd->btn_cpu_usage = btn = elm_button_add(parent);
    _btn_icon_state_update(btn,
@@ -1864,11 +2120,12 @@ _content_add(Win_Data *wd, Evas_Object *parent)
             wd);
    evas_object_size_hint_weight_set(btn, 0.0, 0);
    evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_size_hint_min_set(btn, 1.75 * ELM_SCALE_SIZE(BTN_WIDTH), 1);
    evas_object_data_set(btn, "type", (void *) (int) PROC_SORT_BY_CPU_USAGE);
    evas_object_show(btn);
    evas_object_smart_callback_add(btn, "clicked", _btn_clicked_cb, wd);
    _fields[PROC_FIELD_CPU_USAGE].btn = btn;
+   _field_width_apply(wd, PROC_FIELD_CPU_USAGE);
+   _field_resize_attach(wd, btn, PROC_FIELD_CPU_USAGE);
 
    wd->glist = glist = elm_genlist_add(parent);
    elm_genlist_homogeneous_set(glist, 1);
@@ -2358,6 +2615,10 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui)
                                   _win_resize_cb, wd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE,
                                   _win_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_MOVE,
+                                  _field_header_mouse_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_UP,
+                                  _field_header_mouse_up_cb, wd);
    evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN,
                                   _win_key_down_cb, wd);
 
@@ -2372,4 +2633,3 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui)
                                           NULL,
                                           wd, 0);
 }
-

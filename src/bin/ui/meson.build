@@ -6,6 +6,8 @@ src += files([
    'evisum_ui_colors.h',
    'evisum_ui_util.h',
    'evisum_ui_util.c',
+   'evisum_ui_graph.h',
+   'evisum_ui_graph.c',
    'evisum_ui_cache.c',
    'evisum_ui_cache.h',
    'evisum_ui_network.c',

@@ -56,6 +56,8 @@ evisum_ui_config_save(Evisum_Ui *ui)
         config()->proc.transparent = ui->proc.transparent;
         config()->proc.alpha = ui->proc.alpha;
         config()->proc.fields = ui->proc.fields;
+        for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++)
+          config()->proc.field_widths[i] = ui->proc.field_widths[i];
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
      }
 
@@ -140,6 +142,8 @@ evisum_ui_config_load(Evisum_Ui *ui)
    ui->proc.show_statusbar = config()->proc.show_statusbar;
    ui->proc.transparent = config()->proc.transparent;
    ui->proc.alpha = config()->proc.alpha;
+   for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++)
+     ui->proc.field_widths[i] = config()->proc.field_widths[i];
 
    ui->proc.width = config()->proc.width;
    ui->proc.height = config()->proc.height;
@@ -286,7 +290,7 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb,
    evas_object_show(btn);
 
    ic = elm_icon_add(btn);
-   elm_icon_standard_set(ic, evisum_icon_path_get(icon));
+   evisum_ui_icon_set(ic, icon);
    evas_object_show(ic);
 
    elm_object_part_content_set(btn, "icon", ic);
@@ -816,4 +820,3 @@ evisum_ui_init(void)
 
    return ui;
 }
-

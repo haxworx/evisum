@@ -15,6 +15,7 @@
 
 #define EVISUM_WIN_WIDTH  540
 #define EVISUM_WIN_HEIGHT 360
+#define EVISUM_PROC_FIELD_WIDTHS_MAX 16
 
 typedef struct _Evisum_Ui
 {
@@ -43,6 +44,7 @@ typedef struct _Evisum_Ui
       int           poll_delay;
       int           sort_type;
       unsigned int  fields;
+      int           field_widths[EVISUM_PROC_FIELD_WIDTHS_MAX];
       Eina_Bool     sort_reverse;
       Eina_Bool     show_self;
       Eina_Bool     show_kthreads;
