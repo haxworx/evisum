@@ -1,6 +1,13 @@
 #include "evisum_ui_graph.h"
 #include <math.h>
 
+static Eina_Bool
+_graph_target_valid(Evas_Object *graph_bg, Evas_Object *graph_img)
+{
+   return graph_bg && graph_img && evas_object_evas_get(graph_bg)
+          && evas_object_evas_get(graph_img);
+}
+
 static uint32_t
 _argb(unsigned int r, unsigned int g, unsigned int b)
 {
@@ -149,7 +156,11 @@ evisum_ui_graph_draw(Evas_Object                 *graph_bg,
    int gx, gy, gw, gh;
    int x, y, cell;
 
-   if (!graph_bg || !graph_img || (sample_count < 2))
+   if (!_graph_target_valid(graph_bg, graph_img) || (sample_count < 2))
+     return;
+   if ((series_count > 0) && !series)
+     return;
+   if ((layer_count > 0) && !layers)
      return;
 
    if (y_max <= 0.0)

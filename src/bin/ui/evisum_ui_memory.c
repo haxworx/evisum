@@ -6,6 +6,8 @@
 
 #include <Elementary.h>
 
+typedef struct _Win_Data Win_Data;
+
 typedef struct
 {
    char key[64];
@@ -21,13 +23,17 @@ typedef struct
    uint64_t used;
    uint64_t total;
    Eina_Bool enabled;
+   Eina_Bool visible;
+   Win_Data *wd;
 
    Evas_Object *legend_row;
+   Evas_Object *legend_btn;
+   Evas_Object *legend_swatch;
    Evas_Object *legend_label;
    Evas_Object *legend_pb;
 } Memory_Series;
 
-typedef struct
+struct _Win_Data
 {
    Ecore_Thread *thread;
    Evas_Object  *win;
@@ -42,7 +48,7 @@ typedef struct
    int           series_count;
 
    Evisum_Ui    *ui;
-} Win_Data;
+};
 
 enum
 {
@@ -63,6 +69,49 @@ static const Evisum_Ui_Graph_Layer _mem_layers[] = {
    {  0.6, 0.24 },
    {  0.0, 0.92 },
 };
+
+static void _graph_redraw(Win_Data *wd);
+
+static Eina_Bool
+_graph_objects_valid(Win_Data *wd)
+{
+   return wd && wd->graph_bg && wd->graph_img && evas_object_evas_get(wd->graph_bg)
+          && evas_object_evas_get(wd->graph_img);
+}
+
+static void
+_legend_toggle_state_apply(Memory_Series *entry)
+{
+   int a;
+
+   if (!entry) return;
+   a = entry->visible ? 255 : 96;
+
+   if (entry->legend_swatch)
+     evas_object_color_set(entry->legend_swatch,
+                           entry->color_r,
+                           entry->color_g,
+                           entry->color_b,
+                           a);
+   if (entry->legend_pb)
+     elm_object_disabled_set(entry->legend_pb,
+                             !entry->visible || !entry->total);
+}
+
+static void
+_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                  void *event_info EINA_UNUSED)
+{
+   Memory_Series *entry = data;
+
+   if (!entry || !entry->wd || !entry->legend_btn || !entry->legend_row)
+     return;
+   if (!_graph_objects_valid(entry->wd))
+     return;
+   entry->visible = !entry->visible;
+   _legend_toggle_state_apply(entry);
+   _graph_redraw(entry->wd);
+}
 
 static void
 _legend_repack(Win_Data *wd)
@@ -109,7 +158,7 @@ _series_history_add(Memory_Series *entry, double value)
 static void
 _series_legend_add(Win_Data *wd, Memory_Series *entry)
 {
-   Evas_Object *left, *swatch, *lb, *pb;
+   Evas_Object *left, *swatch, *lb, *pb, *btn;
    Evas *evas;
 
    if (!wd->legend_tb || entry->legend_row)
@@ -123,13 +172,28 @@ _series_legend_add(Win_Data *wd, Memory_Series *entry)
    evas_object_show(left);
 
    evas = evas_object_evas_get(left);
+   btn = elm_button_add(left);
+   evas_object_size_hint_min_set(btn,
+                                 16 * elm_config_scale_get(),
+                                 16 * elm_config_scale_get());
+   evas_object_size_hint_max_set(btn,
+                                 16 * elm_config_scale_get(),
+                                 16 * elm_config_scale_get());
+   evas_object_size_hint_align_set(btn, 0.0, 0.5);
+   evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _legend_toggle_cb, entry);
+   elm_box_pack_end(left, btn);
+
    swatch = evas_object_rectangle_add(evas);
    evas_object_color_set(swatch, entry->color_r, entry->color_g, entry->color_b, 255);
    evas_object_size_hint_min_set(swatch,
                                  12 * elm_config_scale_get(),
                                  12 * elm_config_scale_get());
+   evas_object_size_hint_max_set(swatch,
+                                 12 * elm_config_scale_get(),
+                                 12 * elm_config_scale_get());
    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
-   elm_box_pack_end(left, swatch);
+   elm_object_content_set(btn, swatch);
    evas_object_show(swatch);
 
    lb = elm_label_add(left);
@@ -148,8 +212,11 @@ _series_legend_add(Win_Data *wd, Memory_Series *entry)
    evas_object_show(pb);
 
    entry->legend_row = left;
+   entry->legend_btn = btn;
+   entry->legend_swatch = swatch;
    entry->legend_label = lb;
    entry->legend_pb = pb;
+   _legend_toggle_state_apply(entry);
 }
 
 static void
@@ -167,11 +234,6 @@ _series_legend_update(Memory_Series *entry)
         value = (double) entry->used / (double) entry->total;
         if (value < 0.0) value = 0.0;
         if (value > 1.0) value = 1.0;
-        elm_object_disabled_set(entry->legend_pb, 0);
-     }
-   else
-     {
-        elm_object_disabled_set(entry->legend_pb, 1);
      }
 
    elm_progressbar_value_set(entry->legend_pb, value);
@@ -179,6 +241,7 @@ _series_legend_update(Memory_Series *entry)
                                    eina_slstr_printf("%s / %s",
                                                      evisum_size_format(entry->used, 0),
                                                      evisum_size_format(entry->total, 0)));
+   _legend_toggle_state_apply(entry);
 }
 
 static void
@@ -187,11 +250,14 @@ _graph_redraw(Win_Data *wd)
    Evisum_Ui_Graph_Series series[5 + MEM_VIDEO_CARD_MAX];
    int nseries = 0;
 
+   if (!_graph_objects_valid(wd))
+     return;
+
    for (int i = 0; i < wd->series_count; i++)
      {
         Memory_Series *entry = &wd->series[i];
 
-        if (!entry->enabled || (entry->history_count < 2))
+        if (!entry->enabled || !entry->visible || (entry->history_count < 2))
           continue;
 
         series[nseries].history = entry->history;
@@ -252,10 +318,14 @@ _series_init(Win_Data *wd)
      }
 
    for (int i = 0; i < wd->series_count; i++)
-     evisum_graph_color_get(wd->series[i].key,
-                            &wd->series[i].color_r,
-                            &wd->series[i].color_g,
-                            &wd->series[i].color_b);
+     {
+        wd->series[i].wd = wd;
+        wd->series[i].visible = EINA_TRUE;
+        evisum_graph_color_get(wd->series[i].key,
+                               &wd->series[i].color_r,
+                               &wd->series[i].color_g,
+                               &wd->series[i].color_b);
+     }
 }
 
 static void
@@ -450,6 +520,16 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
 
    if (wd->main_menu)
      evas_object_del(wd->main_menu);
+
+   for (int i = 0; i < wd->series_count; i++)
+     {
+        wd->series[i].wd = NULL;
+        wd->series[i].legend_row = NULL;
+        wd->series[i].legend_btn = NULL;
+        wd->series[i].legend_swatch = NULL;
+        wd->series[i].legend_label = NULL;
+        wd->series[i].legend_pb = NULL;
+     }
 
    ui->mem.win = NULL;
    free(wd);

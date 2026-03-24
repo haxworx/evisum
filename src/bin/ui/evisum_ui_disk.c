@@ -32,7 +32,11 @@ typedef struct
    double     history[DISK_GRAPH_SAMPLES];
    int        history_count;
    Eina_Bool  seen;
+   Eina_Bool  enabled;
+   Win_Data  *wd;
    Evas_Object *legend_row;
+   Evas_Object *legend_btn;
+   Evas_Object *legend_swatch;
    Evas_Object *legend_label;
    Evas_Object *legend_pb;
 } Disk_History;
@@ -43,6 +47,46 @@ static const Evisum_Ui_Graph_Layer _disk_layers[] = {
    {  0.6, 0.24 },
    {  0.0, 0.92 },
 };
+
+static Eina_Bool
+_graph_objects_valid(Win_Data *wd)
+{
+   return wd && wd->graph_bg && wd->graph_img && evas_object_evas_get(wd->graph_bg)
+          && evas_object_evas_get(wd->graph_img);
+}
+
+static void
+_legend_toggle_state_apply(Disk_History *entry)
+{
+   int a;
+
+   if (!entry) return;
+   a = entry->enabled ? 255 : 96;
+
+   if (entry->legend_swatch)
+     evas_object_color_set(entry->legend_swatch,
+                           entry->color_r,
+                           entry->color_g,
+                           entry->color_b,
+                           a);
+   if (entry->legend_pb)
+     elm_object_disabled_set(entry->legend_pb, !entry->enabled);
+}
+
+static void
+_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                  void *event_info EINA_UNUSED)
+{
+   Disk_History *entry = data;
+
+   if (!entry || !entry->wd || !entry->legend_btn || !entry->legend_row)
+     return;
+   if (!_graph_objects_valid(entry->wd))
+     return;
+   entry->enabled = !entry->enabled;
+   _legend_toggle_state_apply(entry);
+   _graph_redraw(entry->wd);
+}
 
 static void
 _history_legend_repack(Win_Data *wd)
@@ -84,7 +128,7 @@ _history_add_sample(Disk_History *entry, double value)
 static void
 _history_legend_add(Win_Data *wd, Disk_History *entry)
 {
-   Evas_Object *left, *swatch, *lb, *pb;
+   Evas_Object *left, *swatch, *lb, *pb, *btn;
    Evas *evas;
 
    if (!wd->legend_tb || entry->legend_row)
@@ -98,13 +142,28 @@ _history_legend_add(Win_Data *wd, Disk_History *entry)
    evas_object_show(left);
 
    evas = evas_object_evas_get(left);
+   btn = elm_button_add(left);
+   evas_object_size_hint_min_set(btn,
+                                 16 * elm_config_scale_get(),
+                                 16 * elm_config_scale_get());
+   evas_object_size_hint_max_set(btn,
+                                 16 * elm_config_scale_get(),
+                                 16 * elm_config_scale_get());
+   evas_object_size_hint_align_set(btn, 0.0, 0.5);
+   evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _legend_toggle_cb, entry);
+   elm_box_pack_end(left, btn);
+
    swatch = evas_object_rectangle_add(evas);
    evas_object_color_set(swatch, entry->color_r, entry->color_g, entry->color_b, 255);
    evas_object_size_hint_min_set(swatch,
                                  12 * elm_config_scale_get(),
                                  12 * elm_config_scale_get());
+   evas_object_size_hint_max_set(swatch,
+                                 12 * elm_config_scale_get(),
+                                 12 * elm_config_scale_get());
    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
-   elm_box_pack_end(left, swatch);
+   elm_object_content_set(btn, swatch);
    evas_object_show(swatch);
 
    lb = elm_label_add(left);
@@ -123,8 +182,11 @@ _history_legend_add(Win_Data *wd, Disk_History *entry)
    evas_object_show(pb);
 
    entry->legend_row = left;
+   entry->legend_btn = btn;
+   entry->legend_swatch = swatch;
    entry->legend_label = lb;
    entry->legend_pb = pb;
+   _legend_toggle_state_apply(entry);
    _history_legend_repack(wd);
 }
 
@@ -133,7 +195,10 @@ _history_legend_del(Disk_History *entry)
 {
    if (entry->legend_row)
      evas_object_del(entry->legend_row);
+   entry->wd = NULL;
    entry->legend_row = NULL;
+   entry->legend_btn = NULL;
+   entry->legend_swatch = NULL;
    entry->legend_label = NULL;
    entry->legend_pb = NULL;
 }
@@ -179,6 +244,8 @@ _history_find_or_create(Win_Data *wd, const File_System *fs)
    entry->name = strdup(fs->mount);
    if (!entry->name)
      entry->name = strdup(fs->path);
+   entry->enabled = EINA_TRUE;
+   entry->wd = wd;
 
    evisum_graph_color_get(entry->key,
                           &entry->color_r,
@@ -216,6 +283,9 @@ _graph_redraw(Win_Data *wd)
    int total, nseries;
    Evisum_Ui_Graph_Series *series;
 
+   if (!_graph_objects_valid(wd))
+     return;
+
    total = eina_list_count(wd->history);
    nseries = 0;
    series = calloc(total, sizeof(Evisum_Ui_Graph_Series));
@@ -224,7 +294,7 @@ _graph_redraw(Win_Data *wd)
 
    EINA_LIST_FOREACH(wd->history, l, entry)
      {
-        if (entry->history_count < 2)
+        if (!entry->enabled || (entry->history_count < 2))
           continue;
         series[nseries].history = entry->history;
         series[nseries].history_count = entry->history_count;

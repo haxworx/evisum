@@ -56,6 +56,27 @@ static const Evisum_Ui_Graph_Layer _sensor_layers[] = {
 
 static void _graph_redraw(Win_Data *wd);
 
+static Eina_Bool
+_graph_objects_valid(Win_Data *wd)
+{
+   return wd && wd->graph_bg && wd->graph_img && evas_object_evas_get(wd->graph_bg)
+          && evas_object_evas_get(wd->graph_img);
+}
+
+static int
+_history_sort_cb(const void *p1, const void *p2)
+{
+   const Sensor_History *s1 = p1;
+   const Sensor_History *s2 = p2;
+   const char *n1 = s1->name ? s1->name : s1->key;
+   const char *n2 = s2->name ? s2->name : s2->key;
+
+   if (!n1 && !n2) return 0;
+   if (!n1) return 1;
+   if (!n2) return -1;
+   return strcmp(n1, n2);
+}
+
 static void
 _legend_toggle_state_apply(Sensor_History *entry)
 {
@@ -80,11 +101,13 @@ _legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
 {
    Sensor_History *entry = data;
 
-   if (!entry) return;
+   if (!entry || !entry->wd || !entry->legend_btn || !entry->legend_row)
+     return;
+   if (!_graph_objects_valid(entry->wd))
+     return;
    entry->enabled = !entry->enabled;
    _legend_toggle_state_apply(entry);
-   if (entry->wd)
-     _graph_redraw(entry->wd);
+   _graph_redraw(entry->wd);
 }
 
 static void
@@ -209,6 +232,7 @@ _history_legend_del(Sensor_History *entry)
 {
    if (entry->legend_row)
      evas_object_del(entry->legend_row);
+   entry->wd = NULL;
    entry->legend_row = NULL;
    entry->legend_btn = NULL;
    entry->legend_swatch = NULL;
@@ -297,6 +321,9 @@ _graph_redraw(Win_Data *wd)
    Evisum_Ui_Graph_Series *series;
    int total, nseries;
    double y_max = 0.0;
+
+   if (!_graph_objects_valid(wd))
+     return;
 
    total = eina_list_count(wd->history);
    nseries = 0;
@@ -423,6 +450,10 @@ _sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *ms
      }
 
    _history_compact(wd);
+   wd->history = eina_list_sort(wd->history,
+                                eina_list_count(wd->history),
+                                _history_sort_cb);
+   _history_legend_repack(wd);
    _graph_redraw(wd);
    free(msg);
 }

@@ -52,7 +52,11 @@ typedef struct
    uint8_t color_b;
 
    Evas_Object *legend_row;
+   Evas_Object *legend_btn;
+   Evas_Object *legend_swatch;
    Evas_Object *legend_label;
+   Eina_Bool enabled;
+   Win_Data  *wd;
 
    Eina_Bool is_new;
    Eina_Bool delete_me;
@@ -66,6 +70,44 @@ static const Evisum_Ui_Graph_Layer _network_layers[] = {
    {  1.2, 0.14 },
    {  0.0, 0.95 },
 };
+
+static Eina_Bool
+_graph_objects_valid(Win_Data *wd)
+{
+   return wd && wd->graph_bg && wd->graph_img && evas_object_evas_get(wd->graph_bg)
+          && evas_object_evas_get(wd->graph_img);
+}
+
+static void
+_legend_toggle_state_apply(Network_Interface *iface)
+{
+   int a;
+
+   if (!iface) return;
+   a = iface->enabled ? 255 : 96;
+
+   if (iface->legend_swatch)
+     evas_object_color_set(iface->legend_swatch,
+                           iface->color_r,
+                           iface->color_g,
+                           iface->color_b,
+                           a);
+}
+
+static void
+_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                  void *event_info EINA_UNUSED)
+{
+   Network_Interface *iface = data;
+
+   if (!iface || !iface->wd || !iface->legend_btn || !iface->legend_row)
+     return;
+   if (!_graph_objects_valid(iface->wd))
+     return;
+   iface->enabled = !iface->enabled;
+   _legend_toggle_state_apply(iface);
+   _graph_redraw(iface->wd, iface->wd->interfaces);
+}
 
 static void
 _win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
@@ -140,7 +182,7 @@ _network_transfer_format(double rate)
 static void
 _iface_legend_add(Win_Data *wd, Network_Interface *iface)
 {
-   Evas_Object *row, *swatch, *lb;
+   Evas_Object *row, *swatch, *lb, *btn;
    Evas *evas;
 
    if (!wd->legend_bx || iface->legend_row)
@@ -155,13 +197,28 @@ _iface_legend_add(Win_Data *wd, Network_Interface *iface)
    evas_object_show(row);
 
    evas = evas_object_evas_get(row);
+   btn = elm_button_add(row);
+   evas_object_size_hint_min_set(btn,
+                                 16 * elm_config_scale_get(),
+                                 16 * elm_config_scale_get());
+   evas_object_size_hint_max_set(btn,
+                                 16 * elm_config_scale_get(),
+                                 16 * elm_config_scale_get());
+   evas_object_size_hint_align_set(btn, 0.0, 0.5);
+   evas_object_show(btn);
+   evas_object_smart_callback_add(btn, "clicked", _legend_toggle_cb, iface);
+   elm_box_pack_end(row, btn);
+
    swatch = evas_object_rectangle_add(evas);
    evas_object_color_set(swatch, iface->color_r, iface->color_g, iface->color_b, 255);
    evas_object_size_hint_min_set(swatch,
                                  12 * elm_config_scale_get(),
                                  12 * elm_config_scale_get());
+   evas_object_size_hint_max_set(swatch,
+                                 12 * elm_config_scale_get(),
+                                 12 * elm_config_scale_get());
    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
-   elm_box_pack_end(row, swatch);
+   elm_object_content_set(btn, swatch);
    evas_object_show(swatch);
 
    lb = elm_label_add(row);
@@ -172,7 +229,11 @@ _iface_legend_add(Win_Data *wd, Network_Interface *iface)
    evas_object_show(lb);
 
    iface->legend_row = row;
+   iface->legend_btn = btn;
+   iface->legend_swatch = swatch;
    iface->legend_label = lb;
+   iface->wd = wd;
+   _legend_toggle_state_apply(iface);
 }
 
 static void
@@ -183,7 +244,10 @@ _iface_legend_del(Network_Interface *iface)
    if (iface->legend_label)
      evas_object_del(iface->legend_label);
    iface->legend_row = NULL;
+   iface->legend_btn = NULL;
+   iface->legend_swatch = NULL;
    iface->legend_label = NULL;
+   iface->wd = NULL;
 }
 
 static void
@@ -247,6 +311,9 @@ _graph_redraw(Win_Data *wd, Eina_List *interfaces)
    int total, nseries;
    Evisum_Ui_Graph_Series *series;
 
+   if (!_graph_objects_valid(wd))
+     return;
+
    peak = wd->graph_peak;
    if (peak < 1.0)
      peak = 1.0;
@@ -259,7 +326,7 @@ _graph_redraw(Win_Data *wd, Eina_List *interfaces)
 
    EINA_LIST_FOREACH(interfaces, l, iface)
      {
-        if (iface->delete_me || (iface->history_count < 2))
+        if (iface->delete_me || !iface->enabled || (iface->history_count < 2))
           continue;
         series[nseries].history = iface->history;
         series[nseries].history_count = iface->history_count;
@@ -320,6 +387,7 @@ _network_update(void *data EINA_UNUSED, Ecore_Thread *thread)
                {
                   iface = calloc(1, sizeof(Network_Interface));
                   iface->is_new = EINA_TRUE;
+                  iface->enabled = EINA_TRUE;
                   snprintf(iface->name, sizeof(iface->name), "%s", nwif->name);
                   iface->total_in = nwif->xfer.in;
                   iface->total_out = nwif->xfer.out;
