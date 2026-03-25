@@ -80,19 +80,17 @@ _history_sort_cb(const void *p1, const void *p2)
 static void
 _legend_toggle_state_apply(Sensor_History *entry)
 {
-   int a;
-
    if (!entry) return;
-   a = entry->enabled ? 255 : 96;
 
-   if (entry->legend_swatch)
-     evas_object_color_set(entry->legend_swatch,
-                           entry->color_r,
-                           entry->color_g,
-                           entry->color_b,
-                           a);
-   if (entry->legend_pb)
+   if (!entry->enabled && entry->legend_swatch)
+     evas_object_hide(entry->legend_swatch);
+   else if (entry->enabled && entry->legend_swatch)
+     evas_object_show(entry->legend_swatch);
+
+   if (entry->legend_pb && evas_object_evas_get(entry->legend_pb))
      elm_object_disabled_set(entry->legend_pb, !entry->enabled);
+   else
+     entry->legend_pb = NULL;
 }
 
 static void
@@ -201,7 +199,6 @@ _history_legend_add(Win_Data *wd, Sensor_History *entry)
                                  12 * elm_config_scale_get());
    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
    elm_object_content_set(btn, swatch);
-   evas_object_show(swatch);
 
    lb = elm_label_add(left);
    evas_object_size_hint_weight_set(lb, EVAS_HINT_EXPAND, 0.0);
@@ -223,6 +220,7 @@ _history_legend_add(Win_Data *wd, Sensor_History *entry)
    entry->legend_swatch = swatch;
    entry->legend_label = lb;
    entry->legend_pb = pb;
+   entry->enabled = EINA_FALSE;
    _legend_toggle_state_apply(entry);
    _history_legend_repack(wd);
 }
@@ -230,6 +228,8 @@ _history_legend_add(Win_Data *wd, Sensor_History *entry)
 static void
 _history_legend_del(Sensor_History *entry)
 {
+   if (entry->legend_pb)
+     evas_object_del(entry->legend_pb);
    if (entry->legend_row)
      evas_object_del(entry->legend_row);
    entry->wd = NULL;
@@ -629,7 +629,7 @@ void
    evas_object_show(graph_tb);
 
    wd->graph_bg = evas_object_rectangle_add(evas);
-   evas_object_color_set(wd->graph_bg, 32, 32, 32, 255);
+   evisum_ui_graph_bg_set(wd->graph_bg);
    evas_object_size_hint_weight_set(wd->graph_bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
    evas_object_size_hint_align_set(wd->graph_bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_table_pack(graph_tb, wd->graph_bg, 0, 0, 1, 1);
@@ -702,7 +702,9 @@ void
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _win_move_cb, wd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, wd);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, wd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, wd);
+   elm_object_focus_allow_set(tb, EINA_TRUE);
+   elm_object_focus_set(tb, EINA_TRUE);
+   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, wd);
 
    evas_object_show(win);
 

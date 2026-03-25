@@ -25,6 +25,22 @@ typedef struct {
    Eina_List      *explainers;
    int            *cpu_order;
    Eina_Bool       confused;
+   uint8_t         text_r;
+   uint8_t         text_g;
+   uint8_t         text_b;
+   uint8_t         overlay_r;
+   uint8_t         overlay_g;
+   uint8_t         overlay_b;
+   uint8_t         overlay_a;
+   uint8_t         padding_r;
+   uint8_t         padding_g;
+   uint8_t         padding_b;
+   uint8_t         padding_a;
+   uint8_t         explainer_bg_r;
+   uint8_t         explainer_bg_g;
+   uint8_t         explainer_bg_b;
+   uint8_t         explainer_bg_a;
+   char            text_hex[7];
 } Ext;
 
 static void
@@ -207,7 +223,7 @@ _explain(Ui_Cpu_Data *pd, Core *cores)
           }
         else
           {
-             eina_strbuf_append_printf(buf, "<b><color=#fff>%i%% ", core->percent);
+             eina_strbuf_append_printf(buf, "<b><color=#%s>%i%% ", ext->text_hex, core->percent);
              if (ext->cpu_freq)
                eina_strbuf_append_printf(buf, "%1.1fGHz ", (double) core->freq / 1000000);
              if (ext->cpu_temp)
@@ -343,6 +359,13 @@ cpu_visual_default(Evas_Object *parent_box)
      cpu_order[i] = i;
    system_cpu_topology_get(cpu_order, ext->cpu_count);
 
+   evisum_cpu_default_colors_get(&ext->text_r, &ext->text_g, &ext->text_b,
+                                 &ext->overlay_r, &ext->overlay_g, &ext->overlay_b, &ext->overlay_a,
+                                 &ext->padding_r, &ext->padding_g, &ext->padding_b, &ext->padding_a,
+                                 &ext->explainer_bg_r, &ext->explainer_bg_g, &ext->explainer_bg_b, &ext->explainer_bg_a);
+   snprintf(ext->text_hex, sizeof(ext->text_hex), "%02x%02x%02x",
+            ext->text_r, ext->text_g, ext->text_b);
+
    box = parent_box;
 
    tbl = elm_table_add(box);
@@ -368,7 +391,7 @@ cpu_visual_default(Evas_Object *parent_box)
         rec = evas_object_rectangle_add(evas_object_evas_get(box));
         evas_object_size_hint_align_set(rec, FILL, FILL);
         evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
-        evas_object_color_set(rec, 0, 0, 0, 64);
+        evas_object_color_set(rec, ext->overlay_r, ext->overlay_g, ext->overlay_b, ext->overlay_a);
         evas_object_show(rec);
         elm_table_pack(tbl, rec, 0, 0, 4, ext->cpu_count);
      }
@@ -376,13 +399,13 @@ cpu_visual_default(Evas_Object *parent_box)
    for (i = 0; show_icons && (i < ext->cpu_count); i++)
      {
         rec = evas_object_rectangle_add(evas_object_evas_get(box));
-        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_color_set(rec, ext->padding_r, ext->padding_g, ext->padding_b, ext->padding_a);
         evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
         evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
         elm_table_pack(tbl, rec, 0, i, 1, 1);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(box));
-        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_color_set(rec, ext->padding_r, ext->padding_g, ext->padding_b, ext->padding_a);
         evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(24), ELM_SCALE_SIZE(24));
         evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
         elm_table_pack(tbl, rec, 1, i, 1, 1);
@@ -395,19 +418,19 @@ cpu_visual_default(Evas_Object *parent_box)
         evas_object_show(ic);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(box));
-        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_color_set(rec, ext->padding_r, ext->padding_g, ext->padding_b, ext->padding_a);
         evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(8), ELM_SCALE_SIZE(8));
         evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
         elm_table_pack(tbl, rec, 2, i, 1, 1);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(box));
-        evas_object_color_set(rec, 0, 0, 0, 0);
+        evas_object_color_set(rec, ext->padding_r, ext->padding_g, ext->padding_b, ext->padding_a);
         evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(16), ELM_SCALE_SIZE(16));
         evas_object_size_hint_weight_set(rec, 0.0, EXPAND);
         elm_table_pack(tbl, rec, 3, i, 1, 1);
 
         lb = elm_label_add(box);
-        snprintf(buf, sizeof(buf), "<b><color=#fff>%i</></>", cpu_order[i]);
+        snprintf(buf, sizeof(buf), "<b><color=#%s>%i</></>", ext->text_hex, cpu_order[i]);
         elm_object_text_set(lb, buf);
         evas_object_size_hint_align_set(lb, 0.0, 0.5);
         evas_object_size_hint_weight_set(lb, 0.0, EXPAND);
@@ -422,7 +445,8 @@ cpu_visual_default(Evas_Object *parent_box)
         evas_object_show(tbl2);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(box));
-        evas_object_color_set(rec, 0, 0, 0, 128);
+        evas_object_color_set(rec, ext->explainer_bg_r, ext->explainer_bg_g,
+                              ext->explainer_bg_b, ext->explainer_bg_a);
         evas_object_size_hint_align_set(rec, FILL, FILL);
         evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
         elm_table_pack(tbl2, rec, 0, 0, 1, 1);
@@ -478,7 +502,8 @@ cpu_visual_default(Evas_Object *parent_box)
    evas_object_show(colors);
 
    lb = elm_label_add(box);
-   elm_object_text_set(lb, "<b><color=#fff> 0%</></>");
+   snprintf(buf, sizeof(buf), "<b><color=#%s> 0%%</></>", ext->text_hex);
+   elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 0, 0, 1, 1);
@@ -487,9 +512,9 @@ cpu_visual_default(Evas_Object *parent_box)
    lb = elm_label_add(box);
    f = (ext->freq_min + 500) / 1000;
    if (f < 1000)
-     snprintf(buf, sizeof(buf), "<b><color=#fff> %iMHz</></>", f);
+     snprintf(buf, sizeof(buf), "<b><color=#%s> %iMHz</></>", ext->text_hex, f);
    else
-     snprintf(buf, sizeof(buf), "<b><color=#fff> %1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
+     snprintf(buf, sizeof(buf), "<b><color=#%s> %1.1fGHz</></>", ext->text_hex, ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
@@ -497,7 +522,8 @@ cpu_visual_default(Evas_Object *parent_box)
    evas_object_show(lb);
 
    lb = elm_label_add(box);
-   elm_object_text_set(lb, "<b><color=#fff>100%</></>");
+   snprintf(buf, sizeof(buf), "<b><color=#%s>100%%</></>", ext->text_hex);
+   elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.99, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(tbl, lb, 1, 0, 1, 1);
@@ -506,9 +532,9 @@ cpu_visual_default(Evas_Object *parent_box)
    lb = elm_label_add(box);
    f = (ext->freq_max + 500) / 1000;
    if (f < 1000)
-     snprintf(buf, sizeof(buf), "<b><color=#fff>%iMHz</></>", f);
+     snprintf(buf, sizeof(buf), "<b><color=#%s>%iMHz</></>", ext->text_hex, f);
    else
-     snprintf(buf, sizeof(buf), "<b><color=#fff>%1.1fGHz</></>", ((double)f + 0.05) / 1000.0);
+     snprintf(buf, sizeof(buf), "<b><color=#%s>%1.1fGHz</></>", ext->text_hex, ((double)f + 0.05) / 1000.0);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.99, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
@@ -516,7 +542,7 @@ cpu_visual_default(Evas_Object *parent_box)
    evas_object_show(lb);
 
    lb = elm_label_add(box);
-   snprintf(buf, sizeof(buf), "<b><color=#fff> %i°C</></>", ext->temp_min);
+   snprintf(buf, sizeof(buf), "<b><color=#%s> %i°C</></>", ext->text_hex, ext->temp_min);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
@@ -524,7 +550,7 @@ cpu_visual_default(Evas_Object *parent_box)
    evas_object_show(lb);
 
    lb = elm_label_add(box);
-   snprintf(buf, sizeof(buf), "<b><color=#fff>%i°C</></>", ext->temp_max);
+   snprintf(buf, sizeof(buf), "<b><color=#%s>%i°C</></>", ext->text_hex, ext->temp_max);
    elm_object_text_set(lb, buf);
    evas_object_size_hint_align_set(lb, 0.99, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
@@ -593,4 +619,3 @@ cpu_visual_default(Evas_Object *parent_box)
                                            pd, 1);
    return pd;
 }
-

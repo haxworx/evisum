@@ -53,4 +53,15 @@ void evisum_ui_colors_init();
 void
 evisum_graph_color_get(const char *key, uint8_t *r, uint8_t *g, uint8_t *b);
 
+void
+evisum_graph_widget_colors_get(uint8_t *bg_r, uint8_t *bg_g, uint8_t *bg_b,
+                               uint8_t *grid_v_r, uint8_t *grid_v_g, uint8_t *grid_v_b,
+                               uint8_t *grid_h_r, uint8_t *grid_h_g, uint8_t *grid_h_b);
+
+void
+evisum_cpu_default_colors_get(uint8_t *text_r, uint8_t *text_g, uint8_t *text_b,
+                              uint8_t *overlay_r, uint8_t *overlay_g, uint8_t *overlay_b, uint8_t *overlay_a,
+                              uint8_t *padding_r, uint8_t *padding_g, uint8_t *padding_b, uint8_t *padding_a,
+                              uint8_t *explainer_bg_r, uint8_t *explainer_bg_g, uint8_t *explainer_bg_b, uint8_t *explainer_bg_a);
+
 #endif

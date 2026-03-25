@@ -60,6 +60,139 @@ images {
    image: "threads.png" COMP;
 }
 
+data {
+   /* Graph widget theme colors (kept in sync with existing defaults). */
+   item: "evisum/graph_widget/background" "#202020";
+   item: "evisum/graph_widget/grid_vertical" "#383838";
+   item: "evisum/graph_widget/grid_horizontal" "#303030";
+   item: "evisum/cpu_default/text" "#ffffff";
+   item: "evisum/cpu_default/overlay" "#00000040";
+   item: "evisum/cpu_default/padding" "#00000000";
+   item: "evisum/cpu_default/explainer_bg" "#00000080";
+
+   /* CPU visuals colormap control points.
+    * Keys map to control point indices used by the colormap interpolator.
+    */
+   item: "evisum/cpu_visual/cpu_colormap/00" "#202020";
+   item: "evisum/cpu_visual/cpu_colormap/01" "#2030a0";
+   item: "evisum/cpu_visual/cpu_colormap/02" "#a040a0";
+   item: "evisum/cpu_visual/cpu_colormap/03" "#ff9040";
+   item: "evisum/cpu_visual/cpu_colormap/04" "#ffffff";
+   item: "evisum/cpu_visual/cpu_colormap/05" "#ffffff";
+   item: "evisum/cpu_visual/freq_colormap/00" "#202020";
+   item: "evisum/cpu_visual/freq_colormap/01" "#285020";
+   item: "evisum/cpu_visual/freq_colormap/02" "#30a060";
+   item: "evisum/cpu_visual/freq_colormap/03" "#a0ff80";
+   item: "evisum/cpu_visual/freq_colormap/04" "#a0ff80";
+   item: "evisum/cpu_visual/temp_colormap/00" "#44ce1b";
+   item: "evisum/cpu_visual/temp_colormap/01" "#bddb44";
+   item: "evisum/cpu_visual/temp_colormap/02" "#f7e379";
+   item: "evisum/cpu_visual/temp_colormap/03" "#f2a134";
+   item: "evisum/cpu_visual/temp_colormap/04" "#e51f1f";
+   item: "evisum/cpu_visual/temp_colormap/05" "#e51f1f";
+
+   /* Shared graph/legend palette.
+    * Keys are contiguous and parsed at runtime as:
+    *   evisum/graph_palette/000 .. evisum/graph_palette/NNN
+    */
+   item: "evisum/graph_palette/000" "#f24444";
+   item: "evisum/graph_palette/001" "#f29b44";
+   item: "evisum/graph_palette/002" "#f2f244";
+   item: "evisum/graph_palette/003" "#9bf244";
+   item: "evisum/graph_palette/004" "#44f244";
+   item: "evisum/graph_palette/005" "#44f29b";
+   item: "evisum/graph_palette/006" "#44f2f2";
+   item: "evisum/graph_palette/007" "#449bf2";
+   item: "evisum/graph_palette/008" "#4444f2";
+   item: "evisum/graph_palette/009" "#9b44f2";
+   item: "evisum/graph_palette/010" "#f244f2";
+   item: "evisum/graph_palette/011" "#f2449b";
+   item: "evisum/graph_palette/012" "#f22222";
+   item: "evisum/graph_palette/013" "#f28a22";
+   item: "evisum/graph_palette/014" "#f2f222";
+   item: "evisum/graph_palette/015" "#8af222";
+   item: "evisum/graph_palette/016" "#22f222";
+   item: "evisum/graph_palette/017" "#22f28a";
+   item: "evisum/graph_palette/018" "#22f2f2";
+   item: "evisum/graph_palette/019" "#228af2";
+   item: "evisum/graph_palette/020" "#2222f2";
+   item: "evisum/graph_palette/021" "#8a22f2";
+   item: "evisum/graph_palette/022" "#f222f2";
+   item: "evisum/graph_palette/023" "#f2228a";
+   item: "evisum/graph_palette/024" "#d13b3b";
+   item: "evisum/graph_palette/025" "#d1863b";
+   item: "evisum/graph_palette/026" "#d1d13b";
+   item: "evisum/graph_palette/027" "#86d13b";
+   item: "evisum/graph_palette/028" "#3bd13b";
+   item: "evisum/graph_palette/029" "#3bd186";
+   item: "evisum/graph_palette/030" "#3bd1d1";
+   item: "evisum/graph_palette/031" "#3b86d1";
+   item: "evisum/graph_palette/032" "#3b3bd1";
+   item: "evisum/graph_palette/033" "#863bd1";
+   item: "evisum/graph_palette/034" "#d13bd1";
+   item: "evisum/graph_palette/035" "#d13b86";
+   item: "evisum/graph_palette/036" "#d11d1d";
+   item: "evisum/graph_palette/037" "#d1771d";
+   item: "evisum/graph_palette/038" "#d1d11d";
+   item: "evisum/graph_palette/039" "#77d11d";
+   item: "evisum/graph_palette/040" "#1dd11d";
+   item: "evisum/graph_palette/041" "#1dd177";
+   item: "evisum/graph_palette/042" "#1dd1d1";
+   item: "evisum/graph_palette/043" "#1d77d1";
+   item: "evisum/graph_palette/044" "#1d1dd1";
+   item: "evisum/graph_palette/045" "#771dd1";
+   item: "evisum/graph_palette/046" "#d11dd1";
+   item: "evisum/graph_palette/047" "#d11d77";
+   item: "evisum/graph_palette/048" "#ad3131";
+   item: "evisum/graph_palette/049" "#ad6f31";
+   item: "evisum/graph_palette/050" "#adad31";
+   item: "evisum/graph_palette/051" "#6fad31";
+   item: "evisum/graph_palette/052" "#31ad31";
+   item: "evisum/graph_palette/053" "#31ad6f";
+   item: "evisum/graph_palette/054" "#31adad";
+   item: "evisum/graph_palette/055" "#316fad";
+   item: "evisum/graph_palette/056" "#3131ad";
+   item: "evisum/graph_palette/057" "#6f31ad";
+   item: "evisum/graph_palette/058" "#ad31ad";
+   item: "evisum/graph_palette/059" "#ad316f";
+   item: "evisum/graph_palette/060" "#ad1818";
+   item: "evisum/graph_palette/061" "#ad6318";
+   item: "evisum/graph_palette/062" "#adad18";
+   item: "evisum/graph_palette/063" "#63ad18";
+   item: "evisum/graph_palette/064" "#18ad18";
+   item: "evisum/graph_palette/065" "#18ad63";
+   item: "evisum/graph_palette/066" "#18adad";
+   item: "evisum/graph_palette/067" "#1863ad";
+   item: "evisum/graph_palette/068" "#1818ad";
+   item: "evisum/graph_palette/069" "#6318ad";
+   item: "evisum/graph_palette/070" "#ad18ad";
+   item: "evisum/graph_palette/071" "#ad1863";
+   item: "evisum/graph_palette/072" "#8f2828";
+   item: "evisum/graph_palette/073" "#8f5b28";
+   item: "evisum/graph_palette/074" "#8f8f28";
+   item: "evisum/graph_palette/075" "#5b8f28";
+   item: "evisum/graph_palette/076" "#288f28";
+   item: "evisum/graph_palette/077" "#288f5b";
+   item: "evisum/graph_palette/078" "#288f8f";
+   item: "evisum/graph_palette/079" "#285b8f";
+   item: "evisum/graph_palette/080" "#28288f";
+   item: "evisum/graph_palette/081" "#5b288f";
+   item: "evisum/graph_palette/082" "#8f288f";
+   item: "evisum/graph_palette/083" "#8f285b";
+   item: "evisum/graph_palette/084" "#8f1414";
+   item: "evisum/graph_palette/085" "#8f5114";
+   item: "evisum/graph_palette/086" "#8f8f14";
+   item: "evisum/graph_palette/087" "#518f14";
+   item: "evisum/graph_palette/088" "#148f14";
+   item: "evisum/graph_palette/089" "#148f51";
+   item: "evisum/graph_palette/090" "#148f8f";
+   item: "evisum/graph_palette/091" "#14518f";
+   item: "evisum/graph_palette/092" "#14148f";
+   item: "evisum/graph_palette/093" "#51148f";
+   item: "evisum/graph_palette/094" "#8f148f";
+   item: "evisum/graph_palette/095" "#8f1451";
+}
+
 collections {
     sounds
     {

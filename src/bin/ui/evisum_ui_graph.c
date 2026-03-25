@@ -1,4 +1,5 @@
 #include "evisum_ui_graph.h"
+#include "evisum_ui_colors.h"
 #include <math.h>
 
 static Eina_Bool
@@ -155,6 +156,9 @@ evisum_ui_graph_draw(Evas_Object                 *graph_bg,
    uint32_t *px;
    int gx, gy, gw, gh;
    int x, y, cell;
+   uint8_t bg_r, bg_g, bg_b;
+   uint8_t grid_v_r, grid_v_g, grid_v_b;
+   uint8_t grid_h_r, grid_h_g, grid_h_b;
 
    if (!_graph_target_valid(graph_bg, graph_img) || (sample_count < 2))
      return;
@@ -179,20 +183,24 @@ evisum_ui_graph_draw(Evas_Object                 *graph_bg,
    if (!px)
      return;
 
+   evisum_graph_widget_colors_get(&bg_r, &bg_g, &bg_b,
+                                  &grid_v_r, &grid_v_g, &grid_v_b,
+                                  &grid_h_r, &grid_h_g, &grid_h_b);
+
    for (y = 0; y < gh; y++)
      for (x = 0; x < gw; x++)
-       px[y * gw + x] = _argb(32, 32, 32);
+       px[y * gw + x] = _argb(bg_r, bg_g, bg_b);
 
    cell = (gw < gh) ? (gw / 10) : (gh / 10);
    if (cell < 12) cell = 12;
 
    for (x = 0; x < gw; x += cell)
      for (y = 0; y < gh; y++)
-       _pixel_set(px, gw, gh, x, y, _argb(56, 56, 56));
+       _pixel_set(px, gw, gh, x, y, _argb(grid_v_r, grid_v_g, grid_v_b));
 
    for (y = 0; y < gh; y += cell)
      for (x = 0; x < gw; x++)
-       _pixel_set(px, gw, gh, x, y, _argb(48, 48, 48));
+       _pixel_set(px, gw, gh, x, y, _argb(grid_h_r, grid_h_g, grid_h_b));
 
    for (int s = 0; s < series_count; s++)
      {
@@ -240,4 +248,16 @@ evisum_ui_graph_draw(Evas_Object                 *graph_bg,
 
    evas_object_image_data_set(graph_img, px);
    evas_object_image_data_update_add(graph_img, 0, 0, gw, gh);
+}
+
+void
+evisum_ui_graph_bg_set(Evas_Object *graph_bg)
+{
+   uint8_t r, g, b;
+
+   if (!graph_bg)
+     return;
+
+   evisum_graph_widget_colors_get(&r, &g, &b, NULL, NULL, NULL, NULL, NULL, NULL);
+   evas_object_color_set(graph_bg, r, g, b, 255);
 }

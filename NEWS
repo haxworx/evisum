@@ -4,8 +4,11 @@ Evisum 1.0.2
 
   * Implement new UI for network window.
   * Implement new UI for storage window (simpler w/graph).
+  * Implement new UI for sensors.
+  * implement new UI for memory.
   * Allow columns to be resized and remember the changes.
   * Implement an evisum_ui_graph API.
+  * Bring all custom colours into the EDC for customisability.
 
 ============
 Evisum 1.0.1

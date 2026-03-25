@@ -28,4 +28,7 @@ evisum_ui_graph_draw(Evas_Object                       *graph_bg,
                      const Evisum_Ui_Graph_Layer       *layers,
                      int                                layer_count);
 
+void
+evisum_ui_graph_bg_set(Evas_Object *graph_bg);
+
 #endif
