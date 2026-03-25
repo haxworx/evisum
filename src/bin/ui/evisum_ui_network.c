@@ -26,6 +26,8 @@ typedef struct
 } Win_Data;
 
 #define NETWORK_GRAPH_SAMPLES 120
+#define NETWORK_GRID_X_STEP_SAMPLES 5
+#define NETWORK_GRID_Y_STEP_PERCENT 10
 #define NETWORK_POLL_USEC 1000000
 #define WIN_WIDTH 320
 #define WIN_HEIGHT 480
@@ -332,7 +334,8 @@ _graph_redraw(Win_Data *wd, Eina_List *interfaces)
      }
 
    evisum_ui_graph_draw(wd->graph_bg, wd->graph_img,
-                        NETWORK_GRAPH_SAMPLES, peak,
+                        NETWORK_GRAPH_SAMPLES, NETWORK_GRID_X_STEP_SAMPLES,
+                        NETWORK_GRID_Y_STEP_PERCENT, peak,
                         series, nseries,
                         _network_layers, EINA_C_ARRAY_LENGTH(_network_layers));
    free(series);

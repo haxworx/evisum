@@ -21,6 +21,8 @@ typedef struct
 } Win_Data;
 
 #define DISK_GRAPH_SAMPLES        120
+#define DISK_GRID_X_STEP_SAMPLES  5
+#define DISK_GRID_Y_STEP_PERCENT  10
 
 typedef struct
 {
@@ -305,7 +307,8 @@ _graph_redraw(Win_Data *wd)
      }
 
    evisum_ui_graph_draw(wd->graph_bg, wd->graph_img,
-                        DISK_GRAPH_SAMPLES, 100.0,
+                        DISK_GRAPH_SAMPLES, DISK_GRID_X_STEP_SAMPLES,
+                        DISK_GRID_Y_STEP_PERCENT, 100.0,
                         series, nseries,
                         _disk_layers, EINA_C_ARRAY_LENGTH(_disk_layers));
    free(series);

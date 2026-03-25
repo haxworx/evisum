@@ -61,6 +61,8 @@ enum
 };
 
 #define MEM_GRAPH_SAMPLES 120
+#define MEM_GRID_X_STEP_SAMPLES 5
+#define MEM_GRID_Y_STEP_PERCENT 10
 #define WIN_WIDTH 420
 #define WIN_HEIGHT 360
 
@@ -267,7 +269,8 @@ _graph_redraw(Win_Data *wd)
      }
 
    evisum_ui_graph_draw(wd->graph_bg, wd->graph_img,
-                        MEM_GRAPH_SAMPLES, 100.0,
+                        MEM_GRAPH_SAMPLES, MEM_GRID_X_STEP_SAMPLES,
+                        MEM_GRID_Y_STEP_PERCENT, 100.0,
                         series, nseries,
                         _mem_layers, EINA_C_ARRAY_LENGTH(_mem_layers));
 }

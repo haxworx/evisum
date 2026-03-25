@@ -61,6 +61,63 @@ _rfpart(double x)
    return 1.0 - _fpart(x);
 }
 
+static int
+_sample_x_pos(int sample_idx, int sample_count, int graph_w)
+{
+   if (sample_count < 2)
+     return 0;
+   if (sample_idx < 0)
+     sample_idx = 0;
+   if (sample_idx >= sample_count)
+     sample_idx = sample_count - 1;
+   return (int) lround(((double) sample_idx / (double) (sample_count - 1))
+                       * (double) (graph_w - 1));
+}
+
+static void
+_square_grid_viewport_calc(int graph_w, int graph_h,
+                           int sample_count, int x_grid_step_samples,
+                           int y_grid_step_percent,
+                           int *out_x, int *out_y, int *out_w, int *out_h)
+{
+   double x_cells, y_cells, target_aspect;
+   int view_w = graph_w, view_h = graph_h;
+   int view_x = 0, view_y = 0;
+
+   x_cells = (double) (sample_count - 1) / (double) x_grid_step_samples;
+   y_cells = 100.0 / (double) y_grid_step_percent;
+   if (x_cells <= 0.0 || y_cells <= 0.0)
+     {
+        *out_x = 0; *out_y = 0; *out_w = graph_w; *out_h = graph_h;
+        return;
+     }
+
+   target_aspect = x_cells / y_cells;
+   if (target_aspect <= 0.0)
+     {
+        *out_x = 0; *out_y = 0; *out_w = graph_w; *out_h = graph_h;
+        return;
+     }
+
+   if (((double) graph_w / (double) graph_h) > target_aspect)
+     {
+        view_w = (int) lround((double) graph_h * target_aspect);
+        if (view_w < 1) view_w = 1;
+        view_x = (graph_w - view_w) / 2;
+     }
+   else
+     {
+        view_h = (int) lround((double) graph_w / target_aspect);
+        if (view_h < 1) view_h = 1;
+        view_y = (graph_h - view_h) / 2;
+     }
+
+   *out_x = view_x;
+   *out_y = view_y;
+   *out_w = view_w;
+   *out_h = view_h;
+}
+
 static void
 _pixel_line_aa(uint32_t *px, int w, int h,
                double x0, double y0, double x1, double y1,
@@ -147,6 +204,8 @@ void
 evisum_ui_graph_draw(Evas_Object                 *graph_bg,
                      Evas_Object                 *graph_img,
                      int                          sample_count,
+                     int                          x_grid_step_samples,
+                     int                          y_grid_step_percent,
                      double                       y_max,
                      const Evisum_Ui_Graph_Series *series,
                      int                          series_count,
@@ -155,13 +214,20 @@ evisum_ui_graph_draw(Evas_Object                 *graph_bg,
 {
    uint32_t *px;
    int gx, gy, gw, gh;
-   int x, y, cell;
+   int x, y;
+   int view_x, view_y, view_w, view_h;
    uint8_t bg_r, bg_g, bg_b;
    uint8_t grid_v_r, grid_v_g, grid_v_b;
    uint8_t grid_h_r, grid_h_g, grid_h_b;
 
    if (!_graph_target_valid(graph_bg, graph_img) || (sample_count < 2))
      return;
+   if (x_grid_step_samples < 1)
+     x_grid_step_samples = 1;
+   if (y_grid_step_percent < 1)
+     y_grid_step_percent = 1;
+   if (y_grid_step_percent > 100)
+     y_grid_step_percent = 100;
    if ((series_count > 0) && !series)
      return;
    if ((layer_count > 0) && !layers)
@@ -191,16 +257,24 @@ evisum_ui_graph_draw(Evas_Object                 *graph_bg,
      for (x = 0; x < gw; x++)
        px[y * gw + x] = _argb(bg_r, bg_g, bg_b);
 
-   cell = (gw < gh) ? (gw / 10) : (gh / 10);
-   if (cell < 12) cell = 12;
+   _square_grid_viewport_calc(gw, gh,
+                              sample_count, x_grid_step_samples,
+                              y_grid_step_percent,
+                              &view_x, &view_y, &view_w, &view_h);
 
-   for (x = 0; x < gw; x += cell)
-     for (y = 0; y < gh; y++)
-       _pixel_set(px, gw, gh, x, y, _argb(grid_v_r, grid_v_g, grid_v_b));
+   for (int sample_idx = 0; sample_idx < sample_count; sample_idx += x_grid_step_samples)
+     {
+        x = view_x + _sample_x_pos(sample_idx, sample_count, view_w);
+        for (y = view_y; y < (view_y + view_h); y++)
+          _pixel_set(px, gw, gh, x, y, _argb(grid_v_r, grid_v_g, grid_v_b));
+     }
 
-   for (y = 0; y < gh; y += cell)
-     for (x = 0; x < gw; x++)
-       _pixel_set(px, gw, gh, x, y, _argb(grid_h_r, grid_h_g, grid_h_b));
+   for (int percent = 0; percent <= 100; percent += y_grid_step_percent)
+     {
+        y = view_y + (int) lround((1.0 - ((double) percent / 100.0)) * (double) (view_h - 1));
+        for (x = view_x; x < (view_x + view_w); x++)
+          _pixel_set(px, gw, gh, x, y, _argb(grid_h_r, grid_h_g, grid_h_b));
+     }
 
    for (int s = 0; s < series_count; s++)
      {
@@ -220,18 +294,18 @@ evisum_ui_graph_draw(Evas_Object                 *graph_bg,
           }
 
         idx = sample_count - count;
-        x0 = (int) (((double) idx / (double) (sample_count - 1)) * (double) (gw - 1));
-        y0 = (int) ((1.0 - (line->history[start] / y_max)) * (double) (gh - 1));
-        if (y0 < 0) y0 = 0;
-        if (y0 >= gh) y0 = gh - 1;
+        x0 = view_x + _sample_x_pos(idx, sample_count, view_w);
+        y0 = view_y + (int) ((1.0 - (line->history[start] / y_max)) * (double) (view_h - 1));
+        if (y0 < view_y) y0 = view_y;
+        if (y0 >= (view_y + view_h)) y0 = view_y + view_h - 1;
 
         for (int i = 1; i < count; i++)
           {
              idx = sample_count - count + i;
-             x1 = (int) (((double) idx / (double) (sample_count - 1)) * (double) (gw - 1));
-             y1 = (int) ((1.0 - (line->history[start + i] / y_max)) * (double) (gh - 1));
-             if (y1 < 0) y1 = 0;
-             if (y1 >= gh) y1 = gh - 1;
+             x1 = view_x + _sample_x_pos(idx, sample_count, view_w);
+             y1 = view_y + (int) ((1.0 - (line->history[start + i] / y_max)) * (double) (view_h - 1));
+             if (y1 < view_y) y1 = view_y;
+             if (y1 >= (view_y + view_h)) y1 = view_y + view_h - 1;
 
              for (int j = 0; j < layer_count; j++)
                {

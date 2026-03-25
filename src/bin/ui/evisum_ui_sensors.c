@@ -47,6 +47,8 @@ typedef struct
 } Sensor_History;
 
 #define SENSOR_GRAPH_SAMPLES 120
+#define SENSOR_GRID_X_STEP_SAMPLES 5
+#define SENSOR_GRID_Y_STEP_PERCENT 10
 
 static const Evisum_Ui_Graph_Layer _sensor_layers[] = {
    { -0.6, 0.24 },
@@ -357,7 +359,8 @@ _graph_redraw(Win_Data *wd)
    if (y_max < 100.0) y_max = 100.0;
 
    evisum_ui_graph_draw(wd->graph_bg, wd->graph_img,
-                        SENSOR_GRAPH_SAMPLES, y_max,
+                        SENSOR_GRAPH_SAMPLES, SENSOR_GRID_X_STEP_SAMPLES,
+                        SENSOR_GRID_Y_STEP_PERCENT, y_max,
                         series, nseries,
                         _sensor_layers, EINA_C_ARRAY_LENGTH(_sensor_layers));
    free(series);
