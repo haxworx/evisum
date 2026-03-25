@@ -1,5 +1,5 @@
 ============
-Evisum 1.0.2
+Evisum 1.1.0
 ============
 
   * Implement new UI for network window.
@@ -9,6 +9,10 @@ Evisum 1.0.2
   * Allow columns to be resized and remember the changes.
   * Implement an evisum_ui_graph API.
   * Bring all custom colours into the EDC for customisability.
+  * Toggle on/off all graph lines.
+  * Implement a graph API.
+  * Main process window fields are resizable and remembered in config.
+
 
 ============
 Evisum 1.0.1
