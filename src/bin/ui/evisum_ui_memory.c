@@ -72,17 +72,17 @@ static const Evisum_Ui_Graph_Layer _mem_layers[] = {
    {  0.0, 0.92 },
 };
 
-static void _evisum_ui_graph_redraw(Win_Data *wd);
+static void _evisum_ui_memory_graph_redraw(Win_Data *wd);
 
 static Eina_Bool
-_evisum_ui_graph_objects_valid(Win_Data *wd)
+_evisum_ui_memory_graph_objects_valid(Win_Data *wd)
 {
    return wd && wd->graph_bg && wd->graph_img && evas_object_evas_get(wd->graph_bg)
           && evas_object_evas_get(wd->graph_img);
 }
 
 static void
-_evisum_ui_legend_toggle_state_apply(Memory_Series *entry)
+_evisum_ui_memory_legend_toggle_state_apply(Memory_Series *entry)
 {
    if (!entry) return;
 
@@ -99,22 +99,22 @@ _evisum_ui_legend_toggle_state_apply(Memory_Series *entry)
 }
 
 static void
-_evisum_ui_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_memory_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
                   void *event_info EINA_UNUSED)
 {
    Memory_Series *entry = data;
 
    if (!entry || !entry->wd || !entry->legend_btn || !entry->legend_row)
      return;
-   if (!_evisum_ui_graph_objects_valid(entry->wd))
+   if (!_evisum_ui_memory_graph_objects_valid(entry->wd))
      return;
    entry->visible = !entry->visible;
-   _evisum_ui_legend_toggle_state_apply(entry);
-   _evisum_ui_graph_redraw(entry->wd);
+   _evisum_ui_memory_legend_toggle_state_apply(entry);
+   _evisum_ui_memory_graph_redraw(entry->wd);
 }
 
 static void
-_evisum_ui_legend_repack(Win_Data *wd)
+_evisum_ui_memory_legend_repack(Win_Data *wd)
 {
    int row = 0;
 
@@ -143,7 +143,7 @@ _evisum_ui_legend_repack(Win_Data *wd)
 }
 
 static void
-_evisum_ui_series_history_add(Memory_Series *entry, double value)
+_evisum_ui_memory_series_history_add(Memory_Series *entry, double value)
 {
    if (entry->history_count < MEM_GRAPH_SAMPLES)
      entry->history[entry->history_count++] = value;
@@ -156,7 +156,7 @@ _evisum_ui_series_history_add(Memory_Series *entry, double value)
 }
 
 static void
-_evisum_ui_series_legend_add(Win_Data *wd, Memory_Series *entry)
+_evisum_ui_memory_series_legend_add(Win_Data *wd, Memory_Series *entry)
 {
    Evas_Object *left, *swatch, *lb, *pb, *btn;
    Evas *evas;
@@ -181,7 +181,7 @@ _evisum_ui_series_legend_add(Win_Data *wd, Memory_Series *entry)
                                  16 * elm_config_scale_get());
    evas_object_size_hint_align_set(btn, 0.0, 0.5);
    evas_object_show(btn);
-   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_legend_toggle_cb, entry);
+   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_memory_legend_toggle_cb, entry);
    elm_box_pack_end(left, btn);
 
    swatch = evas_object_rectangle_add(evas);
@@ -216,11 +216,11 @@ _evisum_ui_series_legend_add(Win_Data *wd, Memory_Series *entry)
    entry->legend_swatch = swatch;
    entry->legend_label = lb;
    entry->legend_pb = pb;
-   _evisum_ui_legend_toggle_state_apply(entry);
+   _evisum_ui_memory_legend_toggle_state_apply(entry);
 }
 
 static void
-_evisum_ui_series_legend_update(Memory_Series *entry)
+_evisum_ui_memory_series_legend_update(Memory_Series *entry)
 {
    double value = 0.0;
 
@@ -241,16 +241,16 @@ _evisum_ui_series_legend_update(Memory_Series *entry)
                                    eina_slstr_printf("%s / %s",
                                                      evisum_size_format(entry->used, 0),
                                                      evisum_size_format(entry->total, 0)));
-   _evisum_ui_legend_toggle_state_apply(entry);
+   _evisum_ui_memory_legend_toggle_state_apply(entry);
 }
 
 static void
-_evisum_ui_graph_redraw(Win_Data *wd)
+_evisum_ui_memory_graph_redraw(Win_Data *wd)
 {
    Evisum_Ui_Graph_Series series[5 + MEM_VIDEO_CARD_MAX];
    int nseries = 0;
 
-   if (!_evisum_ui_graph_objects_valid(wd))
+   if (!_evisum_ui_memory_graph_objects_valid(wd))
      return;
 
    for (int i = 0; i < wd->series_count; i++)
@@ -276,16 +276,16 @@ _evisum_ui_graph_redraw(Win_Data *wd)
 }
 
 static void
-_evisum_ui_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_memory_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
 
-   _evisum_ui_graph_redraw(wd);
+   _evisum_ui_memory_graph_redraw(wd);
 }
 
 static void
-_evisum_ui_series_init(Win_Data *wd)
+_evisum_ui_memory_series_init(Win_Data *wd)
 {
    Memory_Series *entry;
 
@@ -330,7 +330,7 @@ _evisum_ui_series_init(Win_Data *wd)
 }
 
 static void
-_evisum_ui_series_usage_set(Win_Data *wd, int idx, uint64_t used, uint64_t total, Eina_Bool enabled)
+_evisum_ui_memory_series_usage_set(Win_Data *wd, int idx, uint64_t used, uint64_t total, Eina_Bool enabled)
 {
    Memory_Series *entry = &wd->series[idx];
    double used_percent = 0.0;
@@ -349,42 +349,42 @@ _evisum_ui_series_usage_set(Win_Data *wd, int idx, uint64_t used, uint64_t total
         if (used_percent > 100.0) used_percent = 100.0;
      }
 
-   _evisum_ui_series_history_add(entry, used_percent);
-   _evisum_ui_series_legend_add(wd, entry);
-   _evisum_ui_series_legend_update(entry);
+   _evisum_ui_memory_series_history_add(entry, used_percent);
+   _evisum_ui_memory_series_legend_add(wd, entry);
+   _evisum_ui_memory_series_legend_update(entry);
 }
 
 static void
-_evisum_ui_series_update_from_memory(Win_Data *wd, meminfo_t *memory)
+_evisum_ui_memory_series_update_from_memory(Win_Data *wd, meminfo_t *memory)
 {
-   _evisum_ui_series_usage_set(wd, SERIES_USED, memory->used, memory->total, EINA_TRUE);
-   _evisum_ui_series_usage_set(wd, SERIES_CACHED, memory->cached, memory->total, EINA_TRUE);
-   _evisum_ui_series_usage_set(wd, SERIES_BUFFERED, memory->buffered, memory->total, EINA_TRUE);
-   _evisum_ui_series_usage_set(wd, SERIES_SHARED, memory->shared, memory->total, EINA_TRUE);
-   _evisum_ui_series_usage_set(wd, SERIES_SWAP, memory->swap_used, memory->swap_total,
+   _evisum_ui_memory_series_usage_set(wd, SERIES_USED, memory->used, memory->total, EINA_TRUE);
+   _evisum_ui_memory_series_usage_set(wd, SERIES_CACHED, memory->cached, memory->total, EINA_TRUE);
+   _evisum_ui_memory_series_usage_set(wd, SERIES_BUFFERED, memory->buffered, memory->total, EINA_TRUE);
+   _evisum_ui_memory_series_usage_set(wd, SERIES_SHARED, memory->shared, memory->total, EINA_TRUE);
+   _evisum_ui_memory_series_usage_set(wd, SERIES_SWAP, memory->swap_used, memory->swap_total,
                      memory->swap_total > 0);
 
    for (int i = 0; i < MEM_VIDEO_CARD_MAX; i++)
      {
         if (i < (int) memory->video_count)
           {
-             _evisum_ui_series_usage_set(wd, SERIES_VIDEO_BASE + i,
+             _evisum_ui_memory_series_usage_set(wd, SERIES_VIDEO_BASE + i,
                                memory->video[i].used,
                                memory->video[i].total,
                                memory->video[i].total > 0);
           }
         else
           {
-             _evisum_ui_series_usage_set(wd, SERIES_VIDEO_BASE + i, 0, 0, EINA_FALSE);
+             _evisum_ui_memory_series_usage_set(wd, SERIES_VIDEO_BASE + i, 0, 0, EINA_FALSE);
           }
      }
 
-   _evisum_ui_legend_repack(wd);
-   _evisum_ui_graph_redraw(wd);
+   _evisum_ui_memory_legend_repack(wd);
+   _evisum_ui_memory_graph_redraw(wd);
 }
 
 static void
-_evisum_ui_mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
+_evisum_ui_memory_mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
 {
    static meminfo_t memory;
 
@@ -408,16 +408,16 @@ _evisum_ui_mem_usage_main_cb(void *data EINA_UNUSED, Ecore_Thread *thread)
 }
 
 static void
-_evisum_ui_mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
+_evisum_ui_memory_mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
 {
    Win_Data *wd = data;
    meminfo_t *memory = msgdata;
 
-   _evisum_ui_series_update_from_memory(wd, memory);
+   _evisum_ui_memory_series_update_from_memory(wd, memory);
 }
 
 static void
-_evisum_ui_main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_memory_main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
                         void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
@@ -426,7 +426,7 @@ _evisum_ui_main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_evisum_ui_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
+_evisum_ui_memory_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
 
@@ -434,7 +434,7 @@ _evisum_ui_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EI
      {
         wd->main_menu = evisum_ui_main_menu_create(wd->ui, wd->win, obj);
         evas_object_smart_callback_add(wd->main_menu, "dismissed",
-                                       _evisum_ui_main_menu_dismissed_cb, wd);
+                                       _evisum_ui_memory_main_menu_dismissed_cb, wd);
      }
    else
      {
@@ -444,7 +444,7 @@ _evisum_ui_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EI
 }
 
 static void
-_evisum_ui_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
+_evisum_ui_memory_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Win_Data *wd = data;
    Evas_Event_Mouse_Move *ev = event_info;
@@ -477,7 +477,7 @@ _evisum_ui_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj E
 }
 
 static void
-_evisum_ui_win_key_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
+_evisum_ui_memory_win_key_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Win_Data *wd = data;
    Evas_Event_Key_Down *ev = event_info;
@@ -490,7 +490,7 @@ _evisum_ui_win_key_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EIN
 }
 
 static void
-_evisum_ui_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+_evisum_ui_memory_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
    Evisum_Ui *ui = wd->ui;
@@ -499,17 +499,17 @@ _evisum_ui_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *
 }
 
 static void
-_evisum_ui_win_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+_evisum_ui_memory_win_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
    Evisum_Ui *ui = wd->ui;
 
-   _evisum_ui_graph_redraw(wd);
+   _evisum_ui_memory_graph_redraw(wd);
    evas_object_geometry_get(obj, NULL, NULL, &ui->mem.width, &ui->mem.height);
 }
 
 static void
-_evisum_ui_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_memory_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
@@ -566,7 +566,7 @@ evisum_ui_mem_win_add(Evisum_Ui *ui)
 
    wd->win = win;
    wd->ui = ui;
-   _evisum_ui_series_init(wd);
+   _evisum_ui_memory_series_init(wd);
 
    tb = elm_table_add(win);
    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
@@ -587,8 +587,8 @@ evisum_ui_mem_win_add(Evisum_Ui *ui)
    evas_object_size_hint_align_set(wd->graph_bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_table_pack(graph_tb, wd->graph_bg, 0, 0, 1, 1);
    evas_object_show(wd->graph_bg);
-   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_graph_bg_resize_cb, wd);
-   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_graph_bg_resize_cb, wd);
+   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_memory_graph_bg_resize_cb, wd);
+   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_memory_graph_bg_resize_cb, wd);
 
    wd->graph_img = evas_object_image_filled_add(evas);
    evas_object_image_alpha_set(wd->graph_img, EINA_FALSE);
@@ -605,7 +605,7 @@ evisum_ui_mem_win_add(Evisum_Ui *ui)
    evas_object_show(ic);
    elm_object_focus_allow_set(btn, 0);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_btn_menu_clicked_cb, wd);
+   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_memory_btn_menu_clicked_cb, wd);
 
    wd->btn_menu = lay = elm_layout_add(win);
    evas_object_size_hint_weight_set(lay, 1.0, 1.0);
@@ -642,17 +642,17 @@ evisum_ui_mem_win_add(Evisum_Ui *ui)
    else
      elm_win_center(win, 1, 1);
 
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_win_del_cb, wd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_win_move_cb, wd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_win_resize_cb, wd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_win_mouse_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_memory_win_del_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_memory_win_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_memory_win_resize_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_memory_win_mouse_move_cb, wd);
    elm_object_focus_allow_set(tb, EINA_TRUE);
    elm_object_focus_set(tb, EINA_TRUE);
-   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_win_key_down_cb, wd);
+   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_memory_win_key_down_cb, wd);
    evas_object_show(win);
 
-   wd->thread = ecore_thread_feedback_run(_evisum_ui_mem_usage_main_cb,
-                                          _evisum_ui_mem_usage_feedback_cb,
+   wd->thread = ecore_thread_feedback_run(_evisum_ui_memory_mem_usage_main_cb,
+                                          _evisum_ui_memory_mem_usage_feedback_cb,
                                           NULL,
                                           NULL,
                                           wd, 1);

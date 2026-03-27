@@ -56,17 +56,17 @@ static const Evisum_Ui_Graph_Layer _sensor_layers[] = {
    {  0.0, 0.92 },
 };
 
-static void _evisum_ui_graph_redraw(Win_Data *wd);
+static void _evisum_ui_sensors_graph_redraw(Win_Data *wd);
 
 static Eina_Bool
-_evisum_ui_graph_objects_valid(Win_Data *wd)
+_evisum_ui_sensors_graph_objects_valid(Win_Data *wd)
 {
    return wd && wd->graph_bg && wd->graph_img && evas_object_evas_get(wd->graph_bg)
           && evas_object_evas_get(wd->graph_img);
 }
 
 static int
-_evisum_ui_history_sort_cb(const void *p1, const void *p2)
+_evisum_ui_sensors_history_sort_cb(const void *p1, const void *p2)
 {
    const Sensor_History *s1 = p1;
    const Sensor_History *s2 = p2;
@@ -80,7 +80,7 @@ _evisum_ui_history_sort_cb(const void *p1, const void *p2)
 }
 
 static void
-_evisum_ui_legend_toggle_state_apply(Sensor_History *entry)
+_evisum_ui_sensors_legend_toggle_state_apply(Sensor_History *entry)
 {
    if (!entry) return;
 
@@ -96,22 +96,22 @@ _evisum_ui_legend_toggle_state_apply(Sensor_History *entry)
 }
 
 static void
-_evisum_ui_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_sensors_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED,
                   void *event_info EINA_UNUSED)
 {
    Sensor_History *entry = data;
 
    if (!entry || !entry->wd || !entry->legend_btn || !entry->legend_row)
      return;
-   if (!_evisum_ui_graph_objects_valid(entry->wd))
+   if (!_evisum_ui_sensors_graph_objects_valid(entry->wd))
      return;
    entry->enabled = !entry->enabled;
-   _evisum_ui_legend_toggle_state_apply(entry);
-   _evisum_ui_graph_redraw(entry->wd);
+   _evisum_ui_sensors_legend_toggle_state_apply(entry);
+   _evisum_ui_sensors_graph_redraw(entry->wd);
 }
 
 static void
-_evisum_ui_sensor_name_set(char *buf, size_t len, sensor_t *s)
+_evisum_ui_sensors_sensor_name_set(char *buf, size_t len, sensor_t *s)
 {
    if (!s || !s->name)
      {
@@ -126,7 +126,7 @@ _evisum_ui_sensor_name_set(char *buf, size_t len, sensor_t *s)
 }
 
 static void
-_evisum_ui_history_legend_repack(Win_Data *wd)
+_evisum_ui_sensors_history_legend_repack(Win_Data *wd)
 {
    Eina_List *l;
    Sensor_History *entry;
@@ -150,7 +150,7 @@ _evisum_ui_history_legend_repack(Win_Data *wd)
 }
 
 static void
-_evisum_ui_history_add_sample(Sensor_History *entry, double value)
+_evisum_ui_sensors_history_add_sample(Sensor_History *entry, double value)
 {
    if (entry->history_count < SENSOR_GRAPH_SAMPLES)
      entry->history[entry->history_count++] = value;
@@ -163,7 +163,7 @@ _evisum_ui_history_add_sample(Sensor_History *entry, double value)
 }
 
 static void
-_evisum_ui_history_legend_add(Win_Data *wd, Sensor_History *entry)
+_evisum_ui_sensors_history_legend_add(Win_Data *wd, Sensor_History *entry)
 {
    Evas_Object *left, *swatch, *lb, *pb, *btn;
    Evas *evas;
@@ -188,7 +188,7 @@ _evisum_ui_history_legend_add(Win_Data *wd, Sensor_History *entry)
                                  16 * elm_config_scale_get());
    evas_object_size_hint_align_set(btn, 0.0, 0.5);
    evas_object_show(btn);
-   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_legend_toggle_cb, entry);
+   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_sensors_legend_toggle_cb, entry);
    elm_box_pack_end(left, btn);
 
    swatch = evas_object_rectangle_add(evas);
@@ -223,12 +223,12 @@ _evisum_ui_history_legend_add(Win_Data *wd, Sensor_History *entry)
    entry->legend_label = lb;
    entry->legend_pb = pb;
    entry->enabled = EINA_FALSE;
-   _evisum_ui_legend_toggle_state_apply(entry);
-   _evisum_ui_history_legend_repack(wd);
+   _evisum_ui_sensors_legend_toggle_state_apply(entry);
+   _evisum_ui_sensors_history_legend_repack(wd);
 }
 
 static void
-_evisum_ui_history_legend_del(Sensor_History *entry)
+_evisum_ui_sensors_history_legend_del(Sensor_History *entry)
 {
    if (entry->legend_pb)
      evas_object_del(entry->legend_pb);
@@ -243,7 +243,7 @@ _evisum_ui_history_legend_del(Sensor_History *entry)
 }
 
 static void
-_evisum_ui_history_legend_update(Sensor_History *entry, double temp)
+_evisum_ui_sensors_history_legend_update(Sensor_History *entry, double temp)
 {
    if (!entry->legend_pb || !entry->legend_label)
      return;
@@ -253,7 +253,7 @@ _evisum_ui_history_legend_update(Sensor_History *entry, double temp)
 }
 
 static Sensor_History *
-_evisum_ui_history_find_or_create(Win_Data *wd, sensor_t *s)
+_evisum_ui_sensors_history_find_or_create(Win_Data *wd, sensor_t *s)
 {
    Eina_List *l;
    Sensor_History *entry;
@@ -263,7 +263,7 @@ _evisum_ui_history_find_or_create(Win_Data *wd, sensor_t *s)
    if (!s || !s->name)
      return NULL;
 
-   _evisum_ui_sensor_name_set(namebuf, sizeof(namebuf), s);
+   _evisum_ui_sensors_sensor_name_set(namebuf, sizeof(namebuf), s);
    snprintf(keybuf, sizeof(keybuf), "%s", namebuf);
 
    EINA_LIST_FOREACH(wd->history, l, entry)
@@ -297,7 +297,7 @@ _evisum_ui_history_find_or_create(Win_Data *wd, sensor_t *s)
 }
 
 static void
-_evisum_ui_history_compact(Win_Data *wd)
+_evisum_ui_sensors_history_compact(Win_Data *wd)
 {
    Eina_List *l, *l2;
    Sensor_History *entry;
@@ -306,17 +306,17 @@ _evisum_ui_history_compact(Win_Data *wd)
      {
         if (entry->seen) continue;
         wd->history = eina_list_remove_list(wd->history, l);
-        _evisum_ui_history_legend_del(entry);
+        _evisum_ui_sensors_history_legend_del(entry);
         free(entry->name);
         free(entry->key);
         free(entry);
      }
 
-   _evisum_ui_history_legend_repack(wd);
+   _evisum_ui_sensors_history_legend_repack(wd);
 }
 
 static void
-_evisum_ui_graph_redraw(Win_Data *wd)
+_evisum_ui_sensors_graph_redraw(Win_Data *wd)
 {
    Eina_List *l;
    Sensor_History *entry;
@@ -324,7 +324,7 @@ _evisum_ui_graph_redraw(Win_Data *wd)
    int total, nseries;
    double y_max = 0.0;
 
-   if (!_evisum_ui_graph_objects_valid(wd))
+   if (!_evisum_ui_sensors_graph_objects_valid(wd))
      return;
 
    total = eina_list_count(wd->history);
@@ -367,12 +367,12 @@ _evisum_ui_graph_redraw(Win_Data *wd)
 }
 
 static void
-_evisum_ui_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_sensors_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                     void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
 
-   _evisum_ui_graph_redraw(wd);
+   _evisum_ui_sensors_graph_redraw(wd);
 }
 
 static void
@@ -439,30 +439,30 @@ _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
              if (temp < 0.0) temp = 0.0;
              if (temp > 100.0) temp = 100.0;
 
-             entry = _evisum_ui_history_find_or_create(wd, s);
+             entry = _evisum_ui_sensors_history_find_or_create(wd, s);
              if (!entry) continue;
 
              entry->current_temp = temp;
-             _evisum_ui_history_add_sample(entry, temp);
-             _evisum_ui_history_legend_add(wd, entry);
-             _evisum_ui_history_legend_update(entry, temp);
+             _evisum_ui_sensors_history_add_sample(entry, temp);
+             _evisum_ui_sensors_history_legend_add(wd, entry);
+             _evisum_ui_sensors_history_legend_update(entry, temp);
              entry->seen = EINA_TRUE;
           }
 
         system_sensors_thermal_free(sensors, n);
      }
 
-   _evisum_ui_history_compact(wd);
+   _evisum_ui_sensors_history_compact(wd);
    wd->history = eina_list_sort(wd->history,
                                 eina_list_count(wd->history),
-                                _evisum_ui_history_sort_cb);
-   _evisum_ui_history_legend_repack(wd);
-   _evisum_ui_graph_redraw(wd);
+                                _evisum_ui_sensors_history_sort_cb);
+   _evisum_ui_sensors_history_legend_repack(wd);
+   _evisum_ui_sensors_graph_redraw(wd);
    free(msg);
 }
 
 static void
-_evisum_ui_win_key_down_cb(void *data, Evas *e EINA_UNUSED,
+_evisum_ui_sensors_win_key_down_cb(void *data, Evas *e EINA_UNUSED,
                  Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evas_Event_Key_Down *ev = event_info;
@@ -476,7 +476,7 @@ _evisum_ui_win_key_down_cb(void *data, Evas *e EINA_UNUSED,
 }
 
 static void
-_evisum_ui_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
+_evisum_ui_sensors_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
              void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
@@ -486,18 +486,18 @@ _evisum_ui_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
 }
 
 static void
-_evisum_ui_win_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
+_evisum_ui_sensors_win_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
                void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
    Evisum_Ui *ui = wd->ui;
 
-   _evisum_ui_graph_redraw(wd);
+   _evisum_ui_sensors_graph_redraw(wd);
    evas_object_geometry_get(obj, NULL, NULL, &ui->sensors.width, &ui->sensors.height);
 }
 
 static void
-_evisum_ui_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED,
+_evisum_ui_sensors_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED,
                    Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Win_Data *wd = data;
@@ -531,7 +531,7 @@ _evisum_ui_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED,
 }
 
 static void
-_evisum_ui_main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_sensors_main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
                         void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
@@ -540,7 +540,7 @@ _evisum_ui_main_menu_dismissed_cb(void *data, Evas_Object *obj EINA_UNUSED,
 }
 
 static void
-_evisum_ui_btn_menu_clicked_cb(void *data, Evas_Object *obj,
+_evisum_ui_sensors_btn_menu_clicked_cb(void *data, Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
    Win_Data *wd = data;
@@ -549,7 +549,7 @@ _evisum_ui_btn_menu_clicked_cb(void *data, Evas_Object *obj,
      {
         wd->main_menu = evisum_ui_main_menu_create(wd->ui, wd->win, obj);
         evas_object_smart_callback_add(wd->main_menu, "dismissed",
-                                       _evisum_ui_main_menu_dismissed_cb, wd);
+                                       _evisum_ui_sensors_main_menu_dismissed_cb, wd);
      }
    else
      {
@@ -559,7 +559,7 @@ _evisum_ui_btn_menu_clicked_cb(void *data, Evas_Object *obj,
 }
 
 static void
-_evisum_ui_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+_evisum_ui_sensors_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
             void *event_info EINA_UNUSED)
 {
    Sensor_History *entry;
@@ -578,7 +578,7 @@ _evisum_ui_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNU
 
    EINA_LIST_FREE(wd->history, entry)
      {
-        _evisum_ui_history_legend_del(entry);
+        _evisum_ui_sensors_history_legend_del(entry);
         free(entry->name);
         free(entry->key);
         free(entry);
@@ -637,8 +637,8 @@ void
    evas_object_size_hint_align_set(wd->graph_bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
    elm_table_pack(graph_tb, wd->graph_bg, 0, 0, 1, 1);
    evas_object_show(wd->graph_bg);
-   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_graph_bg_resize_cb, wd);
-   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_graph_bg_resize_cb, wd);
+   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_sensors_graph_bg_resize_cb, wd);
+   evas_object_event_callback_add(wd->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_sensors_graph_bg_resize_cb, wd);
 
    wd->graph_img = evas_object_image_filled_add(evas);
    evas_object_image_alpha_set(wd->graph_img, EINA_FALSE);
@@ -655,7 +655,7 @@ void
    evas_object_show(ic);
    elm_object_focus_allow_set(btn, 0);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_btn_menu_clicked_cb, wd);
+   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_sensors_btn_menu_clicked_cb, wd);
 
    wd->btn_menu = lay = elm_layout_add(win);
    evas_object_size_hint_weight_set(lay, 1.0, 1.0);
@@ -701,13 +701,13 @@ void
    else
      elm_win_center(win, 1, 1);
 
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_win_del_cb, wd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_win_move_cb, wd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_win_resize_cb, wd);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_win_mouse_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_sensors_win_del_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_sensors_win_move_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_sensors_win_resize_cb, wd);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_sensors_win_mouse_move_cb, wd);
    elm_object_focus_allow_set(tb, EINA_TRUE);
    elm_object_focus_set(tb, EINA_TRUE);
-   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_win_key_down_cb, wd);
+   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_sensors_win_key_down_cb, wd);
 
    evas_object_show(win);
 
