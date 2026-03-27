@@ -4,7 +4,6 @@
 #include "evisum_ui.h"
 #include "../system/machine.h"
 
-void
-evisum_ui_sensors_win_add(Evisum_Ui *ui);
+void evisum_ui_sensors_win_add(Evisum_Ui *ui);
 
 #endif

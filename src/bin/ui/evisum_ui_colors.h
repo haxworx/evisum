@@ -6,62 +6,58 @@
 #include <stdint.h>
 
 typedef struct _Color_Point {
-   unsigned int val;
-   unsigned int color;
+    unsigned int val;
+    unsigned int color;
 } Color_Point;
 
 extern unsigned int cpu_colormap[256];
 extern unsigned int freq_colormap[256];
 extern unsigned int temp_colormap[256];
 
-#define AVAL(x) (((x) >> 24) & 0xff)
-#define RVAL(x) (((x) >> 16) & 0xff)
-#define GVAL(x) (((x) >>  8) & 0xff)
-#define BVAL(x) (((x)      ) & 0xff)
+#define AVAL(x)          (((x) >> 24) & 0xff)
+#define RVAL(x)          (((x) >> 16) & 0xff)
+#define GVAL(x)          (((x) >> 8) & 0xff)
+#define BVAL(x)          (((x)) & 0xff)
 #define ARGB(a, r, g, b) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
 
 #define COLOR_CPU_NUM 5
 static const Color_Point cpu_colormap_in[] = {
-   {   0, 0xff202020 },
-   {  25, 0xff2030a0 },
-   {  50, 0xffa040a0 },
-   {  75, 0xffff9040 },
-   { 100, 0xffffffff },
-   { 256, 0xffffffff }
+    { 0,   0xff202020 },
+    { 25,  0xff2030a0 },
+    { 50,  0xffa040a0 },
+    { 75,  0xffff9040 },
+    { 100, 0xffffffff },
+    { 256, 0xffffffff }
 };
 #define COLOR_FREQ_NUM 4
 static const Color_Point freq_colormap_in[] = {
-   {   0, 0xff202020 },
-   {  33, 0xff285020 },
-   {  67, 0xff30a060 },
-   { 100, 0xffa0ff80 },
-   { 256, 0xffa0ff80 }
+    { 0,   0xff202020 },
+    { 33,  0xff285020 },
+    { 67,  0xff30a060 },
+    { 100, 0xffa0ff80 },
+    { 256, 0xffa0ff80 }
 };
 
 #define COLOR_TEMP_NUM 5
 static const Color_Point temp_colormap_in[] = {
-   {   0, 0xff44ce1b},
-   {  25, 0xffbddb44 },
-   {  50, 0xfff7e379 },
-   {  75, 0xfff2a134 },
-   { 100, 0xffe51f1f },
-   { 256, 0xffe51f1f }
+    { 0,   0xff44ce1b },
+    { 25,  0xffbddb44 },
+    { 50,  0xfff7e379 },
+    { 75,  0xfff2a134 },
+    { 100, 0xffe51f1f },
+    { 256, 0xffe51f1f }
 };
 
 void evisum_ui_colors_init();
 
-void
-evisum_graph_color_get(const char *key, uint8_t *r, uint8_t *g, uint8_t *b);
+void evisum_graph_color_get(const char *key, uint8_t *r, uint8_t *g, uint8_t *b);
 
-void
-evisum_graph_widget_colors_get(uint8_t *bg_r, uint8_t *bg_g, uint8_t *bg_b,
-                               uint8_t *grid_v_r, uint8_t *grid_v_g, uint8_t *grid_v_b,
-                               uint8_t *grid_h_r, uint8_t *grid_h_g, uint8_t *grid_h_b);
+void evisum_graph_widget_colors_get(uint8_t *bg_r, uint8_t *bg_g, uint8_t *bg_b, uint8_t *grid_v_r, uint8_t *grid_v_g,
+                                    uint8_t *grid_v_b, uint8_t *grid_h_r, uint8_t *grid_h_g, uint8_t *grid_h_b);
 
-void
-evisum_cpu_default_colors_get(uint8_t *text_r, uint8_t *text_g, uint8_t *text_b,
-                              uint8_t *overlay_r, uint8_t *overlay_g, uint8_t *overlay_b, uint8_t *overlay_a,
-                              uint8_t *padding_r, uint8_t *padding_g, uint8_t *padding_b, uint8_t *padding_a,
-                              uint8_t *explainer_bg_r, uint8_t *explainer_bg_g, uint8_t *explainer_bg_b, uint8_t *explainer_bg_a);
+void evisum_cpu_default_colors_get(uint8_t *text_r, uint8_t *text_g, uint8_t *text_b, uint8_t *overlay_r,
+                                   uint8_t *overlay_g, uint8_t *overlay_b, uint8_t *overlay_a, uint8_t *padding_r,
+                                   uint8_t *padding_g, uint8_t *padding_b, uint8_t *padding_a, uint8_t *explainer_bg_r,
+                                   uint8_t *explainer_bg_g, uint8_t *explainer_bg_b, uint8_t *explainer_bg_a);
 
 #endif

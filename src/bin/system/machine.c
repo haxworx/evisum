@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #if !defined(__linux__)
-# include <sys/sysctl.h>
+#include <sys/sysctl.h>
 #endif
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -39,28 +39,28 @@
 
 #if defined(__APPLE__) && defined(__MACH__)
 #define __MacOS__
-# include <mach/mach.h>
-# include <mach/vm_statistics.h>
-# include <mach/mach_types.h>
-# include <mach/mach_init.h>
-# include <mach/mach_host.h>
-# include <net/if_mib.h>
+#include <mach/mach.h>
+#include <mach/vm_statistics.h>
+#include <mach/mach_types.h>
+#include <mach/mach_init.h>
+#include <mach/mach_host.h>
+#include <net/if_mib.h>
 #endif
 
 #if defined(__OpenBSD__)
-# include <sys/sched.h>
-# include <sys/swap.h>
-# include <sys/mount.h>
-# include <sys/sensors.h>
-# include <net/if_types.h>
-# include <ifaddrs.h>
+#include <sys/sched.h>
+#include <sys/swap.h>
+#include <sys/mount.h>
+#include <sys/sensors.h>
+#include <net/if_types.h>
+#include <ifaddrs.h>
 #endif
 
 #if defined(__FreeBSD__) || defined(__DragonFly__)
-# include <net/if_mib.h>
-# include <vm/vm_param.h>
-# include <dev/acpica/acpiio.h>
-# include <sys/resource.h>
+#include <net/if_mib.h>
+#include <vm/vm_param.h>
+#include <dev/acpica/acpiio.h>
+#include <sys/resource.h>
 #endif
 
 #include "macros.h"
@@ -70,4 +70,3 @@
 #include "machine/memory.x"
 #include "machine/sensors.x"
 #include "machine/network.x"
-

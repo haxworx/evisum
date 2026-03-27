@@ -30,4 +30,6 @@ src += files([
    'evisum_ui_process_view.h',
    'evisum_ui_process_list.c',
    'evisum_ui_process_list.h',
+   'evisum_ui_widget_exel.c',
+   'evisum_ui_widget_exel.h',
 ])

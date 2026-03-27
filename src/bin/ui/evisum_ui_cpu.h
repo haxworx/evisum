@@ -6,42 +6,38 @@
 #include "../system/machine.h"
 
 typedef struct {
-   short id;
-   short percent;
-   unsigned int freq;
-   unsigned int temp;
+    short id;
+    short percent;
+    unsigned int freq;
+    unsigned int temp;
 } Core;
 
 typedef struct {
-   Evisum_Ui      *ui;
-   Ecore_Thread   *thread;
+    Evisum_Ui *ui;
+    Ecore_Thread *thread;
 
-   Evas_Object    *menu;
-   Evas_Object    *win;
-   Elm_Layout     *btn_menu;
-   Eina_Bool       btn_visible;
+    Evas_Object *menu;
+    Evas_Object *win;
+    Elm_Layout *btn_menu;
+    Eina_Bool btn_visible;
 
-   // Callback to free user data.
-   void (*ext_free_cb)(void *);
-   void               *ext;
+    // Callback to free user data.
+    void (*ext_free_cb)(void *);
+    void *ext;
 
 } Ui_Cpu_Data;
 
 typedef struct {
-   const char *name;
-   Ui_Cpu_Data *(*func)(Evas_Object *parent);
+    const char *name;
+    Ui_Cpu_Data *(*func)(Evas_Object *parent);
 } Cpu_Visual;
 
-void
-evisum_ui_cpu_win_add(Evisum_Ui *ui);
+void evisum_ui_cpu_win_add(Evisum_Ui *ui);
 
-void
-evisum_ui_cpu_win_restart(Evisum_Ui *ui);
+void evisum_ui_cpu_win_restart(Evisum_Ui *ui);
 
-Eina_List *
-evisum_ui_cpu_visuals_get(void);
+Eina_List *evisum_ui_cpu_visuals_get(void);
 
-Cpu_Visual *
-evisum_ui_cpu_visual_by_name(const char *name);
+Cpu_Visual *evisum_ui_cpu_visual_by_name(const char *name);
 
 #endif
