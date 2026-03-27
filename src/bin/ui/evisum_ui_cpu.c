@@ -6,7 +6,7 @@
 
 // config for colors/sizing
 static void
-_win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_evisum_ui_win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Coord w, h;
    Evas_Event_Mouse_Move *ev;
@@ -31,7 +31,7 @@ _win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_evisum_ui_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evas_Event_Key_Down *ev;
    Evisum_Ui *ui;
@@ -49,7 +49,7 @@ _win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_btn_menu_clicked_cb(void *data, Evas_Object *obj,
+_evisum_ui_btn_menu_clicked_cb(void *data, Evas_Object *obj,
                      void *event_info EINA_UNUSED)
 {
    Evisum_Ui *ui;
@@ -66,7 +66,7 @@ _btn_menu_clicked_cb(void *data, Evas_Object *obj,
 }
 
 static void
-_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
+_evisum_ui_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 {
    Evisum_Ui *ui = data;
 
@@ -74,7 +74,7 @@ _win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info)
 }
 
 static void
-_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+_evisum_ui_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
 {
    Evisum_Ui *ui = data;
 
@@ -82,7 +82,7 @@ _win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info
 }
 
 static void
-_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_evisum_ui_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Ui_Cpu_Data *pd = data;
    Evisum_Ui *ui = pd->ui;
@@ -191,7 +191,7 @@ evisum_ui_cpu_win_add(Evisum_Ui *ui)
    evas_object_show(ic);
    elm_object_focus_allow_set(btn, 0);
    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-   evas_object_smart_callback_add(btn, "clicked", _btn_menu_clicked_cb, pd);
+   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_btn_menu_clicked_cb, pd);
 
    pd->btn_menu = lay = elm_layout_add(win);
    evas_object_size_hint_weight_set(lay, 1.0, 1.0);
@@ -201,11 +201,11 @@ evisum_ui_cpu_win_add(Evisum_Ui *ui)
    elm_table_pack(tb, lay, 0, 0, 1, 1);
    evas_object_show(lay);
 
-   evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _win_mouse_move_cb, pd);
-   evas_object_event_callback_add(scr, EVAS_CALLBACK_KEY_DOWN, _win_key_down_cb, ui);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _win_resize_cb, ui);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE,  _win_move_cb, ui);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, pd);
+   evas_object_event_callback_add(scr, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_win_mouse_move_cb, pd);
+   evas_object_event_callback_add(scr, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_win_key_down_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_win_resize_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE,  _evisum_ui_win_move_cb, ui);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_win_del_cb, pd);
 
    if ((ui->cpu.width > 0) && (ui->cpu.height > 0))
      evas_object_resize(win, ui->cpu.width, ui->cpu.height);

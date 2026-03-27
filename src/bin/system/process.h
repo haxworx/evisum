@@ -27,6 +27,8 @@ typedef struct _Proc_Info
    uint64_t    mem_virt;
    uint64_t    mem_rss;
    uint64_t    mem_shared;
+   uint64_t    net_in;
+   uint64_t    net_out;
 
    char       *command;
    char       *arguments;
@@ -100,6 +102,12 @@ proc_sort_by_rss(const void *p1, const void *p2);
 
 int
 proc_sort_by_shared(const void *p1, const void *p2);
+
+int
+proc_sort_by_net_in(const void *p1, const void *p2);
+
+int
+proc_sort_by_net_out(const void *p1, const void *p2);
 
 int
 proc_sort_by_time(const void *p1, const void *p2);

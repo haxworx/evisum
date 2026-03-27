@@ -258,9 +258,19 @@ system_cpu_state_get(int *ncpu)
    int i;
 
    *ncpu = cpu_count();
+   if (*ncpu <= 0) return NULL;
    cores = malloc((*ncpu) * sizeof(cpu_core_t *));
+   if (!cores) return NULL;
    for (i = 0; i < *ncpu; i++)
-      cores[i] = calloc(1, sizeof(cpu_core_t));
+     {
+        cores[i] = calloc(1, sizeof(cpu_core_t));
+        if (!cores[i])
+          {
+             for (int j = 0; j < i; j++) free(cores[j]);
+             free(cores);
+             return NULL;
+          }
+     }
 
    _cpu_state_get(cores, *ncpu);
 
@@ -274,11 +284,21 @@ system_cpu_usage_delayed_get(int *ncpu, int usecs)
    int i;
 
    *ncpu = cpu_count();
+   if (*ncpu <= 0) return NULL;
 
    cores = malloc((*ncpu) * sizeof(cpu_core_t *));
+   if (!cores) return NULL;
 
    for (i = 0; i < *ncpu; i++)
-     cores[i] = calloc(1, sizeof(cpu_core_t));
+     {
+        cores[i] = calloc(1, sizeof(cpu_core_t));
+        if (!cores[i])
+          {
+             for (int j = 0; j < i; j++) free(cores[j]);
+             free(cores);
+             return NULL;
+          }
+     }
 
    _cpu_state_get(cores, *ncpu);
    usleep(usecs);
@@ -650,7 +670,9 @@ system_cpu_topology_get(int *ids, int ncpu)
 {
 #if defined(__linux__)
    char buf[4096];
+   if (ncpu <= 0) return;
    core_top_t *cores = malloc(ncpu * sizeof(core_top_t));
+   if (!cores) return;
 
    for (int i = 0; i < ncpu; i++)
      {

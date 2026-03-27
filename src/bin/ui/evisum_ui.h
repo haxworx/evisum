@@ -15,7 +15,7 @@
 
 #define EVISUM_WIN_WIDTH  540
 #define EVISUM_WIN_HEIGHT 360
-#define EVISUM_PROC_FIELD_WIDTHS_MAX 16
+#define EVISUM_PROC_FIELD_WIDTHS_MAX 18
 
 typedef struct _Evisum_Ui
 {

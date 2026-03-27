@@ -32,7 +32,12 @@ file_contents(const char *path)
    while ((!feof(f)) && (!ferror(f)))
      {
         tmp = realloc(buf, ++n * (sizeof(char) * block) + 1);
-        if (!tmp) return NULL;
+        if (!tmp)
+          {
+             free(buf);
+             fclose(f);
+             return NULL;
+          }
         buf = tmp;
         len += fread(buf + len, sizeof(char), block, f);
      }
@@ -83,4 +88,3 @@ _sysctlfromname(const char *name, void *mib, int depth, size_t *len)
 }
 
 #endif
-

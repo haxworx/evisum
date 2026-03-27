@@ -180,6 +180,12 @@ _cmd_args(Proc_Info *p, char *name, size_t len)
              int sz = ftell(f);
              Eina_Strbuf *buf = eina_strbuf_new();
              char *line2 = strdup(line);
+             if (!buf)
+               {
+                  free(line2);
+                  fclose(f);
+                  return;
+               }
 
              if (line2)
                { // copy line up to first blank into line2 then 0 terminate
@@ -242,6 +248,8 @@ _cmd_args(Proc_Info *p, char *name, size_t len)
    if (end) *end = '\0';
 
    p->command = strdup(name);
+   if (!p->command)
+     p->command = strdup("");
 }
 
 static int
@@ -300,6 +308,104 @@ typedef struct {
    unsigned long mem_virt;
    char name[1024];
 } Stat;
+
+typedef struct {
+   uint64_t in;
+   uint64_t out;
+} Pid_Net_Stats;
+
+static void
+_pid_net_stats_free_cb(void *data)
+{
+   Pid_Net_Stats *stats = data;
+   free(stats);
+}
+
+static uint64_t
+_line_u64_get(const char *line, const char *tag)
+{
+   const char *p = strstr(line, tag);
+   char *end = NULL;
+
+   if (!p) return 0;
+   p += strlen(tag);
+
+   return strtoull(p, &end, 10);
+}
+
+static Pid_Net_Stats *
+_pid_net_stats_get_or_add(Eina_Hash *hash, int64_t pid)
+{
+   Pid_Net_Stats *stats;
+
+   stats = eina_hash_find(hash, &pid);
+   if (stats) return stats;
+
+   stats = calloc(1, sizeof(Pid_Net_Stats));
+   if (!stats) return NULL;
+
+   eina_hash_add(hash, &pid, stats);
+
+   return stats;
+}
+
+static Eina_Hash *
+_net_stats_cache_get(void)
+{
+   static Eina_Hash *cache = NULL;
+   static double last_refresh = 0.0;
+   FILE *f;
+   char line[4096];
+   int64_t current_pid = -1;
+   double now = ecore_time_get();
+
+   if (cache && ((now - last_refresh) < 0.5))
+     return cache;
+
+   if (cache)
+     eina_hash_free(cache);
+
+   cache = eina_hash_int64_new(_pid_net_stats_free_cb);
+   if (!cache) return NULL;
+
+   f = popen("ss -H -tinp 2>/dev/null", "r");
+   if (!f)
+     {
+        last_refresh = now;
+        return cache;
+     }
+
+   while (fgets(line, sizeof(line), f))
+     {
+        uint64_t in = _line_u64_get(line, "bytes_received:");
+        uint64_t out = _line_u64_get(line, "bytes_acked:");
+        const char *p = line;
+        int64_t line_pid = -1;
+
+        p = strstr(p, "pid=");
+        if (p)
+          {
+             p += 4;
+             line_pid = strtoll(p, NULL, 10);
+             if (line_pid > 0)
+               current_pid = line_pid;
+          }
+
+        if ((!in && !out) || (current_pid <= 0))
+          continue;
+
+        Pid_Net_Stats *stats = _pid_net_stats_get_or_add(cache, current_pid);
+        if (!stats) continue;
+
+        stats->in += in;
+        stats->out += out;
+     }
+
+   pclose(f);
+   last_refresh = now;
+
+   return cache;
+}
 
 static Eina_Bool
 _stat(const char *path, Stat *st)
@@ -385,6 +491,27 @@ _n_files(Proc_Info *p)
    return p->numfiles;
 }
 
+static void
+_net_transfer_get(Proc_Info *p)
+{
+   Eina_Hash *cache;
+   int64_t pid;
+   Pid_Net_Stats *stats;
+
+   p->net_in = 0;
+   p->net_out = 0;
+
+   cache = _net_stats_cache_get();
+   if (!cache) return;
+
+   pid = p->pid;
+   stats = eina_hash_find(cache, &pid);
+   if (!stats) return;
+
+   p->net_in = stats->in;
+   p->net_out = stats->out;
+}
+
 static Eina_List *
 _process_list_linux_get(void)
 {
@@ -412,7 +539,7 @@ _process_list_linux_get(void)
           continue;
 
         Proc_Info *p = calloc(1, sizeof(Proc_Info));
-        if (!p) return NULL;
+        if (!p) continue;
 
         p->pid = pid;
         p->ppid = st.ppid;
@@ -431,8 +558,15 @@ _process_list_linux_get(void)
           p->is_kernel = 1;
         _mem_size(p);
         _cmd_args(p, st.name, sizeof(st.name));
+        _net_transfer_get(p);
 
-        list = eina_list_append(list, p);
+        Eina_List *next = eina_list_append(list, p);
+        if (!next)
+          {
+             proc_info_free(p);
+             continue;
+          }
+        list = next;
      }
 
    return list;
@@ -468,11 +602,24 @@ _proc_thread_info(Proc_Info *p)
         t->numthreads = st.numthreads;
         t->mem_virt = st.mem_virt;
         t->mem_rss = st.mem_rss;
+        t->net_in = 0;
+        t->net_out = 0;
 
         t->tid = tid;
         t->thread_name = strdup(st.name);
+        if (!t->thread_name)
+          {
+             proc_info_free(t);
+             continue;
+          }
 
-        p->threads = eina_list_append(p->threads, t);
+        Eina_List *next = eina_list_append(p->threads, t);
+        if (!next)
+          {
+             proc_info_free(t);
+             continue;
+          }
+        p->threads = next;
      }
 }
 
@@ -506,6 +653,7 @@ proc_info_by_pid(int pid)
    if (st.flags & PF_KTHREAD) p->is_kernel = 1;
    _mem_size(p);
    _cmd_args(p, st.name, sizeof(st.name));
+   _net_transfer_get(p);
 
    _proc_thread_info(p);
 
@@ -542,6 +690,8 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp)
    p->priority = kp->p_priority - PZERO;
    p->nice = kp->p_nice - NZERO;
    p->tid = kp->p_tid;
+   p->net_in = 0;
+   p->net_out = 0;
 }
 
 static void
@@ -553,6 +703,7 @@ _kvm_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
    if ((args = kvm_getargv(kern, kp, sizeof(name)-1)))
      {
         Eina_Strbuf *buf = eina_strbuf_new();
+        if (!buf) goto args_done;
         for (int i = 0; args[i]; i++)
           {
              eina_strbuf_append(buf, args[i]);
@@ -565,6 +716,7 @@ _kvm_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
         if (args[0] && ecore_file_exists(args[0]))
           p->command = strdup(ecore_file_file_get(args[0]));
      }
+args_done:
    struct kinfo_file *kf;
    int n;
 
@@ -581,6 +733,8 @@ _kvm_get(Proc_Info *p, kvm_t *kern, struct kinfo_proc *kp)
 
    if (!p->command)
      p->command = strdup(kp->p_comm);
+   if (!p->command)
+     p->command = strdup("");
 }
 
 Proc_Info *
@@ -595,12 +749,24 @@ proc_info_by_pid(int pid)
    if (!kern) return NULL;
 
    kp = kvm_getprocs(kern, KERN_PROC_PID, pid, sizeof(*kp), &count);
-   if (!kp) return NULL;
+   if (!kp)
+     {
+        kvm_close(kern);
+        return NULL;
+     }
 
-   if (count == 0) return NULL;
+   if (count == 0)
+     {
+        kvm_close(kern);
+        return NULL;
+     }
 
    Proc_Info *p = calloc(1, sizeof(Proc_Info));
-   if (!p) return NULL;
+   if (!p)
+     {
+        kvm_close(kern);
+        return NULL;
+     }
 
    _proc_get(p, kp);
    _kvm_get(p, kern, kp);
@@ -622,8 +788,24 @@ proc_info_by_pid(int pid)
 
         t->tid = kpt->p_tid;
         t->thread_name = strdup(kpt->p_comm);
+        if (!t->thread_name)
+          {
+             proc_info_free(t);
+             continue;
+          }
+        if (!t->thread_name)
+          {
+             proc_info_free(t);
+             continue;
+          }
 
-        p->threads = eina_list_append(p->threads, t);
+        Eina_List *next = eina_list_append(p->threads, t);
+        if (!next)
+          {
+             proc_info_free(t);
+             continue;
+          }
+        p->threads = next;
      }
 
    p->numthreads = eina_list_count(p->threads);
@@ -647,18 +829,25 @@ _process_list_openbsd_get(void)
    if (!kern) return NULL;
 
    kps = kvm_getprocs(kern, KERN_PROC_ALL, 0, sizeof(*kps), &pid_count);
-   if (!kps) return NULL;
+   if (!kps)
+     {
+        kvm_close(kern);
+        return NULL;
+     }
 
    for (int i = 0; i < pid_count; i++)
      {
-        p = calloc(1, sizeof(Proc_Info));
-        if (!p) return NULL;
-
         kp = &kps[i];
 
-        Proc_Info *p = proc_info_by_pid(kp->p_pid);
+        p = proc_info_by_pid(kp->p_pid);
         if (p)
-          list = eina_list_append(list, p);
+          {
+             Eina_List *next = eina_list_append(list, p);
+             if (!next)
+               proc_info_free(p);
+             else
+               list = next;
+          }
      }
 
    kvm_close(kern);
@@ -672,9 +861,10 @@ _process_list_openbsd_get(void)
 static void
 _cmd_get(Proc_Info *p, int pid)
 {
-   char *cp, *args, **argv;
+   char *cp, *args = NULL, **argv = NULL;
    int mib[3], argmax, argc;
    size_t size;
+   Eina_Strbuf *buf = NULL;
 
    mib[0] = CTL_KERN;
    mib[1] = KERN_ARGMAX;
@@ -735,7 +925,8 @@ _cmd_get(Proc_Info *p, int pid)
     * \---------------/ 0xffffffff
     */
 
-   if (sysctl(mib, 3, args, &size, NULL, 0) == -1) return;
+   if (sysctl(mib, 3, args, &size, NULL, 0) == -1)
+     goto done;
 
    memcpy(&argc, args, sizeof(argc));
    cp = args + sizeof(argc);
@@ -746,7 +937,7 @@ _cmd_get(Proc_Info *p, int pid)
         if (*cp == '\0') break;
      }
 
-   if (cp == &args[size]) return;
+   if (cp == &args[size]) goto done;
 
    /* Skip any padded NULLs. */
    for (;cp < &args[size]; cp++)
@@ -754,10 +945,10 @@ _cmd_get(Proc_Info *p, int pid)
         if (*cp == '\0') break;
      }
 
-   if (cp == &args[size]) return;
+   if (cp == &args[size]) goto done;
 
-   argv = malloc(1 + argc * sizeof(char *));
-   if (!argv) return;
+   argv = malloc((1 + argc) * sizeof(char *));
+   if (!argv) goto done;
 
    int i = 0;
    argv[i] = cp;
@@ -775,18 +966,32 @@ _cmd_get(Proc_Info *p, int pid)
 
    argv[i] = NULL;
 
-   p->command = strdup(basename(argv[0]));
+   if (argv[0])
+     {
+        p->command = strdup(basename(argv[0]));
+        if (!p->command)
+          p->command = strdup("");
+     }
 
-   Eina_Strbuf *buf = eina_strbuf_new();
+   buf = eina_strbuf_new();
+   if (!buf) goto done;
 
    for (i = 0; i < argc; i++)
      eina_strbuf_append_printf(buf, "%s ", argv[i]);
 
    if (argc > 0)
-     p->arguments = eina_strbuf_release(buf);
+     {
+        p->arguments = eina_strbuf_release(buf);
+        buf = NULL;
+     }
    else
-     eina_strbuf_free(buf);
+     {
+        eina_strbuf_free(buf);
+        buf = NULL;
+     }
 
+done:
+   if (buf) eina_strbuf_free(buf);
    free(args);
    free(argv);
 }
@@ -817,6 +1022,8 @@ _proc_pidinfo(size_t pid)
    p->priority = taskinfo.ptinfo.pti_priority;
    p->nice = taskinfo.pbsd.pbi_nice;
    p->numthreads = taskinfo.ptinfo.pti_threadnum;
+   p->net_in = 0;
+   p->net_out = 0;
    _cmd_get(p, pid);
 
    return p;
@@ -831,7 +1038,11 @@ _process_list_macos_fallback_get(void)
      {
         Proc_Info *p = _proc_pidinfo(i);
         if (p)
-          list = eina_list_append(list, p);
+          {
+             Eina_List *next = eina_list_append(list, p);
+             if (!next) proc_info_free(p);
+             else list = next;
+          }
      }
 
    return list;
@@ -864,7 +1075,11 @@ _process_list_macos_get(void)
         pid_t pid = pids[i];
         Proc_Info *p = _proc_pidinfo(pid);
         if (p)
-          list = eina_list_append(list, p);
+          {
+             Eina_List *next = eina_list_append(list, p);
+             if (!next) proc_info_free(p);
+             else list = next;
+          }
      }
 
    free(pids);
@@ -906,6 +1121,8 @@ proc_info_by_pid(int pid)
    p->priority = taskinfo.ptinfo.pti_priority;
    p->nice = taskinfo.pbsd.pbi_nice;
    p->numthreads = taskinfo.ptinfo.pti_threadnum;
+   p->net_in = 0;
+   p->net_out = 0;
    _cmd_get(p, pid);
 
    return p;
@@ -964,6 +1181,7 @@ _kvm_get(Proc_Info *p, struct kinfo_proc *kp)
              free(base);
           }
         Eina_Strbuf *buf = eina_strbuf_new();
+        if (!buf) goto done_args;
         for (int i = 0; args[i] != NULL; i++)
           {
              eina_strbuf_append(buf, args[i]);
@@ -973,6 +1191,7 @@ _kvm_get(Proc_Info *p, struct kinfo_proc *kp)
         p->arguments = eina_strbuf_string_steal(buf);
         eina_strbuf_free(buf);
      }
+done_args:
 
    struct filedesc filed;
    struct fdescenttbl *fdt;
@@ -1007,6 +1226,8 @@ nokvm:
      snprintf(name, sizeof(name), "%s", kp->ki_comm);
 
    p->command = strdup(name);
+   if (!p->command)
+     p->command = strdup(kp->ki_comm);
 }
 
 static Proc_Info *
@@ -1048,9 +1269,12 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread)
    p->nice = kp->ki_nice - NZERO;
    p->priority = kp->ki_pri.pri_level - PZERO;
    p->numthreads = kp->ki_numthreads;
+   p->net_in = 0;
+   p->net_out = 0;
 
    p->tid = kp->ki_tid;
    p->thread_name = strdup(kp->ki_tdname);
+   if (!p->thread_name) p->thread_name = strdup("");
    if (kp->ki_flag & P_KPROC) p->is_kernel = 1;
 
    return p;
@@ -1085,7 +1309,11 @@ _process_list_freebsd_fallback_get(void)
 
         Proc_Info *p = _proc_thread_info(&kp, 0);
         if (p)
-          list = eina_list_append(list, p);
+          {
+             Eina_List *next = eina_list_append(list, p);
+             if (!next) proc_info_free(p);
+             else list = next;
+          }
      }
 
    return list;
@@ -1120,7 +1348,11 @@ _process_list_freebsd_get(void)
 
         Proc_Info *p = _proc_thread_info(kp, 0);
         if (p)
-          list = eina_list_append(list, p);
+          {
+             Eina_List *next = eina_list_append(list, p);
+             if (!next) proc_info_free(p);
+             else list = next;
+          }
      }
 
    kvm_close(kern);
@@ -1182,14 +1414,26 @@ proc_info_by_pid(int pid)
 
         kp = &kps[i];
         Proc_Info *t = _proc_thread_info(kp, 1);
+        if (!t) continue;
         if (!p)
           {
              p = _proc_thread_info(kp, 0);
+             if (!p)
+               {
+                  proc_info_free(t);
+                  continue;
+               }
              p->cpu_time = 0;
           }
 
         p->cpu_time += t->cpu_time;
-        p->threads = eina_list_append(p->threads, t);
+        Eina_List *next = eina_list_append(p->threads, t);
+        if (!next)
+          {
+             proc_info_free(t);
+             continue;
+          }
+        p->threads = next;
      }
 
    kvm_close(kern);
@@ -1250,7 +1494,9 @@ _child_add(Eina_List *parents, Proc_Info *child)
      {
         if (parent->pid == child->ppid)
           {
-             parent->children = eina_list_append(parent->children, child);
+             Eina_List *next = eina_list_append(parent->children, child);
+             if (!next) return 0;
+             parent->children = next;
              return 1;
           }
      }
@@ -1285,6 +1531,7 @@ _append_wanted(Eina_List *wanted, Eina_List *tree)
    EINA_LIST_FOREACH(tree, l, parent)
      {
         wanted = eina_list_append(wanted, parent);
+        if (!wanted) return NULL;
         if (parent->children)
           wanted = _append_wanted(wanted, parent->children);
      }
@@ -1304,6 +1551,7 @@ proc_info_pid_children_get(pid_t pid)
         if (!wanted && proc->pid == pid)
           {
              wanted = eina_list_append(wanted, proc);
+             if (!wanted) break;
              if (proc->children)
                wanted = _append_wanted(wanted, proc->children);
           }
@@ -1491,6 +1739,36 @@ proc_sort_by_shared(const void *p1, const void *p2)
 }
 
 int
+proc_sort_by_net_in(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   if (inf1->net_in > inf2->net_in)
+     return 1;
+   if (inf1->net_in < inf2->net_in)
+     return -1;
+
+   return 0;
+}
+
+int
+proc_sort_by_net_out(const void *p1, const void *p2)
+{
+   const Proc_Info *inf1, *inf2;
+
+   inf1 = p1; inf2 = p2;
+
+   if (inf1->net_out > inf2->net_out)
+     return 1;
+   if (inf1->net_out < inf2->net_out)
+     return -1;
+
+   return 0;
+}
+
+int
 proc_sort_by_time(const void *p1, const void *p2)
 {
    const Proc_Info *inf1, *inf2;
@@ -1554,4 +1832,3 @@ proc_sort_by_age(const void *p1, const void *p2)
 
    return c1->start - c2->start;
 }
-

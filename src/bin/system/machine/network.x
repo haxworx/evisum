@@ -47,6 +47,11 @@ _freebsd_generic_network_status(int *n)
              iface->xfer.in = ifmd->ifmd_data.ifi_ibytes;
              iface->xfer.out = ifmd->ifmd_data.ifi_obytes;
              void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
+             if (!t)
+               {
+                  free(iface);
+                  continue;
+               }
              ifaces = t;
              ifaces[(*n)++] = iface;
            }
@@ -69,7 +74,9 @@ _openbsd_generic_network_status(int *n)
 
    int sock = socket(AF_INET, SOCK_STREAM, 0);
    if (sock < 0)
-     return NULL;
+     {
+        return NULL;
+     }
 
    net_iface_t **ifaces = NULL;
 
@@ -86,7 +93,7 @@ _openbsd_generic_network_status(int *n)
         ifreq.ifr_data = (void *)&if_data;
         strncpy(ifreq.ifr_name, ifa->ifa_name, IFNAMSIZ - 1);
         if (ioctl(sock, SIOCGIFDATA, &ifreq) < 0)
-          return NULL;
+          continue;
 
         const struct if_data *ifi = &if_data;
         if (!LINK_STATE_IS_UP(ifi->ifi_link_state))
@@ -100,6 +107,11 @@ _openbsd_generic_network_status(int *n)
              iface->xfer.in = ifi->ifi_ibytes;
              iface->xfer.out = ifi->ifi_obytes;
              void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
+             if (!t)
+               {
+                  free(iface);
+                  continue;
+               }
              ifaces = t;
              ifaces[(*n)++] = iface;
           }
@@ -135,11 +147,22 @@ _linux_generic_network_status(int *n)
              net_iface_t *iface = malloc(sizeof(net_iface_t));
              if (iface)
                {
-                  name[strlen(name)-1] = '\0';
+                  size_t len = strlen(name);
+                  if (!len)
+                    {
+                       free(iface);
+                       continue;
+                    }
+                  name[len - 1] = '\0';
                   snprintf(iface->name, sizeof(iface->name), "%s", name);
                   iface->xfer.in = tmp_in;
                   iface->xfer.out = tmp_out;
                   void *t = realloc(ifaces, (1 + 1 + *n) * sizeof(net_iface_t *));
+                  if (!t)
+                    {
+                       free(iface);
+                       continue;
+                    }
                   ifaces = t;
                   ifaces[(*n)++] = iface;
                }
@@ -167,4 +190,3 @@ system_network_ifaces_get(int *n)
    return NULL;
 #endif
 }
-

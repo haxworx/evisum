@@ -18,13 +18,15 @@ enum
    PROC_FIELD_WIDTH_PRI = 6,
    PROC_FIELD_WIDTH_NICE = 7,
    PROC_FIELD_WIDTH_FILES = 8,
-   PROC_FIELD_WIDTH_SIZE = 9,
-   PROC_FIELD_WIDTH_VIRT = 10,
-   PROC_FIELD_WIDTH_RSS = 11,
-   PROC_FIELD_WIDTH_SHARED = 12,
-   PROC_FIELD_WIDTH_STATE = 13,
-   PROC_FIELD_WIDTH_TIME = 14,
-   PROC_FIELD_WIDTH_CPU_USAGE = 15
+   PROC_FIELD_WIDTH_NET_IN = 9,
+   PROC_FIELD_WIDTH_NET_OUT = 10,
+   PROC_FIELD_WIDTH_SIZE = 11,
+   PROC_FIELD_WIDTH_VIRT = 12,
+   PROC_FIELD_WIDTH_RSS = 13,
+   PROC_FIELD_WIDTH_SHARED = 14,
+   PROC_FIELD_WIDTH_STATE = 15,
+   PROC_FIELD_WIDTH_TIME = 16,
+   PROC_FIELD_WIDTH_CPU_USAGE = 17
 };
 
 static const char *
@@ -77,6 +79,8 @@ config_init(void)
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.state", proc.field_widths[PROC_FIELD_WIDTH_STATE], EET_T_INT);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.time", proc.field_widths[PROC_FIELD_WIDTH_TIME], EET_T_INT);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.cpu_usage", proc.field_widths[PROC_FIELD_WIDTH_CPU_USAGE], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.net_in", proc.field_widths[PROC_FIELD_WIDTH_NET_IN], EET_T_INT);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.net_out", proc.field_widths[PROC_FIELD_WIDTH_NET_OUT], EET_T_INT);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_statusbar", proc.show_statusbar, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.transparent", proc.transparent, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.alpha", proc.alpha, EET_T_UCHAR);
@@ -125,21 +129,28 @@ config(void)
    return _evisum_config;
 }
 
-static void
-_config_fail(const char *msg)
+static Eina_Bool
+_config_check(Evisum_Config *cfg)
 {
-   fprintf(stderr, "ERR: config %s.\n", msg);
-   exit(1);
+   if (!cfg) return EINA_FALSE;
+
+   if (cfg->version > CONFIG_VERSION)
+     return EINA_FALSE;
+
+   if (cfg->proc.poll_delay <= 0)
+     return EINA_FALSE;
+
+   return EINA_TRUE;
 }
 
 static void
-_config_check(Evisum_Config *cfg)
+_config_free(Evisum_Config *cfg)
 {
-   if (cfg->version > CONFIG_VERSION)
-     _config_fail("version");
+   if (!cfg) return;
 
-   if (cfg->proc.poll_delay <= 0)
-     _config_fail("poll");
+   if (cfg->cpu.visual)
+     free(cfg->cpu.visual);
+   free(cfg);
 }
 
 static Evisum_Config *
@@ -152,7 +163,7 @@ _config_init()
    cfg->proc.show_statusbar = 1;
    cfg->proc.show_user = 1;
    cfg->proc.transparent = 0;
-   cfg->proc.fields = 0xffff871b;
+   cfg->proc.fields = 0x0002191a;
    cfg->proc.alpha = 100;
 
    cfg->cpu.visual = strdup("default");
@@ -172,31 +183,42 @@ config_load(void)
         cfg = _config_init();
 
         f = eet_open(path, EET_FILE_MODE_WRITE);
-        if (!f) _config_fail("create");
-        eet_data_write(f, _evisum_conf_descriptor, "Config", cfg, EINA_TRUE);
-        eet_close(f);
+        if (f)
+          {
+             eet_data_write(f, _evisum_conf_descriptor, "Config", cfg, EINA_TRUE);
+             eet_close(f);
+          }
+        else
+          fprintf(stderr, "WARN: config create failed, using defaults in-memory.\n");
      }
    else
      {
         f = eet_open(path, EET_FILE_MODE_READ);
-        if (!f) _config_fail("read");
-        cfg = eet_data_read(f, _evisum_conf_descriptor, "Config");
-        if (!cfg)
+        if (f)
           {
-             fprintf(stderr, "FATAL: Corrupt config?\n");
-             exit(1);
+             cfg = eet_data_read(f, _evisum_conf_descriptor, "Config");
+             eet_close(f);
           }
 
-        if (cfg->version < CONFIG_VERSION)
+        if ((!cfg) || (!_config_check(cfg)) || (cfg->version < CONFIG_VERSION))
           {
-             free(cfg);
-             fprintf(stderr, "INFO: Reinitialising configuration\n");
+             if (cfg)
+               _config_free(cfg);
+             if (!f)
+               fprintf(stderr, "WARN: config read failed, reinitialising defaults.\n");
+             else
+               fprintf(stderr, "WARN: invalid/corrupt config, reinitialising defaults.\n");
 
              cfg = _config_init();
-          }
-        _config_check(cfg);
-
-        eet_close(f);
+             f = eet_open(path, EET_FILE_MODE_WRITE);
+             if (f)
+               {
+                  eet_data_write(f, _evisum_conf_descriptor, "Config", cfg, EINA_TRUE);
+                  eet_close(f);
+               }
+             else
+               fprintf(stderr, "WARN: config rewrite failed, continuing with defaults in-memory.\n");
+           }
      }
    _evisum_config = cfg;
 

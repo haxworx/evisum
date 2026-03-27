@@ -1,4 +1,11 @@
 ============
+Evisum 1.1.1
+============
+
+  * Add network in/out tracking (Linux only).
+  * Update process list and process view.
+
+============
 Evisum 1.1.0
 ============
 

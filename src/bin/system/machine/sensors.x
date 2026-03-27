@@ -115,11 +115,19 @@ system_sensors_thermal_get(int *sensor_count)
           continue;
 
         void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        if (!t) continue;
         sensors = t;
-        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
+        sensor = calloc(1, sizeof(sensor_t));
+        if (!sensor) continue;
         sensor->name = strdup(snsrdev.xname);
+        if (!sensor->name)
+          {
+             free(sensor);
+             continue;
+          }
         sensor->value = (snsr.value - 273150000) / 1000000.0; // (uK -> C)
         memcpy(sensor->mibs, &mibs, sizeof(mibs));
+        sensors[(*sensor_count)++] = sensor;
      }
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
    sensor_t *sensor;
@@ -130,10 +138,18 @@ system_sensors_thermal_get(int *sensor_count)
    if ((sysctlbyname("hw.acpi.thermal.tz0.temperature", &value, &len, NULL, 0)) != -1)
      {
         void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+        if (!t) return sensors;
         sensors = t;
-        sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
+        sensor = calloc(1, sizeof(sensor_t));
+        if (!sensor) return sensors;
         sensor->name = strdup("hw.acpi.thermal.tz0.temperature");
+        if (!sensor->name)
+          {
+             free(sensor);
+             return sensors;
+          }
         sensor->value = (float) (value -  2732) / 10;
+        sensors[(*sensor_count)++] = sensor;
      }
 
    int n = system_cpu_count_get();
@@ -145,10 +161,18 @@ system_sensors_thermal_get(int *sensor_count)
         if ((sysctlbyname(buf, &value, &len, NULL, 0)) != -1)
           {
              void *t = realloc(sensors, (1 + *sensor_count) * sizeof(sensor_t *));
+             if (!t) continue;
              sensors = t;
-             sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
+             sensor = calloc(1, sizeof(sensor_t));
+             if (!sensor) continue;
              sensor->name = strdup(buf);
+             if (!sensor->name)
+               {
+                  free(sensor);
+                  continue;
+               }
              sensor->value = (float) (value - 2732) / 10;
+             sensors[(*sensor_count)++] = sensor;
           }
      }
 
@@ -171,7 +195,11 @@ system_sensors_thermal_get(int *sensor_count)
         if (!link) continue;
 
         int n = scandir(link, &names, 0, alphasort);
-        if (n < 0) continue;
+        if (n < 0)
+          {
+             free(link);
+             continue;
+          }
 
         int idx = 0;
         memset(&seen, 0, sizeof(seen));
@@ -199,8 +227,18 @@ system_sensors_thermal_get(int *sensor_count)
                     }
 
                   void *t = realloc(sensors, (1 + (*sensor_count)) * sizeof(sensor_t *));
+                  if (!t)
+                    {
+                       free(names[i]);
+                       continue;
+                    }
                   sensors = t;
-                  sensors[(*sensor_count)++] = sensor = calloc(1, sizeof(sensor_t));
+                  sensor = calloc(1, sizeof(sensor_t));
+                  if (!sensor)
+                    {
+                       free(names[i]);
+                       continue;
+                    }
 
                   snprintf(buf, sizeof(buf), "%s/name", link);
                   sensor->name = file_contents(buf);
@@ -214,6 +252,14 @@ system_sensors_thermal_get(int *sensor_count)
 
                   snprintf(buf, sizeof(buf), "%s/temp%d_input", link, id);
                   sensor->path = strdup(buf);
+                  if (!sensor->path)
+                    {
+                       free(sensor->name);
+                       free(sensor->child_name);
+                       free(sensor);
+                       free(names[i]);
+                       continue;
+                    }
                   char *d = file_contents(buf);
                   if (d)
                     {
@@ -222,6 +268,7 @@ system_sensors_thermal_get(int *sensor_count)
                        free(d);
                     }
                   seen[idx++] = id;
+                  sensors[(*sensor_count)++] = sensor;
                }
              free(names[i]);
           }
@@ -259,18 +306,30 @@ _power_battery_count_get(power_t *power)
         if (!strncmp(snsrdev.xname, "acpibat", 7))
           {
              i = power->battery_count;
-
-             void *t = realloc(power->batteries, 1 +
-                               power->battery_count++ * sizeof(bat_t **));
+             void *t = realloc(power->batteries,
+                               (1 + power->battery_count) * sizeof(bat_t **));
+             if (!t) continue;
              power->batteries = t;
              power->batteries[i] = calloc(1, sizeof(bat_t));
+             if (!power->batteries[i]) continue;
              power->batteries[i]->name = strdup(snsrdev.xname);
              power->batteries[i]->model = strdup("Unknown");
              power->batteries[i]->vendor = strdup("Unknown");
+             if (!power->batteries[i]->name || !power->batteries[i]->model ||
+                 !power->batteries[i]->vendor)
+               {
+                  free(power->batteries[i]->name);
+                  free(power->batteries[i]->model);
+                  free(power->batteries[i]->vendor);
+                  free(power->batteries[i]);
+                  power->batteries[i] = NULL;
+                  continue;
+               }
              power->batteries[i]->present = true;
              power->batteries[i]->mibs[0] = mibs[0];
              power->batteries[i]->mibs[1] = mibs[1];
              power->batteries[i]->mibs[2] = mibs[2];
+             power->battery_count++;
           }
         if (!strcmp("acpiac0", snsrdev.xname))
           {
@@ -292,10 +351,27 @@ _power_battery_count_get(power_t *power)
      }
 
    power->batteries = malloc(power->battery_count * sizeof(bat_t **));
+   if (!power->batteries)
+     {
+        power->battery_count = 0;
+        return power->battery_count;
+     }
    for (int i = 0; i < power->battery_count; i++) {
         power->batteries[i] = calloc(1, sizeof(bat_t));
+        if (!power->batteries[i])
+          {
+             power->battery_count = i;
+             break;
+          }
         snprintf(name, sizeof(name), "hw.acpi.battery.%i", i);
         power->batteries[i]->name = strdup(name);
+        if (!power->batteries[i]->name)
+          {
+             free(power->batteries[i]);
+             power->batteries[i] = NULL;
+             power->battery_count = i;
+             break;
+          }
         power->batteries[i]->present = true;
      }
 #elif defined(__linux__)
@@ -319,9 +395,29 @@ _power_battery_count_get(power_t *power)
                   char *s;
                   void *t = realloc(power->batteries, (1 +
                                     power->battery_count) * sizeof(bat_t **));
+                  if (!t)
+                    {
+                       free(type);
+                       free(names[i]);
+                       continue;
+                    }
                   power->batteries = t;
                   power->batteries[id] = calloc(1, sizeof(bat_t));
+                  if (!power->batteries[id])
+                    {
+                       free(type);
+                       free(names[i]);
+                       continue;
+                    }
                   power->batteries[id]->name = strdup(names[i]->d_name);
+                  if (!power->batteries[id]->name)
+                    {
+                       free(power->batteries[id]);
+                       power->batteries[id] = NULL;
+                       free(type);
+                       free(names[i]);
+                       continue;
+                    }
 
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/manufacturer", names[i]->d_name);
                   s = file_contents(path);
@@ -336,6 +432,17 @@ _power_battery_count_get(power_t *power)
                     power->batteries[id]->model = s;
                   else
                     power->batteries[id]->model = strdup("");
+                  if (!power->batteries[id]->vendor || !power->batteries[id]->model)
+                    {
+                       free(power->batteries[id]->name);
+                       free(power->batteries[id]->vendor);
+                       free(power->batteries[id]->model);
+                       free(power->batteries[id]);
+                       power->batteries[id] = NULL;
+                       free(type);
+                       free(names[i]);
+                       continue;
+                    }
 
                   snprintf(path, sizeof(path), "/sys/class/power_supply/%s/present", names[i]->d_name);
                   power->batteries[id]->present = 1;
@@ -420,6 +527,10 @@ _battery_state_get(power_t *power)
           }
         power->batteries[i]->vendor = strdup(battio.bix.oeminfo);
         power->batteries[i]->model = strdup(battio.bix.model);
+        if (!power->batteries[i]->vendor)
+          power->batteries[i]->vendor = strdup("");
+        if (!power->batteries[i]->model)
+          power->batteries[i]->model = strdup("");
         battio.unit = i;
         if (ioctl(fd, ACPIIO_BATT_GET_BST, &battio) != -1)
           power->batteries[i]->charge_current = battio.bst.cap;
@@ -446,7 +557,7 @@ _battery_state_get(power_t *power)
           continue;
 
         link = realpath(path, NULL);
-        if (!link) return;
+        if (!link) continue;
 
         dir = opendir(path);
         if (!dir)
