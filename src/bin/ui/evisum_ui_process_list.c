@@ -90,53 +90,34 @@ static Evas_Object *_evisum_ui_process_list_sort_button_add(Evas_Object *parent,
 typedef struct {
     const char *name;
     const char *desc;
-} Proc_Field_Meta;
+    Proc_Sort sort;
+} Proc_Field_Info;
 
-static const Proc_Field_Meta _proc_field_meta[PROC_FIELD_MAX] = {
-    [PROC_FIELD_CMD] = { "command", "Command"         },
-    [PROC_FIELD_UID] = { "user",    "User"            },
-    [PROC_FIELD_PID] = { "pid",     "Process ID"      },
-    [PROC_FIELD_THREADS] = { "thr",     "Threads"         },
-    [PROC_FIELD_CPU] = { "cpu",     "CPU #"           },
-    [PROC_FIELD_PRI] = { "pri",     "Priority"        },
-    [PROC_FIELD_NICE] = { "nice",    "Nice"            },
-    [PROC_FIELD_FILES] = { "files",   "Open Files"      },
-    [PROC_FIELD_SIZE] = { "size",    "Memory Size"     },
-    [PROC_FIELD_VIRT] = { "virt",    "Memory Virtual"  },
-    [PROC_FIELD_RSS] = { "res",     "Memory Reserved" },
-    [PROC_FIELD_SHARED] = { "shr",     "Memory Shared"   },
-    [PROC_FIELD_STATE] = { "state",   "State"           },
-    [PROC_FIELD_TIME] = { "time",    "Time"            },
-    [PROC_FIELD_CPU_USAGE] = { "cpu %",   "CPU Usage"       },
-    [PROC_FIELD_NET_IN] = { "net in",  "Network In"      },
-    [PROC_FIELD_NET_OUT] = { "net out", "Network Out"     },
+static const Proc_Field_Info _proc_field_info[PROC_FIELD_MAX] = {
+    [PROC_FIELD_CMD] = { "command", "Command",         PROC_SORT_BY_CMD       },
+    [PROC_FIELD_UID] = { "user",    "User",            PROC_SORT_BY_UID       },
+    [PROC_FIELD_PID] = { "pid",     "Process ID",      PROC_SORT_BY_PID       },
+    [PROC_FIELD_THREADS] = { "thr",     "Threads",         PROC_SORT_BY_THREADS   },
+    [PROC_FIELD_CPU] = { "cpu",     "CPU #",           PROC_SORT_BY_CPU       },
+    [PROC_FIELD_PRI] = { "pri",     "Priority",        PROC_SORT_BY_PRI       },
+    [PROC_FIELD_NICE] = { "nice",    "Nice",            PROC_SORT_BY_NICE      },
+    [PROC_FIELD_FILES] = { "files",   "Open Files",      PROC_SORT_BY_FILES     },
+    [PROC_FIELD_SIZE] = { "size",    "Memory Size",     PROC_SORT_BY_SIZE      },
+    [PROC_FIELD_VIRT] = { "virt",    "Memory Virtual",  PROC_SORT_BY_VIRT      },
+    [PROC_FIELD_RSS] = { "res",     "Memory Reserved", PROC_SORT_BY_RSS       },
+    [PROC_FIELD_SHARED] = { "shr",     "Memory Shared",   PROC_SORT_BY_SHARED    },
+    [PROC_FIELD_STATE] = { "state",   "State",           PROC_SORT_BY_STATE     },
+    [PROC_FIELD_TIME] = { "time",    "Time",            PROC_SORT_BY_TIME      },
+    [PROC_FIELD_CPU_USAGE] = { "cpu %",   "CPU Usage",       PROC_SORT_BY_CPU_USAGE },
+    [PROC_FIELD_NET_IN] = { "net in",  "Network In",      PROC_SORT_BY_NET_IN    },
+    [PROC_FIELD_NET_OUT] = { "net out", "Network Out",     PROC_SORT_BY_NET_OUT   },
 };
 
-static const Proc_Sort _proc_field_sort[PROC_FIELD_MAX] = {
-    [PROC_FIELD_CMD] = PROC_SORT_BY_CMD,
-    [PROC_FIELD_UID] = PROC_SORT_BY_UID,
-    [PROC_FIELD_PID] = PROC_SORT_BY_PID,
-    [PROC_FIELD_THREADS] = PROC_SORT_BY_THREADS,
-    [PROC_FIELD_CPU] = PROC_SORT_BY_CPU,
-    [PROC_FIELD_PRI] = PROC_SORT_BY_PRI,
-    [PROC_FIELD_NICE] = PROC_SORT_BY_NICE,
-    [PROC_FIELD_FILES] = PROC_SORT_BY_FILES,
-    [PROC_FIELD_SIZE] = PROC_SORT_BY_SIZE,
-    [PROC_FIELD_VIRT] = PROC_SORT_BY_VIRT,
-    [PROC_FIELD_RSS] = PROC_SORT_BY_RSS,
-    [PROC_FIELD_SHARED] = PROC_SORT_BY_SHARED,
-    [PROC_FIELD_STATE] = PROC_SORT_BY_STATE,
-    [PROC_FIELD_TIME] = PROC_SORT_BY_TIME,
-    [PROC_FIELD_CPU_USAGE] = PROC_SORT_BY_CPU_USAGE,
-    [PROC_FIELD_NET_IN] = PROC_SORT_BY_NET_IN,
-    [PROC_FIELD_NET_OUT] = PROC_SORT_BY_NET_OUT,
-};
-
-static const Proc_Field_Meta *
+static const Proc_Field_Info *
 _evisum_ui_process_list_field_meta_get(Proc_Field id) {
     if (id < PROC_FIELD_CMD || id >= PROC_FIELD_MAX) return NULL;
-    if (!_proc_field_meta[id].name || !_proc_field_meta[id].desc) return NULL;
-    return &_proc_field_meta[id];
+    if (!_proc_field_info[id].name || !_proc_field_info[id].desc) return NULL;
+    return &_proc_field_info[id];
 }
 
 static Eina_Bool
@@ -164,9 +145,13 @@ _evisum_ui_process_list_field_min_width_get(Proc_Field id) {
 
 static Proc_Sort
 _evisum_ui_process_list_field_sort_get(Proc_Field id) {
-    if (id < PROC_FIELD_CMD || id >= PROC_FIELD_MAX) return PROC_SORT_BY_NONE;
+    const Proc_Field_Info *info;
 
-    return _proc_field_sort[id];
+    if (id < PROC_FIELD_CMD || id >= PROC_FIELD_MAX) return PROC_SORT_BY_NONE;
+    info = _evisum_ui_process_list_field_meta_get(id);
+    if (!info) return PROC_SORT_BY_NONE;
+
+    return info->sort;
 }
 
 static void
@@ -269,7 +254,7 @@ _evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view) {
     for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) {
         Proc_Sort type;
         Evas_Object *btn;
-        const Proc_Field_Meta *meta;
+        const Proc_Field_Info *meta;
         const char *name, *desc;
 
         type = _evisum_ui_process_list_field_sort_get(i);
