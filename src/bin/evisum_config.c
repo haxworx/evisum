@@ -1,5 +1,6 @@
 #include "config.h"
 #include "evisum_config.h"
+#include "ui/evisum_ui_process_list.h"
 #include <Eina.h>
 #include <Ecore_File.h>
 #include <Efreet.h>
@@ -164,7 +165,7 @@ static void
 _config_free(Evisum_Config *cfg) {
     if (!cfg) return;
 
-    if (cfg->cpu.visual) free(cfg->cpu.visual);
+    if (cfg->cpu.visual) eina_stringshare_del(cfg->cpu.visual);
     free(cfg);
 }
 
@@ -177,10 +178,16 @@ _config_init() {
     cfg->proc.show_statusbar = 1;
     cfg->proc.show_user = 1;
     cfg->proc.transparent = 0;
-    cfg->proc.fields = 0x0002191a;
+    cfg->proc.fields = (1u << PROC_FIELD_CMD)
+                       | (1u << PROC_FIELD_PID)
+                       | (1u << PROC_FIELD_THREADS)
+                       | (1u << PROC_FIELD_FILES)
+                       | (1u << PROC_FIELD_SIZE)
+                       | (1u << PROC_FIELD_VIRT)
+                       | (1u << PROC_FIELD_CPU_USAGE);
     cfg->proc.alpha = 100;
 
-    cfg->cpu.visual = strdup("default");
+    cfg->cpu.visual = eina_stringshare_add("default");
 
     return cfg;
 }

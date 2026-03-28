@@ -2,11 +2,12 @@
 #include "evisum_ui_colors.h"
 #include "evisum_ui_widget_exel.h"
 #include "../system/process.h"
-#include "util.c"
+#include "../background/evisum_background.h"
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 typedef struct {
+    Evisum_Ui *ui;
     Evas_Object *win;
     Evas_Object *tb_content;
 
@@ -152,25 +153,12 @@ _evisum_ui_process_view_exe_response(const char *command) {
     lines = NULL;
 
     while ((fgets(buf, sizeof(buf), p)) != NULL) {
-        lines = eina_list_append(lines, _man2entry(buf));
+        lines = eina_list_append(lines, evisum_ui_text_man2entry(buf));
     }
 
     pclose(p);
 
     return lines;
-}
-
-static void
-_evisum_ui_process_view_item_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Evisum_Ui_Process_View *view;
-    Evas_Object *o;
-    Eina_List *contents = NULL;
-
-    view = data;
-
-    evisum_ui_widget_exel_genlist_item_all_contents_unset(event_info, &contents);
-
-    EINA_LIST_FREE(contents, o) { evisum_ui_widget_exel_item_cache_item_release(view->threads.widget_exel, o); }
 }
 
 static void
@@ -182,51 +170,10 @@ _evisum_ui_process_view_item_del(void *data, Evas_Object *obj EINA_UNUSED) {
     free(t);
 }
 
-static Evas_Object *
-_evisum_ui_process_view_item_column_add(Evas_Object *tb, const char *text, int col) {
-    Evisum_Ui_Widget_Exel_Column_Params params = {
-        .boxed = 0,
-        .boxed_spacer = 0,
-        .align_x = 0.0,
-        .align_y = FILL,
-        .weight_x = 0,
-        .weight_y = EXPAND,
-    };
-
-    return evisum_ui_widget_exel_item_column_add(tb, text, col, &params);
-}
-
 static void
 _evisum_ui_process_view_hash_free_cb(void *data) {
     Thread_Cpu_Info *inf = data;
     free(inf);
-}
-
-static Evas_Object *
-_evisum_ui_process_view_item_create(Evas_Object *parent) {
-    Evas_Object *tb, *lb, *pb;
-
-    tb = elm_table_add(parent);
-    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(tb, FILL, FILL);
-    evas_object_show(tb);
-
-    lb = _evisum_ui_process_view_item_column_add(tb, "tid", 0);
-    evas_object_size_hint_align_set(lb, 0.5, FILL);
-    _evisum_ui_process_view_item_column_add(tb, "name", 1);
-    lb = _evisum_ui_process_view_item_column_add(tb, "state", 2);
-    evas_object_size_hint_align_set(lb, 0.0, FILL);
-    lb = _evisum_ui_process_view_item_column_add(tb, "cpu_id", 3);
-    evas_object_size_hint_align_set(lb, 0.5, FILL);
-
-    pb = elm_progressbar_add(parent);
-    evas_object_size_hint_align_set(pb, FILL, FILL);
-    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
-    elm_progressbar_unit_format_set(pb, "%1.0f %%");
-    evas_object_data_set(tb, "cpu_usage", pb);
-    elm_table_pack(tb, pb, 4, 0, 1, 1);
-
-    return tb;
 }
 
 static Evas_Object *
@@ -240,7 +187,7 @@ _evisum_ui_process_view_content_get(void *data, Evas_Object *obj, const char *so
     th = data;
     if (!th) return NULL;
 
-    view = evas_object_data_get(obj, "ui");
+    view = evas_object_data_get(obj, "widget_exel_data");
     if (!view) return NULL;
 
     row = evisum_ui_widget_exel_item_cache_object_get(view->threads.widget_exel);
@@ -249,7 +196,8 @@ _evisum_ui_process_view_content_get(void *data, Evas_Object *obj, const char *so
         exit(-1);
     }
 
-    evisum_ui_widget_exel_item_field_text_set(view->threads.widget_exel, row, 0, "tid", eina_slstr_printf("%d", th->tid));
+    evisum_ui_widget_exel_item_field_text_set(view->threads.widget_exel, row, 0, "tid",
+                                              eina_slstr_printf("%d", th->tid));
     evisum_ui_widget_exel_item_field_text_set(view->threads.widget_exel, row, 1, "name", th->name);
     evisum_ui_widget_exel_item_field_text_set(view->threads.widget_exel, row, 2, "state", th->state);
     evisum_ui_widget_exel_item_field_text_set(view->threads.widget_exel, row, 3, "cpu_id",
@@ -397,25 +345,29 @@ _evisum_ui_process_view_threads_cpu_usage(Evisum_Ui_Process_View *view, Proc_Inf
 
 static void
 _evisum_ui_process_view_btn_ppid_clicked_cb(void *data, Evas_Object *obj, void *event_info) {
+    Evisum_Ui_Process_View *view;
     Evas_Object *entry;
     const char *txt;
     Proc_Info *proc;
 
-    entry = data;
+    view = data;
+    entry = view->general.entry_ppid;
     txt = elm_object_text_get(entry);
     proc = proc_info_by_pid(atoll(txt));
 
     if (!proc) return;
 
-    evisum_ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
+    evisum_ui_process_view_win_add(view->ui, proc->pid, PROC_VIEW_DEFAULT);
     proc_info_free(proc);
 }
 
 static void
 _evisum_ui_process_view_item_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info) {
+    Evisum_Ui_Process_View *view;
     Elm_Object_Item *it;
     Proc_Info *proc;
 
+    view = data;
     it = event_info;
 
     evisum_ui_widget_exel_genlist_item_selected_set(it, 0);
@@ -423,7 +375,7 @@ _evisum_ui_process_view_item_children_clicked_cb(void *data, Evas_Object *obj EI
     proc = evisum_ui_widget_exel_object_item_data_get(it);
     if (!proc) return;
 
-    evisum_ui_process_view_win_add(proc->pid, PROC_VIEW_DEFAULT);
+    evisum_ui_process_view_win_add(view->ui, proc->pid, PROC_VIEW_DEFAULT);
 }
 
 static char *
@@ -445,7 +397,7 @@ _evisum_ui_process_view_children_icon_get(void *data, Evas_Object *obj, const ch
     Evas_Object *ic = elm_icon_add(obj);
 
     proc = data;
-    view = evas_object_data_get(obj, "windata");
+    view = evas_object_data_get(obj, "widget_exel_data");
 
     if (!strcmp(part, "elm.swallow.icon")) {
         evisum_ui_icon_set(ic, evisum_icon_cache_find(view->icon_cache, proc));
@@ -847,6 +799,7 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
     Evisum_Ui_Process_View *view;
     Proc_Info *proc;
     double cpu_usage = 0.0;
+    int elapsed;
 #if defined(__linux__)
     uint64_t net_in = 0;
     uint64_t net_out = 0;
@@ -856,6 +809,8 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
 
     view = data;
     proc = msg;
+    elapsed = view->poll_delay;
+    if (elapsed <= 0) elapsed = 1;
 
     if (!proc || (view->start && (proc->start != view->start))) {
         if (proc) proc_info_free(proc);
@@ -878,17 +833,15 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
     }
 
     if ((view->pid_cpu_time) && (proc->cpu_time >= view->pid_cpu_time))
-        cpu_usage = (double) (proc->cpu_time - view->pid_cpu_time) / view->poll_delay;
+        cpu_usage = (double) (proc->cpu_time - view->pid_cpu_time) / elapsed;
 
     proc->cpu_usage = cpu_usage;
 #if defined(__linux__)
-    net_in_abs = proc->net_in;
-    net_out_abs = proc->net_out;
+    evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
 
-    if ((view->pid_net_in) && (net_in_abs >= view->pid_net_in))
-        net_in = (net_in_abs - view->pid_net_in) / view->poll_delay;
+    if ((view->pid_net_in) && (net_in_abs >= view->pid_net_in)) net_in = (net_in_abs - view->pid_net_in) / elapsed;
     if ((view->pid_net_out) && (net_out_abs >= view->pid_net_out))
-        net_out = (net_out_abs - view->pid_net_out) / view->poll_delay;
+        net_out = (net_out_abs - view->pid_net_out) / elapsed;
 
     proc->net_in = net_in;
     proc->net_out = net_out;
@@ -1033,7 +986,7 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
     evas_object_show(btn);
 
     view->general.entry_ppid = entry = _evisum_ui_process_view_entry_add(parent);
-    evas_object_smart_callback_add(btn, "clicked", _evisum_ui_process_view_btn_ppid_clicked_cb, entry);
+    evas_object_smart_callback_add(btn, "clicked", _evisum_ui_process_view_btn_ppid_clicked_cb, view);
     elm_table_pack(tb, entry, 1, i++, 1, 1);
 
 #if defined(__MacOS__)
@@ -1206,36 +1159,28 @@ static Evas_Object *
 _evisum_ui_process_view_threads_tab_add(Evas_Object *parent, Evisum_Ui_Process_View *view) {
     Evas_Object *fr, *bx, *bx2, *tb, *rec, *btn, *glist;
     Evas_Object *graph;
-    Evisum_Ui_Widget_Exel_Genlist_Params gp = {
-        .homogeneous = 1,
-        .focus_allow = 0,
-        .multi_select = 0,
-        .bounce_h = 0,
-        .bounce_v = 0,
-        .select_mode = ELM_OBJECT_SELECT_MODE_NONE,
-        .policy_h = ELM_SCROLLER_POLICY_OFF,
-        .policy_v = ELM_SCROLLER_POLICY_AUTO,
-        .weight_x = EXPAND,
-        .weight_y = EXPAND,
-        .align_x = FILL,
-        .align_y = FILL,
-        .data_key = "ui",
-        .data = view,
-    };
     struct {
         const char *label;
         Thread_Sort_Type sort;
         double weight;
         double align;
         int field_id;
+        const char *key;
+        Evisum_Ui_Widget_Exel_Item_Cell_Type type;
+        const char *unit_format;
         const char *field_desc;
         Eina_Bool min_width_btn;
     } cols[] = {
-        { _("id"),     THREAD_SORT_TID,       EXPAND, FILL, 0, "Thread ID",        0 },
-        { _("name"),   THREAD_SORT_NAME,      EXPAND, FILL, 1, "Thread Name",      0 },
-        { _("state"),  THREAD_SORT_STATE,     EXPAND, FILL, 2, "Thread State",     0 },
-        { _("cpu id"), THREAD_SORT_CPU_ID,    0,      FILL, 3, "Thread CPU ID",    1 },
-        { _("cpu %"),  THREAD_SORT_CPU_USAGE, EXPAND, FILL, 4, "Thread CPU Usage", 0 },
+        { _("id"),     THREAD_SORT_TID,       EXPAND, FILL, 0, "tid",       EVISUM_UI_WIDGET_EXEL_ITEM_CELL_TEXT,     NULL, "Thread ID",
+         0                                                                                                                                        },
+        { _("name"),   THREAD_SORT_NAME,      EXPAND, FILL, 1, "name",      EVISUM_UI_WIDGET_EXEL_ITEM_CELL_TEXT,     NULL,
+         "Thread Name",                                                                                                                         0 },
+        { _("state"),  THREAD_SORT_STATE,     EXPAND, FILL, 2, "state",     EVISUM_UI_WIDGET_EXEL_ITEM_CELL_TEXT,     NULL,
+         "Thread State",                                                                                                                        0 },
+        { _("cpu id"), THREAD_SORT_CPU_ID,    0,      FILL, 3, "cpu_id",    EVISUM_UI_WIDGET_EXEL_ITEM_CELL_TEXT,     NULL,
+         "Thread CPU ID",                                                                                                                       1 },
+        { _("cpu %"),  THREAD_SORT_CPU_USAGE, EXPAND, FILL, 4, "cpu_usage", EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS,
+         "%1.0f %%",                                                                                                        "Thread CPU Usage", 0 },
     };
     Evas_Smart_Cb sort_clicked_cb = _evisum_ui_process_view_btn_threads_sort_clicked_cb;
     int i = 0;
@@ -1277,6 +1222,17 @@ _evisum_ui_process_view_threads_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
         evas_object_data_set(btn, "thread_sort_type", (void *) (intptr_t) cols[c].sort);
         evisum_ui_widget_exel_field_register(view->threads.widget_exel, cols[c].field_id, btn, cols[c].field_desc,
                                              ELM_SCALE_SIZE(BTN_WIDTH), ELM_SCALE_SIZE(BTN_WIDTH), EINA_TRUE);
+        evisum_ui_widget_exel_field_row_def_set(view->threads.widget_exel, cols[c].field_id,
+                                                &(Evisum_Ui_Widget_Exel_Item_Cell_Def) {
+                                                        .type = cols[c].type,
+                                                        .key = cols[c].key,
+                                                        .unit_format = cols[c].unit_format,
+                                                        .align_x = cols[c].align,
+                                                        .weight_x = cols[c].weight,
+                                                        .boxed = EINA_FALSE,
+                                                        .spacer = 0,
+                                                        .icon_size = 0,
+                                                });
         evisum_ui_widget_exel_field_width_apply(view->threads.widget_exel, cols[c].field_id);
         if (cols[c].min_width_btn) {
             rec = evas_object_rectangle_add(evas_object_evas_get(tb));
@@ -1287,9 +1243,7 @@ _evisum_ui_process_view_threads_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
         evas_object_show(btn);
     }
 
-    glist = evisum_ui_widget_exel_genlist_add(view->threads.widget_exel, parent, &gp);
-    evisum_ui_widget_exel_genlist_smart_callback_add(view->threads.widget_exel, "unrealized",
-                                                     _evisum_ui_process_view_item_unrealized_cb, view);
+    glist = evisum_ui_widget_exel_genlist_add(view->threads.widget_exel, parent);
     elm_box_pack_end(bx2, glist);
     elm_box_pack_end(bx, bx2);
 
@@ -1299,22 +1253,6 @@ _evisum_ui_process_view_threads_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
 static Evas_Object *
 _evisum_ui_process_view_children_tab_add(Evas_Object *parent, Evisum_Ui_Process_View *view) {
     Evas_Object *fr, *bx, *glist;
-    Evisum_Ui_Widget_Exel_Genlist_Params gp = {
-        .homogeneous = 1,
-        .focus_allow = 1,
-        .multi_select = 0,
-        .bounce_h = 1,
-        .bounce_v = 1,
-        .select_mode = ELM_OBJECT_SELECT_MODE_DEFAULT,
-        .policy_h = ELM_SCROLLER_POLICY_AUTO,
-        .policy_v = ELM_SCROLLER_POLICY_AUTO,
-        .weight_x = EXPAND,
-        .weight_y = EXPAND,
-        .align_x = FILL,
-        .align_y = FILL,
-        .data_key = "windata",
-        .data = view,
-    };
 
     fr = elm_frame_add(parent);
     evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
@@ -1327,9 +1265,8 @@ _evisum_ui_process_view_children_tab_add(Evas_Object *parent, Evisum_Ui_Process_
     evas_object_show(bx);
     elm_object_content_set(fr, bx);
 
-    glist = evisum_ui_widget_exel_genlist_add(view->children.widget_exel, parent, &gp);
-    evisum_ui_widget_exel_genlist_smart_callback_add(view->children.widget_exel, "selected",
-                                                     _evisum_ui_process_view_item_children_clicked_cb, view);
+    glist = evisum_ui_widget_exel_genlist_add(view->children.widget_exel, parent);
+    evas_object_smart_callback_add(glist, "selected", _evisum_ui_process_view_item_children_clicked_cb, view);
     elm_box_pack_end(bx, glist);
 
     return fr;
@@ -1563,12 +1500,13 @@ _evisum_ui_process_view_activate(Evisum_Ui_Process_View *view, Evisum_Proc_Actio
 }
 
 void
-evisum_ui_process_view_win_add(int pid, Evisum_Proc_Action action) {
+evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action) {
     Evas_Object *win, *ic, *bx, *tabs, *tb;
     Proc_Info *proc;
 
     Evisum_Ui_Process_View *view = calloc(1, sizeof(Evisum_Ui_Process_View));
-    Evisum_Ui_Widget_Exel_Params wx_params;
+    if (!view) return;
+    view->ui = ui;
     view->selected_pid = pid;
     view->poll_delay = 1;
     view->threads.widget_exel = NULL;
@@ -1597,34 +1535,26 @@ evisum_ui_process_view_win_add(int pid, Evisum_Proc_Action action) {
 
     elm_win_title_set(view->win, eina_slstr_printf("%s (%i)", view->selected_cmd, view->selected_pid));
 
-    wx_params = (Evisum_Ui_Widget_Exel_Params) {
-        .win = view->win,
-        .parent = view->win,
-        .field_first = 0,
-        .field_max = 1,
-        .resize_hit_width = 0,
-        .fields_mask = &view->threads.fields_mask,
-        .field_widths = view->threads.field_widths,
-        .reference_mask_get_cb = NULL,
-        .fields_changed_cb = NULL,
-        .fields_applied_cb = NULL,
-        .resize_live_cb = NULL,
-        .resize_done_cb = NULL,
-        .data = view,
-    };
-    view->threads.widget_exel = evisum_ui_widget_exel_add(&wx_params);
+    view->threads.widget_exel = evisum_ui_widget_exel_create(view->win);
     if (!view->threads.widget_exel) {
         evas_object_del(view->win);
         return;
     }
+    evisum_ui_widget_exel_field_bounds_set(view->threads.widget_exel, 0, 5);
+    evisum_ui_widget_exel_resize_hit_width_set(view->threads.widget_exel, 0);
+    evisum_ui_widget_exel_state_bind(view->threads.widget_exel, &view->threads.fields_mask, view->threads.field_widths);
+    evisum_ui_widget_exel_callbacks_set(view->threads.widget_exel, NULL, NULL, NULL, NULL, NULL, view);
 
-    wx_params.fields_mask = &view->children.fields_mask;
-    wx_params.field_widths = view->children.field_widths;
-    view->children.widget_exel = evisum_ui_widget_exel_add(&wx_params);
+    view->children.widget_exel = evisum_ui_widget_exel_create(view->win);
     if (!view->children.widget_exel) {
         evas_object_del(view->win);
         return;
     }
+    evisum_ui_widget_exel_field_bounds_set(view->children.widget_exel, 0, 1);
+    evisum_ui_widget_exel_resize_hit_width_set(view->children.widget_exel, 0);
+    evisum_ui_widget_exel_state_bind(view->children.widget_exel, &view->children.fields_mask,
+                                     view->children.field_widths);
+    evisum_ui_widget_exel_callbacks_set(view->children.widget_exel, NULL, NULL, NULL, NULL, NULL, view);
 
     tabs = _evisum_ui_process_view_tabs_add(win, view);
 
@@ -1664,8 +1594,6 @@ evisum_ui_process_view_win_add(int pid, Evisum_Proc_Action action) {
 #if defined(__FreeBSD__)
     view->kthreads_has_rss = 1;
 #endif
-
-    evisum_ui_widget_exel_item_cache_attach(view->threads.widget_exel, _evisum_ui_process_view_item_create, 10);
 
     view->thread = ecore_thread_feedback_run(_evisum_ui_process_view_proc_info_main,
                                              _evisum_ui_process_view_proc_info_feedback_cb, NULL, NULL, view, 0);

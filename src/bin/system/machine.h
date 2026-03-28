@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/types.h>
 
 typedef struct {
     unsigned long total;
@@ -82,6 +83,12 @@ typedef struct {
     } xfer;
 } net_iface_t;
 
+typedef struct {
+    pid_t pid;
+    uint64_t in;
+    uint64_t out;
+} proc_net_t;
+
 int system_cpu_online_count_get(void);
 
 int system_cpu_count_get(void);
@@ -119,5 +126,9 @@ void system_power_state_get(power_t *power);
 void system_power_state_free(power_t *power);
 
 net_iface_t **system_network_ifaces_get(int *n);
+
+proc_net_t **system_network_process_usage_get(int *n);
+
+void system_network_process_usage_free(proc_net_t **procs, int n);
 
 #endif

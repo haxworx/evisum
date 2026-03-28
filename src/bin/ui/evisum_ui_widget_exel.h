@@ -42,42 +42,69 @@ typedef void (*Evisum_Ui_Widget_Exel_Resize_Live_Cb)(void *data);
 typedef void (*Evisum_Ui_Widget_Exel_Resize_Done_Cb)(void *data);
 
 typedef struct {
-    Evas_Object *win;
-    Evas_Object *parent;
-    int field_first;
-    int field_max;
-    int resize_hit_width;
-    unsigned int *fields_mask;
-    int *field_widths;
-
-    Evisum_Ui_Widget_Exel_Reference_Mask_Get_Cb reference_mask_get_cb;
-    Evisum_Ui_Widget_Exel_Fields_Changed_Cb fields_changed_cb;
-    Evisum_Ui_Widget_Exel_Fields_Applied_Cb fields_applied_cb;
-    Evisum_Ui_Widget_Exel_Resize_Live_Cb resize_live_cb;
-    Evisum_Ui_Widget_Exel_Resize_Done_Cb resize_done_cb;
-    void *data;
-} Evisum_Ui_Widget_Exel_Params;
-
-typedef struct {
-    Eina_Bool homogeneous;
-    Eina_Bool focus_allow;
-    Eina_Bool multi_select;
-    Eina_Bool bounce_h;
-    Eina_Bool bounce_v;
-    Elm_Object_Select_Mode select_mode;
-    Elm_Scroller_Policy policy_h;
-    Elm_Scroller_Policy policy_v;
-    double weight_x;
-    double weight_y;
+    int id;
+    const char *title;
+    const char *desc;
+    const char *key;
+    const char *aux_key;
+    const char *unit_format;
+    Evisum_Ui_Widget_Exel_Item_Cell_Type type;
     double align_x;
-    double align_y;
-    const char *data_key;
-    const void *data;
-} Evisum_Ui_Widget_Exel_Genlist_Params;
+    double weight_x;
+    Eina_Bool boxed;
+    int spacer;
+    int icon_size;
+    int default_width;
+    int min_width;
+    Eina_Bool always_visible;
+    Eina_Bool reverse;
+    Evas_Smart_Cb clicked_cb;
+    const void *clicked_data;
+} Evisum_Ui_Widget_Exel_Field_Params;
 
-/* Create and initialize the exel widget controller with field masks, widths, and callbacks.
- * Use this once per view before registering fields so resize/menu behavior is managed centrally. */
-Evisum_Ui_Widget_Exel *evisum_ui_widget_exel_add(const Evisum_Ui_Widget_Exel_Params *params);
+/* Create a full exel view with internal root/header objects and owned field state.
+ * This API avoids exposing internal params arrays or requiring caller-managed header containers. */
+Evisum_Ui_Widget_Exel *evisum_ui_widget_exel_create(Evas_Object *parent);
+
+/* Return the top-level root object owned by the widget.
+ * Pack this into the parent layout instead of creating a separate box in callers. */
+Evas_Object *evisum_ui_widget_exel_object_get(const Evisum_Ui_Widget_Exel *wx);
+
+/* Create/register a header field button and attach resize/menu behavior automatically.
+ * This replaces external `btn_*` object creation and field wiring in consumers. */
+void evisum_ui_widget_exel_field_add(Evisum_Ui_Widget_Exel *wx, const Evisum_Ui_Widget_Exel_Field_Params *params);
+
+/* Apply width/proportion/pack operations for all registered headers in one call.
+ * Call once after field registration and whenever field visibility changes are applied. */
+void evisum_ui_widget_exel_fields_apply(Evisum_Ui_Widget_Exel *wx);
+
+/* Return the current field visibility mask tracked by the widget.
+ * Use this when persisting user field selection without direct access to internal params. */
+unsigned int evisum_ui_widget_exel_fields_mask_get(const Evisum_Ui_Widget_Exel *wx);
+
+/* Return the current stored width for a field.
+ * Use this when persisting column sizing without touching internal arrays. */
+int evisum_ui_widget_exel_field_width_state_get(const Evisum_Ui_Widget_Exel *wx, int id);
+
+/* Bind an external fields mask/widths state to the widget.
+ * Pass NULL pointers to keep/create widget-owned state. */
+void evisum_ui_widget_exel_state_bind(Evisum_Ui_Widget_Exel *wx, unsigned int *fields_mask, int *field_widths);
+
+/* Configure the active field id range used by the widget.
+ * Must be called before registering fields when using non-default ranges. */
+void evisum_ui_widget_exel_field_bounds_set(Evisum_Ui_Widget_Exel *wx, int field_first, int field_max);
+
+/* Set header-resize hit width in pixels for edge drag detection.
+ * Keep zero to disable resize hit-testing. */
+void evisum_ui_widget_exel_resize_hit_width_set(Evisum_Ui_Widget_Exel *wx, int hit_width);
+
+/* Configure optional callbacks and callback context for field/menu/resize state changes. */
+void evisum_ui_widget_exel_callbacks_set(Evisum_Ui_Widget_Exel *wx,
+                                         Evisum_Ui_Widget_Exel_Reference_Mask_Get_Cb reference_mask_get_cb,
+                                         Evisum_Ui_Widget_Exel_Fields_Changed_Cb fields_changed_cb,
+                                         Evisum_Ui_Widget_Exel_Fields_Applied_Cb fields_applied_cb,
+                                         Evisum_Ui_Widget_Exel_Resize_Live_Cb resize_live_cb,
+                                         Evisum_Ui_Widget_Exel_Resize_Done_Cb resize_done_cb, void *data);
 
 /* Release the exel widget controller and any menu state it owns.
  * Call this during view teardown to avoid leaked UI objects and stale pointers. */
@@ -87,6 +114,11 @@ void evisum_ui_widget_exel_free(Evisum_Ui_Widget_Exel *wx);
  * The controller uses this metadata for show/hide state, proportional sizing, and resizing rules. */
 void evisum_ui_widget_exel_field_register(Evisum_Ui_Widget_Exel *wx, int id, Evas_Object *btn, const char *desc,
                                           int default_width, int min_width, Eina_Bool always_visible);
+
+/* Set row-cell metadata for a registered field so the widget can build row objects internally.
+ * Call this for every field that should appear in cached rows. */
+void evisum_ui_widget_exel_field_row_def_set(Evisum_Ui_Widget_Exel *wx, int id,
+                                             const Evisum_Ui_Widget_Exel_Item_Cell_Def *def);
 
 /* Query whether a field is currently enabled and should be visible in the active layout.
  * Use this when building row content or packing headers so hidden fields stay consistent. */
@@ -123,10 +155,6 @@ void evisum_ui_widget_exel_cmd_width_sync(Evisum_Ui_Widget_Exel *wx, int field_c
 /* Attach resize hit-zone mouse handling to a header button for a specific field id.
  * After attaching, the shared controller handles edge drag detection for left/right resize starts. */
 void evisum_ui_widget_exel_field_resize_attach(Evisum_Ui_Widget_Exel *wx, Evas_Object *btn, int field_id);
-
-/* Process global mouse-move events while a header resize drag is active.
- * Wire this from the window mouse-move callback so live column resizing updates instantly. */
-void evisum_ui_widget_exel_field_resize_mouse_move(Evisum_Ui_Widget_Exel *wx, Evas_Event_Mouse_Move *ev);
 
 /* Process global mouse-up events to finish an active header resize drag.
  * This commits final width state and triggers configured resize-done callbacks. */
@@ -200,10 +228,6 @@ Eina_Bool evisum_ui_widget_exel_item_field_progress_set(Evisum_Ui_Widget_Exel *w
  * Pass `is_last` for trailing columns that should stretch and all others will be fixed to header width. */
 void evisum_ui_widget_exel_item_column_width_apply(Evas_Object *obj, Evas_Coord width, Eina_Bool is_last);
 
-/* Ensure a genlist has exactly the requested item count using a shared item class.
- * Use this before setting item data so add/remove behavior stays uniform across views. */
-void evisum_ui_widget_exel_glist_ensure_n_items(Evas_Object *glist, unsigned int items, Elm_Genlist_Item_Class *itc);
-
 /* Add a menu item with optional themed icon and fallback icon behavior.
  * This keeps process menus consistent and avoids repeated icon-part compatibility code. */
 Elm_Object_Item *evisum_ui_widget_exel_menu_item_add(Evas_Object *menu, Elm_Object_Item *parent, const char *icon,
@@ -225,23 +249,9 @@ Evas_Object *evisum_ui_widget_exel_icon_button_add(Evas_Object *parent, const ch
                                                    double weight_x, double align_x, Evas_Smart_Cb clicked_cb,
                                                    const void *data);
 
-/* Create and attach an item cache to this widget controller.
- * Use this when row content objects are pooled and should be owned by the widget lifecycle. */
-void evisum_ui_widget_exel_item_cache_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *parent,
-                                          Evas_Object *(*create_cb)(Evas_Object *), int size);
-
-/* Create and attach an item cache to the widget-owned genlist.
- * Use this when the exel controller already owns the target genlist and callers should not pass list objects around. */
-void evisum_ui_widget_exel_item_cache_attach(Evisum_Ui_Widget_Exel *wx, Evas_Object *(*create_cb)(Evas_Object *),
-                                             int size);
-
 /* Return one cached row object from the widget-owned item cache.
  * Use this in content callbacks to avoid exposing `Item_Cache` internals in consumers. */
 Evas_Object *evisum_ui_widget_exel_item_cache_object_get(Evisum_Ui_Widget_Exel *wx);
-
-/* Release a realized row object back to the widget-owned cache.
- * Returns true when the object was found and handled by the cache. */
-Eina_Bool evisum_ui_widget_exel_item_cache_item_release(Evisum_Ui_Widget_Exel *wx, Evas_Object *obj);
 
 /* Reset and rebuild the widget-owned cache and invoke completion callback when cleanup completes.
  * Use this after column/field layout changes so row object structure is recreated safely. */
@@ -255,19 +265,13 @@ void evisum_ui_widget_exel_item_cache_steal(Evisum_Ui_Widget_Exel *wx, Eina_List
  * This is useful for deciding when to compact cache state after feedback updates. */
 unsigned int evisum_ui_widget_exel_item_cache_active_count_get(const Evisum_Ui_Widget_Exel *wx);
 
-/* Create and own a genlist configured from one parameter block and return the created object.
+/* Create and own a genlist with API-defined defaults and return the created object.
  * Use this so exel consumers do not manually construct genlists and keep list setup centralized. */
-Evas_Object *evisum_ui_widget_exel_genlist_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *parent,
-                                               const Evisum_Ui_Widget_Exel_Genlist_Params *params);
+Evas_Object *evisum_ui_widget_exel_genlist_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *parent);
 
 /* Return the widget-owned genlist object, or NULL if none was created yet.
  * Use this only when another container API requires the object for packing. */
 Evas_Object *evisum_ui_widget_exel_genlist_obj_get(const Evisum_Ui_Widget_Exel *wx);
-
-/* Add a smart callback to the widget-owned genlist.
- * This keeps callback registration scoped to the exel controller instead of direct genlist usage. */
-void evisum_ui_widget_exel_genlist_smart_callback_add(Evisum_Ui_Widget_Exel *wx, const char *name, Evas_Smart_Cb cb,
-                                                      const void *data);
 
 /* Add an evas event callback to the widget-owned genlist.
  * Use this for low-level mouse/key handling without exposing genlist ownership. */
@@ -329,10 +333,6 @@ void evisum_ui_widget_exel_genlist_item_selected_set(Elm_Object_Item *it, Eina_B
 /* Trigger visual/data refresh for a genlist item.
  * Use this after swapping row data on an existing item. */
 void evisum_ui_widget_exel_genlist_item_update(Elm_Object_Item *it);
-
-/* Unset all realized content objects from a genlist item and return them in `contents`.
- * Use this in unrealize callbacks before returning objects to the shared item cache. */
-void evisum_ui_widget_exel_genlist_item_all_contents_unset(Elm_Object_Item *it, Eina_List **contents);
 
 /* Append a new item to the widget-owned genlist using Elm-style append parameters.
  * Pass `func`/`func_data` when per-item selection callbacks are needed, or NULL to match existing behavior. */

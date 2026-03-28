@@ -6,14 +6,7 @@ subdir('system')
 subdir('ui')
 subdir('background')
 
-executable('evisum_test', src + files([
-   'evisum_ui_widget_example.c',
-   'evisum_config.c',
-   'evisum_server.c',
-]),
-   include_directories  : inc,
-   dependencies         : [ deps, deps_os, deps_nls ],
-   install              : false)
+evisum_core_src = src
 
 src += files([
    'main.c',

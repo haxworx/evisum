@@ -5,21 +5,47 @@
 #include <string.h>
 
 #define EVISUM_UI_WIDGET_EXEL_FIELDS_MAX 64
+#define EVISUM_UI_WIDGET_EXEL_DEFAULT_FIELD_FIRST 0
+#define EVISUM_UI_WIDGET_EXEL_DEFAULT_FIELD_MAX   32
+#define EVISUM_UI_WIDGET_EXEL_DEFAULT_HIT_WIDTH   8
+#define EVISUM_UI_WIDGET_EXEL_DEFAULT_CACHE_SIZE  30
 
 typedef struct {
     int id;
     Evas_Object *btn;
     const char *desc;
+    Evisum_Ui_Widget_Exel_Item_Cell_Def row_def;
     int default_width;
     int min_width;
     Eina_Bool always_visible;
     Eina_Bool enabled;
+    Eina_Bool row_def_set;
 } Exel_Field;
+
+typedef struct {
+    Evas_Object *win;
+    Evas_Object *parent;
+    int field_first;
+    int field_max;
+    int resize_hit_width;
+    unsigned int *fields_mask;
+    int *field_widths;
+    Evisum_Ui_Widget_Exel_Reference_Mask_Get_Cb reference_mask_get_cb;
+    Evisum_Ui_Widget_Exel_Fields_Changed_Cb fields_changed_cb;
+    Evisum_Ui_Widget_Exel_Fields_Applied_Cb fields_applied_cb;
+    Evisum_Ui_Widget_Exel_Resize_Live_Cb resize_live_cb;
+    Evisum_Ui_Widget_Exel_Resize_Done_Cb resize_done_cb;
+    void *data;
+} Evisum_Ui_Widget_Exel_Params;
 
 struct _Evisum_Ui_Widget_Exel {
     Evisum_Ui_Widget_Exel_Params p;
+    unsigned int fields_mask_state;
+    int field_widths_state[EVISUM_UI_WIDGET_EXEL_FIELDS_MAX];
     Exel_Field fields[EVISUM_UI_WIDGET_EXEL_FIELDS_MAX];
     Evisum_Ui_Cache *cache;
+    Evas_Object *root;
+    Evas_Object *header_tb;
     Evas_Object *glist;
 
     Evas_Object *fields_menu;
@@ -36,6 +62,10 @@ struct _Evisum_Ui_Widget_Exel {
     Eina_Bool resizing;
     Eina_Bool ignore_sort_click;
     Eina_Bool fields_changed;
+    Eina_Bool owns_state;
+    Eina_Bool win_mouse_move_registered;
+    Eina_Bool unrealized_release_enabled;
+    Eina_Bool unrealized_delete_unhandled;
 };
 
 static Exel_Field *
@@ -44,6 +74,13 @@ _evisum_ui_widget_exel_field_get(const Evisum_Ui_Widget_Exel *wx, int id) {
     if (id < 0 || id >= EVISUM_UI_WIDGET_EXEL_FIELDS_MAX) return NULL;
     if (wx->fields[id].id != id) return NULL;
     return (Exel_Field *) &wx->fields[id];
+}
+
+static Eina_Bool
+_evisum_ui_widget_exel_field_id_valid(const Evisum_Ui_Widget_Exel *wx, int id) {
+    if (!wx) return EINA_FALSE;
+    if (id < 0 || id >= EVISUM_UI_WIDGET_EXEL_FIELDS_MAX) return EINA_FALSE;
+    return EINA_TRUE;
 }
 
 static int
@@ -74,6 +111,8 @@ _evisum_ui_widget_exel_field_default_width_get(const Evisum_Ui_Widget_Exel *wx, 
 static void
 _evisum_ui_widget_exel_fields_sync(Evisum_Ui_Widget_Exel *wx) {
     int i;
+
+    if (!wx || !wx->p.fields_mask) return;
 
     for (i = wx->p.field_first; i < wx->p.field_max; i++) {
         Exel_Field *f = _evisum_ui_widget_exel_field_get(wx, i);
@@ -108,6 +147,7 @@ _evisum_ui_widget_exel_dirty_get(Evisum_Ui_Widget_Exel *wx) {
     unsigned int ref;
 
     if (!wx->p.reference_mask_get_cb) return wx->fields_changed;
+    if (!wx->p.fields_mask) return wx->fields_changed;
 
     ref = wx->p.reference_mask_get_cb(wx->p.data);
     return ref != *(wx->p.fields_mask);
@@ -115,6 +155,7 @@ _evisum_ui_widget_exel_dirty_get(Evisum_Ui_Widget_Exel *wx) {
 
 static void
 _evisum_ui_widget_exel_fields_changed_notify(Evisum_Ui_Widget_Exel *wx) {
+    if (!wx) return;
     wx->fields_changed = _evisum_ui_widget_exel_dirty_get(wx);
     if (wx->p.fields_changed_cb) wx->p.fields_changed_cb(wx->p.data, wx->fields_changed);
 }
@@ -147,6 +188,12 @@ _evisum_ui_widget_exel_fields_menu_apply_clicked_cb(void *data, Evas_Object *obj
     changed = wx->fields_changed;
     evisum_ui_widget_exel_fields_menu_dismiss(wx);
 
+    if (changed && wx->owns_state) {
+        evisum_ui_widget_exel_fields_apply(wx);
+        if (wx->cache) evisum_ui_item_cache_reset(wx->cache, NULL, NULL);
+        if (wx->glist) elm_genlist_realized_items_update(wx->glist);
+    }
+
     if (wx->p.fields_applied_cb) wx->p.fields_applied_cb(wx->p.data, changed);
 }
 
@@ -157,13 +204,14 @@ _evisum_ui_widget_exel_fields_menu_check_changed_cb(void *data, Evas_Object *obj
     Evas_Object *ic;
 
     wx = evas_object_data_get(obj, "wx");
-    if (!wx || !f) return;
+    if (!wx || !f || !wx->p.fields_mask) return;
 
     *(wx->p.fields_mask) ^= (1U << f->id);
     _evisum_ui_widget_exel_fields_sync(wx);
     _evisum_ui_widget_exel_fields_changed_notify(wx);
 
     ic = evas_object_data_get(obj, "apply_icon");
+    if (!ic) return;
     if (!wx->fields_changed) evas_object_hide(ic);
     else evas_object_show(ic);
 }
@@ -249,6 +297,7 @@ _evisum_ui_widget_exel_field_header_mouse_down_cb(void *data, Evas *e EINA_UNUSE
     Evas_Coord x, w;
     int field, prev;
 
+    if (!wx || !obj || !ev) return;
     if (ev->button != 1) return;
 
     evas_object_geometry_get(obj, &x, NULL, &w, NULL);
@@ -281,26 +330,210 @@ _evisum_ui_widget_exel_field_header_mouse_down_cb(void *data, Evas *e EINA_UNUSE
     }
 }
 
-Evisum_Ui_Widget_Exel *
-evisum_ui_widget_exel_add(const Evisum_Ui_Widget_Exel_Params *params) {
-    Evisum_Ui_Widget_Exel *wx;
+static void
+_evisum_ui_widget_exel_field_header_mouse_up_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info) {
+    Evisum_Ui_Widget_Exel *wx = data;
+    Evas_Event_Mouse_Up *ev = event_info;
 
-    if (!params) return NULL;
-    if (!params->field_widths || !params->fields_mask) return NULL;
+    if (!wx || !ev) return;
+
+    evisum_ui_widget_exel_field_resize_mouse_up(wx, ev);
+    evisum_ui_widget_exel_fields_menu_show(wx, obj, ev);
+}
+
+static void
+_evisum_ui_widget_exel_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                                         void *event_info);
+
+static void
+_evisum_ui_widget_exel_genlist_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info);
+
+Evisum_Ui_Widget_Exel *
+evisum_ui_widget_exel_create(Evas_Object *parent) {
+    Evisum_Ui_Widget_Exel_Params p;
+    Evisum_Ui_Widget_Exel *wx;
+    int i;
+
+    if (!parent) return NULL;
+
+    memset(&p, 0, sizeof(p));
+    p.win = parent;
+    p.parent = parent;
+    p.field_first = EVISUM_UI_WIDGET_EXEL_DEFAULT_FIELD_FIRST;
+    p.field_max = EVISUM_UI_WIDGET_EXEL_DEFAULT_FIELD_MAX;
+    p.resize_hit_width = EVISUM_UI_WIDGET_EXEL_DEFAULT_HIT_WIDTH;
 
     wx = calloc(1, sizeof(Evisum_Ui_Widget_Exel));
     if (!wx) return NULL;
 
-    wx->p = *params;
+    wx->fields_mask_state = UINT_MAX;
+    for (i = p.field_first; i < p.field_max; i++) {
+        wx->field_widths_state[i] = 0;
+    }
+
+    p.fields_mask = &wx->fields_mask_state;
+    p.field_widths = wx->field_widths_state;
+    p.data = wx;
+    wx->p = p;
+    wx->owns_state = EINA_TRUE;
+
+    wx->root = elm_box_add(parent);
+    evas_object_size_hint_weight_set(wx->root, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+    evas_object_size_hint_align_set(wx->root, EVAS_HINT_FILL, EVAS_HINT_FILL);
+    evas_object_show(wx->root);
+
+    wx->header_tb = elm_table_add(wx->root);
+    evas_object_size_hint_weight_set(wx->header_tb, EVAS_HINT_EXPAND, 0.0);
+    evas_object_size_hint_align_set(wx->header_tb, EVAS_HINT_FILL, EVAS_HINT_FILL);
+    evas_object_show(wx->header_tb);
+    elm_box_pack_end(wx->root, wx->header_tb);
+
+    evas_object_event_callback_add(p.win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_widget_exel_win_mouse_move_cb, wx);
+    wx->win_mouse_move_registered = EINA_TRUE;
+
     return wx;
+}
+
+Evas_Object *
+evisum_ui_widget_exel_object_get(const Evisum_Ui_Widget_Exel *wx) {
+    if (!wx) return NULL;
+    return wx->root;
+}
+
+void
+evisum_ui_widget_exel_field_add(Evisum_Ui_Widget_Exel *wx, const Evisum_Ui_Widget_Exel_Field_Params *params) {
+    Evas_Object *btn;
+    Evisum_Ui_Widget_Exel_Item_Cell_Def def;
+
+    if (!wx || !params || !wx->header_tb) return;
+
+    btn = evisum_ui_widget_exel_sort_header_button_add(wx->header_tb, params->title, params->reverse, 1.0,
+                                                        EVAS_HINT_FILL, params->clicked_cb, params->clicked_data);
+    if (!btn) return;
+
+    evisum_ui_widget_exel_field_register(wx, params->id, btn, params->desc, params->default_width, params->min_width,
+                                         params->always_visible);
+    def = (Evisum_Ui_Widget_Exel_Item_Cell_Def) {
+        .type = params->type,
+        .key = params->key,
+        .aux_key = params->aux_key,
+        .unit_format = params->unit_format,
+        .align_x = params->align_x,
+        .weight_x = params->weight_x,
+        .boxed = params->boxed,
+        .spacer = params->spacer,
+        .icon_size = params->icon_size,
+    };
+    evisum_ui_widget_exel_field_row_def_set(wx, params->id, &def);
+    evisum_ui_widget_exel_field_resize_attach(wx, btn, params->id);
+    evas_object_event_callback_add(btn, EVAS_CALLBACK_MOUSE_UP, _evisum_ui_widget_exel_field_header_mouse_up_cb, wx);
+}
+
+void
+evisum_ui_widget_exel_fields_apply(Evisum_Ui_Widget_Exel *wx) {
+    int i;
+
+    if (!wx || !wx->header_tb) return;
+
+    for (i = wx->p.field_first; i < wx->p.field_max; i++) {
+        evisum_ui_widget_exel_field_width_apply(wx, i);
+    }
+    evisum_ui_widget_exel_field_proportions_apply(wx);
+    elm_table_clear(wx->header_tb, EINA_FALSE);
+    evisum_ui_widget_exel_fields_pack_visible(wx, wx->header_tb, 0);
+}
+
+unsigned int
+evisum_ui_widget_exel_fields_mask_get(const Evisum_Ui_Widget_Exel *wx) {
+    if (!wx || !wx->p.fields_mask) return 0;
+    return *(wx->p.fields_mask);
+}
+
+int
+evisum_ui_widget_exel_field_width_state_get(const Evisum_Ui_Widget_Exel *wx, int id) {
+    if (!wx || !wx->p.field_widths) return 0;
+    if (id < 0 || id >= EVISUM_UI_WIDGET_EXEL_FIELDS_MAX) return 0;
+    return wx->p.field_widths[id];
+}
+
+void
+evisum_ui_widget_exel_state_bind(Evisum_Ui_Widget_Exel *wx, unsigned int *fields_mask, int *field_widths) {
+    int i;
+
+    if (!wx) return;
+
+    if (fields_mask) {
+        wx->p.fields_mask = fields_mask;
+        wx->owns_state = EINA_FALSE;
+    } else {
+        wx->p.fields_mask = &wx->fields_mask_state;
+        wx->owns_state = EINA_TRUE;
+    }
+
+    if (field_widths) {
+        wx->p.field_widths = field_widths;
+    } else {
+        for (i = wx->p.field_first; i < wx->p.field_max; i++) {
+            wx->field_widths_state[i] = 0;
+        }
+        wx->p.field_widths = wx->field_widths_state;
+        if (!fields_mask) wx->owns_state = EINA_TRUE;
+    }
+
+    _evisum_ui_widget_exel_fields_sync(wx);
+}
+
+void
+evisum_ui_widget_exel_field_bounds_set(Evisum_Ui_Widget_Exel *wx, int field_first, int field_max) {
+    if (!wx) return;
+    if (field_first < 0) field_first = 0;
+    if (field_first >= EVISUM_UI_WIDGET_EXEL_FIELDS_MAX) field_first = EVISUM_UI_WIDGET_EXEL_FIELDS_MAX - 1;
+    if (field_max <= field_first) field_max = field_first + 1;
+    if (field_max > EVISUM_UI_WIDGET_EXEL_FIELDS_MAX) field_max = EVISUM_UI_WIDGET_EXEL_FIELDS_MAX;
+
+    wx->p.field_first = field_first;
+    wx->p.field_max = field_max;
+    _evisum_ui_widget_exel_fields_sync(wx);
+}
+
+void
+evisum_ui_widget_exel_resize_hit_width_set(Evisum_Ui_Widget_Exel *wx, int hit_width) {
+    if (!wx) return;
+    if (hit_width < 0) hit_width = 0;
+    wx->p.resize_hit_width = hit_width;
+}
+
+void
+evisum_ui_widget_exel_callbacks_set(Evisum_Ui_Widget_Exel *wx,
+                                    Evisum_Ui_Widget_Exel_Reference_Mask_Get_Cb reference_mask_get_cb,
+                                    Evisum_Ui_Widget_Exel_Fields_Changed_Cb fields_changed_cb,
+                                    Evisum_Ui_Widget_Exel_Fields_Applied_Cb fields_applied_cb,
+                                    Evisum_Ui_Widget_Exel_Resize_Live_Cb resize_live_cb,
+                                    Evisum_Ui_Widget_Exel_Resize_Done_Cb resize_done_cb, void *data) {
+    if (!wx) return;
+    wx->p.reference_mask_get_cb = reference_mask_get_cb;
+    wx->p.fields_changed_cb = fields_changed_cb;
+    wx->p.fields_applied_cb = fields_applied_cb;
+    wx->p.resize_live_cb = resize_live_cb;
+    wx->p.resize_done_cb = resize_done_cb;
+    wx->p.data = data;
 }
 
 void
 evisum_ui_widget_exel_free(Evisum_Ui_Widget_Exel *wx) {
     if (!wx) return;
+    if (wx->unrealized_release_enabled && wx->glist) {
+        evas_object_smart_callback_del_full(wx->glist, "unrealized", _evisum_ui_widget_exel_genlist_unrealized_cb, wx);
+    }
+    if (wx->win_mouse_move_registered && wx->p.win) {
+        evas_object_event_callback_del_full(wx->p.win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_widget_exel_win_mouse_move_cb,
+                                            wx);
+    }
     evisum_ui_widget_exel_fields_menu_dismiss(wx);
     evisum_ui_widget_exel_deferred_call_cancel(wx);
     if (wx->cache) evisum_ui_item_cache_free(wx->cache);
+    if (wx->root) evas_object_del(wx->root);
+    wx->header_tb = NULL;
     wx->glist = NULL;
     free(wx);
 }
@@ -322,6 +555,20 @@ evisum_ui_widget_exel_field_register(Evisum_Ui_Widget_Exel *wx, int id, Evas_Obj
     f->always_visible = always_visible;
 
     _evisum_ui_widget_exel_fields_sync(wx);
+}
+
+void
+evisum_ui_widget_exel_field_row_def_set(Evisum_Ui_Widget_Exel *wx, int id,
+                                        const Evisum_Ui_Widget_Exel_Item_Cell_Def *def) {
+    Exel_Field *f;
+
+    if (!wx || !def) return;
+    if (id < 0 || id >= EVISUM_UI_WIDGET_EXEL_FIELDS_MAX) return;
+
+    f = &wx->fields[id];
+    if (f->id != id) return;
+    f->row_def = *def;
+    f->row_def_set = EINA_TRUE;
 }
 
 Eina_Bool
@@ -406,6 +653,7 @@ evisum_ui_widget_exel_field_width_apply(Evisum_Ui_Widget_Exel *wx, int id) {
     int width;
 
     if (!wx) return;
+    if (!_evisum_ui_widget_exel_field_id_valid(wx, id) || !wx->p.field_widths) return;
 
     {
         Exel_Field *f = _evisum_ui_widget_exel_field_get(wx, id);
@@ -453,6 +701,7 @@ evisum_ui_widget_exel_cmd_width_sync(Evisum_Ui_Widget_Exel *wx, int field_cmd_id
     int minw;
 
     if (!wx) return;
+    if (!_evisum_ui_widget_exel_field_id_valid(wx, field_cmd_id) || !wx->p.field_widths) return;
 
     minw = _evisum_ui_widget_exel_field_min_width_get(wx, field_cmd_id);
     if (width < minw) width = minw;
@@ -473,12 +722,13 @@ evisum_ui_widget_exel_field_resize_attach(Evisum_Ui_Widget_Exel *wx, Evas_Object
                                    wx);
 }
 
-void
-evisum_ui_widget_exel_field_resize_mouse_move(Evisum_Ui_Widget_Exel *wx, Evas_Event_Mouse_Move *ev) {
+static void
+_evisum_ui_widget_exel_field_resize_mouse_move(Evisum_Ui_Widget_Exel *wx, Evas_Event_Mouse_Move *ev) {
     Evas_Coord width;
 
     if (!wx || !ev) return;
     if (!wx->resizing || !wx->resize_btn) return;
+    if (!_evisum_ui_widget_exel_field_id_valid(wx, wx->resize_field) || !wx->p.field_widths) return;
 
     width = wx->resize_start_w + (wx->resize_dir * (ev->cur.canvas.x - wx->resize_start_x));
     if (width < _evisum_ui_widget_exel_field_min_width_get(wx, wx->resize_field))
@@ -487,8 +737,17 @@ evisum_ui_widget_exel_field_resize_mouse_move(Evisum_Ui_Widget_Exel *wx, Evas_Ev
     evas_object_size_hint_min_set(wx->resize_btn, width, 1);
     wx->p.field_widths[wx->resize_field] = width;
     evisum_ui_widget_exel_field_proportions_apply(wx);
+    if (wx->glist) elm_genlist_realized_items_update(wx->glist);
 
     if (wx->p.resize_live_cb) wx->p.resize_live_cb(wx->p.data);
+}
+
+static void
+_evisum_ui_widget_exel_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                                         void *event_info) {
+    Evisum_Ui_Widget_Exel *wx = data;
+    Evas_Event_Mouse_Move *ev = event_info;
+    _evisum_ui_widget_exel_field_resize_mouse_move(wx, ev);
 }
 
 void
@@ -498,10 +757,16 @@ evisum_ui_widget_exel_field_resize_mouse_up(Evisum_Ui_Widget_Exel *wx, Evas_Even
     if (!wx || !ev) return;
     if (ev->button != 1) return;
     if (!wx->resizing || !wx->resize_btn) return;
+    if (!_evisum_ui_widget_exel_field_id_valid(wx, wx->resize_field) || !wx->p.field_widths) {
+        wx->resizing = 0;
+        wx->resize_btn = NULL;
+        return;
+    }
 
     evas_object_geometry_get(wx->resize_btn, NULL, NULL, &w, NULL);
     wx->p.field_widths[wx->resize_field] = w;
     evisum_ui_widget_exel_field_proportions_apply(wx);
+    if (wx->glist) elm_genlist_realized_items_update(wx->glist);
 
     wx->resizing = 0;
     wx->resize_btn = NULL;
@@ -533,6 +798,10 @@ evisum_ui_widget_exel_fields_menu_show(Evisum_Ui_Widget_Exel *wx, Evas_Object *a
     evas_object_geometry_get(anchor_btn, &ox, &oy, &ow, &oh);
 
     o = wx->fields_menu = _evisum_ui_widget_exel_fields_menu_create(wx);
+    if (!o) {
+        wx->fields_menu = NULL;
+        return;
+    }
     elm_ctxpopup_direction_priority_set(o, ELM_CTXPOPUP_DIRECTION_DOWN, ELM_CTXPOPUP_DIRECTION_UP,
                                         ELM_CTXPOPUP_DIRECTION_LEFT, ELM_CTXPOPUP_DIRECTION_RIGHT);
     evas_object_move(o, ox + (ow / 2), oy + oh);
@@ -576,10 +845,12 @@ evisum_ui_widget_exel_item_column_add(Evas_Object *tb, const char *key, int col,
         elm_box_pack_end(hbx, lb);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+        evas_object_color_set(rec, 0, 0, 0, 0);
         evas_object_size_hint_min_set(rec, params->boxed_spacer, 1);
         elm_box_pack_end(hbx, rec);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+        evas_object_color_set(rec, 0, 0, 0, 0);
         evas_object_data_set(lb, "rec", rec);
         elm_table_pack(tb, rec, col, 0, 1, 1);
         elm_table_pack(tb, hbx, col, 0, 1, 1);
@@ -591,6 +862,7 @@ evisum_ui_widget_exel_item_column_add(Evas_Object *tb, const char *key, int col,
         evas_object_data_set(tb, key, lb);
 
         rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+        evas_object_color_set(rec, 0, 0, 0, 0);
         evas_object_data_set(lb, "rec", rec);
         elm_table_pack(tb, lb, col, 0, 1, 1);
         elm_table_pack(tb, rec, col, 0, 1, 1);
@@ -648,7 +920,7 @@ evisum_ui_widget_exel_item_row_add(Evas_Object *parent, const Evisum_Ui_Widget_E
 Evas_Object *
 evisum_ui_widget_exel_item_cmd_column_add(Evas_Object *tb, const char *icon_key, const char *label_key, int col,
                                           int icon_size, int spacer) {
-    Evas_Object *hbx, *ic, *lb, *rec;
+    Evas_Object *hbx, *ibox, *ic, *lb, *rec;
 
     if (!tb || !icon_key || !label_key) return NULL;
 
@@ -657,16 +929,34 @@ evisum_ui_widget_exel_item_cmd_column_add(Evas_Object *tb, const char *icon_key,
     evas_object_size_hint_align_set(hbx, 0.0, FILL);
     evas_object_size_hint_weight_set(hbx, EXPAND, 0);
 
+    ibox = elm_table_add(tb);
+    evas_object_size_hint_weight_set(ibox, 0.0, 0.0);
+    evas_object_size_hint_align_set(ibox, 0.5, 0.5);
+    evas_object_size_hint_min_set(ibox, ELM_SCALE_SIZE(icon_size), ELM_SCALE_SIZE(icon_size));
+    evas_object_size_hint_max_set(ibox, ELM_SCALE_SIZE(icon_size), ELM_SCALE_SIZE(icon_size));
+    elm_box_pack_end(hbx, ibox);
+    evas_object_show(ibox);
+
+    /* Always keep a fixed icon slot so rows stay aligned when icon content is missing. */
+    rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+    evas_object_color_set(rec, 0, 0, 0, 0);
+    evas_object_size_hint_weight_set(rec, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(rec, FILL, FILL);
+    elm_table_pack(ibox, rec, 0, 0, 1, 1);
+    evas_object_show(rec);
+
     ic = elm_icon_add(tb);
     evas_object_size_hint_aspect_set(ic, EVAS_ASPECT_CONTROL_VERTICAL, 1, 1);
     evas_object_size_hint_align_set(ic, FILL, FILL);
+    evas_object_size_hint_weight_set(ic, EXPAND, EXPAND);
     evas_object_size_hint_min_set(ic, ELM_SCALE_SIZE(icon_size), ELM_SCALE_SIZE(icon_size));
     evas_object_size_hint_max_set(ic, ELM_SCALE_SIZE(icon_size), ELM_SCALE_SIZE(icon_size));
     evas_object_data_set(tb, icon_key, ic);
-    elm_box_pack_end(hbx, ic);
+    elm_table_pack(ibox, ic, 0, 0, 1, 1);
     evas_object_show(ic);
 
     rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+    evas_object_color_set(rec, 0, 0, 0, 0);
     evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(spacer), 1);
     elm_box_pack_end(hbx, rec);
 
@@ -677,6 +967,7 @@ evisum_ui_widget_exel_item_cmd_column_add(Evas_Object *tb, const char *icon_key,
     evas_object_show(lb);
 
     rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+    evas_object_color_set(rec, 0, 0, 0, 0);
     evas_object_data_set(ic, "rec", rec);
     elm_table_pack(tb, rec, col, 0, 1, 1);
     elm_table_pack(tb, hbx, col, 0, 1, 1);
@@ -697,7 +988,7 @@ evisum_ui_widget_exel_item_progress_column_add(Evas_Object *tb, const char *key,
     evas_object_size_hint_align_set(hbx, FILL, FILL);
 
     pb = elm_progressbar_add(hbx);
-    evas_object_size_hint_weight_set(pb, 0, EXPAND);
+    evas_object_size_hint_weight_set(pb, EXPAND, EXPAND);
     evas_object_size_hint_align_set(pb, FILL, FILL);
     if (unit_format) elm_progressbar_unit_format_set(pb, unit_format);
     elm_box_pack_end(hbx, pb);
@@ -705,6 +996,7 @@ evisum_ui_widget_exel_item_progress_column_add(Evas_Object *tb, const char *key,
     evas_object_show(hbx);
 
     rec = evas_object_rectangle_add(evas_object_evas_get(tb));
+    evas_object_color_set(rec, 0, 0, 0, 0);
     evas_object_data_set(pb, "rec", rec);
     elm_table_pack(tb, rec, col, 0, 1, 1);
     elm_table_pack(tb, hbx, col, 0, 1, 1);
@@ -812,8 +1104,9 @@ evisum_ui_widget_exel_item_column_width_apply(Evas_Object *obj, Evas_Coord width
     }
 }
 
-void
-evisum_ui_widget_exel_glist_ensure_n_items(Evas_Object *glist, unsigned int items, Elm_Genlist_Item_Class *itc) {
+static void
+_evisum_ui_widget_exel_glist_ensure_n_items(Evas_Object *glist, unsigned int items, Elm_Genlist_Item_Class *itc) {
+    if (!glist || !itc) return;
     Elm_Object_Item *it;
     unsigned int i, existing = elm_genlist_items_count(glist);
 
@@ -837,6 +1130,7 @@ evisum_ui_widget_exel_menu_item_add(Evas_Object *menu, Elm_Object_Item *parent, 
     Evas_Object *ic;
     Elm_Object_Item *it;
 
+    if (!menu) return NULL;
     if (!icon) return elm_menu_item_add(menu, parent, NULL, label, func, data);
 
     it = elm_menu_item_add(menu, parent, NULL, label, func, data);
@@ -912,9 +1206,9 @@ evisum_ui_widget_exel_icon_button_add(Evas_Object *parent, const char *icon, con
     return btn;
 }
 
-void
-evisum_ui_widget_exel_item_cache_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *parent,
-                                     Evas_Object *(*create_cb)(Evas_Object *), int size) {
+static void
+_evisum_ui_widget_exel_item_cache_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *parent,
+                                      Evas_Object *(*create_cb)(Evas_Object *), int size) {
     if (!wx) return;
     if (!parent || !create_cb || size <= 0) return;
 
@@ -923,29 +1217,48 @@ evisum_ui_widget_exel_item_cache_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *par
     wx->cache = evisum_ui_item_cache_new(parent, create_cb, size);
 }
 
-void
-evisum_ui_widget_exel_item_cache_attach(Evisum_Ui_Widget_Exel *wx, Evas_Object *(*create_cb)(Evas_Object *), int size) {
-    if (!wx || !wx->glist) return;
-    evisum_ui_widget_exel_item_cache_add(wx, wx->glist, create_cb, size);
+static Evas_Object *
+_evisum_ui_widget_exel_item_create_from_fields(Evas_Object *parent) {
+    Evisum_Ui_Widget_Exel *wx = evas_object_data_get(parent, "widget_exel");
+    Evisum_Ui_Widget_Exel_Item_Cell_Def defs[EVISUM_UI_WIDGET_EXEL_FIELDS_MAX];
+    unsigned int n = 0;
+    int i;
+
+    if (!wx) return NULL;
+
+    _evisum_ui_widget_exel_fields_sync(wx);
+
+    for (i = wx->p.field_first; i < wx->p.field_max; i++) {
+        Exel_Field *f = _evisum_ui_widget_exel_field_get(wx, i);
+        if (!f || !f->row_def_set || !f->enabled) continue;
+        defs[n++] = f->row_def;
+    }
+
+    if (!n) return NULL;
+    return evisum_ui_widget_exel_item_row_add(parent, defs, n);
+}
+
+static Eina_Bool
+_evisum_ui_widget_exel_item_cache_item_release(Evisum_Ui_Widget_Exel *wx, Evas_Object *obj) {
+    if (!wx || !wx->cache) return 0;
+    return evisum_ui_item_cache_item_release(wx->cache, obj);
 }
 
 Evas_Object *
 evisum_ui_widget_exel_item_cache_object_get(Evisum_Ui_Widget_Exel *wx) {
     Item_Cache *it;
 
-    if (!wx || !wx->cache) return NULL;
+    if (!wx) return NULL;
+    if (!wx->cache && wx->glist) {
+        _evisum_ui_widget_exel_item_cache_add(wx, wx->glist, _evisum_ui_widget_exel_item_create_from_fields,
+                                              EVISUM_UI_WIDGET_EXEL_DEFAULT_CACHE_SIZE);
+    }
+    if (!wx->cache) return NULL;
     it = evisum_ui_item_cache_item_get(wx->cache);
     if (!it) return NULL;
 
     return it->obj;
 }
-
-Eina_Bool
-evisum_ui_widget_exel_item_cache_item_release(Evisum_Ui_Widget_Exel *wx, Evas_Object *obj) {
-    if (!wx || !wx->cache) return 0;
-    return evisum_ui_item_cache_item_release(wx->cache, obj);
-}
-
 void
 evisum_ui_widget_exel_item_cache_reset(Evisum_Ui_Widget_Exel *wx, void (*done_cb)(void *data), void *data) {
     if (!wx || !wx->cache) return;
@@ -964,26 +1277,30 @@ evisum_ui_widget_exel_item_cache_active_count_get(const Evisum_Ui_Widget_Exel *w
     return eina_list_count(wx->cache->active);
 }
 
+static void
+_evisum_ui_widget_exel_genlist_unrealized_release_enable(Evisum_Ui_Widget_Exel *wx, Eina_Bool delete_unhandled);
+
 Evas_Object *
-evisum_ui_widget_exel_genlist_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *parent,
-                                  const Evisum_Ui_Widget_Exel_Genlist_Params *params) {
+evisum_ui_widget_exel_genlist_add(Evisum_Ui_Widget_Exel *wx, Evas_Object *parent) {
     Evas_Object *glist;
 
-    if (!wx || !parent || !params) return NULL;
+    if (!wx || !parent) return NULL;
 
     glist = elm_genlist_add(parent);
-    elm_genlist_homogeneous_set(glist, params->homogeneous);
-    elm_scroller_bounce_set(glist, params->bounce_h, params->bounce_v);
-    elm_object_focus_allow_set(glist, params->focus_allow);
-    elm_scroller_policy_set(glist, params->policy_h, params->policy_v);
-    elm_genlist_multi_select_set(glist, params->multi_select);
-    elm_genlist_select_mode_set(glist, params->select_mode);
-    evas_object_size_hint_weight_set(glist, params->weight_x, params->weight_y);
-    evas_object_size_hint_align_set(glist, params->align_x, params->align_y);
-    if (params->data_key) evas_object_data_set(glist, params->data_key, (void *) params->data);
+    elm_genlist_homogeneous_set(glist, EINA_TRUE);
+    elm_scroller_bounce_set(glist, EINA_FALSE, EINA_FALSE);
+    elm_object_focus_allow_set(glist, EINA_TRUE);
+    elm_scroller_policy_set(glist, ELM_SCROLLER_POLICY_AUTO, ELM_SCROLLER_POLICY_AUTO);
+    elm_genlist_multi_select_set(glist, EINA_FALSE);
+    elm_genlist_select_mode_set(glist, ELM_OBJECT_SELECT_MODE_DEFAULT);
+    evas_object_size_hint_weight_set(glist, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(glist, FILL, FILL);
+    evas_object_data_set(glist, "widget_exel", wx);
+    if (wx->p.data) evas_object_data_set(glist, "widget_exel_data", wx->p.data);
     evas_object_show(glist);
 
     wx->glist = glist;
+    _evisum_ui_widget_exel_genlist_unrealized_release_enable(wx, EINA_TRUE);
     return glist;
 }
 
@@ -991,13 +1308,6 @@ Evas_Object *
 evisum_ui_widget_exel_genlist_obj_get(const Evisum_Ui_Widget_Exel *wx) {
     if (!wx) return NULL;
     return wx->glist;
-}
-
-void
-evisum_ui_widget_exel_genlist_smart_callback_add(Evisum_Ui_Widget_Exel *wx, const char *name, Evas_Smart_Cb cb,
-                                                 const void *data) {
-    if (!wx || !wx->glist || !name || !cb) return;
-    evas_object_smart_callback_add(wx->glist, name, cb, data);
 }
 
 void
@@ -1016,7 +1326,7 @@ evisum_ui_widget_exel_genlist_clear(Evisum_Ui_Widget_Exel *wx) {
 void
 evisum_ui_widget_exel_genlist_items_ensure(Evisum_Ui_Widget_Exel *wx, unsigned int items, Elm_Genlist_Item_Class *itc) {
     if (!wx || !wx->glist) return;
-    evisum_ui_widget_exel_glist_ensure_n_items(wx->glist, items, itc);
+    _evisum_ui_widget_exel_glist_ensure_n_items(wx->glist, items, itc);
 }
 
 Elm_Object_Item *
@@ -1088,10 +1398,36 @@ evisum_ui_widget_exel_genlist_item_update(Elm_Object_Item *it) {
     elm_genlist_item_update(it);
 }
 
-void
-evisum_ui_widget_exel_genlist_item_all_contents_unset(Elm_Object_Item *it, Eina_List **contents) {
+static void
+_evisum_ui_widget_exel_genlist_item_contents_release(Evisum_Ui_Widget_Exel *wx, Elm_Object_Item *it,
+                                                     Eina_Bool delete_unhandled) {
+    Eina_List *contents = NULL;
+    Evas_Object *obj;
+
     if (!it) return;
-    elm_genlist_item_all_contents_unset(it, contents);
+    elm_genlist_item_all_contents_unset(it, &contents);
+
+    EINA_LIST_FREE(contents, obj) {
+        if (_evisum_ui_widget_exel_item_cache_item_release(wx, obj)) continue;
+        if (delete_unhandled) evas_object_del(obj);
+    }
+}
+
+static void
+_evisum_ui_widget_exel_genlist_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info) {
+    Evisum_Ui_Widget_Exel *wx = data;
+    _evisum_ui_widget_exel_genlist_item_contents_release(wx, event_info, wx->unrealized_delete_unhandled);
+}
+
+static void
+_evisum_ui_widget_exel_genlist_unrealized_release_enable(Evisum_Ui_Widget_Exel *wx, Eina_Bool delete_unhandled) {
+    if (!wx || !wx->glist) return;
+
+    if (!wx->unrealized_release_enabled) {
+        evas_object_smart_callback_add(wx->glist, "unrealized", _evisum_ui_widget_exel_genlist_unrealized_cb, wx);
+        wx->unrealized_release_enabled = EINA_TRUE;
+    }
+    wx->unrealized_delete_unhandled = delete_unhandled;
 }
 
 Elm_Object_Item *

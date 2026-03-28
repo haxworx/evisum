@@ -273,99 +273,12 @@ typedef struct {
     char name[1024];
 } Stat;
 
-typedef struct {
-    uint64_t in;
-    uint64_t out;
-} Pid_Net_Stats;
-
-static void
-_pid_net_stats_free_cb(void *data) {
-    Pid_Net_Stats *stats = data;
-    free(stats);
-}
-
-static uint64_t
-_line_u64_get(const char *line, const char *tag) {
-    const char *p = strstr(line, tag);
-    char *end = NULL;
-
-    if (!p) return 0;
-    p += strlen(tag);
-
-    return strtoull(p, &end, 10);
-}
-
-static Pid_Net_Stats *
-_pid_net_stats_get_or_add(Eina_Hash *hash, int64_t pid) {
-    Pid_Net_Stats *stats;
-
-    stats = eina_hash_find(hash, &pid);
-    if (stats) return stats;
-
-    stats = calloc(1, sizeof(Pid_Net_Stats));
-    if (!stats) return NULL;
-
-    eina_hash_add(hash, &pid, stats);
-
-    return stats;
-}
-
-static Eina_Hash *
-_net_stats_cache_get(void) {
-    static Eina_Hash *cache = NULL;
-    static double last_refresh = 0.0;
-    FILE *f;
-    char line[4096];
-    int64_t current_pid = -1;
-    double now = ecore_time_get();
-
-    if (cache && ((now - last_refresh) < 0.5)) return cache;
-
-    if (cache) eina_hash_free(cache);
-
-    cache = eina_hash_int64_new(_pid_net_stats_free_cb);
-    if (!cache) return NULL;
-
-    f = popen("ss -H -tinp 2>/dev/null", "r");
-    if (!f) {
-        last_refresh = now;
-        return cache;
-    }
-
-    while (fgets(line, sizeof(line), f)) {
-        uint64_t in = _line_u64_get(line, "bytes_received:");
-        uint64_t out = _line_u64_get(line, "bytes_acked:");
-        const char *p = line;
-        int64_t line_pid = -1;
-
-        p = strstr(p, "pid=");
-        if (p) {
-            p += 4;
-            line_pid = strtoll(p, NULL, 10);
-            if (line_pid > 0) current_pid = line_pid;
-        }
-
-        if ((!in && !out) || (current_pid <= 0)) continue;
-
-        Pid_Net_Stats *stats = _pid_net_stats_get_or_add(cache, current_pid);
-        if (!stats) continue;
-
-        stats->in += in;
-        stats->out += out;
-    }
-
-    pclose(f);
-    last_refresh = now;
-
-    return cache;
-}
-
 static Eina_Bool
 _stat(const char *path, Stat *st) {
     FILE *f;
-    char *p;
+    char *lparen, *rparen, *state;
     char line[4096];
-    int dummy, i, slen, len = 0;
+    int dummy, len = 0;
     static long tck = 0;
     static int64_t boot_time = 0;
 
@@ -377,22 +290,15 @@ _stat(const char *path, Stat *st) {
     if (!f) return 0;
 
     if (fgets(line, sizeof(line), f)) {
-        slen = strlen(line);
-        for (i = 0; i < slen; i++) {
-            Eina_Bool found = EINA_FALSE;
-            const char states[] = { 'D', 'I', 'R', 'X', 'T', 'S', 'Z' };
-            // Get the index of state value.
-            for (int j = 0; j < sizeof(states); j++) {
-                if (line[i] == states[j]) {
-                    found = EINA_TRUE;
-                    break;
-                }
-            }
-            if ((i < (slen - 1)) && (found) && (line[i + 1] == ' ')) break;
+        lparen = strchr(line, '(');
+        rparen = strrchr(line, ')');
+        if (!lparen || !rparen || (rparen <= lparen) || (rparen[1] != ' ') || !rparen[2]) {
+            fclose(f);
+            return 0;
         }
 
-        // Scan from index of state value.
-        len = sscanf(&line[i],
+        state = rparen + 2;
+        len = sscanf(state,
                      "%c %d %d %d %d %d %u %u %u %u %u %d %d %d"
                      " %d %d %d %u %u %lld %lu %u %u %u %u %u %u %u %d %d %d %d %u"
                      " %d %d %d %d %d %d %d %d %d",
@@ -401,15 +307,12 @@ _stat(const char *path, Stat *st) {
                      &st->start_time, &st->mem_virt, &st->mem_rss, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy,
                      &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &st->psr, &dummy, &dummy, &dummy,
                      &dummy, &dummy);
+
+        snprintf(st->name, sizeof(st->name), "%.*s", (int) (rparen - lparen - 1), lparen + 1);
     }
     fclose(f);
 
-    if (len != 42 || i == slen) return 0;
-
-    p = strchr(line, ' ') + 2;
-    if ((!p) || (i < 2)) return 0;
-    line[i - 2] = '\0';
-    snprintf(st->name, sizeof(st->name), "%s", p);
+    if (len != 42) return 0;
 
     if (!tck) tck = sysconf(_SC_CLK_TCK);
 
@@ -438,22 +341,29 @@ _n_files(Proc_Info *p) {
 
 static void
 _net_transfer_get(Proc_Info *p) {
-    Eina_Hash *cache;
-    int64_t pid;
-    Pid_Net_Stats *stats;
+    FILE *f;
+    char path[PATH_MAX];
+    char buf[4096], name[128];
+    unsigned long long in, out, dummy;
 
     p->net_in = 0;
     p->net_out = 0;
 
-    cache = _net_stats_cache_get();
-    if (!cache) return;
+    snprintf(path, sizeof(path), "/proc/%d/net/dev", p->pid);
+    f = fopen(path, "r");
+    if (!f) return;
 
-    pid = p->pid;
-    stats = eina_hash_find(cache, &pid);
-    if (!stats) return;
+    while (fgets(buf, sizeof(buf), f)) {
+        if (17 == sscanf(buf,
+                         "%127s %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu",
+                         name, &in, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &dummy, &out, &dummy, &dummy,
+                         &dummy, &dummy, &dummy, &dummy, &dummy)) {
+            p->net_in += in;
+            p->net_out += out;
+        }
+    }
 
-    p->net_in = stats->in;
-    p->net_out = stats->out;
+    fclose(f);
 }
 
 static Eina_List *

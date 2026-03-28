@@ -96,6 +96,12 @@ typedef struct _Evisum_Ui {
         int x, y;
         Eina_Bool restart;
     } network;
+
+    struct {
+        Eina_Hash *proc_net_stats;
+        Eina_Lock proc_net_lock;
+        Eina_Bool proc_net_lock_init;
+    } background;
 } Evisum_Ui;
 
 typedef struct _Battery {

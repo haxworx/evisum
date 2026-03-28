@@ -14,6 +14,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#if defined(__linux__)
+#include <stddef.h>
+#include <netinet/in.h>
+#include <linux/inet_diag.h>
+#include <linux/sock_diag.h>
+#include <linux/tcp.h>
+#include <linux/rtnetlink.h>
+#endif
+
 #if defined(__MacOS__) || defined(__FreeBSD__) || defined(__DragonFly__)
 static net_iface_t **
 _freebsd_generic_network_status(int *n)
@@ -174,6 +183,293 @@ _linux_generic_network_status(int *n)
    return ifaces;
 }
 
+typedef struct {
+   unsigned long inode;
+   uint64_t in;
+   uint64_t out;
+} Linux_Proc_Socket_Stat;
+
+static int
+_linux_proc_socket_stat_cmp(const void *a, const void *b)
+{
+   const Linux_Proc_Socket_Stat *sa = a;
+   const Linux_Proc_Socket_Stat *sb = b;
+
+   if (sa->inode < sb->inode) return -1;
+   if (sa->inode > sb->inode) return 1;
+   return 0;
+}
+
+static bool
+_linux_proc_socket_stat_add(Linux_Proc_Socket_Stat **stats, int *count, int *capacity, unsigned long inode, uint64_t in, uint64_t out)
+{
+   Linux_Proc_Socket_Stat *tmp;
+   int next_capacity;
+
+   if (*count >= *capacity)
+     {
+        next_capacity = *capacity ? *capacity * 2 : 256;
+        tmp = realloc(*stats, next_capacity * sizeof(**stats));
+        if (!tmp) return false;
+        *stats = tmp;
+        *capacity = next_capacity;
+     }
+
+   (*stats)[*count].inode = inode;
+   (*stats)[*count].in = in;
+   (*stats)[*count].out = out;
+   (*count)++;
+
+   return true;
+}
+
+static void
+_linux_proc_socket_diag_collect(int family, Linux_Proc_Socket_Stat **stats, int *count, int *capacity)
+{
+   int fd;
+   ssize_t sent;
+   struct
+   {
+      struct nlmsghdr nlh;
+      struct inet_diag_req_v2 req;
+   } request;
+   char buffer[8192];
+
+   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_SOCK_DIAG);
+   if (fd < 0) return;
+
+   memset(&request, 0, sizeof(request));
+   request.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(request.req));
+   request.nlh.nlmsg_type = SOCK_DIAG_BY_FAMILY;
+   request.nlh.nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
+   request.req.sdiag_family = family;
+   request.req.sdiag_protocol = IPPROTO_TCP;
+   request.req.idiag_states = -1;
+   request.req.idiag_ext = (1 << (INET_DIAG_INFO - 1));
+
+   sent = send(fd, &request, request.nlh.nlmsg_len, 0);
+   if (sent < 0)
+     {
+        close(fd);
+        return;
+     }
+
+   while (1)
+     {
+        ssize_t len = recv(fd, buffer, sizeof(buffer), 0);
+        struct nlmsghdr *nlh;
+
+        if (len <= 0) break;
+
+        for (nlh = (struct nlmsghdr *) buffer; NLMSG_OK(nlh, len); nlh = NLMSG_NEXT(nlh, len))
+          {
+             struct inet_diag_msg *diag;
+             struct rtattr *attr;
+             int attr_len;
+
+             if (nlh->nlmsg_type == NLMSG_DONE)
+               {
+                  close(fd);
+                  return;
+               }
+             if (nlh->nlmsg_type == NLMSG_ERROR)
+               {
+                  close(fd);
+                  return;
+               }
+             if (nlh->nlmsg_type != SOCK_DIAG_BY_FAMILY) continue;
+             if (nlh->nlmsg_len < NLMSG_LENGTH(sizeof(*diag))) continue;
+
+             diag = NLMSG_DATA(nlh);
+             attr_len = nlh->nlmsg_len - NLMSG_LENGTH(sizeof(*diag));
+             if (attr_len <= 0) continue;
+
+             for (attr = (struct rtattr *) (diag + 1); RTA_OK(attr, attr_len); attr = RTA_NEXT(attr, attr_len))
+               {
+                  struct tcp_info *tcpi;
+                  size_t tcpi_len;
+                  uint64_t in = 0, out = 0;
+
+                  if (attr->rta_type != INET_DIAG_INFO) continue;
+
+                  tcpi = RTA_DATA(attr);
+                  tcpi_len = RTA_PAYLOAD(attr);
+
+                  if (tcpi_len >= (offsetof(struct tcp_info, tcpi_bytes_received) + sizeof(tcpi->tcpi_bytes_received)))
+                    in = tcpi->tcpi_bytes_received;
+                  if (tcpi_len >= (offsetof(struct tcp_info, tcpi_bytes_acked) + sizeof(tcpi->tcpi_bytes_acked)))
+                    out = tcpi->tcpi_bytes_acked;
+
+                  if ((!in) && (!out)) continue;
+                  if (!_linux_proc_socket_stat_add(stats, count, capacity, diag->idiag_inode, in, out))
+                    {
+                       close(fd);
+                       return;
+                    }
+               }
+          }
+     }
+
+   close(fd);
+}
+
+static Linux_Proc_Socket_Stat *
+_linux_proc_socket_stats_get(int *count)
+{
+   Linux_Proc_Socket_Stat *stats;
+   int capacity = 0, out_count = 0;
+
+   *count = 0;
+
+   stats = NULL;
+   _linux_proc_socket_diag_collect(AF_INET, &stats, &out_count, &capacity);
+   _linux_proc_socket_diag_collect(AF_INET6, &stats, &out_count, &capacity);
+
+   if (!out_count) return stats;
+
+   qsort(stats, out_count, sizeof(*stats), _linux_proc_socket_stat_cmp);
+
+   int write = 0;
+   for (int read = 0; read < out_count; read++)
+     {
+        if ((write > 0) && (stats[read].inode == stats[write - 1].inode))
+          {
+             stats[write - 1].in += stats[read].in;
+             stats[write - 1].out += stats[read].out;
+             continue;
+          }
+        if (write != read) stats[write] = stats[read];
+        write++;
+     }
+
+   *count = write;
+   return stats;
+}
+
+static const Linux_Proc_Socket_Stat *
+_linux_proc_socket_stat_find(const Linux_Proc_Socket_Stat *stats, int count, unsigned long inode)
+{
+   Linux_Proc_Socket_Stat key;
+   key.inode = inode;
+   key.in = 0;
+   key.out = 0;
+   return bsearch(&key, stats, count, sizeof(*stats), _linux_proc_socket_stat_cmp);
+}
+
+static bool
+_linux_proc_net_usage_add(proc_net_t ***procs, int *n, pid_t pid, uint64_t in, uint64_t out)
+{
+   proc_net_t **tmp;
+   proc_net_t *proc;
+
+   tmp = realloc(*procs, (*n + 1) * sizeof(**procs));
+   if (!tmp) return false;
+   *procs = tmp;
+
+   proc = calloc(1, sizeof(*proc));
+   if (!proc) return false;
+
+   proc->pid = pid;
+   proc->in = in;
+   proc->out = out;
+
+   (*procs)[*n] = proc;
+   (*n)++;
+
+   return true;
+}
+
+static proc_net_t **
+_linux_process_network_usage_get(int *n)
+{
+   DIR *dir;
+   struct dirent *entry;
+   Linux_Proc_Socket_Stat *sockets;
+   int socket_count;
+   proc_net_t **procs = NULL;
+
+   *n = 0;
+
+   sockets = _linux_proc_socket_stats_get(&socket_count);
+   if ((!sockets) || (!socket_count))
+     {
+        free(sockets);
+        return NULL;
+     }
+
+   dir = opendir("/proc");
+   if (!dir)
+     {
+        free(sockets);
+        return NULL;
+     }
+
+   while ((entry = readdir(dir)))
+     {
+        char *end = NULL;
+        unsigned long pid_ul;
+        pid_t pid;
+        char fd_dir[PATH_MAX];
+        DIR *fd;
+        struct dirent *fd_entry;
+        uint64_t in = 0, out = 0;
+
+        if (!isdigit((unsigned char) entry->d_name[0])) continue;
+
+        pid_ul = strtoul(entry->d_name, &end, 10);
+        if (!end || *end) continue;
+        if (pid_ul > INT_MAX) continue;
+        pid = (pid_t) pid_ul;
+
+        snprintf(fd_dir, sizeof(fd_dir), "/proc/%d/fd", pid);
+        fd = opendir(fd_dir);
+        if (!fd) continue;
+
+        while ((fd_entry = readdir(fd)))
+          {
+             char link_path[PATH_MAX];
+             char target[256];
+             ssize_t len;
+             unsigned long inode;
+             const Linux_Proc_Socket_Stat *sock;
+
+             if (fd_entry->d_name[0] == '.') continue;
+
+             size_t base_len = strlen(fd_dir);
+             size_t name_len = strlen(fd_entry->d_name);
+             if ((base_len + 1 + name_len + 1) > sizeof(link_path)) continue;
+             memcpy(link_path, fd_dir, base_len);
+             link_path[base_len] = '/';
+             memcpy(link_path + base_len + 1, fd_entry->d_name, name_len);
+             link_path[base_len + 1 + name_len] = '\0';
+             len = readlink(link_path, target, sizeof(target) - 1);
+             if (len <= 0) continue;
+
+             target[len] = '\0';
+             if (strncmp(target, "socket:[", 8)) continue;
+
+             inode = strtoul(target + 8, &end, 10);
+             if (!end || (*end != ']')) continue;
+
+             sock = _linux_proc_socket_stat_find(sockets, socket_count, inode);
+             if (!sock) continue;
+
+             in += sock->in;
+             out += sock->out;
+          }
+
+        closedir(fd);
+
+        if ((!in) && (!out)) continue;
+        if (!_linux_proc_net_usage_add(&procs, n, pid, in, out)) break;
+     }
+
+   closedir(dir);
+   free(sockets);
+
+   return procs;
+}
+
 #endif
 
 net_iface_t **
@@ -189,4 +485,26 @@ system_network_ifaces_get(int *n)
 #else
    return NULL;
 #endif
+}
+
+proc_net_t **
+system_network_process_usage_get(int *n)
+{
+   *n = 0;
+#if defined(__linux__)
+   return _linux_process_network_usage_get(n);
+#else
+   return NULL;
+#endif
+}
+
+void
+system_network_process_usage_free(proc_net_t **procs, int n)
+{
+   if (!procs) return;
+
+   for (int i = 0; i < n; i++)
+     free(procs[i]);
+
+   free(procs);
 }

@@ -4,7 +4,7 @@
 
 #include <Eina.h>
 #include <Ecore.h>
-#include <Ecore_Con.h>
+#include <Ecore_Ipc.h>
 #include "evisum_server.h"
 #include "src/bin/ui/evisum_ui.h"
 #include "evisum_config.h"
@@ -12,30 +12,47 @@
 #define LISTEN_SOCKET_NAME "evisum_server"
 #define WANTED             "bonjour monde"
 
+typedef enum {
+  EVISUM_MSG_CORE // core message domain - can add more
+} Evisum_Msg_Major;
+
+enum {
+  EVISUM_MSG_HELLO, // hello from client to server
+  EVISUM_MSG_HELLO_REPLY, // hello reply from server to client
+} Evisum_Msg_Minor;
+
 typedef struct _Evisum_Server {
     Ecore_Event_Handler *handler;
-    Ecore_Con_Server *srv;
+    Ecore_Ipc_Server *srv;
 } Evisum_Server;
+
+typedef struct _Evisum_Msg_Hello {
+    Evisum_Action action;
+    int           pid;
+} Evisum_Msg_Hello;
 
 static void *_evisum_server = NULL;
 
 static Eina_Bool
-_evisum_server_server_client_connect_cb(void *data EINA_UNUSED, int type EINA_UNUSED, void *event) {
-    Ecore_Con_Event_Client_Data *ev;
-    Evisum_Action *action;
-    Evisum_Ui *ui;
-    int *pid;
+_evisum_server_server_client_data_cb(void *data EINA_UNUSED, int type EINA_UNUSED, void *event) {
+    Ecore_Ipc_Event_Client_Data *ev = event;
+    Evisum_Ui *ui = data;
 
-    ev = event;
-    action = ev->data;
-    ui = data;
+    if ((ev->major == 0) && (ev->minor == 0) &&
+        (ev->size == sizeof(Evisum_Msg_Hello))) {
+      // if this is the hello message
+      Evisum_Msg_Hello *hello = ev->data;
 
-    pid = ev->data + sizeof(int);
+      evisum_ui_activate(ui, hello->action, hello->pid);
+      ecore_ipc_client_send(ev->client,
+                            EVISUM_MSG_CORE, EVISUM_MSG_HELLO_REPLY,
+                            0, 0, 0, // ref, ref_to, response <- not used
+                            WANTED, strlen(WANTED) + 1);
+      // yes data can just be a string, but guaranteedd to be all there on
+      // the other end. also send the nul byte at the string end to be nice
+      // so it's terminated without needing a copy
+    }
 
-    ecore_con_client_send(ev->client, WANTED, strlen(WANTED));
-    ecore_con_client_flush(ev->client);
-
-    evisum_ui_activate(ui, *action, *pid);
 
     return ECORE_CALLBACK_RENEW;
 }
@@ -46,7 +63,7 @@ evisum_server_shutdown(void) {
     if (!server) return;
 
     ecore_event_handler_del(server->handler);
-    ecore_con_server_del(server->srv);
+    ecore_ipc_server_del(server->srv);
     free(server);
 }
 
@@ -56,17 +73,17 @@ evisum_server_init(void *data) {
     Evisum_Server *server = calloc(1, sizeof(Evisum_Server));
     if (!server) return 0;
 
-    server->srv = ecore_con_server_add(ECORE_CON_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
+    server->srv = ecore_ipc_server_add(ECORE_IPC_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
     if (!server->srv) return 0;
 
-    server->handler = ecore_event_handler_add(ECORE_CON_EVENT_CLIENT_DATA, _evisum_server_server_client_connect_cb, ui);
+    server->handler = ecore_event_handler_add(ECORE_IPC_EVENT_CLIENT_DATA, _evisum_server_server_client_data_cb, ui);
     _evisum_server = server;
 
     return 1;
 }
 
 typedef struct _Evisum_Server_Client {
-    Ecore_Con_Server *srv;
+    Ecore_Ipc_Server *srv;
     Evisum_Action action;
     int pid;
     Eina_Bool success;
@@ -74,7 +91,7 @@ typedef struct _Evisum_Server_Client {
 
 static Eina_Bool
 _evisum_server_client_done_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED) {
-    Ecore_Con_Event_Server_Del *ev;
+    Ecore_Ipc_Event_Server_Del *ev;
     Evisum_Server_Client *client = data;
 
     ev = event;
@@ -88,8 +105,8 @@ _evisum_server_client_done_cb(void *data, int type EINA_UNUSED, void *event EINA
 
 static Eina_Bool
 _evisum_server_client_data_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED) {
-    Ecore_Con_Server *srv;
-    Ecore_Con_Event_Server_Data *ev;
+    Ecore_Ipc_Server *srv;
+    Ecore_Ipc_Event_Server_Data *ev;
     Evisum_Server_Client *client = data;
 
     ev = event;
@@ -105,19 +122,22 @@ _evisum_server_client_data_cb(void *data, int type EINA_UNUSED, void *event EINA
 
 static Eina_Bool
 _evisum_server_client_connect_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED) {
-    Ecore_Con_Event_Server_Add *ev;
-    Ecore_Con_Server *srv;
+    Ecore_Ipc_Event_Server_Add *ev;
+    Ecore_Ipc_Server *srv;
     Evisum_Server_Client *client;
+    Evisum_Msg_Hello hello;
 
     ev = event;
     srv = ev->server;
     client = data;
 
     if (client->srv != srv) return ECORE_CALLBACK_RENEW;
-
-    ecore_con_server_send(srv, &client->action, sizeof(Evisum_Action));
-    ecore_con_server_send(srv, &client->pid, sizeof(int));
-    ecore_con_server_flush(srv);
+    hello.action = client->action;
+    hello.pid = client->pid;
+    ecore_ipc_server_send(srv,
+                          EVISUM_MSG_CORE, EVISUM_MSG_HELLO,
+                          0, 0, 0, // ref, ref_to, response <- not used
+                          &hello, sizeof(hello));
 
     return ECORE_CALLBACK_DONE;
 }
@@ -125,10 +145,10 @@ _evisum_server_client_connect_cb(void *data, int type EINA_UNUSED, void *event E
 Eina_Bool
 evisum_server_client_add(Evisum_Action action, int pid) {
     Evisum_Server_Client *client;
-    Ecore_Event_Handler *handler[4];
+    Ecore_Event_Handler *handler[3];
     Eina_Bool ok;
 
-    Ecore_Con_Server *srv = ecore_con_server_connect(ECORE_CON_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
+    Ecore_Ipc_Server *srv = ecore_ipc_server_connect(ECORE_IPC_LOCAL_USER, LISTEN_SOCKET_NAME, 0, NULL);
     if (!srv) return 0;
 
     client = calloc(1, sizeof(Evisum_Server_Client));
@@ -138,17 +158,15 @@ evisum_server_client_add(Evisum_Action action, int pid) {
     client->pid = pid;
     client->srv = srv;
 
-    handler[0] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ADD, _evisum_server_client_connect_cb, client);
-    handler[1] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DEL, _evisum_server_client_done_cb, client);
-    handler[2] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_ERROR, _evisum_server_client_done_cb, client);
-    handler[3] = ecore_event_handler_add(ECORE_CON_EVENT_SERVER_DATA, _evisum_server_client_data_cb, client);
+    handler[0] = ecore_event_handler_add(ECORE_IPC_EVENT_SERVER_ADD, _evisum_server_client_connect_cb, client);
+    handler[1] = ecore_event_handler_add(ECORE_IPC_EVENT_SERVER_DEL, _evisum_server_client_done_cb, client);
+    handler[2] = ecore_event_handler_add(ECORE_IPC_EVENT_SERVER_DATA, _evisum_server_client_data_cb, client);
 
     ecore_main_loop_begin();
 
     ecore_event_handler_del(handler[0]);
     ecore_event_handler_del(handler[1]);
     ecore_event_handler_del(handler[2]);
-    ecore_event_handler_del(handler[3]);
 
     ok = client->success;
     free(client);

@@ -10,6 +10,6 @@ typedef enum {
     PROC_VIEW_MANUAL = 3,
 } Evisum_Proc_Action;
 
-void evisum_ui_process_view_win_add(int pid, Evisum_Proc_Action action);
+void evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action);
 
 #endif

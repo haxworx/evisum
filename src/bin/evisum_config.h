@@ -35,7 +35,7 @@ typedef struct _Evisum_Config {
         int height;
         int x, y;
         Eina_Bool restart;
-        char *visual;
+        Eina_Stringshare *visual;
     } cpu;
 
     struct {

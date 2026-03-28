@@ -11,7 +11,8 @@ host_os = host_machine.system()
 
 cc = meson.get_compiler('c')
 
-deps = dependency('elementary', version: efl_version)
+deps = [ dependency('elementary', version: efl_version),
+         dependency('ecore-ipc', version: efl_version), ]
 
 deps_os = declare_dependency(link_args : [] )
 if host_os == 'freebsd' or host_os == 'openbsd' or host_os == 'dragonfly'

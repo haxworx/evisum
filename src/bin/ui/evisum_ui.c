@@ -4,6 +4,7 @@
 #include "evisum_server.h"
 
 #include "system/filesystems.h"
+#include "background/evisum_background.h"
 
 #include "evisum_ui.h"
 #include "ui/evisum_ui_colors.h"
@@ -678,7 +679,7 @@ evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid) {
             evisum_ui_process_list_win_add(ui);
             break;
         case EVISUM_ACTION_PROCESS:
-            evisum_ui_process_view_win_add(pid, PROC_VIEW_DEFAULT);
+            evisum_ui_process_view_win_add(ui, pid, PROC_VIEW_DEFAULT);
             break;
         case EVISUM_ACTION_CPU:
             evisum_ui_cpu_win_add(ui);
@@ -704,6 +705,7 @@ evisum_ui_shutdown(Evisum_Ui *ui) {
 
     ecore_thread_cancel(ui->background_poll_thread);
     ecore_thread_wait(ui->background_poll_thread, 0.5);
+    evisum_background_shutdown(ui);
 
     if (ui->cpu.visual) free(ui->cpu.visual);
     free(ui);

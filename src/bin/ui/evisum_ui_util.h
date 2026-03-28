@@ -44,6 +44,8 @@ int evisum_ui_textblock_font_size_get(Evas_Object *tb);
 
 void evisum_ui_textblock_font_size_set(Evas_Object *tb, int new_size);
 
+char *evisum_ui_text_man2entry(const char *text);
+
 void evisum_about_window_show(void *data);
 
 #endif
