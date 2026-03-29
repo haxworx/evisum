@@ -168,7 +168,7 @@ _evisum_ui_memory_series_legend_add(Evisum_Ui_Memory_View *view, Memory_Series *
     pb = elm_progressbar_add(view->legend_tb);
     elm_object_text_set(pb, NULL);
     elm_progressbar_span_size_set(pb, ELM_SCALE_SIZE(220));
-    elm_progressbar_unit_format_set(pb, "0 B / 0 B");
+    elm_progressbar_unit_format_set(pb, _("0 B / 0 B"));
     evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, 0.0);
     evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
     evas_object_show(pb);
@@ -493,8 +493,7 @@ evisum_ui_mem_win_add(Evisum_Ui *ui) {
     evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_memory_graph_bg_resize_cb, view);
     evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_memory_graph_bg_resize_cb, view);
 
-    view->graph_img = evas_object_image_filled_add(evas);
-    evas_object_image_alpha_set(view->graph_img, EINA_FALSE);
+    view->graph_img = evas_object_vg_add(evas);
     evas_object_size_hint_weight_set(view->graph_img, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set(view->graph_img, EVAS_HINT_FILL, EVAS_HINT_FILL);
     elm_table_pack(graph_tb, view->graph_img, 0, 0, 1, 1);

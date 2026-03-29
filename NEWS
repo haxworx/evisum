@@ -1,9 +1,19 @@
 ============
-Evisum 1.1.1
+Evisum 1.2.0-beta
 ============
 
   * Add network in/out tracking (Linux only).
   * Update process list and process view.
+  * Massive preparatory work undertaken to prepare for evisum 2.0.
+    It will include a new engine which has already been implemented,
+    though it will take time to test and verify it's reliability.
+  * Fix IPC code.
+  * Fix invalid use of EDC (strdup/stringshare).
+  * Rework the animator on the about window.
+  * Add support for network transfer per-process (Linux).
+  * Create our own widget "exel".
+  * Tidy up the other cpu visuals.
+  * Use evas_vg and vectors for our graphs.
 
 ============
 Evisum 1.1.0

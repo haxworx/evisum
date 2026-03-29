@@ -2,51 +2,85 @@
 #include "evisum_ui_colors.h"
 #include <math.h>
 
+#define GRAPH_LINE_STROKE_WIDTH 1.5
+#define GRAPH_ROOT_DATA_KEY     "evisum_ui_graph_root"
+
 static Eina_Bool
-_graph_target_valid(Evas_Object *graph_bg, Evas_Object *graph_img) {
-    return graph_bg && graph_img && evas_object_evas_get(graph_bg) && evas_object_evas_get(graph_img);
-}
-
-static uint32_t
-_argb(unsigned int r, unsigned int g, unsigned int b) {
-    return 0xff000000 | (r << 16) | (g << 8) | b;
+_graph_target_valid(Evas_Object *graph_bg, Evas_Object *graph_vg) {
+    return graph_bg && graph_vg && evas_object_evas_get(graph_bg) && evas_object_evas_get(graph_vg);
 }
 
 static void
-_pixel_set(uint32_t *px, int w, int h, int x, int y, uint32_t color) {
-    if ((x < 0) || (y < 0) || (x >= w) || (y >= h)) return;
-    px[y * w + x] = color;
+_graph_root_children_clear(Evas_Vg_Container *root) {
+    Eina_Iterator *it;
+    Eina_List *nodes = NULL;
+    Evas_Vg_Node *node;
+
+    if (!root) return;
+
+    it = evas_vg_container_children_get(root);
+    if (!it) return;
+
+    EINA_ITERATOR_FOREACH(it, node)
+    nodes = eina_list_append(nodes, node);
+
+    eina_iterator_free(it);
+
+    EINA_LIST_FREE(nodes, node)
+    efl_del(node);
 }
 
-static void
-_pixel_blend(uint32_t *px, int w, int h, int x, int y, uint8_t sr, uint8_t sg, uint8_t sb, double alpha) {
-    uint32_t p;
-    uint8_t dr, dg, db;
-    uint8_t r, g, b;
+static Evas_Vg_Container *
+_graph_root_reset(Evas_Object *graph_vg) {
+    Evas_Vg_Container *root = evas_object_data_get(graph_vg, GRAPH_ROOT_DATA_KEY);
+    Evas_Vg_Node *root_node;
 
-    if ((x < 0) || (y < 0) || (x >= w) || (y >= h)) return;
-    if (alpha <= 0.0) return;
-    if (alpha > 1.0) alpha = 1.0;
+    root_node = evas_object_vg_root_node_get(graph_vg);
+    if (!root || (root_node != (Evas_Vg_Node *) root)) {
+        root = evas_vg_container_add(graph_vg);
+        if (!root) return NULL;
 
-    p = px[y * w + x];
-    dr = (p >> 16) & 0xff;
-    dg = (p >> 8) & 0xff;
-    db = p & 0xff;
+        evas_object_vg_root_node_set(graph_vg, (Evas_Vg_Node *) root);
+        evas_object_data_set(graph_vg, GRAPH_ROOT_DATA_KEY, root);
+        return root;
+    }
 
-    r = (uint8_t) ((double) dr * (1.0 - alpha) + (double) sr * alpha);
-    g = (uint8_t) ((double) dg * (1.0 - alpha) + (double) sg * alpha);
-    b = (uint8_t) ((double) db * (1.0 - alpha) + (double) sb * alpha);
-    px[y * w + x] = 0xff000000 | (r << 16) | (g << 8) | b;
+    _graph_root_children_clear(root);
+    return root;
+}
+
+static Evas_Vg_Shape *
+_shape_stroke_add(Evas_Vg_Container *root, uint8_t r, uint8_t g, uint8_t b, uint8_t a, double width) {
+    Evas_Vg_Shape *shape;
+
+    shape = evas_vg_shape_add(root);
+    if (!shape) return NULL;
+
+    evas_vg_shape_stroke_width_set(shape, width);
+    evas_vg_shape_stroke_color_set(shape, r, g, b, a);
+    return shape;
+}
+
+static uint8_t
+_alpha_to_u8(double alpha) {
+    if (alpha <= 0.0) return 0;
+    if (alpha >= 1.0) return 255;
+    return (uint8_t) lround(alpha * 255.0);
 }
 
 static double
-_fpart(double x) {
-    return x - floor(x);
+_clamp_double(double value, double min, double max) {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
 }
 
 static double
-_rfpart(double x) {
-    return 1.0 - _fpart(x);
+_sample_y_pos(double value, double y_max, int view_y, int view_h) {
+    double y;
+
+    y = (double) view_y + (1.0 - (value / y_max)) * (double) (view_h - 1);
+    return _clamp_double(y, (double) view_y, (double) (view_y + view_h - 1));
 }
 
 static int
@@ -99,94 +133,18 @@ _square_grid_viewport_calc(int graph_w, int graph_h, int sample_count, int x_gri
     *out_h = view_h;
 }
 
-static void
-_pixel_line_aa(uint32_t *px, int w, int h, double x0, double y0, double x1, double y1, uint8_t r, uint8_t g, uint8_t b,
-               double alpha) {
-    Eina_Bool steep;
-    double dx, dy, grad, xend, yend, xgap, intery;
-    int xpxl1, ypxl1, xpxl2, ypxl2;
-
-    steep = fabs(y1 - y0) > fabs(x1 - x0);
-    if (steep) {
-        double t;
-        t = x0;
-        x0 = y0;
-        y0 = t;
-        t = x1;
-        x1 = y1;
-        y1 = t;
-    }
-    if (x0 > x1) {
-        double t;
-        t = x0;
-        x0 = x1;
-        x1 = t;
-        t = y0;
-        y0 = y1;
-        y1 = t;
-    }
-
-    dx = x1 - x0;
-    dy = y1 - y0;
-    grad = (dx == 0.0) ? 1.0 : (dy / dx);
-
-    xend = round(x0);
-    yend = y0 + grad * (xend - x0);
-    xgap = _rfpart(x0 + 0.5);
-    xpxl1 = (int) xend;
-    ypxl1 = (int) floor(yend);
-    if (steep) {
-        _pixel_blend(px, w, h, ypxl1, xpxl1, r, g, b, _rfpart(yend) * xgap * alpha);
-        _pixel_blend(px, w, h, ypxl1 + 1, xpxl1, r, g, b, _fpart(yend) * xgap * alpha);
-    } else {
-        _pixel_blend(px, w, h, xpxl1, ypxl1, r, g, b, _rfpart(yend) * xgap * alpha);
-        _pixel_blend(px, w, h, xpxl1, ypxl1 + 1, r, g, b, _fpart(yend) * xgap * alpha);
-    }
-    intery = yend + grad;
-
-    xend = round(x1);
-    yend = y1 + grad * (xend - x1);
-    xgap = _fpart(x1 + 0.5);
-    xpxl2 = (int) xend;
-    ypxl2 = (int) floor(yend);
-    if (steep) {
-        _pixel_blend(px, w, h, ypxl2, xpxl2, r, g, b, _rfpart(yend) * xgap * alpha);
-        _pixel_blend(px, w, h, ypxl2 + 1, xpxl2, r, g, b, _fpart(yend) * xgap * alpha);
-    } else {
-        _pixel_blend(px, w, h, xpxl2, ypxl2, r, g, b, _rfpart(yend) * xgap * alpha);
-        _pixel_blend(px, w, h, xpxl2, ypxl2 + 1, r, g, b, _fpart(yend) * xgap * alpha);
-    }
-
-    if (steep) {
-        for (int x = xpxl1 + 1; x <= xpxl2 - 1; x++) {
-            int iy = (int) floor(intery);
-            _pixel_blend(px, w, h, iy, x, r, g, b, _rfpart(intery) * alpha);
-            _pixel_blend(px, w, h, iy + 1, x, r, g, b, _fpart(intery) * alpha);
-            intery += grad;
-        }
-    } else {
-        for (int x = xpxl1 + 1; x <= xpxl2 - 1; x++) {
-            int iy = (int) floor(intery);
-            _pixel_blend(px, w, h, x, iy, r, g, b, _rfpart(intery) * alpha);
-            _pixel_blend(px, w, h, x, iy + 1, r, g, b, _fpart(intery) * alpha);
-            intery += grad;
-        }
-    }
-}
-
 void
-evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_img, int sample_count, int x_grid_step_samples,
+evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_vg, int sample_count, int x_grid_step_samples,
                      int y_grid_step_percent, double y_max, const Evisum_Ui_Graph_Series *series, int series_count,
                      const Evisum_Ui_Graph_Layer *layers, int layer_count) {
-    uint32_t *px;
+    Evas_Vg_Container *root;
+    Evas_Vg_Shape *shape;
     int gx, gy, gw, gh;
-    int x, y;
     int view_x, view_y, view_w, view_h;
-    uint8_t bg_r, bg_g, bg_b;
     uint8_t grid_v_r, grid_v_g, grid_v_b;
     uint8_t grid_h_r, grid_h_g, grid_h_b;
 
-    if (!_graph_target_valid(graph_bg, graph_img) || (sample_count < 2)) return;
+    if (!_graph_target_valid(graph_bg, graph_vg) || (sample_count < 2)) return;
     if (x_grid_step_samples < 1) x_grid_step_samples = 1;
     if (y_grid_step_percent < 1) y_grid_step_percent = 1;
     if (y_grid_step_percent > 100) y_grid_step_percent = 100;
@@ -198,36 +156,44 @@ evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_img, int sample_c
     evas_object_geometry_get(graph_bg, &gx, &gy, &gw, &gh);
     if ((gw < 10) || (gh < 10)) return;
 
-    evas_object_move(graph_img, gx, gy);
-    evas_object_resize(graph_img, gw, gh);
-    evas_object_image_size_set(graph_img, gw, gh);
-    evas_object_image_fill_set(graph_img, 0, 0, gw, gh);
+    evas_object_move(graph_vg, gx, gy);
+    evas_object_resize(graph_vg, gw, gh);
 
-    px = evas_object_image_data_get(graph_img, EINA_TRUE);
-    if (!px) return;
+    evisum_graph_widget_colors_get(NULL, NULL, NULL, &grid_v_r, &grid_v_g, &grid_v_b, &grid_h_r, &grid_h_g, &grid_h_b);
 
-    evisum_graph_widget_colors_get(&bg_r, &bg_g, &bg_b, &grid_v_r, &grid_v_g, &grid_v_b, &grid_h_r, &grid_h_g,
-                                   &grid_h_b);
-
-    for (y = 0; y < gh; y++)
-        for (x = 0; x < gw; x++) px[y * gw + x] = _argb(bg_r, bg_g, bg_b);
+    root = _graph_root_reset(graph_vg);
+    if (!root) return;
 
     _square_grid_viewport_calc(gw, gh, sample_count, x_grid_step_samples, y_grid_step_percent, &view_x, &view_y,
                                &view_w, &view_h);
+    if ((view_w < 1) || (view_h < 1)) return;
 
-    for (int sample_idx = 0; sample_idx < sample_count; sample_idx += x_grid_step_samples) {
-        x = view_x + _sample_x_pos(sample_idx, sample_count, view_w);
-        for (y = view_y; y < (view_y + view_h); y++) _pixel_set(px, gw, gh, x, y, _argb(grid_v_r, grid_v_g, grid_v_b));
+    shape = _shape_stroke_add(root, grid_v_r, grid_v_g, grid_v_b, 255, 1.0);
+    if (shape) {
+        for (int sample_idx = 0; sample_idx < sample_count; sample_idx += x_grid_step_samples) {
+            int x;
+            double vx;
+
+            x = view_x + _sample_x_pos(sample_idx, sample_count, view_w);
+            vx = (double) x + 0.5;
+            evas_vg_shape_append_move_to(shape, vx, (double) view_y);
+            evas_vg_shape_append_line_to(shape, vx, (double) (view_y + view_h - 1));
+        }
     }
 
-    for (int percent = 0; percent <= 100; percent += y_grid_step_percent) {
-        y = view_y + (int) lround((1.0 - ((double) percent / 100.0)) * (double) (view_h - 1));
-        for (x = view_x; x < (view_x + view_w); x++) _pixel_set(px, gw, gh, x, y, _argb(grid_h_r, grid_h_g, grid_h_b));
+    shape = _shape_stroke_add(root, grid_h_r, grid_h_g, grid_h_b, 255, 1.0);
+    if (shape) {
+        for (int percent = 0; percent <= 100; percent += y_grid_step_percent) {
+            double y;
+
+            y = (double) view_y + (1.0 - ((double) percent / 100.0)) * (double) (view_h - 1) + 0.5;
+            evas_vg_shape_append_move_to(shape, (double) view_x, y);
+            evas_vg_shape_append_line_to(shape, (double) (view_x + view_w - 1), y);
+        }
     }
 
     for (int s = 0; s < series_count; s++) {
-        int idx, start, count;
-        int x0, y0, x1, y1;
+        int start, count;
         const Evisum_Ui_Graph_Series *line = &series[s];
 
         if (!line->history || (line->history_count < 2)) continue;
@@ -239,32 +205,42 @@ evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_img, int sample_c
             count = sample_count;
         }
 
-        idx = sample_count - count;
-        x0 = view_x + _sample_x_pos(idx, sample_count, view_w);
-        y0 = view_y + (int) ((1.0 - (line->history[start] / y_max)) * (double) (view_h - 1));
-        if (y0 < view_y) y0 = view_y;
-        if (y0 >= (view_y + view_h)) y0 = view_y + view_h - 1;
+        for (int j = 0; j < layer_count; j++) {
+            uint8_t alpha = _alpha_to_u8(layers[j].alpha);
+            uint8_t pr, pg, pb;
+            double min_y = (double) view_y;
+            double max_y = (double) (view_y + view_h - 1);
+            int idx;
+            double x0, y0;
 
-        for (int i = 1; i < count; i++) {
-            idx = sample_count - count + i;
-            x1 = view_x + _sample_x_pos(idx, sample_count, view_w);
-            y1 = view_y + (int) ((1.0 - (line->history[start + i] / y_max)) * (double) (view_h - 1));
-            if (y1 < view_y) y1 = view_y;
-            if (y1 >= (view_y + view_h)) y1 = view_y + view_h - 1;
+            if (!alpha) continue;
 
-            for (int j = 0; j < layer_count; j++) {
-                _pixel_line_aa(px, gw, gh, (double) x0, (double) y0 + layers[j].offset, (double) x1,
-                               (double) y1 + layers[j].offset, line->color_r, line->color_g, line->color_b,
-                               layers[j].alpha);
+            pr = (uint8_t) (((unsigned int) line->color_r * (unsigned int) alpha) / 255U);
+            pg = (uint8_t) (((unsigned int) line->color_g * (unsigned int) alpha) / 255U);
+            pb = (uint8_t) (((unsigned int) line->color_b * (unsigned int) alpha) / 255U);
+            shape = _shape_stroke_add(root, pr, pg, pb, alpha, GRAPH_LINE_STROKE_WIDTH);
+            if (!shape) continue;
+
+            idx = sample_count - count;
+            x0 = (double) view_x + (double) _sample_x_pos(idx, sample_count, view_w);
+            y0 = _sample_y_pos(line->history[start], y_max, view_y, view_h) + layers[j].offset;
+            y0 = _clamp_double(y0, min_y, max_y);
+            evas_vg_shape_append_move_to(shape, x0, y0);
+
+            for (int i = 1; i < count; i++) {
+                double x1, y1;
+
+                idx = sample_count - count + i;
+                x1 = (double) view_x + (double) _sample_x_pos(idx, sample_count, view_w);
+                y1 = _sample_y_pos(line->history[start + i], y_max, view_y, view_h) + layers[j].offset;
+                y1 = _clamp_double(y1, min_y, max_y);
+                evas_vg_shape_append_line_to(shape, x1, y1);
             }
-
-            x0 = x1;
-            y0 = y1;
         }
     }
 
-    evas_object_image_data_set(graph_img, px);
-    evas_object_image_data_update_add(graph_img, 0, 0, gw, gh);
+    /* Keep VG output untinted; graph background color is provided by graph_bg. */
+    evas_object_color_set(graph_vg, 255, 255, 255, 255);
 }
 
 void

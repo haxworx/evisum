@@ -628,16 +628,16 @@ _evisum_ui_process_view_run_time_string(int64_t secs) {
 #if defined(__linux__)
 static char *
 _evisum_ui_process_view_net_rate_string(uint64_t rate) {
-    const char *unit = "B/s";
+    const char *unit = _("B/s");
     char buf[256];
     double value = rate;
 
     if (value > 1048576.0) {
         value /= 1048576.0;
-        unit = "MB/s";
+        unit = _("MB/s");
     } else if (value > 1024.0) {
         value /= 1024.0;
-        unit = "KB/s";
+        unit = _("KB/s");
     }
 
     snprintf(buf, sizeof(buf), "%.2f %s", value, unit);
@@ -731,17 +731,17 @@ _evisum_ui_process_view_general_view_update(Evisum_Ui_Process_View *view, Proc_I
     elm_object_text_set(view->general.entry_threads, eina_slstr_printf("%d", proc->numthreads));
     elm_object_text_set(view->general.entry_files, eina_slstr_printf("%d", proc->numfiles));
     if (!proc->is_kernel) elm_object_text_set(view->general.entry_virt, evisum_size_format(proc->mem_virt, 0));
-    else elm_object_text_set(view->general.entry_virt, "-");
+    else elm_object_text_set(view->general.entry_virt, _("-"));
 
     if ((!proc->is_kernel) || (view->kthreads_has_rss))
         elm_object_text_set(view->general.entry_rss, evisum_size_format(proc->mem_rss, 0));
-    else elm_object_text_set(view->general.entry_rss, "-");
+    else elm_object_text_set(view->general.entry_rss, _("-"));
 
     if (!proc->is_kernel) elm_object_text_set(view->general.entry_shared, evisum_size_format(proc->mem_shared, 0));
-    else elm_object_text_set(view->general.entry_shared, "-");
+    else elm_object_text_set(view->general.entry_shared, _("-"));
 
     if (!proc->is_kernel) elm_object_text_set(view->general.entry_size, evisum_size_format(proc->mem_size, 0));
-    else elm_object_text_set(view->general.entry_size, "-");
+    else elm_object_text_set(view->general.entry_size, _("-"));
 
     s = _evisum_ui_process_view_run_time_string(proc->run_time);
     if (s) {
@@ -774,8 +774,8 @@ _evisum_ui_process_view_general_view_update(Evisum_Ui_Process_View *view, Proc_I
             free(s);
         }
     } else {
-        elm_object_text_set(view->general.entry_net_in, "-");
-        elm_object_text_set(view->general.entry_net_out, "-");
+        elm_object_text_set(view->general.entry_net_in, _("-"));
+        elm_object_text_set(view->general.entry_net_out, _("-"));
     }
 #endif
 }
@@ -1538,6 +1538,9 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action
     view->threads.widget_exel = evisum_ui_widget_exel_create(view->win);
     if (!view->threads.widget_exel) {
         evas_object_del(view->win);
+        evisum_icon_cache_del(view->icon_cache);
+        free(view->selected_cmd);
+        free(view);
         return;
     }
     evisum_ui_widget_exel_field_bounds_set(view->threads.widget_exel, 0, 5);
@@ -1547,7 +1550,11 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action
 
     view->children.widget_exel = evisum_ui_widget_exel_create(view->win);
     if (!view->children.widget_exel) {
+        evisum_ui_widget_exel_free(view->threads.widget_exel);
         evas_object_del(view->win);
+        evisum_icon_cache_del(view->icon_cache);
+        free(view->selected_cmd);
+        free(view);
         return;
     }
     evisum_ui_widget_exel_field_bounds_set(view->children.widget_exel, 0, 1);

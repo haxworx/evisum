@@ -63,7 +63,7 @@ evisum_ui_config_save(Evisum_Ui *ui) {
         config()->cpu.x = ui->cpu.x;
         config()->cpu.y = ui->cpu.y;
         config()->cpu.restart = ui->cpu.restart;
-        config()->cpu.visual = ui->cpu.visual;
+        eina_stringshare_replace(&config()->cpu.visual, ui->cpu.visual);
     }
 
     if (ui->mem.win) {
@@ -142,7 +142,7 @@ evisum_ui_config_load(Evisum_Ui *ui) {
     ui->cpu.x = config()->cpu.x;
     ui->cpu.y = config()->cpu.y;
     ui->cpu.restart = config()->cpu.restart;
-    ui->cpu.visual = strdup(config()->cpu.visual);
+    eina_stringshare_replace(&ui->cpu.visual, config()->cpu.visual);
 
     ui->mem.width = config()->mem.width;
     ui->mem.height = config()->mem.height;
@@ -357,8 +357,7 @@ _cpu_visual_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_inf
     ui = data;
     txt = elm_object_text_get(obj);
 
-    if (ui->cpu.visual) free(ui->cpu.visual);
-    ui->cpu.visual = strdup(txt);
+    eina_stringshare_replace(&ui->cpu.visual, txt);
     evisum_ui_cpu_win_restart(ui);
 }
 
@@ -500,6 +499,7 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
             elm_box_pack_end(bx, btn);
             evas_object_show(btn);
             evas_object_smart_callback_add(btn, "clicked", _cpu_visual_clicked_cb, ui);
+            free(name);
         }
 
         return o;
@@ -707,7 +707,7 @@ evisum_ui_shutdown(Evisum_Ui *ui) {
     ecore_thread_wait(ui->background_poll_thread, 0.5);
     evisum_background_shutdown(ui);
 
-    if (ui->cpu.visual) free(ui->cpu.visual);
+    if (ui->cpu.visual) eina_stringshare_del(ui->cpu.visual);
     free(ui);
 }
 

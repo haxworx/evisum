@@ -294,7 +294,7 @@ _colors_fill(Evas_Object *colors) {
 Ui_Cpu_Data *
 cpu_visual_default(Evas_Object *parent_box) {
     Evas_Object *tbl, *tbl2, *box, *obj, *ic, *lb, *rec;
-    Evas_Object *fr, *bx, *hbx, *colors, *check;
+    Evas_Object *fr, *bx, *hbx, *colors, *check, *desc_fr;
     Ext *ext;
     int *cpu_order;
     int i, f;
@@ -506,6 +506,23 @@ cpu_visual_default(Evas_Object *parent_box) {
     evas_object_show(lb);
 
     elm_box_pack_end(box, fr);
+
+    desc_fr = elm_frame_add(box);
+    elm_object_text_set(desc_fr, _("Description"));
+    evas_object_size_hint_align_set(desc_fr, FILL, FILL);
+    evas_object_size_hint_weight_set(desc_fr, EXPAND, 0);
+    elm_box_pack_end(box, desc_fr);
+    evas_object_show(desc_fr);
+
+    lb = elm_label_add(desc_fr);
+    elm_label_line_wrap_set(lb, ELM_WRAP_WORD);
+    elm_object_text_set(lb,
+                        _("<align=left>This view shows CPU activity over time. "
+                          "It can also show frequency and temperature when available.</align>"));
+    evas_object_size_hint_align_set(lb, 0.0, 0.5);
+    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
+    elm_object_content_set(desc_fr, lb);
+    evas_object_show(lb);
 
     fr = elm_frame_add(box);
     elm_frame_autocollapse_set(fr, 1);

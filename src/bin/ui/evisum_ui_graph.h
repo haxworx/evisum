@@ -16,7 +16,7 @@ typedef struct _Evisum_Ui_Graph_Layer {
     double alpha;
 } Evisum_Ui_Graph_Layer;
 
-void evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_img, int sample_count, int x_grid_step_samples,
+void evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_vg, int sample_count, int x_grid_step_samples,
                           int y_grid_step_percent, double y_max, const Evisum_Ui_Graph_Series *series, int series_count,
                           const Evisum_Ui_Graph_Layer *layers, int layer_count);
 

@@ -190,7 +190,7 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
         case PROC_FIELD_CPU_USAGE:
             def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
             def->key = "cpu_u";
-            def->unit_format = "%1.1f %%";
+            def->unit_format = _("%1.1f %%");
             return EINA_TRUE;
         default: return EINA_FALSE;
     }
@@ -352,15 +352,15 @@ _evisum_ui_process_list_run_time_set(char *buf, size_t n, int64_t secs) {
 
 static void
 _evisum_ui_process_list_net_rate_set(char *buf, size_t n, uint64_t rate) {
-    const char *unit = "B/s";
+    const char *unit = _("B/s");
     double value = rate;
 
     if (value > 1048576.0) {
         value /= 1048576.0;
-        unit = "MB/s";
+        unit = _("MB/s");
     } else if (value > 1024.0) {
         value /= 1024.0;
-        unit = "KB/s";
+        unit = _("KB/s");
     }
 
     snprintf(buf, n, "%.2f %s", value, unit);
@@ -478,14 +478,14 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
     evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_SHARED, "share", buf);
 
     if ((ui->proc.has_wchan) && (proc->state[0] == 's' && proc->state[1] == 'l'))
-        snprintf(buf, sizeof(buf), "%s", proc->wchan ?: "-");
-    else snprintf(buf, sizeof(buf), "%s", proc->state ?: "-");
+        snprintf(buf, sizeof(buf), "%s", proc->wchan ?: _("-"));
+    else snprintf(buf, sizeof(buf), "%s", proc->state ?: _("-"));
     evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_STATE, "state", buf);
 
     _evisum_ui_process_list_run_time_set(buf, sizeof(buf), proc->run_time);
     evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_TIME, "time", buf);
 
-    snprintf(buf, sizeof(buf), "%1.1f %%", proc->cpu_usage);
+    snprintf(buf, sizeof(buf), _("%1.1f %%"), proc->cpu_usage);
     evisum_ui_widget_exel_item_field_progress_set(view->widget_exel, row, PROC_FIELD_CPU_USAGE, "cpu_u",
                                                   proc->cpu_usage / 100.0, buf);
 
@@ -545,7 +545,7 @@ _evisum_ui_process_list_summary_add(Evisum_Ui_Process_List_View *view) {
     evas_object_show(ic);
 
     view->summary.pb_cpu = pb = elm_progressbar_add(hbx);
-    elm_progressbar_unit_format_set(pb, "%1.2f %%");
+    elm_progressbar_unit_format_set(pb, _("%1.2f %%"));
     elm_progressbar_span_size_set(pb, 120);
     elm_box_pack_end(hbx, pb);
     evas_object_show(pb);
@@ -1011,7 +1011,7 @@ _evisum_ui_process_list_item_menu_create(Evisum_Ui_Process_List_View *view, Proc
     stopped = !(!strcmp(proc->state, "stop"));
 
     menu_it = _evisum_ui_process_list_item_menu_add(menu, NULL, evisum_icon_cache_find(view->icon_cache, proc),
-                                                    proc->command ?: "-", NULL, NULL);
+                                                    proc->command ?: _("-"), NULL, NULL);
 
     menu_it2 = _evisum_ui_process_list_item_menu_add(menu, menu_it, "actions", _("Actions"), NULL, NULL);
     _evisum_ui_process_list_item_menu_actions_add(menu, menu_it2, view);
@@ -1025,7 +1025,7 @@ _evisum_ui_process_list_item_menu_create(Evisum_Ui_Process_List_View *view, Proc
                                                      _evisum_ui_process_list_item_menu_stop_cb, view);
 
     elm_object_item_disabled_set(menu_it2, !stopped);
-    _evisum_ui_process_list_item_menu_add(menu, menu_it, "kill", "Kill", _evisum_ui_process_list_item_menu_kill_cb,
+    _evisum_ui_process_list_item_menu_add(menu, menu_it, "kill", _("Kill"), _evisum_ui_process_list_item_menu_kill_cb,
                                           view);
 
     elm_menu_item_separator_add(menu, menu_it);

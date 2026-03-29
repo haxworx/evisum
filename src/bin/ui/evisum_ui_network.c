@@ -135,15 +135,15 @@ _evisum_ui_network_iface_color_apply(Network_Interface *iface) {
 
 static char *
 _evisum_ui_network_transfer_format(double rate) {
-    const char *unit = "B/s";
+    const char *unit = _("B/s");
     char buf[256];
 
     if (rate > 1048576) {
         rate /= 1048576;
-        unit = "MB/s";
+        unit = _("MB/s");
     } else if ((rate > 1024) && (rate < 1048576)) {
         rate /= 1024;
-        unit = "KB/s";
+        unit = _("KB/s");
     }
 
     snprintf(buf, sizeof(buf), "%.2f %s", rate, unit);
@@ -497,8 +497,7 @@ evisum_ui_network_win_add(Evisum_Ui *ui) {
     evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_network_graph_bg_resize_cb, view);
     evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_network_graph_bg_resize_cb, view);
 
-    view->graph_img = evas_object_image_filled_add(evas);
-    evas_object_image_alpha_set(view->graph_img, EINA_FALSE);
+    view->graph_img = evas_object_vg_add(evas);
     evas_object_size_hint_weight_set(view->graph_img, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
     evas_object_size_hint_align_set(view->graph_img, EVAS_HINT_FILL, EVAS_HINT_FILL);
     elm_table_pack(graph_tb, view->graph_img, 0, 0, 1, 1);

@@ -112,10 +112,11 @@ evisum_ui_cpu_win_restart(Evisum_Ui *ui) {
 void
 evisum_ui_cpu_win_add(Evisum_Ui *ui) {
     Ui_Cpu_Data *pd;
-    Evas_Object *win, *box, *scr, *btn, *ic;
+    Evas_Object *win, *box, *scr, *btn, *ic, *bg;
     Evas_Object *tb;
     Elm_Layout *lay;
     Cpu_Visual *vis;
+    uint8_t bg_r, bg_g, bg_b;
 
     if (ui->cpu.win) {
         elm_win_raise(ui->cpu.win);
@@ -126,6 +127,14 @@ evisum_ui_cpu_win_add(Evisum_Ui *ui) {
     elm_win_autodel_set(win, 1);
     evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
     evas_object_size_hint_align_set(win, FILL, FILL);
+
+    evisum_graph_widget_colors_get(&bg_r, &bg_g, &bg_b, NULL, NULL, NULL, NULL, NULL, NULL);
+    bg = elm_bg_add(win);
+    elm_bg_color_set(bg, bg_r, bg_g, bg_b);
+    evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(bg, FILL, FILL);
+    elm_win_resize_object_add(win, bg);
+    evas_object_show(bg);
 
     scr = elm_scroller_add(win);
     evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
