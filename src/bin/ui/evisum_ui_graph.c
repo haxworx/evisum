@@ -244,6 +244,18 @@ evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_vg, int sample_co
 }
 
 void
+evisum_ui_graph_reset(Evas_Object *graph_vg) {
+    Evas_Vg_Container *root;
+
+    if (!graph_vg || !evas_object_evas_get(graph_vg)) return;
+
+    root = _graph_root_reset(graph_vg);
+    if (!root) return;
+
+    evas_object_color_set(graph_vg, 255, 255, 255, 255);
+}
+
+void
 evisum_ui_graph_bg_set(Evas_Object *graph_bg) {
     uint8_t r, g, b;
 

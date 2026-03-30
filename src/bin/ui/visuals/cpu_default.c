@@ -45,7 +45,7 @@ typedef struct {
 
 static void
 _core_times_main_cb(void *data, Ecore_Thread *thread) {
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
     int ncpu;
     Ext *ext = pd->ext;
 
@@ -77,7 +77,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
 }
 
 static void
-_update(Ui_Cpu_Data *pd, Core *cores) {
+_update(Evisum_Ui_Cpu_Visual_Data *pd, Core *cores) {
     Evas_Object *obj;
     unsigned int *pixels, *pix;
     Evas_Coord x, y, w, h;
@@ -175,7 +175,7 @@ typedef struct {
 } Explainer;
 
 static void
-_explain(Ui_Cpu_Data *pd, Core *cores) {
+_explain(Evisum_Ui_Cpu_Visual_Data *pd, Core *cores) {
     Eina_Strbuf *buf;
     Explainer *exp;
     Ext *ext;
@@ -213,7 +213,7 @@ _explain(Ui_Cpu_Data *pd, Core *cores) {
 
 static void
 _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
-    Ui_Cpu_Data *pd;
+    Evisum_Ui_Cpu_Visual_Data *pd;
     Core *cores;
     Ext *ext;
     static Eina_Bool was_confused = 0;
@@ -247,7 +247,7 @@ _cb_free(void *data) {
 
 static void
 _check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
     Ext *ext = pd->ext;
 
     ext->show_cpufreq = elm_check_state_get(obj);
@@ -255,7 +255,7 @@ _check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *ev
 
 static void
 _temp_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
     Ext *ext = pd->ext;
 
     ext->show_cputemp = elm_check_state_get(obj);
@@ -263,7 +263,7 @@ _temp_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, voi
 
 static void
 _confused_check_changed_cb(void *data EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
     Ext *ext = pd->ext;
 
     ext->confused = elm_check_state_get(obj);
@@ -291,8 +291,8 @@ _colors_fill(Evas_Object *colors) {
     evas_object_image_data_update_add(colors, 0, 0, 101, 1);
 }
 
-Ui_Cpu_Data *
-cpu_visual_default(Evas_Object *parent_box) {
+Evisum_Ui_Cpu_Visual_Data *
+evisum_ui_cpu_visual_default(Evas_Object *parent_box) {
     Evas_Object *tbl, *tbl2, *box, *obj, *ic, *lb, *rec;
     Evas_Object *fr, *bx, *hbx, *colors, *check, *desc_fr;
     Ext *ext;
@@ -301,7 +301,7 @@ cpu_visual_default(Evas_Object *parent_box) {
     char buf[128];
     Eina_Bool show_icons = 1;
 
-    Ui_Cpu_Data *pd = calloc(1, sizeof(Ui_Cpu_Data));
+    Evisum_Ui_Cpu_Visual_Data *pd = calloc(1, sizeof(Evisum_Ui_Cpu_Visual_Data));
     if (!pd) return NULL;
 
     pd->ext = ext = calloc(1, sizeof(Ext));
@@ -418,7 +418,7 @@ cpu_visual_default(Evas_Object *parent_box) {
         ext->explainers = eina_list_append(ext->explainers, exp);
     }
 
-    // Callback to free anything extra we pass around via the ext pointer in (Ui_Cpu_Data *).
+    // Callback to free anything extra we pass around via the ext pointer in (Evisum_Ui_Cpu_Visual_Data *).
     pd->ext_free_cb = _cb_free;
 
     bx = elm_box_add(box);

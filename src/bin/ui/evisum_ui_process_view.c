@@ -9,7 +9,6 @@
 typedef struct {
     Evisum_Ui *ui;
     Evas_Object *win;
-    Evas_Object *tb_content;
 
     Evas_Object *tab_general;
     Evas_Object *tab_children;
@@ -28,17 +27,14 @@ typedef struct {
     char *selected_cmd;
     int selected_pid;
     uint32_t poll_count;
-    int64_t pid_cpu_time;
-#if defined(__linux__)
-    uint64_t pid_net_in;
-    uint64_t pid_net_out;
-#endif
 
     Ecore_Thread *thread;
 
     Eina_Bool kthreads_has_rss;
+    Eina_Bool ignore_initial_resize;
 
     Eina_Hash *icon_cache;
+    Eina_Hash *proc_usage_cache;
 
     struct {
         Evas_Object *entry_cmd;
@@ -63,6 +59,8 @@ typedef struct {
 #if defined(__linux__)
         Evas_Object *entry_net_in;
         Evas_Object *entry_net_out;
+        Evas_Object *entry_disk_read;
+        Evas_Object *entry_disk_write;
 #endif
         Evas_Object *btn_start;
         Evas_Object *btn_stop;
@@ -99,10 +97,24 @@ typedef struct {
 
 } Evisum_Ui_Process_View;
 
+static int _process_view_last_width = 0;
+static int _process_view_last_height = 0;
+
 typedef struct {
     long cpu_time;
     long cpu_time_prev;
 } Thread_Cpu_Info;
+
+typedef struct {
+    int64_t start;
+    int64_t cpu_time;
+#if defined(__linux__)
+    uint64_t net_in;
+    uint64_t net_out;
+    uint64_t disk_read;
+    uint64_t disk_write;
+#endif
+} Proc_Usage_Cache;
 
 typedef struct {
     int tid;
@@ -174,6 +186,12 @@ static void
 _evisum_ui_process_view_hash_free_cb(void *data) {
     Thread_Cpu_Info *inf = data;
     free(inf);
+}
+
+static void
+_evisum_ui_process_view_usage_cache_free_cb(void *data) {
+    Proc_Usage_Cache *cache = data;
+    free(cache);
 }
 
 static Evas_Object *
@@ -627,12 +645,15 @@ _evisum_ui_process_view_run_time_string(int64_t secs) {
 
 #if defined(__linux__)
 static char *
-_evisum_ui_process_view_net_rate_string(uint64_t rate) {
+_evisum_ui_process_view_rate_string(uint64_t rate) {
     const char *unit = _("B/s");
     char buf[256];
     double value = rate;
 
-    if (value > 1048576.0) {
+    if (value > 1073741824.0) {
+        value /= 1073741824.0;
+        unit = _("GB/s");
+    } else if (value > 1048576.0) {
         value /= 1048576.0;
         unit = _("MB/s");
     } else if (value > 1024.0) {
@@ -762,20 +783,34 @@ _evisum_ui_process_view_general_view_update(Evisum_Ui_Process_View *view, Proc_I
 
 #if defined(__linux__)
     if (!proc->is_kernel) {
-        s = _evisum_ui_process_view_net_rate_string(proc->net_in);
+        s = _evisum_ui_process_view_rate_string(proc->net_in);
         if (s) {
             elm_object_text_set(view->general.entry_net_in, s);
             free(s);
         }
 
-        s = _evisum_ui_process_view_net_rate_string(proc->net_out);
+        s = _evisum_ui_process_view_rate_string(proc->net_out);
         if (s) {
             elm_object_text_set(view->general.entry_net_out, s);
+            free(s);
+        }
+
+        s = _evisum_ui_process_view_rate_string(proc->disk_read);
+        if (s) {
+            elm_object_text_set(view->general.entry_disk_read, s);
+            free(s);
+        }
+
+        s = _evisum_ui_process_view_rate_string(proc->disk_write);
+        if (s) {
+            elm_object_text_set(view->general.entry_disk_write, s);
             free(s);
         }
     } else {
         elm_object_text_set(view->general.entry_net_in, _("-"));
         elm_object_text_set(view->general.entry_net_out, _("-"));
+        elm_object_text_set(view->general.entry_disk_read, _("-"));
+        elm_object_text_set(view->general.entry_disk_write, _("-"));
     }
 #endif
 }
@@ -798,13 +833,14 @@ static void
 _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg) {
     Evisum_Ui_Process_View *view;
     Proc_Info *proc;
-    double cpu_usage = 0.0;
+    Proc_Usage_Cache *cache;
+    int64_t id;
     int elapsed;
 #if defined(__linux__)
-    uint64_t net_in = 0;
-    uint64_t net_out = 0;
     uint64_t net_in_abs = 0;
     uint64_t net_out_abs = 0;
+    uint64_t disk_read_abs = 0;
+    uint64_t disk_write_abs = 0;
 #endif
 
     view = data;
@@ -831,21 +867,84 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
         view->poll_count++;
         return;
     }
+    if (!view->proc_usage_cache) view->proc_usage_cache = eina_hash_int64_new(_evisum_ui_process_view_usage_cache_free_cb);
 
-    if ((view->pid_cpu_time) && (proc->cpu_time >= view->pid_cpu_time))
-        cpu_usage = (double) (proc->cpu_time - view->pid_cpu_time) / elapsed;
-
-    proc->cpu_usage = cpu_usage;
+    id = proc->pid;
+    cache = view->proc_usage_cache ? eina_hash_find(view->proc_usage_cache, &id) : NULL;
 #if defined(__linux__)
-    evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
-
-    if ((view->pid_net_in) && (net_in_abs >= view->pid_net_in)) net_in = (net_in_abs - view->pid_net_in) / elapsed;
-    if ((view->pid_net_out) && (net_out_abs >= view->pid_net_out))
-        net_out = (net_out_abs - view->pid_net_out) / elapsed;
-
-    proc->net_in = net_in;
-    proc->net_out = net_out;
+    disk_read_abs = proc->disk_read;
+    disk_write_abs = proc->disk_write;
 #endif
+    if (!cache) {
+        cache = calloc(1, sizeof(Proc_Usage_Cache));
+        if (cache) {
+            cache->start = proc->start;
+            cache->cpu_time = proc->cpu_time;
+#if defined(__linux__)
+            evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
+            cache->net_in = net_in_abs;
+            cache->net_out = net_out_abs;
+            cache->disk_read = disk_read_abs;
+            cache->disk_write = disk_write_abs;
+            proc->net_in = 0;
+            proc->net_out = 0;
+            proc->disk_read = 0;
+            proc->disk_write = 0;
+#endif
+            proc->cpu_usage = 0.0;
+            if (view->proc_usage_cache) eina_hash_add(view->proc_usage_cache, &id, cache);
+            else free(cache);
+        } else {
+            proc->cpu_usage = 0.0;
+#if defined(__linux__)
+            proc->net_in = 0;
+            proc->net_out = 0;
+            proc->disk_read = 0;
+            proc->disk_write = 0;
+#endif
+        }
+    } else if (cache->start != proc->start) {
+        cache->start = proc->start;
+        cache->cpu_time = proc->cpu_time;
+#if defined(__linux__)
+        evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
+        cache->net_in = net_in_abs;
+        cache->net_out = net_out_abs;
+        cache->disk_read = disk_read_abs;
+        cache->disk_write = disk_write_abs;
+        proc->net_in = 0;
+        proc->net_out = 0;
+        proc->disk_read = 0;
+        proc->disk_write = 0;
+#endif
+        proc->cpu_usage = 0.0;
+    } else {
+        if (cache->cpu_time && (proc->cpu_time >= cache->cpu_time))
+            proc->cpu_usage = (double) (proc->cpu_time - cache->cpu_time) / elapsed;
+        else proc->cpu_usage = 0.0;
+        cache->cpu_time = proc->cpu_time;
+#if defined(__linux__)
+        evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
+        if (cache->net_in && (net_in_abs >= cache->net_in)) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
+        else proc->net_in = 0;
+
+        if (cache->net_out && (net_out_abs >= cache->net_out)) proc->net_out = (net_out_abs - cache->net_out) / elapsed;
+        else proc->net_out = 0;
+
+        if (cache->disk_read && (disk_read_abs >= cache->disk_read))
+            proc->disk_read = (disk_read_abs - cache->disk_read) / elapsed;
+        else proc->disk_read = 0;
+
+        if (cache->disk_write && (disk_write_abs >= cache->disk_write))
+            proc->disk_write = (disk_write_abs - cache->disk_write) / elapsed;
+        else proc->disk_write = 0;
+
+        cache->net_in = net_in_abs;
+        cache->net_out = net_out_abs;
+        cache->disk_read = disk_read_abs;
+        cache->disk_write = disk_write_abs;
+#endif
+    }
 
     _evisum_ui_process_view_graph_update(view, proc);
     _evisum_ui_process_view_graph_summary_update(view, proc);
@@ -853,11 +952,6 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
     _evisum_ui_process_view_general_view_update(view, proc);
 
     view->poll_count++;
-    view->pid_cpu_time = proc->cpu_time;
-#if defined(__linux__)
-    view->pid_net_in = net_in_abs;
-    view->pid_net_out = net_out_abs;
-#endif
 
     proc_info_free(proc);
 }
@@ -914,7 +1008,7 @@ _evisum_ui_process_view_lb_add(Evas_Object *parent, const char *text) {
 
 static Evas_Object *
 _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_View *view) {
-    Evas_Object *fr, *hbx, *tb;
+    Evas_Object *fr, *hbx, *tb, *scr;
     Evas_Object *lb, *entry, *btn, *pad, *ic;
     Evas_Object *rec;
     Proc_Info *proc;
@@ -925,12 +1019,20 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
     evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
     evas_object_size_hint_align_set(fr, FILL, FILL);
 
+    scr = elm_scroller_add(parent);
+    evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(scr, FILL, FILL);
+    elm_scroller_policy_set(scr, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
+    elm_scroller_bounce_set(scr, 0, 1);
+    evas_object_show(scr);
+    elm_object_content_set(fr, scr);
+
     tb = elm_table_add(parent);
     evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
     evas_object_size_hint_align_set(tb, FILL, FILL);
     evas_object_show(tb);
     elm_object_focus_allow_set(tb, 1);
-    elm_object_content_set(fr, tb);
+    elm_object_content_set(scr, tb);
 
     rec = evas_object_rectangle_add(evas_object_evas_get(tb));
     evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(64), ELM_SCALE_SIZE(64));
@@ -1008,18 +1110,6 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
     view->general.entry_files = entry = _evisum_ui_process_view_entry_add(parent);
     elm_table_pack(tb, entry, 1, i++, 1, 1);
 
-#if defined(__linux__)
-    lb = _evisum_ui_process_view_lb_add(parent, _(" Network In:"));
-    elm_table_pack(tb, lb, 0, i, 1, 1);
-    view->general.entry_net_in = entry = _evisum_ui_process_view_entry_add(parent);
-    elm_table_pack(tb, entry, 1, i++, 1, 1);
-
-    lb = _evisum_ui_process_view_lb_add(parent, _(" Network Out:"));
-    elm_table_pack(tb, lb, 0, i, 1, 1);
-    view->general.entry_net_out = entry = _evisum_ui_process_view_entry_add(parent);
-    elm_table_pack(tb, entry, 1, i++, 1, 1);
-#endif
-
     lb = _evisum_ui_process_view_lb_add(parent, _(" Memory :"));
     elm_table_pack(tb, lb, 0, i, 1, 1);
     view->general.entry_size = entry = _evisum_ui_process_view_entry_add(parent);
@@ -1039,6 +1129,28 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
     elm_table_pack(tb, lb, 0, i, 1, 1);
     view->general.entry_virt = entry = _evisum_ui_process_view_entry_add(parent);
     elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+#if defined(__linux__)
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Disk Read:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_disk_read = entry = _evisum_ui_process_view_entry_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Disk Write:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_disk_write = entry = _evisum_ui_process_view_entry_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Network In:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_net_in = entry = _evisum_ui_process_view_entry_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Network Out:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_net_out = entry = _evisum_ui_process_view_entry_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+#endif
 
     lb = _evisum_ui_process_view_lb_add(parent, _(" Start time:"));
     elm_table_pack(tb, lb, 0, i, 1, 1);
@@ -1445,6 +1557,7 @@ _evisum_ui_process_view_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object 
     }
 
     if (view->threads.hash_cpu_times) eina_hash_free(view->threads.hash_cpu_times);
+    if (view->proc_usage_cache) eina_hash_free(view->proc_usage_cache);
     free(view->selected_cmd);
     if (view->threads.widget_exel) evisum_ui_widget_exel_free(view->threads.widget_exel);
     if (view->children.widget_exel) evisum_ui_widget_exel_free(view->children.widget_exel);
@@ -1459,6 +1572,17 @@ _evisum_ui_process_view_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object 
 static void
 _evisum_ui_process_view_win_resize_cb(void *data, Evas *e, Evas_Object *obj, void *event_info) {
     Evisum_Ui_Process_View *view = data;
+    Evas_Coord w, h;
+
+    if (view->ignore_initial_resize) {
+        view->ignore_initial_resize = 0;
+        evisum_ui_widget_exel_genlist_realized_items_update(view->threads.widget_exel);
+        return;
+    }
+
+    evas_object_geometry_get(obj, NULL, NULL, &w, &h);
+    if (w > 0) _process_view_last_width = w;
+    if (h > 0) _process_view_last_height = h;
 
     evisum_ui_widget_exel_genlist_realized_items_update(view->threads.widget_exel);
 }
@@ -1546,7 +1670,7 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action
     evisum_ui_widget_exel_field_bounds_set(view->threads.widget_exel, 0, 5);
     evisum_ui_widget_exel_resize_hit_width_set(view->threads.widget_exel, 0);
     evisum_ui_widget_exel_state_bind(view->threads.widget_exel, &view->threads.fields_mask, view->threads.field_widths);
-    evisum_ui_widget_exel_callbacks_set(view->threads.widget_exel, NULL, NULL, NULL, NULL, NULL, view);
+    evisum_ui_widget_exel_callbacks_set(view->threads.widget_exel, NULL, NULL, NULL, NULL, NULL, NULL, view);
 
     view->children.widget_exel = evisum_ui_widget_exel_create(view->win);
     if (!view->children.widget_exel) {
@@ -1561,19 +1685,19 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action
     evisum_ui_widget_exel_resize_hit_width_set(view->children.widget_exel, 0);
     evisum_ui_widget_exel_state_bind(view->children.widget_exel, &view->children.fields_mask,
                                      view->children.field_widths);
-    evisum_ui_widget_exel_callbacks_set(view->children.widget_exel, NULL, NULL, NULL, NULL, NULL, view);
+    evisum_ui_widget_exel_callbacks_set(view->children.widget_exel, NULL, NULL, NULL, NULL, NULL, NULL, view);
 
     tabs = _evisum_ui_process_view_tabs_add(win, view);
 
     bx = elm_box_add(win);
-    evas_object_size_hint_weight_set(bx, EXPAND, 0);
+    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
     evas_object_size_hint_align_set(bx, FILL, FILL);
     evas_object_show(bx);
     elm_box_pack_end(bx, tabs);
 
-    view->tb_content = tb = elm_table_add(bx);
+    tb = elm_table_add(bx);
     evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(tb, FILL, 0.0);
+    evas_object_size_hint_align_set(tb, FILL, FILL);
     evas_object_show(tb);
 
     view->general_view = _evisum_ui_process_view_general_tab_add(tabs, view);
@@ -1593,7 +1717,10 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action
     evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_process_view_win_resize_cb, view);
     evas_object_event_callback_add(bx, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_process_view_win_key_down_cb, view);
 
-    evas_object_resize(win, ELM_SCALE_SIZE(460), 1);
+    view->ignore_initial_resize = 1;
+    if (_process_view_last_width > 0 && _process_view_last_height > 0)
+        evas_object_resize(win, _process_view_last_width, _process_view_last_height);
+    else evas_object_resize(win, ELM_SCALE_SIZE(460), ELM_SCALE_SIZE(600));
     elm_win_center(win, 1, 1);
     evas_object_show(win);
 

@@ -60,6 +60,7 @@ typedef struct {
 
     Eina_Bool is_new;
     Eina_Bool delete_me;
+    Eina_Bool sampled;
 } Network_Interface;
 
 static void _evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces);
@@ -138,7 +139,10 @@ _evisum_ui_network_transfer_format(double rate) {
     const char *unit = _("B/s");
     char buf[256];
 
-    if (rate > 1048576) {
+    if (rate > 1073741824) {
+        rate /= 1073741824;
+        unit = _("GB/s");
+    } else if (rate > 1048576) {
         rate /= 1048576;
         unit = _("MB/s");
     } else if ((rate > 1024) && (rate < 1048576)) {
@@ -227,6 +231,17 @@ _evisum_ui_network_iface_history_add(Network_Interface *iface, double value) {
     else {
         memmove(&iface->history[0], &iface->history[1], sizeof(double) * (NETWORK_GRAPH_SAMPLES - 1));
         iface->history[NETWORK_GRAPH_SAMPLES - 1] = value;
+    }
+}
+
+static void
+_evisum_ui_network_histories_reset(Eina_List *interfaces) {
+    Eina_List *l;
+    Network_Interface *iface;
+
+    EINA_LIST_FOREACH(interfaces, l, iface) {
+        iface->history_count = 0;
+        memset(iface->history, 0, sizeof(iface->history));
     }
 }
 
@@ -355,14 +370,28 @@ _evisum_ui_network_update_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUS
     Eina_List *interfaces = msgdata;
     Eina_List *l, *l2;
     Network_Interface *iface;
+    Eina_Bool graph_reset_needed = EINA_FALSE;
 
     view->interfaces = interfaces;
 
+    EINA_LIST_FOREACH(interfaces, l, iface) {
+        if (iface->is_new && !iface->delete_me) {
+            graph_reset_needed = EINA_TRUE;
+            break;
+        }
+    }
+
+    if (graph_reset_needed) {
+        _evisum_ui_network_histories_reset(interfaces);
+        evisum_ui_graph_reset(view->graph_img);
+        view->graph_peak = 0.0;
+    }
+
+    EINA_LIST_FOREACH(interfaces, l, iface)
+    iface->sampled = EINA_FALSE;
+
     EINA_LIST_FOREACH_SAFE(interfaces, l, l2, iface) {
         double rate = (double) iface->in + (double) iface->out;
-
-        _evisum_ui_network_iface_history_add(iface, rate);
-        if (rate > view->graph_peak) view->graph_peak = rate;
 
         if (iface->delete_me) {
             _evisum_ui_network_iface_legend_del(iface);
@@ -377,6 +406,10 @@ _evisum_ui_network_update_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUS
             _evisum_ui_network_iface_legend_add(view, iface);
         }
 
+        if (iface->sampled) continue;
+        iface->sampled = EINA_TRUE;
+        _evisum_ui_network_iface_history_add(iface, rate);
+        if (rate > view->graph_peak) view->graph_peak = rate;
         _evisum_ui_network_iface_legend_update(iface);
     }
 

@@ -28,6 +28,8 @@ typedef struct _Proc_Info {
     uint64_t mem_shared;
     uint64_t net_in;
     uint64_t net_out;
+    uint64_t disk_read;
+    uint64_t disk_write;
 
     char *command;
     char *arguments;
@@ -86,6 +88,10 @@ int proc_sort_by_shared(const void *p1, const void *p2);
 int proc_sort_by_net_in(const void *p1, const void *p2);
 
 int proc_sort_by_net_out(const void *p1, const void *p2);
+
+int proc_sort_by_disk_read(const void *p1, const void *p2);
+
+int proc_sort_by_disk_write(const void *p1, const void *p2);
 
 int proc_sort_by_time(const void *p1, const void *p2);
 

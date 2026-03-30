@@ -23,6 +23,7 @@ typedef struct {
     uint64_t total;
     Eina_Bool enabled;
     Eina_Bool visible;
+    Eina_Bool sampled;
     Evisum_Ui_Memory_View *view;
 
     Evas_Object *legend_row;
@@ -280,6 +281,9 @@ _evisum_ui_memory_series_usage_set(Evisum_Ui_Memory_View *view, int idx, uint64_
     Memory_Series *entry = &view->series[idx];
     double used_percent = 0.0;
 
+    if (entry->sampled) return;
+    entry->sampled = EINA_TRUE;
+
     entry->enabled = enabled;
     entry->used = used;
     entry->total = total;
@@ -299,6 +303,10 @@ _evisum_ui_memory_series_usage_set(Evisum_Ui_Memory_View *view, int idx, uint64_
 
 static void
 _evisum_ui_memory_series_update_from_memory(Evisum_Ui_Memory_View *view, meminfo_t *memory) {
+    for (int i = 0; i < view->series_count; i++) {
+        view->series[i].sampled = EINA_FALSE;
+    }
+
     _evisum_ui_memory_series_usage_set(view, SERIES_USED, memory->used, memory->total, EINA_TRUE);
     _evisum_ui_memory_series_usage_set(view, SERIES_CACHED, memory->cached, memory->total, EINA_TRUE);
     _evisum_ui_memory_series_usage_set(view, SERIES_BUFFERED, memory->buffered, memory->total, EINA_TRUE);

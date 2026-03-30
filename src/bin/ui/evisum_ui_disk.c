@@ -184,14 +184,17 @@ _evisum_ui_disk_history_legend_update(Disk_History *entry, double used_percent, 
 }
 
 static Disk_History *
-_evisum_ui_disk_history_find_or_create(Evisum_Ui_Disk_View *view, const File_System *fs) {
+_evisum_ui_disk_history_find_or_create(Evisum_Ui_Disk_View *view, const File_System *fs, Eina_Bool *created) {
     Eina_List *l;
     Disk_History *entry;
     char keybuf[4096];
 
     snprintf(keybuf, sizeof(keybuf), "%s|%s", fs->path, fs->mount);
     EINA_LIST_FOREACH(view->history, l, entry) {
-        if (!strcmp(entry->key, keybuf)) return entry;
+        if (!strcmp(entry->key, keybuf)) {
+            if (created) *created = EINA_FALSE;
+            return entry;
+        }
     }
 
     entry = calloc(1, sizeof(Disk_History));
@@ -210,6 +213,7 @@ _evisum_ui_disk_history_find_or_create(Evisum_Ui_Disk_View *view, const File_Sys
     evisum_graph_color_get(entry->key, &entry->color_r, &entry->color_g, &entry->color_b);
 
     view->history = eina_list_append(view->history, entry);
+    if (created) *created = EINA_TRUE;
     return entry;
 }
 
@@ -228,6 +232,17 @@ _evisum_ui_disk_history_compact(Evisum_Ui_Disk_View *view) {
     }
 
     _evisum_ui_disk_history_legend_repack(view);
+}
+
+static void
+_evisum_ui_disk_history_reset(Evisum_Ui_Disk_View *view) {
+    Eina_List *l;
+    Disk_History *entry;
+
+    EINA_LIST_FOREACH(view->history, l, entry) {
+        entry->history_count = 0;
+        memset(entry->history, 0, sizeof(entry->history));
+    }
 }
 
 static void
@@ -292,6 +307,7 @@ _evisum_ui_disk_disks_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNU
     Eina_List *l;
     Eina_List *mounted;
     Disk_History *entry;
+    Eina_Bool graph_reset_needed = EINA_FALSE;
 
     view = data;
     mounted = msgdata;
@@ -300,10 +316,24 @@ _evisum_ui_disk_disks_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNU
     entry->seen = EINA_FALSE;
 
     EINA_LIST_FOREACH(mounted, l, fs) {
+        Eina_Bool created = EINA_FALSE;
+
+        entry = _evisum_ui_disk_history_find_or_create(view, fs, &created);
+        if (!entry) continue;
+        if (created) graph_reset_needed = EINA_TRUE;
+    }
+
+    if (graph_reset_needed) {
+        _evisum_ui_disk_history_reset(view);
+        evisum_ui_graph_reset(view->graph_img);
+    }
+
+    EINA_LIST_FOREACH(mounted, l, fs) {
         double used_percent = 0.0;
 
-        entry = _evisum_ui_disk_history_find_or_create(view, fs);
+        entry = _evisum_ui_disk_history_find_or_create(view, fs, NULL);
         if (!entry) continue;
+        if (entry->seen) continue;
 
         if (fs->usage.total) used_percent = ((double) fs->usage.used / (double) fs->usage.total) * 100.0;
         if (used_percent < 0.0) used_percent = 0.0;

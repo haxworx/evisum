@@ -22,7 +22,7 @@ typedef struct {
 static void
 _core_times_main_cb(void *data, Ecore_Thread *thread) {
     int ncpu;
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
     Ext *ext = pd->ext;
 
     if (!system_cpu_frequency_min_max_get(&ext->freq_min, &ext->freq_max)) ext->cpu_freq = 1;
@@ -50,7 +50,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
 
 static void
 _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
-    Ui_Cpu_Data *pd;
+    Evisum_Ui_Cpu_Visual_Data *pd;
     Core *cores;
     Ext *ext;
 
@@ -147,14 +147,14 @@ _cpu_percent_colors_fill(Evas_Object *colors) {
     evas_object_image_data_update_add(colors, 0, 0, stride, 1);
 }
 
-Ui_Cpu_Data *
-cpu_visual_basic(Evas_Object *parent_bx) {
+Evisum_Ui_Cpu_Visual_Data *
+evisum_ui_cpu_visual_basic(Evas_Object *parent_bx) {
     Evas_Object *container, *grid, *fr, *legend_tbl, *colors, *lb, *bg, *desc_fr;
     Ext *ext;
     uint8_t text_r, text_g, text_b;
     char text_hex[7];
 
-    Ui_Cpu_Data *pd = calloc(1, sizeof(Ui_Cpu_Data));
+    Evisum_Ui_Cpu_Visual_Data *pd = calloc(1, sizeof(Evisum_Ui_Cpu_Visual_Data));
     if (!pd) return NULL;
 
     pd->ext = ext = calloc(1, sizeof(Ext));

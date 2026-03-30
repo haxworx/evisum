@@ -80,13 +80,9 @@ typedef struct {
     int64_t cpu_time;
     uint64_t net_in;
     uint64_t net_out;
+    uint64_t disk_read;
+    uint64_t disk_write;
 } Proc_Usage_Cache;
-
-static void _evisum_ui_process_list_content_reset(Evisum_Ui_Process_List_View *view);
-static void _evisum_ui_process_list_content_update_all(Evisum_Ui_Process_List_View *view);
-static void _evisum_ui_process_list_btn_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED);
-static Evas_Object *_evisum_ui_process_list_sort_button_add(Evas_Object *parent, Evisum_Ui_Process_List_View *view,
-                                                            Proc_Sort type, double weight_x);
 
 typedef struct {
     const char *name;
@@ -95,23 +91,25 @@ typedef struct {
 } Proc_Field_Info;
 
 static const Proc_Field_Info _proc_field_info[PROC_FIELD_MAX] = {
-    [PROC_FIELD_CMD] = { "command", "Command",         PROC_SORT_BY_CMD       },
-    [PROC_FIELD_UID] = { "user",    "User",            PROC_SORT_BY_UID       },
-    [PROC_FIELD_PID] = { "pid",     "Process ID",      PROC_SORT_BY_PID       },
-    [PROC_FIELD_THREADS] = { "thr",     "Threads",         PROC_SORT_BY_THREADS   },
-    [PROC_FIELD_CPU] = { "cpu",     "CPU #",           PROC_SORT_BY_CPU       },
-    [PROC_FIELD_PRI] = { "pri",     "Priority",        PROC_SORT_BY_PRI       },
-    [PROC_FIELD_NICE] = { "nice",    "Nice",            PROC_SORT_BY_NICE      },
-    [PROC_FIELD_FILES] = { "files",   "Open Files",      PROC_SORT_BY_FILES     },
-    [PROC_FIELD_SIZE] = { "size",    "Memory Size",     PROC_SORT_BY_SIZE      },
-    [PROC_FIELD_VIRT] = { "virt",    "Memory Virtual",  PROC_SORT_BY_VIRT      },
-    [PROC_FIELD_RSS] = { "res",     "Memory Reserved", PROC_SORT_BY_RSS       },
-    [PROC_FIELD_SHARED] = { "shr",     "Memory Shared",   PROC_SORT_BY_SHARED    },
-    [PROC_FIELD_STATE] = { "state",   "State",           PROC_SORT_BY_STATE     },
-    [PROC_FIELD_TIME] = { "time",    "Time",            PROC_SORT_BY_TIME      },
-    [PROC_FIELD_CPU_USAGE] = { "cpu %",   "CPU Usage",       PROC_SORT_BY_CPU_USAGE },
-    [PROC_FIELD_NET_IN] = { "net in",  "Network In",      PROC_SORT_BY_NET_IN    },
-    [PROC_FIELD_NET_OUT] = { "net out", "Network Out",     PROC_SORT_BY_NET_OUT   },
+    [PROC_FIELD_CMD]        = { N_("COMMAND"), N_("Command"),         PROC_SORT_BY_CMD        },
+    [PROC_FIELD_UID]        = { N_("USER"),    N_("User"),            PROC_SORT_BY_UID        },
+    [PROC_FIELD_PID]        = { N_("PID"),     N_("Process ID"),      PROC_SORT_BY_PID        },
+    [PROC_FIELD_THREADS]    = { N_("THR"),     N_("Threads"),         PROC_SORT_BY_THREADS    },
+    [PROC_FIELD_CPU]        = { N_("CPU"),     N_("CPU #"),           PROC_SORT_BY_CPU        },
+    [PROC_FIELD_PRI]        = { N_("PRI"),     N_("Priority"),        PROC_SORT_BY_PRI        },
+    [PROC_FIELD_NICE]       = { N_("NI"),      N_("Nice"),            PROC_SORT_BY_NICE       },
+    [PROC_FIELD_FILES]      = { N_("FD"),      N_("Open Files"),      PROC_SORT_BY_FILES      },
+    [PROC_FIELD_SIZE]       = { N_("SIZE"),    N_("Memory Size"),     PROC_SORT_BY_SIZE       },
+    [PROC_FIELD_VIRT]       = { N_("VIRT"),    N_("Memory Virtual"),  PROC_SORT_BY_VIRT       },
+    [PROC_FIELD_RSS]        = { N_("RES"),     N_("Memory Reserved"), PROC_SORT_BY_RSS        },
+    [PROC_FIELD_SHARED]     = { N_("SHR"),     N_("Memory Shared"),   PROC_SORT_BY_SHARED     },
+    [PROC_FIELD_STATE]      = { N_("S"),       N_("State"),           PROC_SORT_BY_STATE      },
+    [PROC_FIELD_TIME]       = { N_("TIME+"),   N_("Time"),            PROC_SORT_BY_TIME       },
+    [PROC_FIELD_CPU_USAGE]  = { N_("CPU%"),    N_("CPU Usage"),       PROC_SORT_BY_CPU_USAGE  },
+    [PROC_FIELD_NET_IN]     = { N_("RX/s"),    N_("Network In"),      PROC_SORT_BY_NET_IN     },
+    [PROC_FIELD_NET_OUT]    = { N_("TX/s"),    N_("Network Out"),     PROC_SORT_BY_NET_OUT    },
+    [PROC_FIELD_DISK_READ]  = { N_("R/s"),     N_("Disk Read"),       PROC_SORT_BY_DISK_READ  },
+    [PROC_FIELD_DISK_WRITE] = { N_("W/s"),     N_("Disk Write"),      PROC_SORT_BY_DISK_WRITE },
 };
 
 static const Proc_Field_Info *
@@ -126,7 +124,9 @@ _evisum_ui_process_list_field_default_width_get(Proc_Field id) {
     if (id == PROC_FIELD_CMD) return 2.0 * ELM_SCALE_SIZE(BTN_WIDTH);
     if (id == PROC_FIELD_UID) return 1.8 * ELM_SCALE_SIZE(BTN_WIDTH);
     if (id == PROC_FIELD_CPU_USAGE) return 1.75 * ELM_SCALE_SIZE(BTN_WIDTH);
-    if (id == PROC_FIELD_NET_IN || id == PROC_FIELD_NET_OUT) return 1.5 * ELM_SCALE_SIZE(BTN_WIDTH);
+    if (id == PROC_FIELD_NET_IN || id == PROC_FIELD_NET_OUT || id == PROC_FIELD_DISK_READ
+        || id == PROC_FIELD_DISK_WRITE)
+        return 1.5 * ELM_SCALE_SIZE(BTN_WIDTH);
 
     return ELM_SCALE_SIZE(BTN_WIDTH);
 }
@@ -181,6 +181,8 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
         case PROC_FIELD_FILES: def->key = "files"; return EINA_TRUE;
         case PROC_FIELD_NET_IN: def->key = "net_in"; return EINA_TRUE;
         case PROC_FIELD_NET_OUT: def->key = "net_out"; return EINA_TRUE;
+        case PROC_FIELD_DISK_READ: def->key = "disk_read"; return EINA_TRUE;
+        case PROC_FIELD_DISK_WRITE: def->key = "disk_write"; return EINA_TRUE;
         case PROC_FIELD_SIZE: def->key = "size"; return EINA_TRUE;
         case PROC_FIELD_VIRT: def->key = "virt"; return EINA_TRUE;
         case PROC_FIELD_RSS: def->key = "rss"; return EINA_TRUE;
@@ -199,6 +201,12 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
 static void
 _evisum_ui_process_list_field_proportions_apply(Evisum_Ui_Process_List_View *view) {
     evisum_ui_widget_exel_field_proportions_apply(view->widget_exel);
+}
+
+static void
+_evisum_ui_process_list_content_update_all(Evisum_Ui_Process_List_View *view) {
+    view->update_every_item = 1;
+    view->poll_count = 0;
 }
 
 static void
@@ -231,6 +239,7 @@ _evisum_ui_process_list_fields_mouse_up_cb(void *data EINA_UNUSED, Evas *e EINA_
     ev = event_info;
     view = data;
 
+    if (evisum_ui_widget_exel_field_reorder_mouse_up(view->widget_exel, ev)) return;
     evisum_ui_widget_exel_fields_menu_show(view->widget_exel, obj, ev);
 }
 
@@ -247,6 +256,22 @@ _evisum_ui_process_list_fields_changed_cb(void *data, Eina_Bool changed) {
     view->skip_update = 1;
     (void) changed;
     evisum_ui_config_save(view->ui);
+}
+
+static void
+_evisum_ui_process_list_content_reset(Evisum_Ui_Process_List_View *view) {
+    int j = 0;
+
+    _evisum_ui_process_list_field_proportions_apply(view);
+
+    elm_table_clear(view->tb_main, 0);
+    elm_table_pack(view->tb_main, view->btn_menu, j++, 0, 1, 1);
+    j = evisum_ui_widget_exel_fields_pack_visible(view->widget_exel, view->tb_main, j);
+    elm_table_pack(view->tb_main, evisum_ui_widget_exel_genlist_obj_get(view->widget_exel), 0, 1, j, 1);
+    elm_table_pack(view->tb_main, view->summary.fr, 0, 2, j, 1);
+    evas_object_show(view->summary.fr);
+    evisum_ui_widget_exel_genlist_clear(view->widget_exel);
+    evisum_ui_widget_exel_item_cache_reset(view->widget_exel, _evisum_ui_process_list_fields_cache_reset_done_cb, view);
 }
 
 static void
@@ -274,18 +299,82 @@ _evisum_ui_process_list_fields_resize_done_cb(void *data) {
 }
 
 static void
+_evisum_ui_process_list_fields_reordered_cb(void *data) {
+    Evisum_Ui_Process_List_View *view = data;
+    if (!view) return;
+
+    _evisum_ui_process_list_content_reset(view);
+    evisum_ui_config_save(view->ui);
+}
+
+static Eina_Bool
+_evisum_ui_process_list_btn_clicked_state_save(Evisum_Ui_Process_List_View *view, Evas_Object *btn, Proc_Sort type) {
+    Evisum_Ui *ui = view->ui;
+
+    if (evisum_ui_widget_exel_sort_ignore_consume(view->widget_exel)) return 0;
+
+    if (evisum_ui_widget_exel_fields_menu_visible_get(view->widget_exel)) {
+        evisum_ui_widget_exel_fields_menu_dismiss(view->widget_exel);
+        return 0;
+    }
+
+    if (ui->proc.sort_type == type) ui->proc.sort_reverse = !ui->proc.sort_reverse;
+    evisum_ui_widget_exel_sort_header_button_state_set(btn, ui->proc.sort_reverse);
+
+    evisum_ui_widget_exel_genlist_page_bring_in(view->widget_exel, 0, 0);
+
+    return 1;
+}
+
+static void
+_evisum_ui_process_list_btn_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED) {
+    Evisum_Ui_Process_List_View *view;
+    Evisum_Ui *ui;
+    Proc_Sort type;
+    int t;
+
+    view = data;
+    ui = view->ui;
+
+    t = (intptr_t) evas_object_data_get(obj, "type");
+    type = (t & 0xff);
+
+    if (!_evisum_ui_process_list_btn_clicked_state_save(view, obj, type)) return;
+
+    ui->proc.sort_type = type;
+    view->skip_update = 0;
+    view->skip_wait = 1;
+}
+
+static Evas_Object *
+_evisum_ui_process_list_sort_button_add(Evas_Object *parent, Evisum_Ui_Process_List_View *view, Proc_Sort type,
+                                        double weight_x) {
+    Evisum_Ui *ui = view->ui;
+    Evas_Object *btn;
+
+    btn = evisum_ui_widget_exel_sort_header_button_add(parent, "",
+                                                       (ui->proc.sort_type == type) ? ui->proc.sort_reverse : 0,
+                                                       weight_x, FILL, _evisum_ui_process_list_btn_clicked_cb, view);
+    evas_object_data_set(btn, "type", (void *) (intptr_t) type);
+    return btn;
+}
+
+static void
 _evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view) {
     view->widget_exel = evisum_ui_widget_exel_create(view->win);
     if (!view->widget_exel) return;
 
     evisum_ui_widget_exel_field_bounds_set(view->widget_exel, PROC_FIELD_CMD, PROC_FIELD_MAX);
+    evisum_ui_widget_exel_field_order_bind(view->widget_exel, view->ui->proc.field_order);
+    evisum_ui_widget_exel_field_reorder_enabled_set(view->widget_exel, EINA_TRUE);
     evisum_ui_widget_exel_resize_hit_width_set(view->widget_exel, PROC_COL_RESIZE_HIT_WIDTH);
     evisum_ui_widget_exel_state_bind(view->widget_exel, &view->ui->proc.fields, view->ui->proc.field_widths);
     evisum_ui_widget_exel_callbacks_set(view->widget_exel, _evisum_ui_process_list_fields_reference_mask_get_cb,
                                         _evisum_ui_process_list_fields_changed_cb,
                                         _evisum_ui_process_list_fields_applied_cb,
                                         _evisum_ui_process_list_fields_resize_live_cb,
-                                        _evisum_ui_process_list_fields_resize_done_cb, view);
+                                        _evisum_ui_process_list_fields_resize_done_cb,
+                                        _evisum_ui_process_list_fields_reordered_cb, view);
 
     for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) {
         Proc_Sort type;
@@ -318,22 +407,6 @@ _evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view) {
 }
 
 static void
-_evisum_ui_process_list_content_reset(Evisum_Ui_Process_List_View *view) {
-    int j = 0;
-
-    _evisum_ui_process_list_field_proportions_apply(view);
-
-    elm_table_clear(view->tb_main, 0);
-    elm_table_pack(view->tb_main, view->btn_menu, j++, 0, 1, 1);
-    j = evisum_ui_widget_exel_fields_pack_visible(view->widget_exel, view->tb_main, j);
-    elm_table_pack(view->tb_main, evisum_ui_widget_exel_genlist_obj_get(view->widget_exel), 0, 1, j, 1);
-    elm_table_pack(view->tb_main, view->summary.fr, 0, 2, j, 1);
-    evas_object_show(view->summary.fr);
-    evisum_ui_widget_exel_genlist_clear(view->widget_exel);
-    evisum_ui_widget_exel_item_cache_reset(view->widget_exel, _evisum_ui_process_list_fields_cache_reset_done_cb, view);
-}
-
-static void
 _evisum_ui_process_list_item_del(void *data, Evas_Object *obj EINA_UNUSED) {
     Proc_Info *proc = data;
     proc_info_free(proc);
@@ -355,7 +428,10 @@ _evisum_ui_process_list_net_rate_set(char *buf, size_t n, uint64_t rate) {
     const char *unit = _("B/s");
     double value = rate;
 
-    if (value > 1048576.0) {
+    if (value > 1073741824.0) {
+        value /= 1073741824.0;
+        unit = _("GB/s");
+    } else if (value > 1048576.0) {
         value /= 1048576.0;
         unit = _("MB/s");
     } else if (value > 1024.0) {
@@ -364,12 +440,6 @@ _evisum_ui_process_list_net_rate_set(char *buf, size_t n, uint64_t rate) {
     }
 
     snprintf(buf, n, "%.2f %s", value, unit);
-}
-
-static void
-_evisum_ui_process_list_content_update_all(Evisum_Ui_Process_List_View *view) {
-    view->update_every_item = 1;
-    view->poll_count = 0;
 }
 
 static Evas_Object *
@@ -503,6 +573,20 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
     }
     evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_NET_OUT, "net_out", buf);
 
+    if (!proc->is_kernel) _evisum_ui_process_list_net_rate_set(buf, sizeof(buf), proc->disk_read);
+    else {
+        buf[0] = '-';
+        buf[1] = '\0';
+    }
+    evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_DISK_READ, "disk_read", buf);
+
+    if (!proc->is_kernel) _evisum_ui_process_list_net_rate_set(buf, sizeof(buf), proc->disk_write);
+    else {
+        buf[0] = '-';
+        buf[1] = '\0';
+    }
+    evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_DISK_WRITE, "disk_write", buf);
+
     return row;
 }
 
@@ -627,7 +711,7 @@ _evisum_ui_process_list_process_ignore(Evisum_Ui_Process_List_View *view, Proc_I
 }
 
 static Eina_List *
-_evisum_ui_process_list_search_trim(Eina_List *list, Evisum_Ui_Process_List_View *view) {
+_evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_List_View *view) {
     Eina_List *l, *l_next;
     Proc_Info *proc;
 
@@ -642,6 +726,8 @@ _evisum_ui_process_list_search_trim(Eina_List *list, Evisum_Ui_Process_List_View
             if ((cache = eina_hash_find(view->proc_usage_cache, &id))) {
                 uint64_t net_in_abs = 0;
                 uint64_t net_out_abs = 0;
+                uint64_t disk_read_abs = proc->disk_read;
+                uint64_t disk_write_abs = proc->disk_write;
                 int elapsed = view->ui->proc.poll_delay;
                 if (elapsed <= 0) elapsed = 1;
                 evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
@@ -651,9 +737,13 @@ _evisum_ui_process_list_search_trim(Eina_List *list, Evisum_Ui_Process_List_View
                     cache->cpu_time = proc->cpu_time;
                     cache->net_in = net_in_abs;
                     cache->net_out = net_out_abs;
+                    cache->disk_read = proc->disk_read;
+                    cache->disk_write = proc->disk_write;
                     proc->cpu_usage = 0.0;
                     proc->net_in = 0;
                     proc->net_out = 0;
+                    proc->disk_read = 0;
+                    proc->disk_write = 0;
                     continue;
                 }
 
@@ -668,8 +758,18 @@ _evisum_ui_process_list_search_trim(Eina_List *list, Evisum_Ui_Process_List_View
                 if (cache->net_out && net_out_abs >= cache->net_out) proc->net_out = (net_out_abs - cache->net_out) / elapsed;
                 else proc->net_out = 0;
 
+                if (cache->disk_read && disk_read_abs >= cache->disk_read)
+                    proc->disk_read = (disk_read_abs - cache->disk_read) / elapsed;
+                else proc->disk_read = 0;
+
+                if (cache->disk_write && disk_write_abs >= cache->disk_write)
+                    proc->disk_write = (disk_write_abs - cache->disk_write) / elapsed;
+                else proc->disk_write = 0;
+
                 cache->net_in = net_in_abs;
                 cache->net_out = net_out_abs;
+                cache->disk_read = disk_read_abs;
+                cache->disk_write = disk_write_abs;
             } else {
                 cache = calloc(1, sizeof(Proc_Usage_Cache));
                 if (cache) {
@@ -680,8 +780,12 @@ _evisum_ui_process_list_search_trim(Eina_List *list, Evisum_Ui_Process_List_View
                     cache->cpu_time = proc->cpu_time;
                     cache->net_in = net_in_abs;
                     cache->net_out = net_out_abs;
+                    cache->disk_read = proc->disk_read;
+                    cache->disk_write = proc->disk_write;
                     proc->net_in = 0;
                     proc->net_out = 0;
+                    proc->disk_read = 0;
+                    proc->disk_write = 0;
                     eina_hash_add(view->proc_usage_cache, &id, cache);
                 }
             }
@@ -702,7 +806,7 @@ _evisum_ui_process_list_get(Evisum_Ui_Process_List_View *view) {
 
     if (ui->proc.show_user) list = _evisum_ui_process_list_uid_trim(list, getuid());
 
-    list = _evisum_ui_process_list_search_trim(list, view);
+    list = _evisum_ui_process_list_search_trim_cache(list, view);
     list = _evisum_ui_process_list_sort(list, view);
 
     return list;
@@ -798,38 +902,6 @@ _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
     if (view->ui && evisum_ui_effects_enabled_get(view->ui)) _evisum_ui_process_list_indicator(view);
 }
 
-static Evas_Object *
-_evisum_ui_process_list_sort_button_add(Evas_Object *parent, Evisum_Ui_Process_List_View *view, Proc_Sort type,
-                                        double weight_x) {
-    Evisum_Ui *ui = view->ui;
-    Evas_Object *btn;
-
-    btn = evisum_ui_widget_exel_sort_header_button_add(parent, "",
-                                                       (ui->proc.sort_type == type) ? ui->proc.sort_reverse : 0,
-                                                       weight_x, FILL, _evisum_ui_process_list_btn_clicked_cb, view);
-    evas_object_data_set(btn, "type", (void *) (intptr_t) type);
-    return btn;
-}
-
-static Eina_Bool
-_evisum_ui_process_list_btn_clicked_state_save(Evisum_Ui_Process_List_View *view, Evas_Object *btn, Proc_Sort type) {
-    Evisum_Ui *ui = view->ui;
-
-    if (evisum_ui_widget_exel_sort_ignore_consume(view->widget_exel)) return 0;
-
-    if (evisum_ui_widget_exel_fields_menu_visible_get(view->widget_exel)) {
-        evisum_ui_widget_exel_fields_menu_dismiss(view->widget_exel);
-        return 0;
-    }
-
-    if (ui->proc.sort_type == type) ui->proc.sort_reverse = !ui->proc.sort_reverse;
-    evisum_ui_widget_exel_sort_header_button_state_set(btn, ui->proc.sort_reverse);
-
-    evisum_ui_widget_exel_genlist_page_bring_in(view->widget_exel, 0, 0);
-
-    return 1;
-}
-
 static void
 _evisum_ui_process_list_field_header_mouse_up_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                                                  void *event_info) {
@@ -838,27 +910,8 @@ _evisum_ui_process_list_field_header_mouse_up_cb(void *data, Evas *e EINA_UNUSED
     (void) e;
     (void) obj;
     if (!view || !ev) return;
+    if (evisum_ui_widget_exel_field_reorder_mouse_up(view->widget_exel, ev)) return;
     evisum_ui_widget_exel_field_resize_mouse_up(view->widget_exel, ev);
-}
-
-static void
-_evisum_ui_process_list_btn_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED) {
-    Evisum_Ui_Process_List_View *view;
-    Evisum_Ui *ui;
-    Proc_Sort type;
-    int t;
-
-    view = data;
-    ui = view->ui;
-
-    t = (intptr_t) evas_object_data_get(obj, "type");
-    type = (t & 0xff);
-
-    if (!_evisum_ui_process_list_btn_clicked_state_save(view, obj, type)) return;
-
-    ui->proc.sort_type = type;
-    view->skip_update = 0;
-    view->skip_wait = 1;
 }
 
 static void
@@ -1149,20 +1202,29 @@ _evisum_ui_process_list_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *
 
 static Evas_Object *
 _evisum_ui_process_list_content_add(Evisum_Ui_Process_List_View *view, Evas_Object *parent) {
-    Evas_Object *tb, *btn, *glist;
+    Evas_Object *tb, *btn, *glist, *scr;
     Evas_Object *fr, *hbx;
 
-    tb = elm_table_add(parent);
+    scr = elm_scroller_add(parent);
+    evas_object_size_hint_weight_set(scr, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(scr, FILL, FILL);
+    elm_scroller_policy_set(scr, ELM_SCROLLER_POLICY_AUTO, ELM_SCROLLER_POLICY_OFF);
+    elm_scroller_bounce_set(scr, EINA_FALSE, EINA_FALSE);
+    evas_object_show(scr);
+
+    tb = elm_table_add(scr);
     evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
     evas_object_size_hint_align_set(tb, FILL, FILL);
     evas_object_show(tb);
+    elm_object_content_set(scr, tb);
+    view->tb_main = tb;
 
     view->btn_menu = btn = evisum_ui_widget_exel_icon_button_add(tb, "menu", _("Menu"), 0.0, FILL,
                                                                  _evisum_ui_process_list_btn_menu_clicked_cb, view);
     evas_object_show(btn);
 
     _evisum_ui_process_list_fields_init(view);
-    if (!view->widget_exel) return tb;
+    if (!view->widget_exel) return scr;
 
     evisum_ui_widget_exel_genlist_add(view->widget_exel, parent);
     glist = evisum_ui_widget_exel_genlist_obj_get(view->widget_exel);
@@ -1193,7 +1255,7 @@ _evisum_ui_process_list_content_add(Evisum_Ui_Process_List_View *view, Evas_Obje
 
     elm_object_content_set(fr, hbx);
 
-    return tb;
+    return scr;
 }
 
 static Eina_Bool
@@ -1449,6 +1511,8 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
         cache->cpu_time = 0;
         cache->net_in = 0;
         cache->net_out = 0;
+        cache->disk_read = 0;
+        cache->disk_write = 0;
     }
     eina_iterator_free(it);
 
@@ -1559,12 +1623,14 @@ _evisum_ui_process_list_init(Evisum_Ui_Process_List_View *view) {
     view->sorters[PROC_SORT_BY_CPU_USAGE].sort_cb = proc_sort_by_cpu_usage;
     view->sorters[PROC_SORT_BY_NET_IN].sort_cb = proc_sort_by_net_in;
     view->sorters[PROC_SORT_BY_NET_OUT].sort_cb = proc_sort_by_net_out;
+    view->sorters[PROC_SORT_BY_DISK_READ].sort_cb = proc_sort_by_disk_read;
+    view->sorters[PROC_SORT_BY_DISK_WRITE].sort_cb = proc_sort_by_disk_write;
 }
 
 void
 evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     Evas_Object *win, *icon;
-    Evas_Object *tb;
+    Evas_Object *content;
 
     if (ui->proc.win) {
         elm_win_raise(ui->proc.win);
@@ -1595,9 +1661,9 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     if ((ui->proc.x > 0) && (ui->proc.y > 0)) evas_object_move(win, ui->proc.x, ui->proc.y);
     else elm_win_center(win, 1, 1);
 
-    view->tb_main = tb = _evisum_ui_process_list_content_add(view, win);
-    elm_win_resize_object_add(win, tb);
-    elm_object_content_set(win, tb);
+    content = _evisum_ui_process_list_content_add(view, win);
+    elm_win_resize_object_add(win, content);
+    elm_object_content_set(win, content);
 
     view->icon_cache = evisum_icon_cache_new();
     view->proc_usage_cache = eina_hash_int64_new(_evisum_ui_process_list_usage_cache_free_cb);
@@ -1606,7 +1672,7 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_process_list_win_resize_cb, view);
     evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_process_list_win_move_cb, view);
     evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_UP, _evisum_ui_process_list_field_header_mouse_up_cb, view);
-    evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_process_list_win_key_down_cb, view);
+    evas_object_event_callback_add(view->tb_main, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_process_list_win_key_down_cb, view);
 
     _evisum_ui_process_list_search_add(view);
     _evisum_ui_process_list_effects_add(view, win);
@@ -1614,6 +1680,7 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     _evisum_ui_process_list_feedback_cb(view, NULL, _evisum_ui_process_list_get(view));
 
     _evisum_ui_process_list_win_resize_cb(view, NULL, win, NULL);
+    view->skip_wait = 1;
     view->thread = ecore_thread_feedback_run(_evisum_ui_process_list_process_list, _evisum_ui_process_list_feedback_cb,
                                              NULL, NULL, view, 0);
 }

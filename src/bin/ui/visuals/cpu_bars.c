@@ -53,7 +53,7 @@ _cpu_percent_colors_fill(Evas_Object *colors) {
 static void
 _core_times_main_cb(void *data, Ecore_Thread *thread) {
     int ncpu;
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
     Ext *ext = pd->ext;
 
     ecore_thread_name_set(thread, "cpu");
@@ -78,7 +78,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
 
 static void
 _core_times_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
-    Ui_Cpu_Data *pd;
+    Evisum_Ui_Cpu_Visual_Data *pd;
     Core *cores;
     Ext *ext;
     Evas_Coord oh, ow, ox, oy;
@@ -128,15 +128,15 @@ _cb_free(void *data) {
     free(ext);
 }
 
-Ui_Cpu_Data *
-cpu_visual_bars(Evas_Object *parent_bx) {
+Evisum_Ui_Cpu_Visual_Data *
+evisum_ui_cpu_visual_bars(Evas_Object *parent_bx) {
     Evas_Object *tb, *rec, *container, *fr, *legend_tbl, *colors, *lb, *bg, *desc_fr;
     Ext *ext;
     uint8_t text_r, text_g, text_b;
     char text_hex[7];
     int i;
 
-    Ui_Cpu_Data *pd = calloc(1, sizeof(Ui_Cpu_Data));
+    Evisum_Ui_Cpu_Visual_Data *pd = calloc(1, sizeof(Evisum_Ui_Cpu_Visual_Data));
     if (!pd) return NULL;
 
     pd->ext = ext = calloc(1, sizeof(Ext));

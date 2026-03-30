@@ -40,6 +40,7 @@ typedef void (*Evisum_Ui_Widget_Exel_Fields_Changed_Cb)(void *data, Eina_Bool ch
 typedef void (*Evisum_Ui_Widget_Exel_Fields_Applied_Cb)(void *data, Eina_Bool changed);
 typedef void (*Evisum_Ui_Widget_Exel_Resize_Live_Cb)(void *data);
 typedef void (*Evisum_Ui_Widget_Exel_Resize_Done_Cb)(void *data);
+typedef void (*Evisum_Ui_Widget_Exel_Fields_Reordered_Cb)(void *data);
 
 typedef struct {
     int id;
@@ -94,6 +95,14 @@ void evisum_ui_widget_exel_state_bind(Evisum_Ui_Widget_Exel *wx, unsigned int *f
  * Must be called before registering fields when using non-default ranges. */
 void evisum_ui_widget_exel_field_bounds_set(Evisum_Ui_Widget_Exel *wx, int field_first, int field_max);
 
+/* Bind an external ordered list of field ids keyed by display position.
+ * Pass NULL to keep/create widget-owned order state. */
+void evisum_ui_widget_exel_field_order_bind(Evisum_Ui_Widget_Exel *wx, int *field_order);
+
+/* Enable/disable drag-reordering of field headers.
+ * Reordering is opt-in so existing views keep current interaction behavior. */
+void evisum_ui_widget_exel_field_reorder_enabled_set(Evisum_Ui_Widget_Exel *wx, Eina_Bool enabled);
+
 /* Set header-resize hit width in pixels for edge drag detection.
  * Keep zero to disable resize hit-testing. */
 void evisum_ui_widget_exel_resize_hit_width_set(Evisum_Ui_Widget_Exel *wx, int hit_width);
@@ -104,7 +113,8 @@ void evisum_ui_widget_exel_callbacks_set(Evisum_Ui_Widget_Exel *wx,
                                          Evisum_Ui_Widget_Exel_Fields_Changed_Cb fields_changed_cb,
                                          Evisum_Ui_Widget_Exel_Fields_Applied_Cb fields_applied_cb,
                                          Evisum_Ui_Widget_Exel_Resize_Live_Cb resize_live_cb,
-                                         Evisum_Ui_Widget_Exel_Resize_Done_Cb resize_done_cb, void *data);
+                                         Evisum_Ui_Widget_Exel_Resize_Done_Cb resize_done_cb,
+                                         Evisum_Ui_Widget_Exel_Fields_Reordered_Cb fields_reordered_cb, void *data);
 
 /* Release the exel widget controller and any menu state it owns.
  * Call this during view teardown to avoid leaked UI objects and stale pointers. */
@@ -159,6 +169,10 @@ void evisum_ui_widget_exel_field_resize_attach(Evisum_Ui_Widget_Exel *wx, Evas_O
 /* Process global mouse-up events to finish an active header resize drag.
  * This commits final width state and triggers configured resize-done callbacks. */
 void evisum_ui_widget_exel_field_resize_mouse_up(Evisum_Ui_Widget_Exel *wx, Evas_Event_Mouse_Up *ev);
+
+/* Process mouse-up for drag-reordering and commit any field order changes.
+ * Returns true when a reorder interaction was handled. */
+Eina_Bool evisum_ui_widget_exel_field_reorder_mouse_up(Evisum_Ui_Widget_Exel *wx, Evas_Event_Mouse_Up *ev);
 
 /* Consume and clear the internal "ignore next sort click" flag set after resizing.
  * Use this at sort-click entry points to prevent accidental sort toggles on drag release. */

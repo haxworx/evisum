@@ -20,6 +20,36 @@ int EVISUM_EVENT_CONFIG_CHANGED;
 
 static Evas_Object *_slider_alpha = NULL;
 
+static void
+_proc_field_order_sanitize(int *order) {
+    unsigned char seen[EVISUM_PROC_FIELD_WIDTHS_MAX] = { 0 };
+    int out[EVISUM_PROC_FIELD_WIDTHS_MAX] = { 0 };
+    int pos;
+
+    if (!order) return;
+
+    /* Keep command fixed in the first position. */
+    out[PROC_FIELD_CMD] = PROC_FIELD_CMD;
+    seen[PROC_FIELD_CMD] = 1;
+    pos = PROC_FIELD_CMD + 1;
+
+    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) {
+        int id = order[i];
+        if ((id >= PROC_FIELD_CMD) && (id < PROC_FIELD_MAX) && !seen[id]) {
+            out[pos++] = id;
+            seen[id] = 1;
+        }
+    }
+
+    for (int id = PROC_FIELD_CMD; id < PROC_FIELD_MAX; id++) {
+        if (seen[id]) continue;
+        out[pos++] = id;
+        seen[id] = 1;
+    }
+
+    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) order[i] = out[i];
+}
+
 void
 evisum_ui_config_save(Evisum_Ui *ui) {
     Eina_Bool notify = 0;
@@ -54,6 +84,7 @@ evisum_ui_config_save(Evisum_Ui *ui) {
         config()->proc.fields = ui->proc.fields;
         for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++)
             config()->proc.field_widths[i] = ui->proc.field_widths[i];
+        for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++) config()->proc.field_order[i] = ui->proc.field_order[i];
         proc_info_kthreads_show_set(ui->proc.show_kthreads);
     }
 
@@ -130,6 +161,9 @@ evisum_ui_config_load(Evisum_Ui *ui) {
     ui->proc.transparent = config()->proc.transparent;
     ui->proc.alpha = config()->proc.alpha;
     for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++) ui->proc.field_widths[i] = config()->proc.field_widths[i];
+    for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++) ui->proc.field_order[i] = config()->proc.field_order[i];
+    _proc_field_order_sanitize(ui->proc.field_order);
+    for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++) config()->proc.field_order[i] = ui->proc.field_order[i];
 
     ui->proc.width = config()->proc.width;
     ui->proc.height = config()->proc.height;

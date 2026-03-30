@@ -1,5 +1,5 @@
 ============
-Evisum 1.2.0-beta
+Evisum 1.2.0
 ============
 
   * Add network in/out tracking (Linux only).
@@ -14,6 +14,10 @@ Evisum 1.2.0-beta
   * Create our own widget "exel".
   * Tidy up the other cpu visuals.
   * Use evas_vg and vectors for our graphs.
+  * Add disk i/o tracking (Linux only).
+  * Fix process view window resize so it remembers.
+  * Columns in widget can reorder.
+  * Fix column header names to be concise like the others.
 
 ============
 Evisum 1.1.0

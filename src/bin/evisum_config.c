@@ -18,15 +18,17 @@ enum {
     PROC_FIELD_WIDTH_PRI = 6,
     PROC_FIELD_WIDTH_NICE = 7,
     PROC_FIELD_WIDTH_FILES = 8,
-    PROC_FIELD_WIDTH_NET_IN = 9,
-    PROC_FIELD_WIDTH_NET_OUT = 10,
-    PROC_FIELD_WIDTH_SIZE = 11,
-    PROC_FIELD_WIDTH_VIRT = 12,
-    PROC_FIELD_WIDTH_RSS = 13,
-    PROC_FIELD_WIDTH_SHARED = 14,
-    PROC_FIELD_WIDTH_STATE = 15,
-    PROC_FIELD_WIDTH_TIME = 16,
-    PROC_FIELD_WIDTH_CPU_USAGE = 17
+    PROC_FIELD_WIDTH_SIZE = 9,
+    PROC_FIELD_WIDTH_VIRT = 10,
+    PROC_FIELD_WIDTH_DISK_WRITE = 11,
+    PROC_FIELD_WIDTH_DISK_READ = 12,
+    PROC_FIELD_WIDTH_NET_IN = 13,
+    PROC_FIELD_WIDTH_NET_OUT = 14,
+    PROC_FIELD_WIDTH_RSS = 15,
+    PROC_FIELD_WIDTH_SHARED = 16,
+    PROC_FIELD_WIDTH_STATE = 17,
+    PROC_FIELD_WIDTH_TIME = 18,
+    PROC_FIELD_WIDTH_CPU_USAGE = 19
 };
 
 static const char *
@@ -100,6 +102,48 @@ config_init(void) {
                                   proc.field_widths[PROC_FIELD_WIDTH_NET_IN], EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.net_out",
                                   proc.field_widths[PROC_FIELD_WIDTH_NET_OUT], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.disk_read",
+                                  proc.field_widths[PROC_FIELD_WIDTH_DISK_READ], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.disk_write",
+                                  proc.field_widths[PROC_FIELD_WIDTH_DISK_WRITE], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.cmd",
+                                  proc.field_order[PROC_FIELD_CMD], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.uid",
+                                  proc.field_order[PROC_FIELD_UID], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.pid",
+                                  proc.field_order[PROC_FIELD_PID], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.threads",
+                                  proc.field_order[PROC_FIELD_THREADS], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.cpu",
+                                  proc.field_order[PROC_FIELD_CPU], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.pri",
+                                  proc.field_order[PROC_FIELD_PRI], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.nice",
+                                  proc.field_order[PROC_FIELD_NICE], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.files",
+                                  proc.field_order[PROC_FIELD_FILES], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.size",
+                                  proc.field_order[PROC_FIELD_SIZE], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.virt",
+                                  proc.field_order[PROC_FIELD_VIRT], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.disk_write",
+                                  proc.field_order[PROC_FIELD_DISK_WRITE], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.disk_read",
+                                  proc.field_order[PROC_FIELD_DISK_READ], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.net_in",
+                                  proc.field_order[PROC_FIELD_NET_IN], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.net_out",
+                                  proc.field_order[PROC_FIELD_NET_OUT], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.rss",
+                                  proc.field_order[PROC_FIELD_RSS], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.shared",
+                                  proc.field_order[PROC_FIELD_SHARED], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.state",
+                                  proc.field_order[PROC_FIELD_STATE], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.time",
+                                  proc.field_order[PROC_FIELD_TIME], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.cpu_usage",
+                                  proc.field_order[PROC_FIELD_CPU_USAGE], EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_statusbar", proc.show_statusbar,
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.transparent", proc.transparent,
@@ -186,6 +230,7 @@ _config_init() {
                        | (1u << PROC_FIELD_VIRT)
                        | (1u << PROC_FIELD_CPU_USAGE);
     cfg->proc.alpha = 100;
+    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) cfg->proc.field_order[i] = i;
 
     cfg->cpu.visual = eina_stringshare_add("default");
 

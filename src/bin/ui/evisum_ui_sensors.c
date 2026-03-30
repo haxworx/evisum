@@ -369,6 +369,7 @@ _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
 
             entry = _evisum_ui_sensors_history_find_or_create(view, s);
             if (!entry) continue;
+            if (entry->seen) continue;
 
             entry->current_temp = temp;
             _evisum_ui_sensors_history_add_sample(entry, temp);

@@ -366,6 +366,54 @@ _net_transfer_get(Proc_Info *p) {
     fclose(f);
 }
 
+static uint64_t
+_disk_write_get(int pid) {
+    FILE *f;
+    char path[PATH_MAX];
+    char buf[4096];
+    uint64_t write_bytes = 0;
+
+    snprintf(path, sizeof(path), "/proc/%d/io", pid);
+    f = fopen(path, "r");
+    if (!f) return 0;
+
+    while (fgets(buf, sizeof(buf), f)) {
+        unsigned long long value = 0;
+        if (sscanf(buf, "write_bytes: %llu", &value) == 1) {
+            write_bytes = value;
+            break;
+        }
+    }
+
+    fclose(f);
+
+    return write_bytes;
+}
+
+static uint64_t
+_disk_read_get(int pid) {
+    FILE *f;
+    char path[PATH_MAX];
+    char buf[4096];
+    uint64_t read_bytes = 0;
+
+    snprintf(path, sizeof(path), "/proc/%d/io", pid);
+    f = fopen(path, "r");
+    if (!f) return 0;
+
+    while (fgets(buf, sizeof(buf), f)) {
+        unsigned long long value = 0;
+        if (sscanf(buf, "read_bytes: %llu", &value) == 1) {
+            read_bytes = value;
+            break;
+        }
+    }
+
+    fclose(f);
+
+    return read_bytes;
+}
+
 static Eina_List *
 _process_list_linux_get(void) {
     Eina_List *files, *list;
@@ -408,6 +456,8 @@ _process_list_linux_get(void) {
         _mem_size(p);
         _cmd_args(p, st.name, sizeof(st.name));
         _net_transfer_get(p);
+        p->disk_read = _disk_read_get(pid);
+        p->disk_write = _disk_write_get(pid);
 
         Eina_List *next = eina_list_append(list, p);
         if (!next) {
@@ -449,6 +499,8 @@ _proc_thread_info(Proc_Info *p) {
         t->mem_rss = st.mem_rss;
         t->net_in = 0;
         t->net_out = 0;
+        t->disk_read = 0;
+        t->disk_write = 0;
 
         t->tid = tid;
         t->thread_name = strdup(st.name);
@@ -495,6 +547,8 @@ proc_info_by_pid(int pid) {
     _mem_size(p);
     _cmd_args(p, st.name, sizeof(st.name));
     _net_transfer_get(p);
+    p->disk_read = _disk_read_get(pid);
+    p->disk_write = _disk_write_get(pid);
 
     _proc_thread_info(p);
 
@@ -532,6 +586,8 @@ _proc_get(Proc_Info *p, struct kinfo_proc *kp) {
     p->tid = kp->p_tid;
     p->net_in = 0;
     p->net_out = 0;
+    p->disk_read = 0;
+    p->disk_write = 0;
 }
 
 static void
@@ -826,6 +882,8 @@ _proc_pidinfo(size_t pid) {
     p->numthreads = taskinfo.ptinfo.pti_threadnum;
     p->net_in = 0;
     p->net_out = 0;
+    p->disk_read = 0;
+    p->disk_write = 0;
     _cmd_get(p, pid);
 
     return p;
@@ -913,6 +971,8 @@ proc_info_by_pid(int pid) {
     p->numthreads = taskinfo.ptinfo.pti_threadnum;
     p->net_in = 0;
     p->net_out = 0;
+    p->disk_read = 0;
+    p->disk_write = 0;
     _cmd_get(p, pid);
 
     return p;
@@ -1043,6 +1103,8 @@ _proc_thread_info(struct kinfo_proc *kp, Eina_Bool is_thread) {
     p->numthreads = kp->ki_numthreads;
     p->net_in = 0;
     p->net_out = 0;
+    p->disk_read = 0;
+    p->disk_write = 0;
 
     p->tid = kp->ki_tid;
     p->thread_name = strdup(kp->ki_tdname);
@@ -1478,6 +1540,32 @@ proc_sort_by_net_out(const void *p1, const void *p2) {
 
     if (inf1->net_out > inf2->net_out) return 1;
     if (inf1->net_out < inf2->net_out) return -1;
+
+    return 0;
+}
+
+int
+proc_sort_by_disk_read(const void *p1, const void *p2) {
+    const Proc_Info *inf1, *inf2;
+
+    inf1 = p1;
+    inf2 = p2;
+
+    if (inf1->disk_read > inf2->disk_read) return 1;
+    if (inf1->disk_read < inf2->disk_read) return -1;
+
+    return 0;
+}
+
+int
+proc_sort_by_disk_write(const void *p1, const void *p2) {
+    const Proc_Info *inf1, *inf2;
+
+    inf1 = p1;
+    inf2 = p2;
+
+    if (inf1->disk_write > inf2->disk_write) return 1;
+    if (inf1->disk_write < inf2->disk_write) return -1;
 
     return 0;
 }

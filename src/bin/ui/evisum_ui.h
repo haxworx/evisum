@@ -12,10 +12,13 @@
 #include "ui/evisum_ui_cache.h"
 
 #define _(STR) gettext(STR)
+#ifndef N_
+#define N_(STR) gettext_noop(STR)
+#endif
 
 #define EVISUM_WIN_WIDTH             540
 #define EVISUM_WIN_HEIGHT            360
-#define EVISUM_PROC_FIELD_WIDTHS_MAX 18
+#define EVISUM_PROC_FIELD_WIDTHS_MAX 20
 
 typedef struct _Evisum_Ui {
     pid_t program_pid;
@@ -43,6 +46,7 @@ typedef struct _Evisum_Ui {
         int sort_type;
         unsigned int fields;
         int field_widths[EVISUM_PROC_FIELD_WIDTHS_MAX];
+        int field_order[EVISUM_PROC_FIELD_WIDTHS_MAX];
         Eina_Bool sort_reverse;
         Eina_Bool show_self;
         Eina_Bool show_kthreads;

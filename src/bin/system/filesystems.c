@@ -66,7 +66,10 @@ file_system_info_all_get(void) {
             continue;
         }
 
-        if (((strcmp(type_name, "fuseblk")) && (strstr(cp, "nodev"))) || (statfs(mount, &stats) < 0)
+        Eina_Bool ok = EINA_TRUE;
+        if ((strcmp(type_name, "fuseblk")) && (strcmp(type_name, "exfat"))) ok = EINA_FALSE;
+
+        if (((!ok) && (strstr(cp, "nodev"))) || (statfs(mount, &stats) < 0)
             || (stats.f_blocks == 0 && stats.f_bfree == 0)) {
             free(dev);
             free(type_name);

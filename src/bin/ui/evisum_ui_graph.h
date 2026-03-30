@@ -20,6 +20,8 @@ void evisum_ui_graph_draw(Evas_Object *graph_bg, Evas_Object *graph_vg, int samp
                           int y_grid_step_percent, double y_max, const Evisum_Ui_Graph_Series *series, int series_count,
                           const Evisum_Ui_Graph_Layer *layers, int layer_count);
 
+void evisum_ui_graph_reset(Evas_Object *graph_vg);
+
 void evisum_ui_graph_bg_set(Evas_Object *graph_bg);
 
 #endif

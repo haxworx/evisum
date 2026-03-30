@@ -9,7 +9,7 @@ static void
 _evisum_ui_cpu_win_mouse_move_cb(void *data, Evas *e, Evas_Object *obj, void *event_info) {
     Evas_Coord w, h;
     Evas_Event_Mouse_Move *ev;
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
 
     ev = event_info;
     evas_object_geometry_get(obj, NULL, NULL, &w, &h);
@@ -43,7 +43,7 @@ _evisum_ui_cpu_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *even
 static void
 _evisum_ui_cpu_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED) {
     Evisum_Ui *ui;
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
 
     ui = pd->ui;
     if (!pd->menu) pd->menu = evisum_ui_main_menu_create(ui, ui->cpu.win, obj);
@@ -69,7 +69,7 @@ _evisum_ui_cpu_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, vo
 
 static void
 _evisum_ui_cpu_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Ui_Cpu_Data *pd = data;
+    Evisum_Ui_Cpu_Visual_Data *pd = data;
     Evisum_Ui *ui = pd->ui;
 
     evisum_ui_config_save(ui);
@@ -86,16 +86,16 @@ Eina_List *
 evisum_ui_cpu_visuals_get(void) {
     Eina_List *l = NULL;
 
-    for (int i = 0; (i < sizeof(visualizations) / sizeof(Cpu_Visual)); i++) {
+    for (int i = 0; (i < sizeof(visualizations) / sizeof(Evisum_Ui_Cpu_Visual)); i++) {
         l = eina_list_append(l, strdup(visualizations[i].name));
     }
 
     return l;
 }
 
-Cpu_Visual *
+Evisum_Ui_Cpu_Visual *
 evisum_ui_cpu_visual_by_name(const char *name) {
-    for (int i = 0; (i < sizeof(visualizations) / sizeof(Cpu_Visual)); i++) {
+    for (int i = 0; (i < sizeof(visualizations) / sizeof(Evisum_Ui_Cpu_Visual)); i++) {
         if (!strcmp(name, visualizations[i].name)) return &visualizations[i];
     }
     return NULL;
@@ -111,11 +111,11 @@ evisum_ui_cpu_win_restart(Evisum_Ui *ui) {
 
 void
 evisum_ui_cpu_win_add(Evisum_Ui *ui) {
-    Ui_Cpu_Data *pd;
+    Evisum_Ui_Cpu_Visual_Data *pd;
     Evas_Object *win, *box, *scr, *btn, *ic, *bg;
     Evas_Object *tb;
     Elm_Layout *lay;
-    Cpu_Visual *vis;
+    Evisum_Ui_Cpu_Visual *vis;
     uint8_t bg_r, bg_g, bg_b;
 
     if (ui->cpu.win) {
