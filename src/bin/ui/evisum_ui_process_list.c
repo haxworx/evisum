@@ -19,11 +19,6 @@
 extern int EVISUM_EVENT_CONFIG_CHANGED;
 
 typedef struct {
-    Proc_Sort type;
-    int (*sort_cb)(const void *p1, const void *p2);
-} Sorter;
-
-typedef struct {
     Ecore_Thread *thread;
     Eina_Hash *icon_cache;
     Ecore_Event_Handler *handler;
@@ -32,7 +27,6 @@ typedef struct {
     Eina_Bool skip_update;
     Eina_Bool update_every_item;
     Eina_Bool first_run;
-    Sorter sorters[PROC_SORT_BY_MAX];
     pid_t selected_pid;
     int poll_count;
 
@@ -88,28 +82,29 @@ typedef struct {
     const char *name;
     const char *desc;
     Proc_Sort sort;
+    int (*sort_cb)(const void *p1, const void *p2);
 } Proc_Field_Info;
 
 static const Proc_Field_Info _proc_field_info[PROC_FIELD_MAX] = {
-    [PROC_FIELD_CMD]        = { N_("COMMAND"), N_("Command"),         PROC_SORT_BY_CMD        },
-    [PROC_FIELD_UID]        = { N_("USER"),    N_("User"),            PROC_SORT_BY_UID        },
-    [PROC_FIELD_PID]        = { N_("PID"),     N_("Process ID"),      PROC_SORT_BY_PID        },
-    [PROC_FIELD_THREADS]    = { N_("THR"),     N_("Threads"),         PROC_SORT_BY_THREADS    },
-    [PROC_FIELD_CPU]        = { N_("CPU"),     N_("CPU #"),           PROC_SORT_BY_CPU        },
-    [PROC_FIELD_PRI]        = { N_("PRI"),     N_("Priority"),        PROC_SORT_BY_PRI        },
-    [PROC_FIELD_NICE]       = { N_("NI"),      N_("Nice"),            PROC_SORT_BY_NICE       },
-    [PROC_FIELD_FILES]      = { N_("FD"),      N_("Open Files"),      PROC_SORT_BY_FILES      },
-    [PROC_FIELD_SIZE]       = { N_("SIZE"),    N_("Memory Size"),     PROC_SORT_BY_SIZE       },
-    [PROC_FIELD_VIRT]       = { N_("VIRT"),    N_("Memory Virtual"),  PROC_SORT_BY_VIRT       },
-    [PROC_FIELD_RSS]        = { N_("RES"),     N_("Memory Reserved"), PROC_SORT_BY_RSS        },
-    [PROC_FIELD_SHARED]     = { N_("SHR"),     N_("Memory Shared"),   PROC_SORT_BY_SHARED     },
-    [PROC_FIELD_STATE]      = { N_("S"),       N_("State"),           PROC_SORT_BY_STATE      },
-    [PROC_FIELD_TIME]       = { N_("TIME+"),   N_("Time"),            PROC_SORT_BY_TIME       },
-    [PROC_FIELD_CPU_USAGE]  = { N_("CPU%"),    N_("CPU Usage"),       PROC_SORT_BY_CPU_USAGE  },
-    [PROC_FIELD_NET_IN]     = { N_("RX/s"),    N_("Network In"),      PROC_SORT_BY_NET_IN     },
-    [PROC_FIELD_NET_OUT]    = { N_("TX/s"),    N_("Network Out"),     PROC_SORT_BY_NET_OUT    },
-    [PROC_FIELD_DISK_READ]  = { N_("R/s"),     N_("Disk Read"),       PROC_SORT_BY_DISK_READ  },
-    [PROC_FIELD_DISK_WRITE] = { N_("W/s"),     N_("Disk Write"),      PROC_SORT_BY_DISK_WRITE },
+    [PROC_FIELD_CMD]        = { N_("COMMAND"), N_("Command"),         PROC_SORT_BY_CMD,        proc_sort_by_cmd        },
+    [PROC_FIELD_UID]        = { N_("USER"),    N_("User"),            PROC_SORT_BY_UID,        proc_sort_by_uid        },
+    [PROC_FIELD_PID]        = { N_("PID"),     N_("Process ID"),      PROC_SORT_BY_PID,        proc_sort_by_pid        },
+    [PROC_FIELD_THREADS]    = { N_("THR"),     N_("Threads"),         PROC_SORT_BY_THREADS,    proc_sort_by_threads    },
+    [PROC_FIELD_CPU]        = { N_("CPU"),     N_("CPU #"),           PROC_SORT_BY_CPU,        proc_sort_by_cpu        },
+    [PROC_FIELD_PRI]        = { N_("PRI"),     N_("Priority"),        PROC_SORT_BY_PRI,        proc_sort_by_pri        },
+    [PROC_FIELD_NICE]       = { N_("NI"),      N_("Nice"),            PROC_SORT_BY_NICE,       proc_sort_by_nice       },
+    [PROC_FIELD_FILES]      = { N_("FD"),      N_("Open Files"),      PROC_SORT_BY_FILES,      proc_sort_by_files      },
+    [PROC_FIELD_SIZE]       = { N_("SIZE"),    N_("Memory Size"),     PROC_SORT_BY_SIZE,       proc_sort_by_size       },
+    [PROC_FIELD_VIRT]       = { N_("VIRT"),    N_("Memory Virtual"),  PROC_SORT_BY_VIRT,       proc_sort_by_virt       },
+    [PROC_FIELD_RSS]        = { N_("RES"),     N_("Memory Reserved"), PROC_SORT_BY_RSS,        proc_sort_by_rss        },
+    [PROC_FIELD_SHARED]     = { N_("SHR"),     N_("Memory Shared"),   PROC_SORT_BY_SHARED,     proc_sort_by_shared     },
+    [PROC_FIELD_STATE]      = { N_("S"),       N_("State"),           PROC_SORT_BY_STATE,      proc_sort_by_state      },
+    [PROC_FIELD_TIME]       = { N_("TIME+"),   N_("Time"),            PROC_SORT_BY_TIME,       proc_sort_by_time       },
+    [PROC_FIELD_CPU_USAGE]  = { N_("CPU%"),    N_("CPU Usage"),       PROC_SORT_BY_CPU_USAGE,  proc_sort_by_cpu_usage  },
+    [PROC_FIELD_NET_IN]     = { N_("RX/s"),    N_("Network In"),      PROC_SORT_BY_NET_IN,     proc_sort_by_net_in     },
+    [PROC_FIELD_NET_OUT]    = { N_("TX/s"),    N_("Network Out"),     PROC_SORT_BY_NET_OUT,    proc_sort_by_net_out    },
+    [PROC_FIELD_DISK_READ]  = { N_("R/s"),     N_("Disk Read"),       PROC_SORT_BY_DISK_READ,  proc_sort_by_disk_read  },
+    [PROC_FIELD_DISK_WRITE] = { N_("W/s"),     N_("Disk Write"),      PROC_SORT_BY_DISK_WRITE, proc_sort_by_disk_write },
 };
 
 static const Proc_Field_Info *
@@ -659,12 +654,9 @@ _evisum_ui_process_list_summary_add(Evisum_Ui_Process_List_View *view) {
 static Eina_List *
 _evisum_ui_process_list_sort(Eina_List *list, Evisum_Ui_Process_List_View *view) {
     Evisum_Ui *ui;
-    Sorter s;
     ui = view->ui;
 
-    s = view->sorters[ui->proc.sort_type];
-
-    list = eina_list_sort(list, eina_list_count(list), s.sort_cb);
+    list = eina_list_sort(list, eina_list_count(list), _proc_field_info[ui->proc.sort_type].sort_cb);
 
     if (ui->proc.sort_reverse) list = eina_list_reverse(list);
 
@@ -1603,30 +1595,6 @@ _evisum_ui_process_list_effects_add(Evisum_Ui_Process_List_View *view, Evas_Obje
     evas_object_show(win);
 }
 
-static void
-_evisum_ui_process_list_init(Evisum_Ui_Process_List_View *view) {
-    view->sorters[PROC_SORT_BY_NONE].sort_cb = proc_sort_by_pid;
-    view->sorters[PROC_SORT_BY_UID].sort_cb = proc_sort_by_uid;
-    view->sorters[PROC_SORT_BY_PID].sort_cb = proc_sort_by_pid;
-    view->sorters[PROC_SORT_BY_THREADS].sort_cb = proc_sort_by_threads;
-    view->sorters[PROC_SORT_BY_CPU].sort_cb = proc_sort_by_cpu;
-    view->sorters[PROC_SORT_BY_PRI].sort_cb = proc_sort_by_pri;
-    view->sorters[PROC_SORT_BY_NICE].sort_cb = proc_sort_by_nice;
-    view->sorters[PROC_SORT_BY_FILES].sort_cb = proc_sort_by_files;
-    view->sorters[PROC_SORT_BY_SIZE].sort_cb = proc_sort_by_size;
-    view->sorters[PROC_SORT_BY_VIRT].sort_cb = proc_sort_by_virt;
-    view->sorters[PROC_SORT_BY_RSS].sort_cb = proc_sort_by_rss;
-    view->sorters[PROC_SORT_BY_SHARED].sort_cb = proc_sort_by_shared;
-    view->sorters[PROC_SORT_BY_CMD].sort_cb = proc_sort_by_cmd;
-    view->sorters[PROC_SORT_BY_STATE].sort_cb = proc_sort_by_state;
-    view->sorters[PROC_SORT_BY_TIME].sort_cb = proc_sort_by_time;
-    view->sorters[PROC_SORT_BY_CPU_USAGE].sort_cb = proc_sort_by_cpu_usage;
-    view->sorters[PROC_SORT_BY_NET_IN].sort_cb = proc_sort_by_net_in;
-    view->sorters[PROC_SORT_BY_NET_OUT].sort_cb = proc_sort_by_net_out;
-    view->sorters[PROC_SORT_BY_DISK_READ].sort_cb = proc_sort_by_disk_read;
-    view->sorters[PROC_SORT_BY_DISK_WRITE].sort_cb = proc_sort_by_disk_write;
-}
-
 void
 evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     Evas_Object *win, *icon;
@@ -1642,10 +1610,10 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
 
     view->selected_pid = -1;
     view->first_run = 1;
+    view->update_every_item = 1;
     view->ui = ui;
     view->handler
             = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED, _evisum_ui_process_list_config_changed_cb, view);
-    _evisum_ui_process_list_init(view);
 
     ui->proc.win = view->win = win = elm_win_add(NULL, "evisum", ELM_WIN_BASIC);
     elm_win_autodel_set(win, 1);

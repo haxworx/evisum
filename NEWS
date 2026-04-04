@@ -1,4 +1,20 @@
 ============
+Evisum 1.2.2-beta
+============
+  
+  * Fix no sort type on first-run.
+
+============
+Evisum 1.2.1
+============ 
+
+  * Remove redundant code.
+  * Stop blocking the main loop in sensors windows.
+  * Fix a small leak in sensors windows.
+  * Fix menu change, hide then unable to apply bug.
+  * Fix trim.
+
+============
 Evisum 1.2.0
 ============
 

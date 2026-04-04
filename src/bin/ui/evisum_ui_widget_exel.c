@@ -76,10 +76,12 @@ struct _Evisum_Ui_Widget_Exel {
     Eina_Bool resizing;
     Eina_Bool ignore_sort_click;
     Eina_Bool fields_changed;
+    Eina_Bool fields_menu_apply_requested;
     Eina_Bool owns_state;
     Eina_Bool win_mouse_move_registered;
     Eina_Bool unrealized_release_enabled;
     Eina_Bool unrealized_delete_unhandled;
+    unsigned int fields_menu_mask_snapshot;
 };
 
 static Exel_Field *
@@ -271,6 +273,7 @@ _evisum_ui_widget_exel_fields_menu_apply_clicked_cb(void *data, Evas_Object *obj
     Eina_Bool changed;
 
     changed = wx->fields_changed;
+    wx->fields_menu_apply_requested = EINA_TRUE;
     evisum_ui_widget_exel_fields_menu_dismiss(wx);
 
     if (changed && wx->owns_state) {
@@ -1069,6 +1072,9 @@ evisum_ui_widget_exel_fields_menu_show(Evisum_Ui_Widget_Exel *wx, Evas_Object *a
     if (ev->button != 3) return;
     if (wx->fields_menu) return;
 
+    wx->fields_menu_apply_requested = EINA_FALSE;
+    wx->fields_menu_mask_snapshot = wx->p.fields_mask ? *(wx->p.fields_mask) : 0;
+
     _evisum_ui_widget_exel_fields_sync(wx);
     _evisum_ui_widget_exel_fields_changed_notify(wx);
 
@@ -1090,8 +1096,15 @@ evisum_ui_widget_exel_fields_menu_dismiss(Evisum_Ui_Widget_Exel *wx) {
     if (!wx) return;
     if (!wx->fields_menu) return;
 
+    if (!wx->fields_menu_apply_requested && wx->p.fields_mask) {
+        *(wx->p.fields_mask) = wx->fields_menu_mask_snapshot;
+        _evisum_ui_widget_exel_fields_sync(wx);
+        _evisum_ui_widget_exel_fields_changed_notify(wx);
+    }
+
     elm_ctxpopup_dismiss(wx->fields_menu);
     wx->fields_menu = NULL;
+    wx->fields_menu_apply_requested = EINA_FALSE;
 }
 
 Eina_Bool

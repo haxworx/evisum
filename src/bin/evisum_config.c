@@ -221,6 +221,7 @@ _config_init() {
     cfg->proc.show_kthreads = 0;
     cfg->proc.show_statusbar = 1;
     cfg->proc.show_user = 1;
+    cfg->proc.sort_type = PROC_SORT_BY_CMD;
     cfg->proc.transparent = 0;
     cfg->proc.fields = (1u << PROC_FIELD_CMD)
                        | (1u << PROC_FIELD_PID)

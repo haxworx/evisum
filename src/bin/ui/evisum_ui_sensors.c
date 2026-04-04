@@ -17,11 +17,8 @@ typedef struct {
     Eina_Bool skip_wait;
 
     Evisum_Ui *ui;
+    int n_sensors;
 } Evisum_Ui_Sensors_View;
-
-typedef struct {
-    int unused;
-} Sensor_Win_Data;
 
 typedef struct {
     char *key;
@@ -316,15 +313,17 @@ _evisum_ui_sensors_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Obje
 
 static void
 _evisum_ui_sensors_poll(void *data, Ecore_Thread *thread) {
+    sensor_t **sensors;
     Evisum_Ui_Sensors_View *view = data;
 
     ecore_thread_name_set(thread, "sensors");
 
     while (!ecore_thread_check(thread)) {
-        Sensor_Win_Data *msg = calloc(1, sizeof(Sensor_Win_Data));
-        if (!msg) return;
 
-        ecore_thread_feedback(thread, msg);
+        sensors = system_sensors_thermal_get(&view->n_sensors);
+        for (int i = 0; i < view->n_sensors; i++) system_sensor_thermal_get(sensors[i]);
+
+        ecore_thread_feedback(thread, sensors);
 
         for (int i = 0; i < 8; i++) {
             if (view->skip_wait) {
@@ -332,36 +331,33 @@ _evisum_ui_sensors_poll(void *data, Ecore_Thread *thread) {
                 break;
             }
             if (ecore_thread_check(thread)) return;
-            usleep(250000);
+            usleep(125000);
         }
     }
 }
 
 static void
 _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
-    Sensor_Win_Data *msg = msgdata;
     Evisum_Ui_Sensors_View *view = data;
-    sensor_t **sensors;
+    sensor_t **sensors = msgdata;
     sensor_t *s;
     Sensor_History *entry;
     Eina_List *l;
     int n = 0;
     int i = 0;
 
-    if (!view || !msg) return;
+    if (!view) return;
 
     EINA_LIST_FOREACH(view->history, l, entry)
     entry->seen = EINA_FALSE;
 
-    sensors = system_sensors_thermal_get(&n);
     if (sensors) {
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < view->n_sensors; i++) {
             Sensor_History *entry;
             double temp;
 
             s = sensors[i];
             if (!s) continue;
-            if (!system_sensor_thermal_get(s)) continue;
 
             temp = s->value;
             if (temp < 0.0) temp = 0.0;
@@ -371,6 +367,7 @@ _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
             if (!entry) continue;
             if (entry->seen) continue;
 
+            system_sensor_thermal_free(s);
             entry->current_temp = temp;
             _evisum_ui_sensors_history_add_sample(entry, temp);
             _evisum_ui_sensors_history_legend_add(view, entry);
@@ -385,7 +382,6 @@ _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
     view->history = eina_list_sort(view->history, eina_list_count(view->history), _evisum_ui_sensors_history_sort_cb);
     _evisum_ui_sensors_history_legend_repack(view);
     _evisum_ui_sensors_graph_redraw(view);
-    free(msg);
 }
 
 static void
