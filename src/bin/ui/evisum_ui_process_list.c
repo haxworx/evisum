@@ -1610,7 +1610,6 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
 
     view->selected_pid = -1;
     view->first_run = 1;
-    view->update_every_item = 1;
     view->ui = ui;
     view->handler
             = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED, _evisum_ui_process_list_config_changed_cb, view);
