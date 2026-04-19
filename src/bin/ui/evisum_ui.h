@@ -16,8 +16,8 @@
 #define N_(STR) gettext_noop(STR)
 #endif
 
-#define EVISUM_WIN_WIDTH             540
-#define EVISUM_WIN_HEIGHT            360
+#define EVISUM_WIN_WIDTH             800
+#define EVISUM_WIN_HEIGHT            500
 #define EVISUM_PROC_FIELD_WIDTHS_MAX 20
 
 typedef struct _Evisum_Ui {
@@ -122,7 +122,7 @@ void evisum_ui_shutdown(Evisum_Ui *ui);
 
 Evas_Object *evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj);
 
-void evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid);
+void evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, pid_t pid);
 
 const char *evisum_ui_icon_cache_find(Evisum_Ui *ui, const char *cmd);
 

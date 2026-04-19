@@ -49,7 +49,7 @@ typedef struct _Proc_Info {
 
 Eina_List *proc_info_all_get(void);
 
-Proc_Info *proc_info_by_pid(int pid);
+Proc_Info *proc_info_by_pid(pid_t pid);
 
 void proc_info_free(Proc_Info *proc);
 

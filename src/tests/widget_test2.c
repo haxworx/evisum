@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include "ui/evisum_ui_widget_exel.h"
 
@@ -18,9 +19,9 @@ typedef enum {
 
 typedef struct {
     int index;
-    int base_pid;
+    pid_t base_pid;
     unsigned long long base_mem_kib;
-    int pid;
+    pid_t pid;
     unsigned long long mem_kib;
     double cpu_usage;
     char name[32];
@@ -163,7 +164,7 @@ _content_get(void *data, Evas_Object *obj, const char *source) {
     item = evisum_ui_widget_exel_item_cache_object_get(wx);
     if (!item) return NULL;
 
-    snprintf(buf, sizeof(buf), "%d", row->pid);
+    snprintf(buf, sizeof(buf), "%d", (int) row->pid);
     evisum_ui_widget_exel_item_field_text_set(wx, item, EX2_FIELD_AINT, "aint", buf);
 
     evisum_ui_widget_exel_item_field_text_set(wx, item, EX2_FIELD_NOBODY, "nobody", row->name);
@@ -198,7 +199,7 @@ _update_timer_cb(void *data) {
         Example2_Row *row = evisum_ui_widget_exel_object_item_data_get(it);
 
         if (row) {
-            row->pid = row->base_pid + (int) ((tick + (unsigned int) row->index) % 20);
+            row->pid = (pid_t) (row->base_pid + (pid_t) ((tick + (unsigned int) row->index) % 20));
             row->mem_kib = row->base_mem_kib + (((tick * 37U) + ((unsigned int) row->index * 59U)) % 32768U);
             row->cpu_usage = (double) (((tick * 9U) + ((unsigned int) row->index * 13U)) % 100U);
             snprintf(row->tag, sizeof(row->tag), "slot-%02u", ((tick + (unsigned int) row->index) % 40U) + 1U);

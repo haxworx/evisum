@@ -226,9 +226,12 @@ _config_init() {
     cfg->proc.fields = (1u << PROC_FIELD_CMD)
                        | (1u << PROC_FIELD_PID)
                        | (1u << PROC_FIELD_THREADS)
+                       | (1u << PROC_FIELD_DISK_READ)
+                       | (1u << PROC_FIELD_DISK_WRITE)
+                       | (1u << PROC_FIELD_NET_IN)
+                       | (1u << PROC_FIELD_NET_OUT)
                        | (1u << PROC_FIELD_FILES)
                        | (1u << PROC_FIELD_SIZE)
-                       | (1u << PROC_FIELD_VIRT)
                        | (1u << PROC_FIELD_CPU_USAGE);
     cfg->proc.alpha = 100;
     for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) cfg->proc.field_order[i] = i;

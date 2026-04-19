@@ -1,12 +1,19 @@
 ============
+Evisum 1.2.3
+============
+
+  * Static analysis fixes.
+  * Ensure future proofing of pid_max.
+
+============
 Evisum 1.2.2
 ============
-  
+
   * Fix no sort type on first-run.
 
 ============
 Evisum 1.2.1
-============ 
+============
 
   * Remove redundant code.
   * Stop blocking the main loop in sensors windows.

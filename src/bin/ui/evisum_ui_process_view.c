@@ -25,7 +25,7 @@ typedef struct {
     int poll_delay;
     int64_t start;
     char *selected_cmd;
-    int selected_pid;
+    pid_t selected_pid;
     uint32_t poll_count;
 
     Ecore_Thread *thread;
@@ -351,8 +351,10 @@ _evisum_ui_process_view_threads_cpu_usage(Evisum_Ui_Process_View *view, Proc_Inf
 
         if ((inf = eina_hash_find(view->threads.hash_cpu_times, key)) == NULL) {
             inf = calloc(1, sizeof(Thread_Cpu_Info));
-            inf->cpu_time = p->cpu_time;
-            eina_hash_add(view->threads.hash_cpu_times, key, inf);
+            if (inf) {
+                inf->cpu_time = p->cpu_time;
+                eina_hash_add(view->threads.hash_cpu_times, key, inf);
+            }
         } else {
             cpu_usage = (double) (p->cpu_time - inf->cpu_time) * 10;
             inf->cpu_time = p->cpu_time;
@@ -867,7 +869,8 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
         view->poll_count++;
         return;
     }
-    if (!view->proc_usage_cache) view->proc_usage_cache = eina_hash_int64_new(_evisum_ui_process_view_usage_cache_free_cb);
+    if (!view->proc_usage_cache)
+        view->proc_usage_cache = eina_hash_int64_new(_evisum_ui_process_view_usage_cache_free_cb);
 
     id = proc->pid;
     cache = view->proc_usage_cache ? eina_hash_find(view->proc_usage_cache, &id) : NULL;
@@ -1624,7 +1627,7 @@ _evisum_ui_process_view_activate(Evisum_Ui_Process_View *view, Evisum_Proc_Actio
 }
 
 void
-evisum_ui_process_view_win_add(Evisum_Ui *ui, int pid, Evisum_Proc_Action action) {
+evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action action) {
     Evas_Object *win, *ic, *bx, *tabs, *tb;
     Proc_Info *proc;
 

@@ -667,7 +667,7 @@ _ui_init_system_probe(Evisum_Ui *ui) {
 }
 
 void
-evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, int pid) {
+evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, pid_t pid) {
     Eina_Bool restart = 0;
 
     if (ui->proc.restart) {

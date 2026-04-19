@@ -30,7 +30,7 @@ static const char *about_text_fmt
         = "<font color=#ffffff>"
           "<align=center>"
           "<b>"
-          "Copyright &copy; 2019-2021, 2024-2026. Alastair Poole &lt;alastair.poole@pm.me&gt;<br>"
+          "Copyright &copy; 2019-2021, 2024-2026. Alastair Poole &lt;netstar@netstar.im&gt;<br>"
           "<br>"
           "</b>"
           "</>"
@@ -253,6 +253,8 @@ evisum_about_window_show(void *data) {
     evas_object_clip_set(pad, clip);
 
     about = malloc(sizeof(Animate_Data));
+    if (!about) return;
+
     about->win = win;
     about->bg = bg;
     about->obj = pad;

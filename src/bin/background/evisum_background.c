@@ -16,14 +16,15 @@ typedef struct {
 } Proc_Net_Stats;
 
 static Proc_Net_Stats *
-_proc_net_stats_get_or_add(Eina_Hash *hash, int64_t pid) {
-    Proc_Net_Stats *stats = eina_hash_find(hash, &pid);
+_proc_net_stats_get_or_add(Eina_Hash *hash, pid_t pid) {
+    int64_t key = pid;
+    Proc_Net_Stats *stats = eina_hash_find(hash, &key);
     if (stats) return stats;
 
     stats = calloc(1, sizeof(*stats));
     if (!stats) return NULL;
 
-    eina_hash_add(hash, &pid, stats);
+    eina_hash_add(hash, &key, stats);
     return stats;
 }
 
@@ -38,7 +39,7 @@ _proc_net_stats_collect(void) {
 
     procs = system_network_process_usage_get(&n);
     for (int i = 0; i < n; i++) {
-        int64_t pid;
+        pid_t pid;
         Proc_Net_Stats *stats;
 
         if (!procs[i]) continue;

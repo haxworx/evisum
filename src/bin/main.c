@@ -31,7 +31,8 @@ _signals(Evisum_Ui *ui) {
 int
 elm_main(int argc, char **argv) {
     Evisum_Ui *ui;
-    int i, pid = -1;
+    int i;
+    pid_t pid = -1;
     size_t len;
     Evisum_Action action = EVISUM_ACTION_DEFAULT;
 
@@ -70,7 +71,7 @@ elm_main(int argc, char **argv) {
                 break;
             }
         }
-        if (len > 8) action = EVISUM_ACTION_DEFAULT;
+        if (len > 10) action = EVISUM_ACTION_DEFAULT;
         if (action == EVISUM_ACTION_PROCESS) pid = atoi(argv[1]);
     }
 

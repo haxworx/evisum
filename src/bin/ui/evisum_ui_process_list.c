@@ -86,24 +86,24 @@ typedef struct {
 } Proc_Field_Info;
 
 static const Proc_Field_Info _proc_field_info[PROC_FIELD_MAX] = {
-    [PROC_FIELD_CMD]        = { N_("COMMAND"), N_("Command"),         PROC_SORT_BY_CMD,        proc_sort_by_cmd        },
-    [PROC_FIELD_UID]        = { N_("USER"),    N_("User"),            PROC_SORT_BY_UID,        proc_sort_by_uid        },
-    [PROC_FIELD_PID]        = { N_("PID"),     N_("Process ID"),      PROC_SORT_BY_PID,        proc_sort_by_pid        },
-    [PROC_FIELD_THREADS]    = { N_("THR"),     N_("Threads"),         PROC_SORT_BY_THREADS,    proc_sort_by_threads    },
-    [PROC_FIELD_CPU]        = { N_("CPU"),     N_("CPU #"),           PROC_SORT_BY_CPU,        proc_sort_by_cpu        },
-    [PROC_FIELD_PRI]        = { N_("PRI"),     N_("Priority"),        PROC_SORT_BY_PRI,        proc_sort_by_pri        },
-    [PROC_FIELD_NICE]       = { N_("NI"),      N_("Nice"),            PROC_SORT_BY_NICE,       proc_sort_by_nice       },
-    [PROC_FIELD_FILES]      = { N_("FD"),      N_("Open Files"),      PROC_SORT_BY_FILES,      proc_sort_by_files      },
-    [PROC_FIELD_SIZE]       = { N_("SIZE"),    N_("Memory Size"),     PROC_SORT_BY_SIZE,       proc_sort_by_size       },
-    [PROC_FIELD_VIRT]       = { N_("VIRT"),    N_("Memory Virtual"),  PROC_SORT_BY_VIRT,       proc_sort_by_virt       },
-    [PROC_FIELD_RSS]        = { N_("RES"),     N_("Memory Reserved"), PROC_SORT_BY_RSS,        proc_sort_by_rss        },
-    [PROC_FIELD_SHARED]     = { N_("SHR"),     N_("Memory Shared"),   PROC_SORT_BY_SHARED,     proc_sort_by_shared     },
-    [PROC_FIELD_STATE]      = { N_("S"),       N_("State"),           PROC_SORT_BY_STATE,      proc_sort_by_state      },
-    [PROC_FIELD_TIME]       = { N_("TIME+"),   N_("Time"),            PROC_SORT_BY_TIME,       proc_sort_by_time       },
-    [PROC_FIELD_CPU_USAGE]  = { N_("CPU%"),    N_("CPU Usage"),       PROC_SORT_BY_CPU_USAGE,  proc_sort_by_cpu_usage  },
-    [PROC_FIELD_NET_IN]     = { N_("RX/s"),    N_("Network In"),      PROC_SORT_BY_NET_IN,     proc_sort_by_net_in     },
-    [PROC_FIELD_NET_OUT]    = { N_("TX/s"),    N_("Network Out"),     PROC_SORT_BY_NET_OUT,    proc_sort_by_net_out    },
-    [PROC_FIELD_DISK_READ]  = { N_("R/s"),     N_("Disk Read"),       PROC_SORT_BY_DISK_READ,  proc_sort_by_disk_read  },
+    [PROC_FIELD_CMD] =        { N_("COMMAND"), N_("Command"),         PROC_SORT_BY_CMD,        proc_sort_by_cmd        },
+    [PROC_FIELD_UID] =        { N_("USER"),    N_("User"),            PROC_SORT_BY_UID,        proc_sort_by_uid        },
+    [PROC_FIELD_PID] =        { N_("PID"),     N_("Process ID"),      PROC_SORT_BY_PID,        proc_sort_by_pid        },
+    [PROC_FIELD_THREADS] =    { N_("THR"),     N_("Threads"),         PROC_SORT_BY_THREADS,    proc_sort_by_threads    },
+    [PROC_FIELD_CPU] =        { N_("CPU"),     N_("CPU #"),           PROC_SORT_BY_CPU,        proc_sort_by_cpu        },
+    [PROC_FIELD_PRI] =        { N_("PRI"),     N_("Priority"),        PROC_SORT_BY_PRI,        proc_sort_by_pri        },
+    [PROC_FIELD_NICE] =       { N_("NI"),      N_("Nice"),            PROC_SORT_BY_NICE,       proc_sort_by_nice       },
+    [PROC_FIELD_FILES] =      { N_("FD"),      N_("Open Files"),      PROC_SORT_BY_FILES,      proc_sort_by_files      },
+    [PROC_FIELD_SIZE] =       { N_("SIZE"),    N_("Memory Size"),     PROC_SORT_BY_SIZE,       proc_sort_by_size       },
+    [PROC_FIELD_VIRT] =       { N_("VIRT"),    N_("Memory Virtual"),  PROC_SORT_BY_VIRT,       proc_sort_by_virt       },
+    [PROC_FIELD_RSS] =        { N_("RES"),     N_("Memory Reserved"), PROC_SORT_BY_RSS,        proc_sort_by_rss        },
+    [PROC_FIELD_SHARED] =     { N_("SHR"),     N_("Memory Shared"),   PROC_SORT_BY_SHARED,     proc_sort_by_shared     },
+    [PROC_FIELD_STATE] =      { N_("S"),       N_("State"),           PROC_SORT_BY_STATE,      proc_sort_by_state      },
+    [PROC_FIELD_TIME] =       { N_("TIME+"),   N_("Time"),            PROC_SORT_BY_TIME,       proc_sort_by_time       },
+    [PROC_FIELD_CPU_USAGE] =  { N_("CPU%"),    N_("CPU Usage"),       PROC_SORT_BY_CPU_USAGE,  proc_sort_by_cpu_usage  },
+    [PROC_FIELD_NET_IN] =     { N_("RX/s"),    N_("Network In"),      PROC_SORT_BY_NET_IN,     proc_sort_by_net_in     },
+    [PROC_FIELD_NET_OUT] =    { N_("TX/s"),    N_("Network Out"),     PROC_SORT_BY_NET_OUT,    proc_sort_by_net_out    },
+    [PROC_FIELD_DISK_READ] =  { N_("R/s"),     N_("Disk Read"),       PROC_SORT_BY_DISK_READ,  proc_sort_by_disk_read  },
     [PROC_FIELD_DISK_WRITE] = { N_("W/s"),     N_("Disk Write"),      PROC_SORT_BY_DISK_WRITE, proc_sort_by_disk_write },
 };
 
@@ -167,29 +167,65 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
             def->spacer = ELM_SCALE_SIZE(4);
             def->icon_size = 16;
             return EINA_TRUE;
-        case PROC_FIELD_UID: def->key = "uid"; def->align_x = 0.0; return EINA_TRUE;
-        case PROC_FIELD_PID: def->key = "pid"; return EINA_TRUE;
-        case PROC_FIELD_THREADS: def->key = "thr"; return EINA_TRUE;
-        case PROC_FIELD_CPU: def->key = "cpu"; return EINA_TRUE;
-        case PROC_FIELD_PRI: def->key = "prio"; return EINA_TRUE;
-        case PROC_FIELD_NICE: def->key = "nice"; return EINA_TRUE;
-        case PROC_FIELD_FILES: def->key = "files"; return EINA_TRUE;
-        case PROC_FIELD_NET_IN: def->key = "net_in"; return EINA_TRUE;
-        case PROC_FIELD_NET_OUT: def->key = "net_out"; return EINA_TRUE;
-        case PROC_FIELD_DISK_READ: def->key = "disk_read"; return EINA_TRUE;
-        case PROC_FIELD_DISK_WRITE: def->key = "disk_write"; return EINA_TRUE;
-        case PROC_FIELD_SIZE: def->key = "size"; return EINA_TRUE;
-        case PROC_FIELD_VIRT: def->key = "virt"; return EINA_TRUE;
-        case PROC_FIELD_RSS: def->key = "rss"; return EINA_TRUE;
-        case PROC_FIELD_SHARED: def->key = "share"; return EINA_TRUE;
-        case PROC_FIELD_STATE: def->key = "state"; return EINA_TRUE;
-        case PROC_FIELD_TIME: def->key = "time"; return EINA_TRUE;
+        case PROC_FIELD_UID:
+            def->key = "uid";
+            def->align_x = 0.0;
+            return EINA_TRUE;
+        case PROC_FIELD_PID:
+            def->key = "pid";
+            return EINA_TRUE;
+        case PROC_FIELD_THREADS:
+            def->key = "thr";
+            return EINA_TRUE;
+        case PROC_FIELD_CPU:
+            def->key = "cpu";
+            return EINA_TRUE;
+        case PROC_FIELD_PRI:
+            def->key = "prio";
+            return EINA_TRUE;
+        case PROC_FIELD_NICE:
+            def->key = "nice";
+            return EINA_TRUE;
+        case PROC_FIELD_FILES:
+            def->key = "files";
+            return EINA_TRUE;
+        case PROC_FIELD_NET_IN:
+            def->key = "net_in";
+            return EINA_TRUE;
+        case PROC_FIELD_NET_OUT:
+            def->key = "net_out";
+            return EINA_TRUE;
+        case PROC_FIELD_DISK_READ:
+            def->key = "disk_read";
+            return EINA_TRUE;
+        case PROC_FIELD_DISK_WRITE:
+            def->key = "disk_write";
+            return EINA_TRUE;
+        case PROC_FIELD_SIZE:
+            def->key = "size";
+            return EINA_TRUE;
+        case PROC_FIELD_VIRT:
+            def->key = "virt";
+            return EINA_TRUE;
+        case PROC_FIELD_RSS:
+            def->key = "rss";
+            return EINA_TRUE;
+        case PROC_FIELD_SHARED:
+            def->key = "share";
+            return EINA_TRUE;
+        case PROC_FIELD_STATE:
+            def->key = "state";
+            return EINA_TRUE;
+        case PROC_FIELD_TIME:
+            def->key = "time";
+            return EINA_TRUE;
         case PROC_FIELD_CPU_USAGE:
             def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
             def->key = "cpu_u";
             def->unit_format = _("%1.1f %%");
             return EINA_TRUE;
-        default: return EINA_FALSE;
+        default:
+            return EINA_FALSE;
     }
 }
 
@@ -364,12 +400,11 @@ _evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view) {
     evisum_ui_widget_exel_field_reorder_enabled_set(view->widget_exel, EINA_TRUE);
     evisum_ui_widget_exel_resize_hit_width_set(view->widget_exel, PROC_COL_RESIZE_HIT_WIDTH);
     evisum_ui_widget_exel_state_bind(view->widget_exel, &view->ui->proc.fields, view->ui->proc.field_widths);
-    evisum_ui_widget_exel_callbacks_set(view->widget_exel, _evisum_ui_process_list_fields_reference_mask_get_cb,
-                                        _evisum_ui_process_list_fields_changed_cb,
-                                        _evisum_ui_process_list_fields_applied_cb,
-                                        _evisum_ui_process_list_fields_resize_live_cb,
-                                        _evisum_ui_process_list_fields_resize_done_cb,
-                                        _evisum_ui_process_list_fields_reordered_cb, view);
+    evisum_ui_widget_exel_callbacks_set(
+            view->widget_exel, _evisum_ui_process_list_fields_reference_mask_get_cb,
+            _evisum_ui_process_list_fields_changed_cb, _evisum_ui_process_list_fields_applied_cb,
+            _evisum_ui_process_list_fields_resize_live_cb, _evisum_ui_process_list_fields_resize_done_cb,
+            _evisum_ui_process_list_fields_reordered_cb, view);
 
     for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) {
         Proc_Sort type;
@@ -747,7 +782,8 @@ _evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_Lis
                 if (cache->net_in && net_in_abs >= cache->net_in) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
                 else proc->net_in = 0;
 
-                if (cache->net_out && net_out_abs >= cache->net_out) proc->net_out = (net_out_abs - cache->net_out) / elapsed;
+                if (cache->net_out && net_out_abs >= cache->net_out)
+                    proc->net_out = (net_out_abs - cache->net_out) / elapsed;
                 else proc->net_out = 0;
 
                 if (cache->disk_read && disk_read_abs >= cache->disk_read)
@@ -953,7 +989,7 @@ static void
 _evisum_ui_process_list_item_menu_debug_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
     Proc_Info *proc;
     const char *terminals[] = {
-        "terminology", "gnome-terminal", "xfce4-terminal", "konsole", NULL,
+        "terminology", "gnome-terminal", "xfce4-terminal", "konsole", "lxterminal", "deepin-terminal", NULL,
     };
     const char *terminal = NULL;
     Evisum_Ui_Process_List_View *view = data;
@@ -1639,7 +1675,8 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_process_list_win_resize_cb, view);
     evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_process_list_win_move_cb, view);
     evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_UP, _evisum_ui_process_list_field_header_mouse_up_cb, view);
-    evas_object_event_callback_add(view->tb_main, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_process_list_win_key_down_cb, view);
+    evas_object_event_callback_add(view->tb_main, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_process_list_win_key_down_cb,
+                                   view);
 
     _evisum_ui_process_list_search_add(view);
     _evisum_ui_process_list_effects_add(view, win);

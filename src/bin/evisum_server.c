@@ -28,7 +28,7 @@ typedef struct _Evisum_Server {
 
 typedef struct _Evisum_Msg_Hello {
     Evisum_Action action;
-    int           pid;
+    pid_t         pid;
 } Evisum_Msg_Hello;
 
 static void *_evisum_server = NULL;
@@ -85,7 +85,7 @@ evisum_server_init(void *data) {
 typedef struct _Evisum_Server_Client {
     Ecore_Ipc_Server *srv;
     Evisum_Action action;
-    int pid;
+    pid_t pid;
     Eina_Bool success;
 } Evisum_Server_Client;
 
@@ -143,7 +143,7 @@ _evisum_server_client_connect_cb(void *data, int type EINA_UNUSED, void *event E
 }
 
 Eina_Bool
-evisum_server_client_add(Evisum_Action action, int pid) {
+evisum_server_client_add(Evisum_Action action, pid_t pid) {
     Evisum_Server_Client *client;
     Ecore_Event_Handler *handler[3];
     Eina_Bool ok;

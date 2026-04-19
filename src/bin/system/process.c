@@ -148,7 +148,7 @@ static void
 _cmd_args(Proc_Info *p, char *name, size_t len) {
     char path[PATH_MAX];
     char line[4096];
-    int pid = p->pid;
+    pid_t pid = p->pid;
 
     snprintf(path, sizeof(path), "/proc/%i/exe", pid);
     char *link = ecore_file_readlink(path);
@@ -223,7 +223,7 @@ _cmd_args(Proc_Info *p, char *name, size_t len) {
 }
 
 static int
-_uid(int pid) {
+_uid(pid_t pid) {
     FILE *f;
     char buf[4096];
     int uid = 0;
@@ -264,7 +264,8 @@ _boot_time(void) {
 }
 
 typedef struct {
-    int pid, ppid, utime, stime, cutime, cstime;
+    pid_t pid, ppid;
+    int utime, stime, cutime, cstime;
     int psr, pri, nice, numthreads;
     long long int start_time, run_time;
     char state;
@@ -367,7 +368,7 @@ _net_transfer_get(Proc_Info *p) {
 }
 
 static uint64_t
-_disk_write_get(int pid) {
+_disk_write_get(pid_t pid) {
     FILE *f;
     char path[PATH_MAX];
     char buf[4096];
@@ -391,7 +392,7 @@ _disk_write_get(int pid) {
 }
 
 static uint64_t
-_disk_read_get(int pid) {
+_disk_read_get(pid_t pid) {
     FILE *f;
     char path[PATH_MAX];
     char buf[4096];
@@ -426,7 +427,7 @@ _process_list_linux_get(void) {
 
     files = ecore_file_ls("/proc");
     EINA_LIST_FREE(files, n) {
-        int pid = atoi(n);
+        pid_t pid = (pid_t) atoi(n);
         free(n);
 
         if (!pid) continue;
@@ -519,7 +520,7 @@ _proc_thread_info(Proc_Info *p) {
 }
 
 Proc_Info *
-proc_info_by_pid(int pid) {
+proc_info_by_pid(pid_t pid) {
     const char *state;
     Stat st;
     char buf[4096];
@@ -624,7 +625,7 @@ args_done:
 }
 
 Proc_Info *
-proc_info_by_pid(int pid) {
+proc_info_by_pid(pid_t pid) {
     struct kinfo_proc *kp, *kpt;
     kvm_t *kern;
     char errbuf[_POSIX2_LINE_MAX];
@@ -731,7 +732,7 @@ _process_list_openbsd_get(void) {
 
 #if defined(__MacOS__)
 static void
-_cmd_get(Proc_Info *p, int pid) {
+_cmd_get(Proc_Info *p, pid_t pid) {
     char *cp, *args = NULL, **argv = NULL;
     int mib[3], argmax, argc;
     size_t size;
@@ -857,7 +858,7 @@ done:
 }
 
 static Proc_Info *
-_proc_pidinfo(size_t pid) {
+_proc_pidinfo(pid_t pid) {
     const char *state;
     struct proc_taskallinfo taskinfo;
     int size = proc_pidinfo(pid, PROC_PIDTASKALLINFO, 0, &taskinfo, sizeof(taskinfo));
@@ -940,7 +941,7 @@ _process_list_macos_get(void) {
 }
 
 Proc_Info *
-proc_info_by_pid(int pid) {
+proc_info_by_pid(pid_t pid) {
     const char *state;
     struct proc_taskallinfo taskinfo;
     struct proc_workqueueinfo workqueue;
@@ -1183,7 +1184,7 @@ _process_list_freebsd_get(void) {
 }
 
 static Proc_Info *
-_proc_info_by_pid_fallback(int pid) {
+_proc_info_by_pid_fallback(pid_t pid) {
     struct kinfo_proc kp;
     int mib[4];
     size_t len;
@@ -1202,7 +1203,7 @@ _proc_info_by_pid_fallback(int pid) {
 }
 
 Proc_Info *
-proc_info_by_pid(int pid) {
+proc_info_by_pid(pid_t pid) {
     kvm_t *kern;
     struct kinfo_proc *kps, *kp;
     char errbuf[_POSIX2_LINE_MAX];
