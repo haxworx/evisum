@@ -4,6 +4,7 @@ Evisum 1.2.3
 
   * Static analysis fixes.
   * Ensure future proofing of pid_max.
+  * Fix initial sizing of process list.
 
 ============
 Evisum 1.2.2

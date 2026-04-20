@@ -26,7 +26,6 @@ typedef struct {
     Eina_Bool skip_wait;
     Eina_Bool skip_update;
     Eina_Bool update_every_item;
-    Eina_Bool first_run;
     pid_t selected_pid;
     int poll_count;
 
@@ -649,6 +648,8 @@ _evisum_ui_process_list_summary_add(Evisum_Ui_Process_List_View *view) {
 
     if (!ui->proc.show_statusbar) return;
 
+    view->summary.visible = 1;
+
     hbx = view->summary.hbx;
 
     ic = elm_icon_add(hbx);
@@ -681,9 +682,6 @@ _evisum_ui_process_list_summary_add(Evisum_Ui_Process_List_View *view) {
     evas_object_size_hint_align_set(bx, FILL, FILL);
     elm_box_pack_end(hbx, bx);
     evas_object_show(bx);
-
-    view->first_run = 0;
-    view->summary.visible = 1;
 }
 
 static Eina_List *
@@ -923,7 +921,6 @@ _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
     }
     eina_list_free(real);
 
-    if (view->first_run) _evisum_ui_process_list_summary_add(view);
 
     view->poll_count++;
 
@@ -1645,7 +1642,6 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     if (!view) return;
 
     view->selected_pid = -1;
-    view->first_run = 1;
     view->ui = ui;
     view->handler
             = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED, _evisum_ui_process_list_config_changed_cb, view);
@@ -1681,10 +1677,8 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     _evisum_ui_process_list_search_add(view);
     _evisum_ui_process_list_effects_add(view, win);
     _evisum_ui_process_list_content_reset(view);
-    _evisum_ui_process_list_feedback_cb(view, NULL, _evisum_ui_process_list_get(view));
+    _evisum_ui_process_list_summary_add(view);
 
-    _evisum_ui_process_list_win_resize_cb(view, NULL, win, NULL);
-    view->skip_wait = 1;
     view->thread = ecore_thread_feedback_run(_evisum_ui_process_list_process_list, _evisum_ui_process_list_feedback_cb,
                                              NULL, NULL, view, 0);
 }

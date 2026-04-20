@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2021, 2024. Alastair Roy Poole <alastair.poole@pm.me>
+ * Copyright 2018-2021, 2024-2026. Alastair Roy Poole <netstar@netstar.im>
  *
  * See COPYING file for details.
  */
@@ -49,7 +49,7 @@ elm_main(int argc, char **argv) {
                    "        Launch storage view.\n"
                    "      -n\n"
                    "        Launch network view.\n"
-                   "      -s | -p\n"
+                   "      -s\n"
                    "        Launch sensors view.\n"
                    "      -h | -help | --help\n"
                    "        This menu.\n"
@@ -58,7 +58,7 @@ elm_main(int argc, char **argv) {
         } else if (!strcmp(argv[i], "-c")) action = EVISUM_ACTION_CPU;
         else if (!strcmp(argv[i], "-m")) action = EVISUM_ACTION_MEM;
         else if (!strcmp(argv[i], "-d")) action = EVISUM_ACTION_STORAGE;
-        else if ((!strcmp(argv[i], "-s")) || (!strcmp(argv[i], "-p"))) action = EVISUM_ACTION_SENSORS;
+        else if (!strcmp(argv[i], "-s")) action = EVISUM_ACTION_SENSORS;
         else if (!strcmp(argv[i], "-n")) action = EVISUM_ACTION_NETWORK;
     }
 
