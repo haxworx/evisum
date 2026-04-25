@@ -383,4 +383,26 @@ collections {
     EVISUM_ICON(stop, 16, 16, 0, 0, 1.0)
     EVISUM_ICON(storage, 16, 16, 0, 0, 1.0)
     EVISUM_ICON(threads, 16, 16, 0, 0, 1.0)
+    group {
+        name: "evisum/about/ladyhand";
+        min: 560 540;
+        max: 560 540;
+        parts {
+            part {
+                name: "bg";
+                type: IMAGE;
+                description {
+                    state: "default" 0.0;
+                    aspect: 1.037 1.037;
+                    aspect_preference: BOTH;
+                    image {
+                        normal: "ladyhand.png";
+                    }
+                    fill {
+                        smooth: 1;
+                    }
+                }
+            }
+        }
+    }
 }

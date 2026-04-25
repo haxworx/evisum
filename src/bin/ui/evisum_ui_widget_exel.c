@@ -11,6 +11,7 @@
 #define EVISUM_UI_WIDGET_EXEL_DEFAULT_HIT_WIDTH   8
 #define EVISUM_UI_WIDGET_EXEL_DEFAULT_CACHE_SIZE  30
 #define EVISUM_UI_WIDGET_EXEL_DRAG_THRESHOLD      6
+#define EVISUM_UI_WIDGET_EXEL_CURSOR_RESIZE_H     "sb_h_double_arrow"
 
 typedef struct {
     int id;
@@ -79,6 +80,8 @@ struct _Evisum_Ui_Widget_Exel {
     Eina_Bool fields_menu_apply_requested;
     Eina_Bool owns_state;
     Eina_Bool win_mouse_move_registered;
+    Eina_Bool win_mouse_out_registered;
+    Eina_Bool resize_cursor_active;
     Eina_Bool unrealized_release_enabled;
     Eina_Bool unrealized_delete_unhandled;
     unsigned int fields_menu_mask_snapshot;
@@ -561,8 +564,51 @@ _evisum_ui_widget_exel_field_header_mouse_up_cb(void *data, Evas *e EINA_UNUSED,
 }
 
 static void
+_evisum_ui_widget_exel_resize_cursor_update(Evisum_Ui_Widget_Exel *wx, Eina_Bool active) {
+    if (!wx || !wx->p.win) return;
+    if (wx->resize_cursor_active == active) return;
+
+    wx->resize_cursor_active = active;
+    if (active) elm_object_cursor_set(wx->p.win, EVISUM_UI_WIDGET_EXEL_CURSOR_RESIZE_H);
+    else elm_object_cursor_unset(wx->p.win);
+}
+
+static Eina_Bool
+_evisum_ui_widget_exel_resize_handle_hit_test(const Evisum_Ui_Widget_Exel *wx, Evas_Coord px, Evas_Coord py) {
+    int hit_width;
+
+    if (!wx) return EINA_FALSE;
+    hit_width = ELM_SCALE_SIZE(wx->p.resize_hit_width);
+    if (hit_width <= 0) return EINA_FALSE;
+
+    for (int i = wx->p.field_first; i < wx->p.field_max; i++) {
+        int id = wx->p.field_order ? wx->p.field_order[i] : i;
+        Evas_Coord x = 0, y = 0, w = 0, h = 0;
+        Exel_Field *f = _evisum_ui_widget_exel_field_get(wx, id);
+        if (!f || !f->btn || !f->enabled) continue;
+        if (id == wx->p.field_first) continue;
+
+        evas_object_geometry_get(f->btn, &x, &y, &w, &h);
+        if (px < x || px > (x + w) || py < y || py > (y + h)) continue;
+
+        if (px >= (x + w - hit_width)) return EINA_TRUE;
+        if ((px <= (x + hit_width)) && (_evisum_ui_widget_exel_field_prev_visible_get(wx, id) != 0)) return EINA_TRUE;
+    }
+
+    return EINA_FALSE;
+}
+
+static void
 _evisum_ui_widget_exel_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
                                          void *event_info);
+
+static void
+_evisum_ui_widget_exel_win_mouse_out_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                                        void *event_info EINA_UNUSED) {
+    Evisum_Ui_Widget_Exel *wx = data;
+    if (!wx) return;
+    _evisum_ui_widget_exel_resize_cursor_update(wx, EINA_FALSE);
+}
 
 static void
 _evisum_ui_widget_exel_genlist_unrealized_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info);
@@ -611,6 +657,8 @@ evisum_ui_widget_exel_create(Evas_Object *parent) {
 
     evas_object_event_callback_add(p.win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_widget_exel_win_mouse_move_cb, wx);
     wx->win_mouse_move_registered = EINA_TRUE;
+    evas_object_event_callback_add(p.win, EVAS_CALLBACK_MOUSE_OUT, _evisum_ui_widget_exel_win_mouse_out_cb, wx);
+    wx->win_mouse_out_registered = EINA_TRUE;
 
     return wx;
 }
@@ -773,6 +821,11 @@ evisum_ui_widget_exel_free(Evisum_Ui_Widget_Exel *wx) {
         evas_object_event_callback_del_full(wx->p.win, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_widget_exel_win_mouse_move_cb,
                                             wx);
     }
+    if (wx->win_mouse_out_registered && wx->p.win) {
+        evas_object_event_callback_del_full(wx->p.win, EVAS_CALLBACK_MOUSE_OUT, _evisum_ui_widget_exel_win_mouse_out_cb,
+                                            wx);
+    }
+    _evisum_ui_widget_exel_resize_cursor_update(wx, EINA_FALSE);
     evisum_ui_widget_exel_fields_menu_dismiss(wx);
     evisum_ui_widget_exel_deferred_call_cancel(wx);
     _evisum_ui_widget_exel_drag_proxy_del(wx);
@@ -992,6 +1045,7 @@ _evisum_ui_widget_exel_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_O
                                          void *event_info) {
     Evisum_Ui_Widget_Exel *wx = data;
     Evas_Event_Mouse_Move *ev = event_info;
+    Eina_Bool on_resize_handle = EINA_FALSE;
 
     if (!wx || !ev) return;
 
@@ -1010,6 +1064,12 @@ _evisum_ui_widget_exel_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_O
     if (wx->dragging) _evisum_ui_widget_exel_drag_proxy_move(wx, ev->cur.canvas.x, ev->cur.canvas.y);
 
     _evisum_ui_widget_exel_field_resize_mouse_move(wx, ev);
+
+    if (wx->resizing) on_resize_handle = EINA_TRUE;
+    else if (!wx->dragging && !wx->drag_pending)
+        on_resize_handle = _evisum_ui_widget_exel_resize_handle_hit_test(wx, ev->cur.canvas.x, ev->cur.canvas.y);
+
+    _evisum_ui_widget_exel_resize_cursor_update(wx, on_resize_handle);
 }
 
 void
@@ -1033,6 +1093,7 @@ evisum_ui_widget_exel_field_resize_mouse_up(Evisum_Ui_Widget_Exel *wx, Evas_Even
     wx->resizing = 0;
     wx->resize_btn = NULL;
     wx->ignore_sort_click = 1;
+    _evisum_ui_widget_exel_resize_cursor_update(wx, EINA_FALSE);
 
     if (wx->p.resize_done_cb) wx->p.resize_done_cb(wx->p.data);
 }
