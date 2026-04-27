@@ -1,6 +1,7 @@
 #include "evisum_ui_disk.h"
 #include "evisum_ui_graph.h"
-#include "../system/filesystems.h"
+#include "../engine/evisum_engine.h"
+#include "../background/evisum_background.h"
 #include "config.h"
 #include "evisum_ui_colors.h"
 
@@ -187,19 +188,38 @@ static Disk_History *
 _evisum_ui_disk_history_find_or_create(Evisum_Ui_Disk_View *view, const File_System *fs, Eina_Bool *created) {
     Eina_List *l;
     Disk_History *entry;
-    char keybuf[4096];
+    const char *path;
+    const char *mount;
+    char *key;
+    size_t path_len, mount_len, key_len;
 
-    snprintf(keybuf, sizeof(keybuf), "%s|%s", fs->path, fs->mount);
+    path = fs->path;
+    mount = fs->mount;
+    path_len = strlen(path);
+    mount_len = strlen(mount);
+    key_len = path_len + 1 + mount_len + 1;
+
+    key = malloc(key_len);
+    if (!key) return NULL;
+    memcpy(key, path, path_len);
+    key[path_len] = '|';
+    memcpy(key + path_len + 1, mount, mount_len);
+    key[key_len - 1] = '\0';
+
     EINA_LIST_FOREACH(view->history, l, entry) {
-        if (!strcmp(entry->key, keybuf)) {
+        if (!strcmp(entry->key, key)) {
+            free(key);
             if (created) *created = EINA_FALSE;
             return entry;
         }
     }
 
     entry = calloc(1, sizeof(Disk_History));
-    if (!entry) return NULL;
-    entry->key = strdup(keybuf);
+    if (!entry) {
+        free(key);
+        return NULL;
+    }
+    entry->key = key;
     if (!entry->key) {
         free(entry);
         return NULL;
@@ -286,17 +306,21 @@ _evisum_ui_disk_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object 
 static void
 _evisum_ui_disk_disks_poll(void *data, Ecore_Thread *thread) {
     Evisum_Ui_Disk_View *view = data;
+    uint64_t seq = 0;
+    int ticks = 9;
 
     while (!ecore_thread_check(thread)) {
-        for (int i = 0; i < 8; i++) {
-            if (view->skip_wait) {
-                view->skip_wait = 0;
-                break;
-            }
-            if (ecore_thread_check(thread)) return;
-            usleep(125000);
-        }
-        ecore_thread_feedback(thread, file_system_info_all_get());
+        Eina_List *mounted;
+        if (view->skip_wait) {
+            view->skip_wait = 0;
+            ticks = 9;
+        } else if (!evisum_background_update_wait(&seq)) continue;
+        ticks++;
+        if (ticks < 10) continue;
+        ticks = 0;
+        mounted = file_system_info_all_get();
+        if (!mounted) continue;
+        ecore_thread_feedback(thread, mounted);
     }
 }
 

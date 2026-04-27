@@ -1,7 +1,7 @@
 #include "evisum_ui_process_view.h"
 #include "evisum_ui_colors.h"
 #include "evisum_ui_widget_exel.h"
-#include "../system/process.h"
+#include "../engine/evisum_engine.h"
 #include "../background/evisum_background.h"
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
@@ -22,7 +22,6 @@ typedef struct {
 
     Evas_Object *current_view;
 
-    int poll_delay;
     int64_t start;
     char *selected_cmd;
     pid_t selected_pid;
@@ -433,6 +432,7 @@ _evisum_ui_process_view_children_del(void *data, Evas_Object *obj EINA_UNUSED) {
     Proc_Info *proc = data;
 
     eina_list_free(proc->children);
+    proc->children = NULL;
     proc_info_free(proc);
 }
 
@@ -482,7 +482,13 @@ _evisum_ui_process_view_children_view_update(void *data) {
         }
     }
     child = eina_list_nth(children, 0);
-    if (child) proc_info_free(child);
+    if (child) {
+        Eina_List *root_children = child->children;
+        child->children = NULL;
+        proc_info_free(child);
+        eina_list_free(root_children);
+    }
+    eina_list_free(children);
 
     return 1;
 }
@@ -490,16 +496,15 @@ _evisum_ui_process_view_children_view_update(void *data) {
 static void
 _evisum_ui_process_view_proc_info_main(void *data, Ecore_Thread *thread) {
     Evisum_Ui_Process_View *view = data;
+    uint64_t seq = 0;
 
     ecore_thread_name_set(thread, "process_view");
 
     while (!ecore_thread_check(thread)) {
+        if (!evisum_background_update_wait(&seq)) continue;
         Proc_Info *proc = proc_info_by_pid(view->selected_pid);
+        if (!proc) continue;
         ecore_thread_feedback(thread, proc);
-
-        if (ecore_thread_check(thread)) return;
-
-        usleep(100000);
     }
 }
 
@@ -847,8 +852,7 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
 
     view = data;
     proc = msg;
-    elapsed = view->poll_delay;
-    if (elapsed <= 0) elapsed = 1;
+    elapsed = 1;
 
     if (!proc || (view->start && (proc->start != view->start))) {
         if (proc) proc_info_free(proc);
@@ -877,6 +881,8 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
 #if defined(__linux__)
     disk_read_abs = proc->disk_read;
     disk_write_abs = proc->disk_write;
+    net_in_abs = proc->net_in;
+    net_out_abs = proc->net_out;
 #endif
     if (!cache) {
         cache = calloc(1, sizeof(Proc_Usage_Cache));
@@ -884,7 +890,6 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
             cache->start = proc->start;
             cache->cpu_time = proc->cpu_time;
 #if defined(__linux__)
-            evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
             cache->net_in = net_in_abs;
             cache->net_out = net_out_abs;
             cache->disk_read = disk_read_abs;
@@ -910,7 +915,6 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
         cache->start = proc->start;
         cache->cpu_time = proc->cpu_time;
 #if defined(__linux__)
-        evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
         cache->net_in = net_in_abs;
         cache->net_out = net_out_abs;
         cache->disk_read = disk_read_abs;
@@ -927,7 +931,6 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
         else proc->cpu_usage = 0.0;
         cache->cpu_time = proc->cpu_time;
 #if defined(__linux__)
-        evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
         if (cache->net_in && (net_in_abs >= cache->net_in)) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
         else proc->net_in = 0;
 
@@ -1635,7 +1638,6 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action acti
     if (!view) return;
     view->ui = ui;
     view->selected_pid = pid;
-    view->poll_delay = 1;
     view->threads.widget_exel = NULL;
     view->children.widget_exel = NULL;
     view->children.fields_mask = 0;

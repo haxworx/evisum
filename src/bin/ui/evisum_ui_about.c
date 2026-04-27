@@ -185,14 +185,14 @@ evisum_about_window_show(void *data) {
     Evas_Object *win, *bg, *root, *header, *version, *lb, *btn;
     Evas_Object *hbx, *spacer, *pad_left, *pad_right, *scroller, *scroller_box;
     Evas_Object *top_spacer, *bottom_spacer;
-    Evas_Object *pad_top;
+    Evas_Object *pad_top, *pad_bottom;
     int about_w, about_h, hdr_h, about_pad, btn_h;
 
     about_w = ELM_SCALE_SIZE(EVISUM_ABOUT_BG_WIDTH);
     about_h = ELM_SCALE_SIZE(EVISUM_ABOUT_BG_HEIGHT);
     about_pad = ELM_SCALE_SIZE(16);
     btn_h = ELM_SCALE_SIZE(BTN_HEIGHT);
-    hdr_h = btn_h + about_pad;
+    hdr_h = btn_h + (about_pad * 2);
 
     if (ui->win_about) {
         elm_win_raise(ui->win_about);
@@ -336,8 +336,15 @@ evisum_about_window_show(void *data) {
     evas_object_size_hint_min_set(pad_top, about_w, about_pad);
     evas_object_show(pad_top);
 
+    pad_bottom = elm_box_add(win);
+    evas_object_size_hint_align_set(pad_bottom, FILL, FILL);
+    evas_object_size_hint_weight_set(pad_bottom, EXPAND, 0);
+    evas_object_size_hint_min_set(pad_bottom, about_w, about_pad);
+    evas_object_show(pad_bottom);
+
     elm_box_pack_end(header, pad_top);
     elm_box_pack_end(header, hbx);
+    elm_box_pack_end(header, pad_bottom);
 
     evas_object_smart_callback_add(btn, "clicked", _btn_close_cb, about);
 

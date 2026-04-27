@@ -1,7 +1,8 @@
 #include "evisum_ui_sensors.h"
 #include "evisum_ui_graph.h"
 #include "evisum_ui_colors.h"
-#include "system/machine.h"
+#include "../engine/evisum_engine.h"
+#include "../background/evisum_background.h"
 #include "config.h"
 
 typedef struct {
@@ -95,13 +96,13 @@ _evisum_ui_sensors_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED, vo
 }
 
 static void
-_evisum_ui_sensors_sensor_name_set(char *buf, size_t len, sensor_t *s) {
-    if (!s || !s->name) {
+_evisum_ui_sensors_sensor_name_set(char *buf, size_t len, Sensor *s) {
+    if (!s || !s->name[0]) {
         snprintf(buf, len, "%s", _("Sensor"));
         return;
     }
 
-    if (!s->child_name) snprintf(buf, len, "%s", s->name);
+    if (!s->child_name[0]) snprintf(buf, len, "%s", s->name);
     else snprintf(buf, len, "%s (%s)", s->name, s->child_name);
 }
 
@@ -210,13 +211,13 @@ _evisum_ui_sensors_history_legend_update(Sensor_History *entry, double temp) {
 }
 
 static Sensor_History *
-_evisum_ui_sensors_history_find_or_create(Evisum_Ui_Sensors_View *view, sensor_t *s) {
+_evisum_ui_sensors_history_find_or_create(Evisum_Ui_Sensors_View *view, Sensor *s) {
     Eina_List *l;
     Sensor_History *entry;
     char keybuf[256];
     char namebuf[256];
 
-    if (!s || !s->name) return NULL;
+    if (!s || !s->name[0]) return NULL;
 
     _evisum_ui_sensors_sensor_name_set(namebuf, sizeof(namebuf), s);
     snprintf(keybuf, sizeof(keybuf), "%s", namebuf);
@@ -313,37 +314,36 @@ _evisum_ui_sensors_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Obje
 
 static void
 _evisum_ui_sensors_poll(void *data, Ecore_Thread *thread) {
-    sensor_t **sensors;
+    Sensor **sensors;
     Evisum_Ui_Sensors_View *view = data;
+    uint64_t seq = 0;
+    int ticks = 9;
 
     ecore_thread_name_set(thread, "sensors");
 
     while (!ecore_thread_check(thread)) {
+        if (view->skip_wait) {
+            view->skip_wait = 0;
+            ticks = 9;
+        } else if (!evisum_background_update_wait(&seq)) continue;
+        ticks++;
+        if (ticks < 10) continue;
+        ticks = 0;
 
         sensors = system_sensors_thermal_get(&view->n_sensors);
-        for (int i = 0; i < view->n_sensors; i++) system_sensor_thermal_get(sensors[i]);
+        if (!sensors) continue;
 
         ecore_thread_feedback(thread, sensors);
-
-        for (int i = 0; i < 8; i++) {
-            if (view->skip_wait) {
-                view->skip_wait = 0;
-                break;
-            }
-            if (ecore_thread_check(thread)) return;
-            usleep(125000);
-        }
     }
 }
 
 static void
 _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
     Evisum_Ui_Sensors_View *view = data;
-    sensor_t **sensors = msgdata;
-    sensor_t *s;
+    Sensor **sensors = msgdata;
+    Sensor *s;
     Sensor_History *entry;
     Eina_List *l;
-    int n = 0;
     int i = 0;
 
     if (!view) return;
@@ -367,7 +367,6 @@ _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
             if (!entry) continue;
             if (entry->seen) continue;
 
-            system_sensor_thermal_free(s);
             entry->current_temp = temp;
             _evisum_ui_sensors_history_add_sample(entry, temp);
             _evisum_ui_sensors_history_legend_add(view, entry);
@@ -375,7 +374,7 @@ _evisum_ui_sensors_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
             entry->seen = EINA_TRUE;
         }
 
-        system_sensors_thermal_free(sensors, n);
+        system_sensors_thermal_free(sensors, view->n_sensors);
     }
 
     _evisum_ui_sensors_history_compact(view);

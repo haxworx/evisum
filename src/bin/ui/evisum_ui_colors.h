@@ -2,7 +2,7 @@
 #define __EVISUM_UI_COLORS_H__
 
 #include "evisum_ui.h"
-#include "../system/machine.h"
+#include "../engine/evisum_engine.h"
 #include <stdint.h>
 
 typedef struct _Color_Point {

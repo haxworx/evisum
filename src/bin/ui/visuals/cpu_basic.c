@@ -1,4 +1,5 @@
 #include "cpu_basic.h"
+#include "../../background/evisum_background.h"
 #include "ui/evisum_ui_graph.h"
 
 #define CORE_TILE_SIZE  128
@@ -22,6 +23,7 @@ typedef struct {
 static void
 _core_times_main_cb(void *data, Ecore_Thread *thread) {
     int ncpu;
+    uint64_t seq = 0;
     Evisum_Ui_Cpu_Visual_Data *pd = data;
     Ext *ext = pd->ext;
 
@@ -30,7 +32,9 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
     ecore_thread_name_set(thread, "cpu");
 
     while (!ecore_thread_check(thread)) {
-        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, POLL_USEC);
+        if (!evisum_background_update_wait(&seq)) continue;
+        Cpu_Core **cores = system_cpu_state_get(&ncpu);
+        if (!cores || ncpu <= 0) continue;
         Core *cores_out = calloc(ncpu, sizeof(Core));
 
         if (cores_out) {
@@ -39,8 +43,7 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
                 Core *core = &(cores_out[n]);
                 core->id = id;
                 core->percent = cores[id]->percent;
-                if (ext->cpu_freq) core->freq = system_cpu_n_frequency_get(id);
-                free(cores[id]);
+                if (ext->cpu_freq) core->freq = cores[id]->freq;
             }
             ecore_thread_feedback(thread, cores_out);
         }

@@ -61,11 +61,11 @@ config_init(void) {
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_user", proc.show_user,
                                   EET_T_UCHAR);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.poll_delay", proc.poll_delay,
+                                  EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_type", proc.sort_type,
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_reverse", proc.sort_reverse,
-                                  EET_T_UCHAR);
-    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.poll_delay", proc.poll_delay,
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.fields", proc.fields, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_widths.cmd",
@@ -146,6 +146,8 @@ config_init(void) {
                                   proc.field_order[PROC_FIELD_CPU_USAGE], EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_statusbar", proc.show_statusbar,
                                   EET_T_UCHAR);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.history_whole", proc.history_whole,
+                                  EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.transparent", proc.transparent,
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.alpha", proc.alpha, EET_T_UCHAR);
@@ -200,8 +202,6 @@ _config_check(Evisum_Config *cfg) {
 
     if (cfg->version > CONFIG_VERSION) return EINA_FALSE;
 
-    if (cfg->proc.poll_delay <= 0) return EINA_FALSE;
-
     return EINA_TRUE;
 }
 
@@ -217,10 +217,10 @@ static Evisum_Config *
 _config_init() {
     Evisum_Config *cfg = calloc(1, sizeof(Evisum_Config));
     cfg->version = CONFIG_VERSION;
-    cfg->proc.poll_delay = 3;
     cfg->proc.show_kthreads = 0;
     cfg->proc.show_statusbar = 1;
     cfg->proc.show_user = 1;
+    cfg->proc.poll_delay = 1;
     cfg->proc.sort_type = PROC_SORT_BY_CMD;
     cfg->proc.transparent = 0;
     cfg->proc.fields = (1u << PROC_FIELD_CMD)

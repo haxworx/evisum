@@ -1,4 +1,5 @@
 #include "cpu_bars.h"
+#include "../../background/evisum_background.h"
 #include "ui/evisum_ui_graph.h"
 
 #define BAR_WIDTH 16
@@ -53,13 +54,16 @@ _cpu_percent_colors_fill(Evas_Object *colors) {
 static void
 _core_times_main_cb(void *data, Ecore_Thread *thread) {
     int ncpu;
+    uint64_t seq = 0;
     Evisum_Ui_Cpu_Visual_Data *pd = data;
     Ext *ext = pd->ext;
 
     ecore_thread_name_set(thread, "cpu");
 
     while (!ecore_thread_check(thread)) {
-        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, POLL_USEC);
+        if (!evisum_background_update_wait(&seq)) continue;
+        Cpu_Core **cores = system_cpu_state_get(&ncpu);
+        if (!cores || ncpu <= 0) continue;
         Core *cores_out = calloc(ncpu, sizeof(Core));
 
         if (cores_out) {
@@ -68,7 +72,6 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
                 Core *core = &(cores_out[n]);
                 core->id = id;
                 core->percent = cores[id]->percent;
-                free(cores[id]);
             }
             ecore_thread_feedback(thread, cores_out);
         }

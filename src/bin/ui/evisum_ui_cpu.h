@@ -3,7 +3,7 @@
 
 #include "evisum_ui.h"
 #include "evisum_ui_colors.h"
-#include "../system/machine.h"
+#include "../engine/evisum_engine.h"
 
 typedef struct {
     short id;

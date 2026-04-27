@@ -1,10 +1,11 @@
-inc = include_directories('.', '../..')
+inc = include_directories('.', '../..', 'enigmatic', 'enigmatic/client', 'enigmatic/lz4')
 
 src = []
 
-subdir('system')
+subdir('engine')
 subdir('ui')
 subdir('background')
+subdir('enigmatic')
 
 evisum_core_src = src
 
@@ -19,6 +20,7 @@ src += files([
 executable('evisum', src,
    include_directories  : inc,
    dependencies         : [ deps, deps_os, deps_nls ],
+   link_with            : [ lz4_lib ],
    install              : true)
 
 if host_os == 'freebsd' or host_os == 'dragonfly'

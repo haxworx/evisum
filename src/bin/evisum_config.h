@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x001C
+#define CONFIG_VERSION 0x001D
 
 typedef struct _Evisum_Config {
     int version;
@@ -19,14 +19,15 @@ typedef struct _Evisum_Config {
 
         Eina_Bool show_kthreads;
         Eina_Bool show_user;
+        int poll_delay;
         unsigned char sort_type;
         Eina_Bool sort_reverse;
-        unsigned char poll_delay;
         unsigned int fields;
         int field_widths[EVISUM_PROC_FIELD_WIDTHS_MAX];
         int field_order[EVISUM_PROC_FIELD_WIDTHS_MAX];
 
         Eina_Bool show_statusbar;
+        Eina_Bool history_whole;
         Eina_Bool transparent;
         unsigned char alpha;
     } proc;

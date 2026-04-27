@@ -1,6 +1,7 @@
 #include "evisum_ui_network.h"
 #include "evisum_ui_graph.h"
-#include "system/machine.h"
+#include "../engine/evisum_engine.h"
+#include "../background/evisum_background.h"
 #include "evisum_ui_colors.h"
 #include "config.h"
 
@@ -60,8 +61,13 @@ typedef struct {
 
     Eina_Bool is_new;
     Eina_Bool delete_me;
-    Eina_Bool sampled;
-} Network_Interface;
+} Network_View_Interface;
+
+typedef struct {
+    char name[255];
+    uint64_t total_in;
+    uint64_t total_out;
+} Network_Update_Sample;
 
 static void _evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces);
 static const Evisum_Ui_Graph_Layer _network_layers[] = {
@@ -79,7 +85,7 @@ _evisum_ui_network_graph_objects_valid(Evisum_Ui_Network_View *view) {
 }
 
 static void
-_evisum_ui_network_legend_toggle_state_apply(Network_Interface *iface) {
+_evisum_ui_network_legend_toggle_state_apply(Network_View_Interface *iface) {
     if (!iface) return;
 
     if (!iface->enabled && iface->legend_swatch) evas_object_hide(iface->legend_swatch);
@@ -88,7 +94,7 @@ _evisum_ui_network_legend_toggle_state_apply(Network_Interface *iface) {
 
 static void
 _evisum_ui_network_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Network_Interface *iface = data;
+    Network_View_Interface *iface = data;
 
     if (!iface || !iface->view || !iface->legend_btn || !iface->legend_row) return;
     if (!_evisum_ui_network_graph_objects_valid(iface->view)) return;
@@ -130,7 +136,7 @@ _evisum_ui_network_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event
 }
 
 static void
-_evisum_ui_network_iface_color_apply(Network_Interface *iface) {
+_evisum_ui_network_iface_color_apply(Network_View_Interface *iface) {
     evisum_graph_color_get(iface->name, &iface->color_r, &iface->color_g, &iface->color_b);
 }
 
@@ -155,7 +161,7 @@ _evisum_ui_network_transfer_format(double rate) {
 }
 
 static void
-_evisum_ui_network_iface_legend_add(Evisum_Ui_Network_View *view, Network_Interface *iface) {
+_evisum_ui_network_iface_legend_add(Evisum_Ui_Network_View *view, Network_View_Interface *iface) {
     Evas_Object *row, *swatch, *lb, *btn;
     Evas *evas;
 
@@ -202,9 +208,8 @@ _evisum_ui_network_iface_legend_add(Evisum_Ui_Network_View *view, Network_Interf
 }
 
 static void
-_evisum_ui_network_iface_legend_del(Network_Interface *iface) {
+_evisum_ui_network_iface_legend_del(Network_View_Interface *iface) {
     if (iface->legend_row) evas_object_del(iface->legend_row);
-    if (iface->legend_label) evas_object_del(iface->legend_label);
     iface->legend_row = NULL;
     iface->legend_btn = NULL;
     iface->legend_swatch = NULL;
@@ -213,7 +218,7 @@ _evisum_ui_network_iface_legend_del(Network_Interface *iface) {
 }
 
 static void
-_evisum_ui_network_iface_legend_update(Network_Interface *iface) {
+_evisum_ui_network_iface_legend_update(Network_View_Interface *iface) {
     char *s1, *s2;
 
     if (!iface->legend_label) return;
@@ -226,7 +231,7 @@ _evisum_ui_network_iface_legend_update(Network_Interface *iface) {
 }
 
 static void
-_evisum_ui_network_iface_history_add(Network_Interface *iface, double value) {
+_evisum_ui_network_iface_history_add(Network_View_Interface *iface, double value) {
     if (iface->history_count < NETWORK_GRAPH_SAMPLES) iface->history[iface->history_count++] = value;
     else {
         memmove(&iface->history[0], &iface->history[1], sizeof(double) * (NETWORK_GRAPH_SAMPLES - 1));
@@ -237,7 +242,7 @@ _evisum_ui_network_iface_history_add(Network_Interface *iface, double value) {
 static void
 _evisum_ui_network_histories_reset(Eina_List *interfaces) {
     Eina_List *l;
-    Network_Interface *iface;
+    Network_View_Interface *iface;
 
     EINA_LIST_FOREACH(interfaces, l, iface) {
         iface->history_count = 0;
@@ -246,27 +251,26 @@ _evisum_ui_network_histories_reset(Eina_List *interfaces) {
 }
 
 static void
-_evisum_ui_network_interface_gone(net_iface_t **ifaces, int n, Eina_List *list) {
-    Eina_List *l;
-    Network_Interface *iface;
+_evisum_ui_network_update_samples_free(Eina_List *samples) {
+    Network_Update_Sample *s;
+    EINA_LIST_FREE(samples, s) free(s);
+}
 
-    EINA_LIST_FOREACH(list, l, iface) {
-        Eina_Bool found = EINA_FALSE;
-        for (int i = 0; i < n; i++) {
-            net_iface_t *nwif = ifaces[i];
-            if (!strcmp(nwif->name, iface->name)) {
-                found = EINA_TRUE;
-                break;
-            }
-        }
-        if (!found) iface->delete_me = EINA_TRUE;
+static Network_View_Interface *
+_evisum_ui_network_iface_find(Eina_List *interfaces, const char *name) {
+    Eina_List *l;
+    Network_View_Interface *iface;
+
+    EINA_LIST_FOREACH(interfaces, l, iface) {
+        if (!strcmp(iface->name, name)) return iface;
     }
+    return NULL;
 }
 
 static void
 _evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces) {
     Eina_List *l;
-    Network_Interface *iface;
+    Network_View_Interface *iface;
     double peak;
     int total, nseries;
     Evisum_Ui_Graph_Series *series;
@@ -307,113 +311,111 @@ _evisum_ui_network_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Obje
 
 static void
 _evisum_ui_network_update(void *data EINA_UNUSED, Ecore_Thread *thread) {
-    Eina_List *interfaces = NULL;
-    Network_Interface *iface;
+    uint64_t seq = 0;
+    int ticks = 9;
 
     ecore_thread_name_set(thread, "network");
 
     while (!ecore_thread_check(thread)) {
-        int n;
-        net_iface_t *nwif, **ifaces = system_network_ifaces_get(&n);
+        Eina_List *samples = NULL;
 
-        _evisum_ui_network_interface_gone(ifaces, n, interfaces);
+        if (!evisum_background_update_wait(&seq)) continue;
+        ticks++;
+        if (ticks < 10) continue;
+        ticks = 0;
+        int n;
+        Network_Interface *nwif, **ifaces = system_network_ifaces_get(&n);
+        if (!ifaces) continue;
 
         for (int i = 0; i < n; i++) {
-            Network_Interface *iface2;
-            Eina_List *l;
+            Network_Update_Sample *s;
 
             nwif = ifaces[i];
-            iface = NULL;
-            EINA_LIST_FOREACH(interfaces, l, iface2) {
-                if (!strcmp(nwif->name, iface2->name)) {
-                    iface = iface2;
-                    break;
-                }
+            s = calloc(1, sizeof(*s));
+            if (s) {
+                snprintf(s->name, sizeof(s->name), "%s", nwif->name);
+                s->total_in = nwif->total_in;
+                s->total_out = nwif->total_out;
+                samples = eina_list_append(samples, s);
             }
 
-            if (!iface) {
-                iface = calloc(1, sizeof(Network_Interface));
-                iface->is_new = EINA_TRUE;
-                iface->enabled = EINA_TRUE;
-                snprintf(iface->name, sizeof(iface->name), "%s", nwif->name);
-                iface->total_in = nwif->xfer.in;
-                iface->total_out = nwif->xfer.out;
-                interfaces = eina_list_append(interfaces, iface);
-            } else {
-                iface->is_new = EINA_FALSE;
-                iface->in = (iface->total_in == 0) ? 0 : (nwif->xfer.in - iface->total_in);
-                iface->out = (iface->total_out == 0) ? 0 : (nwif->xfer.out - iface->total_out);
-
-                if (iface->in > iface->peak_in) iface->peak_in = iface->in;
-                if (iface->out > iface->peak_out) iface->peak_out = iface->out;
-
-                iface->total_in = nwif->xfer.in;
-                iface->total_out = nwif->xfer.out;
-            }
-
-            free(nwif);
         }
 
         free(ifaces);
-        ecore_thread_feedback(thread, interfaces);
-
-        if (!ecore_thread_check(thread)) usleep(NETWORK_POLL_USEC);
+        if (samples) ecore_thread_feedback(thread, samples);
     }
-
-    EINA_LIST_FREE(interfaces, iface)
-    free(iface);
 }
 
 static void
 _evisum_ui_network_update_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
     Evisum_Ui_Network_View *view = data;
-    Eina_List *interfaces = msgdata;
+    Eina_List *samples = msgdata;
     Eina_List *l, *l2;
-    Network_Interface *iface;
+    Network_View_Interface *iface;
+    Network_Update_Sample *s;
     Eina_Bool graph_reset_needed = EINA_FALSE;
 
-    view->interfaces = interfaces;
+    if (!samples) return;
+    if (!view || !view->win || !evas_object_evas_get(view->win)) {
+        _evisum_ui_network_update_samples_free(samples);
+        return;
+    }
 
-    EINA_LIST_FOREACH(interfaces, l, iface) {
-        if (iface->is_new && !iface->delete_me) {
+    EINA_LIST_FOREACH(view->interfaces, l, iface) {
+        iface->is_new = EINA_FALSE;
+        iface->delete_me = EINA_TRUE;
+    }
+
+    EINA_LIST_FOREACH(samples, l, s) {
+        iface = _evisum_ui_network_iface_find(view->interfaces, s->name);
+        if (!iface) {
+            iface = calloc(1, sizeof(*iface));
+            if (!iface) continue;
+            iface->is_new = EINA_TRUE;
+            iface->enabled = EINA_TRUE;
+            snprintf(iface->name, sizeof(iface->name), "%s", s->name);
+            iface->total_in = s->total_in;
+            iface->total_out = s->total_out;
+            view->interfaces = eina_list_append(view->interfaces, iface);
             graph_reset_needed = EINA_TRUE;
-            break;
+        } else {
+            iface->in = (iface->total_in == 0 || s->total_in < iface->total_in) ? 0 : (s->total_in - iface->total_in);
+            iface->out = (iface->total_out == 0 || s->total_out < iface->total_out) ? 0 : (s->total_out - iface->total_out);
+            if (iface->in > iface->peak_in) iface->peak_in = iface->in;
+            if (iface->out > iface->peak_out) iface->peak_out = iface->out;
+            iface->total_in = s->total_in;
+            iface->total_out = s->total_out;
         }
+        iface->delete_me = EINA_FALSE;
+    }
+
+    _evisum_ui_network_update_samples_free(samples);
+
+    EINA_LIST_FOREACH_SAFE(view->interfaces, l, l2, iface) {
+        if (!iface->delete_me) continue;
+        _evisum_ui_network_iface_legend_del(iface);
+        free(iface);
+        view->interfaces = eina_list_remove_list(view->interfaces, l);
     }
 
     if (graph_reset_needed) {
-        _evisum_ui_network_histories_reset(interfaces);
+        _evisum_ui_network_histories_reset(view->interfaces);
         evisum_ui_graph_reset(view->graph_img);
         view->graph_peak = 0.0;
     }
 
-    EINA_LIST_FOREACH(interfaces, l, iface)
-    iface->sampled = EINA_FALSE;
-
-    EINA_LIST_FOREACH_SAFE(interfaces, l, l2, iface) {
+    EINA_LIST_FOREACH(view->interfaces, l, iface) {
         double rate = (double) iface->in + (double) iface->out;
-
-        if (iface->delete_me) {
-            _evisum_ui_network_iface_legend_del(iface);
-            free(iface);
-            interfaces = eina_list_remove_list(interfaces, l);
-            view->interfaces = interfaces;
-            continue;
-        }
-
         if (iface->is_new) {
             _evisum_ui_network_iface_color_apply(iface);
             _evisum_ui_network_iface_legend_add(view, iface);
         }
-
-        if (iface->sampled) continue;
-        iface->sampled = EINA_TRUE;
         _evisum_ui_network_iface_history_add(iface, rate);
         if (rate > view->graph_peak) view->graph_peak = rate;
         _evisum_ui_network_iface_legend_update(iface);
     }
 
-    _evisum_ui_network_graph_redraw(view, interfaces);
+    _evisum_ui_network_graph_redraw(view, view->interfaces);
 }
 
 static void
@@ -449,19 +451,25 @@ _evisum_ui_network_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj 
     Evisum_Ui_Network_View *view = data;
     Evisum_Ui *ui = view->ui;
 
+    view->win = NULL;
     if (view->menu) evas_object_del(view->menu);
 
-    if (view->interfaces) {
-        Eina_List *l;
-        Network_Interface *iface;
-
-        EINA_LIST_FOREACH(view->interfaces, l, iface)
-        _evisum_ui_network_iface_legend_del(iface);
+    evisum_ui_config_save(ui);
+    if (view->thread) {
+        ecore_thread_cancel(view->thread);
+        ecore_thread_wait(view->thread, 1.0);
+        view->thread = NULL;
     }
 
-    evisum_ui_config_save(ui);
-    ecore_thread_cancel(view->thread);
-    ecore_thread_wait(view->thread, 0.5);
+    if (view->interfaces) {
+        Network_View_Interface *iface;
+        EINA_LIST_FREE(view->interfaces, iface) {
+            _evisum_ui_network_iface_legend_del(iface);
+            free(iface);
+        }
+        view->interfaces = NULL;
+    }
+
     ui->network.win = NULL;
     free(view);
 }

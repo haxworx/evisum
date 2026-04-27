@@ -1,7 +1,8 @@
 #include "evisum_ui_memory.h"
 #include "evisum_ui_graph.h"
 #include "evisum_ui_colors.h"
-#include "system/filesystems.h"
+#include "../engine/evisum_engine.h"
+#include "../background/evisum_background.h"
 #include "config.h"
 
 #include <Elementary.h>
@@ -302,7 +303,7 @@ _evisum_ui_memory_series_usage_set(Evisum_Ui_Memory_View *view, int idx, uint64_
 }
 
 static void
-_evisum_ui_memory_series_update_from_memory(Evisum_Ui_Memory_View *view, meminfo_t *memory) {
+_evisum_ui_memory_series_update_from_memory(Evisum_Ui_Memory_View *view, Meminfo *memory) {
     for (int i = 0; i < view->series_count; i++) {
         view->series[i].sampled = EINA_FALSE;
     }
@@ -328,28 +329,31 @@ _evisum_ui_memory_series_update_from_memory(Evisum_Ui_Memory_View *view, meminfo
 }
 
 static void
-_evisum_ui_memory_mem_usage_main(void *data EINA_UNUSED, Ecore_Thread *thread) {
-    static meminfo_t memory;
+_evisum_ui_memory_mem_usage_main(void *data, Ecore_Thread *thread) {
+    Evisum_Ui_Memory_View *view = data;
+    static Meminfo memory;
+    uint64_t seq = 0;
+    int ticks = 9;
 
     ecore_thread_name_set(thread, "memory");
 
     while (!ecore_thread_check(thread)) {
+        if (!evisum_background_update_wait(&seq)) continue;
+        ticks++;
+        if (ticks < 10) continue;
+        ticks = 0;
         memset(&memory, 0, sizeof(memory));
         system_memory_usage_get(&memory);
-        if (file_system_in_use("ZFS")) memory.used += memory.zfs_arc_used;
+        if (view->ui->mem.zfs_mounted) memory.used += memory.zfs_arc_used;
 
         ecore_thread_feedback(thread, &memory);
-        for (int i = 0; i < 8; i++) {
-            if (ecore_thread_check(thread)) break;
-            usleep(125000);
-        }
     }
 }
 
 static void
 _evisum_ui_memory_mem_usage_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
     Evisum_Ui_Memory_View *view = data;
-    meminfo_t *memory = msgdata;
+    Meminfo *memory = msgdata;
 
     _evisum_ui_memory_series_update_from_memory(view, memory);
 }

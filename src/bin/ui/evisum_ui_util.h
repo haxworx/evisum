@@ -2,7 +2,7 @@
 #define __EVISUM_UI_UTIL_H__
 
 #include <Evas.h>
-#include "system/process.h"
+#include "../engine/evisum_engine.h"
 
 #define FILL   EVAS_HINT_FILL
 #define EXPAND EVAS_HINT_EXPAND

@@ -3,7 +3,7 @@
 #include "evisum_config.h"
 #include "evisum_server.h"
 
-#include "system/filesystems.h"
+#include "../engine/evisum_engine.h"
 #include "background/evisum_background.h"
 
 #include "evisum_ui.h"
@@ -19,6 +19,7 @@
 int EVISUM_EVENT_CONFIG_CHANGED;
 
 static Evas_Object *_slider_alpha = NULL;
+static Evas_Object *_slider_poll_delay = NULL;
 
 static void
 _proc_field_order_sanitize(int *order) {
@@ -60,10 +61,10 @@ evisum_ui_config_save(Evisum_Ui *ui) {
     config()->backgrounds = 0;
 
     if (ui->proc.win) {
-        if ((config()->proc.poll_delay != ui->proc.poll_delay)
-            || (config()->proc.show_kthreads != ui->proc.show_kthreads)
+        if ((config()->proc.show_kthreads != ui->proc.show_kthreads)
             || (config()->proc.show_user != ui->proc.show_user)
             || (config()->proc.show_statusbar != ui->proc.show_statusbar)
+            || (config()->proc.history_whole != ui->proc.history_whole)
             || (config()->proc.transparent != ui->proc.transparent) || (config()->proc.alpha != ui->proc.alpha)) {
             notify = 1;
         }
@@ -75,10 +76,11 @@ evisum_ui_config_save(Evisum_Ui *ui) {
         config()->proc.restart = ui->proc.restart;
         config()->proc.sort_type = ui->proc.sort_type;
         config()->proc.sort_reverse = ui->proc.sort_reverse;
-        config()->proc.poll_delay = ui->proc.poll_delay;
         config()->proc.show_kthreads = ui->proc.show_kthreads;
         config()->proc.show_user = ui->proc.show_user;
+        config()->proc.poll_delay = ui->proc.poll_delay;
         config()->proc.show_statusbar = ui->proc.show_statusbar;
+        config()->proc.history_whole = ui->proc.history_whole;
         config()->proc.transparent = ui->proc.transparent;
         config()->proc.alpha = ui->proc.alpha;
         config()->proc.fields = ui->proc.fields;
@@ -152,12 +154,16 @@ evisum_ui_config_load(Evisum_Ui *ui) {
 
     ui->proc.sort_type = config()->proc.sort_type;
     ui->proc.sort_reverse = config()->proc.sort_reverse;
-    ui->proc.poll_delay = config()->proc.poll_delay;
     ui->proc.show_kthreads = config()->proc.show_kthreads;
     ui->proc.fields = config()->proc.fields;
     proc_info_kthreads_show_set(ui->proc.show_kthreads);
     ui->proc.show_user = config()->proc.show_user;
+    ui->proc.poll_delay = config()->proc.poll_delay;
+    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = 1;
+    else if (ui->proc.poll_delay > 10)
+        ui->proc.poll_delay = 10;
     ui->proc.show_statusbar = config()->proc.show_statusbar;
+    ui->proc.history_whole = config()->proc.history_whole;
     ui->proc.transparent = config()->proc.transparent;
     ui->proc.alpha = config()->proc.alpha;
     for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++) ui->proc.field_widths[i] = config()->proc.field_widths[i];
@@ -302,18 +308,6 @@ _btn_create(Evas_Object *parent, const char *icon, const char *text, void *cb, v
 }
 
 static void
-_main_menu_slider_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
-    Evisum_Ui *ui = data;
-
-    ui->proc.poll_delay = elm_slider_value_get(obj) + 0.5;
-
-    if (ui->proc.poll_delay > 1) elm_slider_unit_format_set(obj, _("%1.0f secs"));
-    else elm_slider_unit_format_set(obj, _("%1.0f sec"));
-
-    evisum_ui_config_save(ui);
-}
-
-static void
 _main_menu_slider_alpha_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
     Evisum_Ui *ui = data;
 
@@ -347,6 +341,26 @@ _main_menu_show_statusbar_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, v
     Evisum_Ui *ui = data;
 
     ui->proc.show_statusbar = elm_check_state_get(obj);
+    evisum_ui_config_save(ui);
+}
+
+static void
+_main_menu_history_range_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
+    Evisum_Ui *ui = data;
+
+    ui->proc.history_whole = elm_radio_value_get(obj) == 1;
+    evisum_ui_config_save(ui);
+}
+
+static void
+_main_menu_slider_poll_delay_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
+    Evisum_Ui *ui = data;
+
+    ui->proc.poll_delay = elm_slider_value_get(obj) + 0.5;
+    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = 1;
+    else if (ui->proc.poll_delay > 10)
+        ui->proc.poll_delay = 10;
+
     evisum_ui_config_save(ui);
 }
 
@@ -398,7 +412,7 @@ _cpu_visual_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_inf
 Evas_Object *
 evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj) {
     Evas_Object *o, *obx, *bx, *tb, *hbx, *sep, *fr, *sli;
-    Evas_Object *it_focus, *btn, *chk, *rec;
+    Evas_Object *it_focus, *btn, *chk, *rec, *radio, *radio_group, *options_fr;
     Evas_Coord ox, oy, ow, oh;
     int i = 0;
 
@@ -541,32 +555,16 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
 
     if (parent != ui->proc.win) return o;
 
-    fr = elm_frame_add(o);
-    elm_object_text_set(fr, _("Options"));
-    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(fr, FILL, FILL);
-    evas_object_show(fr);
+    options_fr = elm_frame_add(o);
+    elm_object_text_set(options_fr, _("Options"));
+    evas_object_size_hint_weight_set(options_fr, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(options_fr, FILL, FILL);
+    evas_object_show(options_fr);
 
     bx = elm_box_add(o);
     evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
     evas_object_size_hint_align_set(bx, FILL, FILL);
     evas_object_show(bx);
-
-    sli = elm_slider_add(o);
-    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
-    elm_slider_min_max_set(sli, 1.0, 10.0);
-    elm_slider_span_size_set(sli, 10.0 - 1.0);
-    elm_slider_step_set(sli, 1 / 10.0);
-    elm_slider_indicator_show_set(sli, 0);
-    elm_slider_unit_format_set(sli, _("%1.0f secs"));
-    elm_slider_value_set(sli, ui->proc.poll_delay);
-    evas_object_size_hint_align_set(sli, FILL, FILL);
-    elm_object_tooltip_text_set(sli, _("Poll delay"));
-    evas_object_smart_callback_add(sli, "slider,drag,stop", _main_menu_slider_changed_cb, ui);
-    evas_object_smart_callback_add(sli, "changed", _main_menu_slider_changed_cb, ui);
-    evas_object_show(sli);
-    _main_menu_slider_changed_cb(ui, sli, NULL);
-    elm_box_pack_end(bx, sli);
 
     if (ui->proc.has_kthreads) {
         chk = elm_check_add(bx);
@@ -588,8 +586,58 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
     evas_object_smart_callback_add(chk, "changed", _main_menu_show_user_changed_cb, ui);
     elm_box_pack_end(bx, chk);
 
-    elm_object_content_set(fr, bx);
-    elm_box_pack_end(obx, fr);
+    _slider_poll_delay = sli = elm_slider_add(o);
+    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
+    elm_slider_min_max_set(sli, 1.0, 10.0);
+    elm_slider_span_size_set(sli, 100.0);
+    elm_slider_step_set(sli, 1 / 9.0);
+    elm_slider_unit_format_set(sli, _("%1.0f s"));
+    elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_NONE);
+    elm_object_tooltip_text_set(sli, _("Delay in seconds"));
+    elm_slider_value_set(sli, ui->proc.poll_delay);
+    evas_object_size_hint_align_set(sli, FILL, FILL);
+    evas_object_smart_callback_add(sli, "slider,drag,stop", _main_menu_slider_poll_delay_changed_cb, ui);
+    evas_object_smart_callback_add(sli, "changed", _main_menu_slider_poll_delay_changed_cb, ui);
+    evas_object_show(sli);
+    elm_box_pack_end(bx, sli);
+
+    fr = elm_frame_add(o);
+    elm_object_text_set(fr, _("History"));
+    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(fr, FILL, FILL);
+    evas_object_show(fr);
+
+    hbx = elm_box_add(o);
+    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+    evas_object_size_hint_align_set(hbx, FILL, FILL);
+    elm_box_horizontal_set(hbx, 1);
+    evas_object_show(hbx);
+
+    radio_group = radio = elm_radio_add(hbx);
+    elm_object_text_set(radio, _("Last hour"));
+    elm_radio_state_value_set(radio, 0);
+    evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(radio, FILL, FILL);
+    evas_object_smart_callback_add(radio, "changed", _main_menu_history_range_changed_cb, ui);
+    elm_box_pack_end(hbx, radio);
+    evas_object_show(radio);
+
+    radio = elm_radio_add(hbx);
+    elm_object_text_set(radio, _("Whole history"));
+    elm_radio_state_value_set(radio, 1);
+    elm_radio_group_add(radio, radio_group);
+    evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(radio, FILL, FILL);
+    evas_object_smart_callback_add(radio, "changed", _main_menu_history_range_changed_cb, ui);
+    elm_box_pack_end(hbx, radio);
+    evas_object_show(radio);
+    elm_radio_value_set(radio_group, ui->proc.history_whole ? 1 : 0);
+
+    elm_object_content_set(fr, hbx);
+    elm_box_pack_end(bx, fr);
+
+    elm_object_content_set(options_fr, bx);
+    elm_box_pack_end(obx, options_fr);
 
     fr = elm_frame_add(o);
     elm_object_text_set(fr, _("Display"));
@@ -610,7 +658,6 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
     evas_object_show(chk);
     evas_object_smart_callback_add(chk, "changed", _main_menu_show_statusbar_changed_cb, ui);
     elm_box_pack_end(bx, chk);
-
 
     hbx = elm_box_add(o);
     evas_object_size_hint_weight_set(hbx, EXPAND, 0);
@@ -658,7 +705,7 @@ _ui_init_system_probe(Evisum_Ui *ui) {
     ui->proc.has_kthreads = 1;
 #endif
 #if defined(__FreeBSD__)
-    ui->mem.zfs_mounted = file_system_in_use("ZFS");
+    ui->mem.zfs_mounted = 0;
     ui->kthreads_has_rss = 1;
 #endif
 #if !defined(__linux__)
@@ -740,6 +787,7 @@ evisum_ui_shutdown(Evisum_Ui *ui) {
     ecore_thread_cancel(ui->background_poll_thread);
     ecore_thread_wait(ui->background_poll_thread, 0.5);
     evisum_background_shutdown(ui);
+    evisum_engine_shutdown();
 
     if (ui->cpu.visual) eina_stringshare_del(ui->cpu.visual);
     free(ui);
@@ -750,7 +798,6 @@ evisum_ui_init(void) {
     Evisum_Ui *ui = calloc(1, sizeof(Evisum_Ui));
     if (!ui) return NULL;
 
-    ui->proc.poll_delay = 3;
     ui->proc.sort_reverse = 0;
     ui->proc.sort_type = PROC_SORT_BY_PID;
 

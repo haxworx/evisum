@@ -15,6 +15,8 @@ aren't too high.
 
 ## 📚 Table of Contents
 - [🔥 Features](#-features)
+- [🏗️ Architecture](#️-architecture)
+- [📦 Enigmatic Library](#-enigmatic-library)
 - [📌 Requirements](#-requirements)
 - [⚙️ Build Instructions](#%EF%B8%8F-build-instructions)
 - [🚀 Installation](#-installation)
@@ -23,7 +25,13 @@ aren't too high.
 
 ## 🔥 Features
 - Cross-platform support for **Linux, FreeBSD, OpenBSD, macOS and DragonFlyBSD**.
-- A **server-client** architecture for efficient system monitoring.
+- A daemon-backed architecture using **enigmatic** + **enigmatic_client**:
+  - `enigmatic` performs system polling and writes structured log events.
+  - `enigmatic_client` follows that stream and builds typed snapshots.
+  - evisum consumes one shared background update signal, so windows stay in sync
+    without each view implementing its own low-level polling loop.
+  - External programs can use the same client API/library to build their own
+    monitors and tooling.
 - Tools to monitor:
   - **Processes** 🛠️
   - **CPU usage** ⚡
@@ -32,6 +40,60 @@ aren't too high.
   - **Storage health** 💾
   - **System sensors** 🌡️
 - Designed for **speed, reliability, and usability**.
+
+## 🏗️ Architecture
+Evisum now uses a single data pipeline based on the `enigmatic` daemon and the
+`enigmatic_client` log-streaming API.
+
+- `enigmatic` (daemon):
+  - Polls the operating system.
+  - Writes structured events/snapshots to the Enigmatic log stream.
+- `libenigmatic_client`:
+  - Follows and parses the Enigmatic log.
+  - Maintains an in-memory `Snapshot` with typed objects (`Cpu_Core`, `Meminfo`,
+    `Sensor`, `Network_Interface`, `File_System`, `Proc_Info_Log`).
+- evisum engine/background:
+  - Starts/attaches to `enigmatic`.
+  - Exposes snapshot-backed data to UI views.
+  - Uses one background update signal so windows react to new stream data
+    instead of polling independently.
+- UI windows:
+  - Consume engine/background updates.
+  - Keep per-view rendering and formatting logic only.
+
+This removes the old duplicated system-querying path and keeps runtime data flow
+centered on one stream source.
+
+## 📦 Enigmatic Library
+`Enigmatic_Client` is available as an external installable library so programs
+outside evisum can consume Enigmatic data directly (like the examples in
+`src/bin/enigmatic/examples`).
+
+Installed artifacts include:
+- Shared library: `libenigmatic_client.so`
+- pkg-config file: `enigmatic_client.pc`
+- Public headers under `include/enigmatic/`:
+  - `Enigmatic_Client.h`
+  - `Events.h`
+  - `enigmatic_util.h`
+  - `system/machine.h`
+  - `system/file_systems.h`
+  - `system/process.h`
+
+### Using the library in your own program
+
+```sh
+cc my_program.c $(pkg-config --cflags --libs enigmatic_client) -o my_program
+```
+
+Typical include:
+
+```c
+#include "Enigmatic_Client.h"
+```
+
+At runtime, open a client and register snapshot/event callbacks to receive live
+stream updates.
 
 ## 📌 Requirements
 Evisum requires an installation of **EFL (v1.27.0+)**.

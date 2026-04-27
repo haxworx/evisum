@@ -6,8 +6,7 @@
 
 #include "evisum_actions.h"
 
-#include "system/machine.h"
-#include "system/process.h"
+#include "engine/evisum_engine.h"
 #include "ui/evisum_ui_util.h"
 #include "ui/evisum_ui_cache.h"
 
@@ -55,6 +54,7 @@ typedef struct _Evisum_Ui {
         unsigned char alpha;
         Eina_Bool transparent;
         Eina_Bool show_statusbar;
+        Eina_Bool history_whole;
     } proc;
 
     Evas_Object *win_about;
@@ -101,20 +101,7 @@ typedef struct _Evisum_Ui {
         Eina_Bool restart;
     } network;
 
-    struct {
-        Eina_Hash *proc_net_stats;
-        Eina_Lock proc_net_lock;
-        Eina_Bool proc_net_lock_init;
-    } background;
 } Evisum_Ui;
-
-typedef struct _Battery {
-    int index;
-    double usage;
-    char model[256];
-    char vendor[256];
-    Evas_Object *pb;
-} Battery;
 
 Evisum_Ui *evisum_ui_init(void);
 

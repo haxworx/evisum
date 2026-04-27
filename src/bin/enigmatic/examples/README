@@ -1,0 +1,20 @@
+# Examples
+
+* enigmatic_client - Reference client.
+
+## Building External Programs
+
+The `Enigmatic_Client` API is exposed as the installable library
+`libenigmatic_client` with pkg-config name `enigmatic_client`.
+
+Compile an external client program with:
+
+```
+cc my_program.c $(pkg-config --cflags --libs enigmatic_client) -o my_program
+```
+
+Headers are installed under `enigmatic/`, for example:
+
+```
+#include "Enigmatic_Client.h"
+```

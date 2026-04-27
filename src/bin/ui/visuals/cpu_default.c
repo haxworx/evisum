@@ -1,4 +1,5 @@
 #include "cpu_default.h"
+#include "../../background/evisum_background.h"
 
 #define BAR_HEIGHT    3
 #define COLORS_HEIGHT 32
@@ -47,6 +48,7 @@ static void
 _core_times_main_cb(void *data, Ecore_Thread *thread) {
     Evisum_Ui_Cpu_Visual_Data *pd = data;
     int ncpu;
+    uint64_t seq = 0;
     Ext *ext = pd->ext;
 
     if (!system_cpu_frequency_min_max_get(&ext->freq_min, &ext->freq_max)) ext->cpu_freq = 1;
@@ -57,7 +59,9 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
     ecore_thread_name_set(thread, "cpu");
 
     while (!ecore_thread_check(thread)) {
-        cpu_core_t **cores = system_cpu_usage_delayed_get(&ncpu, 100000);
+        if (!evisum_background_update_wait(&seq)) continue;
+        Cpu_Core **cores = system_cpu_state_get(&ncpu);
+        if (!cores || ncpu <= 0) continue;
         Core *cores_out = calloc(ncpu, sizeof(Core));
 
         if (cores_out) {
@@ -66,9 +70,8 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
                 Core *core = &(cores_out[n]);
                 core->id = id;
                 core->percent = cores[id]->percent;
-                if (ext->cpu_freq) core->freq = system_cpu_n_frequency_get(id);
-                if (ext->cpu_temp) core->temp = system_cpu_n_temperature_get(id);
-                free(cores[id]);
+                if (ext->cpu_freq) core->freq = cores[id]->freq;
+                if (ext->cpu_temp) core->temp = cores[id]->temp;
             }
             ecore_thread_feedback(thread, cores_out);
         }

@@ -13,6 +13,8 @@
 #include <sys/types.h>
 #include <sys/resource.h>
 #include <pwd.h>
+#include <time.h>
+#include <unistd.h>
 
 /* If you're reading this comment, God help you. */
 
@@ -46,6 +48,12 @@ typedef struct {
         double keytime;
     } search;
 
+    struct {
+        Evas_Object *pop;
+        Evas_Object *pb;
+        Eina_Bool visible;
+    } loader;
+
     Evas_Object *tb_main;
 
     Elm_Genlist_Item_Class itc;
@@ -58,7 +66,24 @@ typedef struct {
         Evas_Object *hbx;
         Evas_Object *pb_cpu;
         Evas_Object *pb_mem;
+        Evas_Object *history_slider;
+        Evas_Object *history_live_btn;
     } summary;
+
+    struct {
+        Eina_Lock lock;
+        Eina_Bool lock_init;
+        Eina_Bool live;
+        Eina_Bool pending;
+        Eina_Bool sliding;
+        Eina_Bool slider_updating;
+        Eina_Bool whole;
+        Ecore_Timer *timer;
+        Ecore_Timer *apply_timer;
+        uint32_t start_time;
+        uint32_t end_time;
+        uint32_t requested_time;
+    } history;
 
     Elm_Layout *indicator;
     Evisum_Ui *ui;
@@ -70,7 +95,6 @@ typedef struct {
 
 typedef struct {
     int64_t start;
-    int64_t cpu_time;
     uint64_t net_in;
     uint64_t net_out;
     uint64_t disk_read;
@@ -221,7 +245,7 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
         case PROC_FIELD_CPU_USAGE:
             def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
             def->key = "cpu_u";
-            def->unit_format = _("%1.1f %%");
+            def->unit_format = _("%1.0f %%");
             return EINA_TRUE;
         default:
             return EINA_FALSE;
@@ -584,7 +608,7 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
     _evisum_ui_process_list_run_time_set(buf, sizeof(buf), proc->run_time);
     evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_TIME, "time", buf);
 
-    snprintf(buf, sizeof(buf), _("%1.1f %%"), proc->cpu_usage);
+    snprintf(buf, sizeof(buf), _("%1.0f %%"), proc->cpu_usage);
     evisum_ui_widget_exel_item_field_progress_set(view->widget_exel, row, PROC_FIELD_CPU_USAGE, "cpu_u",
                                                   proc->cpu_usage / 100.0, buf);
 
@@ -620,31 +644,453 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
 }
 
 static void
+_evisum_ui_process_list_history_time_format(uint32_t t, char *buf, size_t len) {
+    time_t when = (time_t) t;
+    struct tm tm_buf;
+
+    if (!buf || !len) return;
+    if (!t || !localtime_r(&when, &tm_buf)) {
+        snprintf(buf, len, "--:--:--");
+        return;
+    }
+
+    strftime(buf, len, "%Y-%m-%d %H:%M:%S", &tm_buf);
+}
+
+static char *
+_evisum_ui_process_list_history_indicator_format_cb(double value, void *data EINA_UNUSED) {
+    char buf[32];
+
+    _evisum_ui_process_list_history_time_format((uint32_t) (value + 0.5), buf, sizeof(buf));
+
+    return strdup(buf);
+}
+
+static void
+_evisum_ui_process_list_history_indicator_free_cb(char *str) {
+    free(str);
+}
+
+static void
+_evisum_ui_process_list_history_tooltip_set(Evisum_Ui_Process_List_View *view, uint32_t t) {
+    char time_buf[32];
+    char tip[128];
+
+    if (!view->summary.history_slider) return;
+
+    _evisum_ui_process_list_history_time_format(t, time_buf, sizeof(time_buf));
+    snprintf(tip, sizeof(tip), _("Process history: %s"), time_buf);
+    elm_object_tooltip_text_set(view->summary.history_slider, tip);
+}
+
+static void
+_evisum_ui_process_list_history_live_state_set(Evisum_Ui_Process_List_View *view);
+
+static void
+_evisum_ui_process_list_history_bounds_update(Evisum_Ui_Process_List_View *view);
+
+static void
+_evisum_ui_process_list_loader_position(Evisum_Ui_Process_List_View *view) {
+    Evas_Coord w, h;
+
+    if (!view->loader.pop) return;
+
+    evas_object_geometry_get(view->win, NULL, NULL, &w, &h);
+    evas_object_move(view->loader.pop, w / 2, h / 2);
+}
+
+static void
+_evisum_ui_process_list_loader_show(Evisum_Ui_Process_List_View *view) {
+    if (!view->loader.pop) return;
+    if (view->loader.visible) return;
+
+    _evisum_ui_process_list_loader_position(view);
+    evas_object_raise(view->loader.pop);
+    elm_progressbar_pulse(view->loader.pb, EINA_TRUE);
+    evas_object_show(view->loader.pop);
+    view->loader.visible = EINA_TRUE;
+}
+
+static void
+_evisum_ui_process_list_loader_hide(Evisum_Ui_Process_List_View *view) {
+    if (!view->loader.pop || !view->loader.visible) return;
+
+    elm_progressbar_pulse(view->loader.pb, EINA_FALSE);
+    evas_object_lower(view->loader.pop);
+    evas_object_hide(view->loader.pop);
+    view->loader.visible = EINA_FALSE;
+}
+
+static void
+_evisum_ui_process_list_loader_add(Evisum_Ui_Process_List_View *view) {
+    Evas_Object *tb, *fr, *rec, *pb;
+
+    view->loader.pop = tb = elm_table_add(view->win);
+    evas_object_lower(tb);
+
+    rec = evas_object_rectangle_add(evas_object_evas_get(view->win));
+    evas_object_size_hint_min_set(rec, ELM_SCALE_SIZE(220), ELM_SCALE_SIZE(128));
+    evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(220), ELM_SCALE_SIZE(128));
+    elm_table_pack(tb, rec, 0, 0, 1, 1);
+
+    fr = elm_frame_add(view->win);
+    elm_object_text_set(fr, _("Loading snapshot"));
+    evas_object_size_hint_weight_set(fr, 0, 0);
+    evas_object_size_hint_align_set(fr, FILL, 0.5);
+
+    view->loader.pb = pb = elm_progressbar_add(fr);
+    elm_progressbar_unit_format_set(pb, "");
+    elm_progressbar_span_size_set(pb, ELM_SCALE_SIZE(220));
+    elm_progressbar_pulse_set(pb, EINA_TRUE);
+    evas_object_size_hint_weight_set(pb, 0, 0);
+    evas_object_size_hint_align_set(pb, FILL, 0.5);
+    evas_object_show(pb);
+    elm_object_content_set(fr, pb);
+    elm_table_pack(tb, fr, 0, 0, 1, 1);
+    evas_object_show(fr);
+}
+
+static Eina_Bool
+_evisum_ui_process_list_history_apply_timer_cb(void *data) {
+    Evisum_Ui_Process_List_View *view = data;
+
+    if (!view->history.lock_init) {
+        view->history.apply_timer = NULL;
+        return EINA_FALSE;
+    }
+
+    eina_lock_take(&view->history.lock);
+    view->history.pending = EINA_TRUE;
+    eina_lock_release(&view->history.lock);
+
+    /* Snapshot loading happens on the process-list worker; this callback only
+     * marks the most recent requested time as ready to be loaded. */
+    view->skip_wait = 1;
+    view->skip_update = 0;
+    view->history.apply_timer = NULL;
+    _evisum_ui_process_list_loader_show(view);
+
+    return EINA_FALSE;
+}
+
+static void
+_evisum_ui_process_list_history_request_deferred(Evisum_Ui_Process_List_View *view, uint32_t t) {
+    if (!view->history.lock_init) return;
+
+    if (view->history.apply_timer) {
+        ecore_timer_del(view->history.apply_timer);
+        view->history.apply_timer = NULL;
+    }
+
+    eina_lock_take(&view->history.lock);
+    view->history.live = EINA_FALSE;
+    view->history.requested_time = t;
+    view->history.pending = EINA_FALSE;
+    eina_lock_release(&view->history.lock);
+
+    /* Coalesce slider/key repeats so dragging or holding an arrow key loads the
+     * final requested timestamp instead of every intermediate second. */
+    view->history.apply_timer = ecore_timer_add(0.5, _evisum_ui_process_list_history_apply_timer_cb, view);
+}
+
+static void
+_evisum_ui_process_list_history_preview_set(Evisum_Ui_Process_List_View *view, uint32_t t) {
+    if (!view->summary.history_slider || !view->summary.history_live_btn) return;
+
+    if (view->history.start_time && (t < view->history.start_time)) t = view->history.start_time;
+    if (view->history.end_time && (t > view->history.end_time)) t = view->history.end_time;
+
+    view->history.slider_updating = EINA_TRUE;
+    elm_slider_value_set(view->summary.history_slider, t);
+    view->history.slider_updating = EINA_FALSE;
+    elm_object_disabled_set(view->summary.history_live_btn, EINA_FALSE);
+    _evisum_ui_process_list_history_tooltip_set(view, t);
+}
+
+static void
+_evisum_ui_process_list_history_state_get(Evisum_Ui_Process_List_View *view, Eina_Bool *live, Eina_Bool *pending,
+                                          uint32_t *requested_time) {
+    if (live) *live = EINA_TRUE;
+    if (pending) *pending = EINA_FALSE;
+    if (requested_time) *requested_time = 0;
+    if (!view->history.lock_init) return;
+
+    eina_lock_take(&view->history.lock);
+    if (live) *live = view->history.live;
+    if (pending) *pending = view->history.pending;
+    if (requested_time) *requested_time = view->history.requested_time;
+    eina_lock_release(&view->history.lock);
+}
+
+static void
+_evisum_ui_process_list_history_pending_clear(Evisum_Ui_Process_List_View *view, uint32_t requested_time) {
+    if (!view->history.lock_init) return;
+
+    eina_lock_take(&view->history.lock);
+    if (view->history.requested_time == requested_time) view->history.pending = EINA_FALSE;
+    eina_lock_release(&view->history.lock);
+}
+
+static void
+_evisum_ui_process_list_history_live_state_set(Evisum_Ui_Process_List_View *view) {
+    if (!view->history.lock_init) return;
+
+    eina_lock_take(&view->history.lock);
+    view->history.live = EINA_TRUE;
+    view->history.pending = EINA_FALSE;
+    view->history.sliding = EINA_FALSE;
+    view->history.requested_time = 0;
+    eina_lock_release(&view->history.lock);
+}
+
+static void
+_evisum_ui_process_list_history_bounds_update(Evisum_Ui_Process_List_View *view) {
+    uint32_t start_time = 0, end_time = 0;
+    uint32_t live_time, now, since = 0;
+    Eina_Bool live;
+
+    if (!view->summary.history_slider) return;
+
+    now = (uint32_t) time(NULL);
+    live_time = evisum_engine_live_time_get();
+
+    /* The default history view is the recent contiguous range only.  Whole
+     * history mode deliberately keeps the older broad bounds behaviour. */
+    if (view->history.whole != view->ui->proc.history_whole) {
+        view->history.whole = view->ui->proc.history_whole;
+        view->history.start_time = 0;
+        view->history.end_time = 0;
+    }
+    if (!view->ui->proc.history_whole) since = now > 3600 ? now - 3600 : 0;
+    if ((view->history.start_time) && (!since || (view->history.start_time >= since))
+        && (now >= view->history.start_time)) {
+        start_time = view->history.start_time;
+        end_time = live_time > now ? live_time : now;
+    } else {
+        if (since) {
+            if (!evisum_engine_history_contiguous_bounds_since_get(since, &start_time, &end_time)) {
+                elm_object_disabled_set(view->summary.history_slider, 1);
+                elm_object_disabled_set(view->summary.history_live_btn, 1);
+                return;
+            }
+        } else if (!evisum_engine_history_bounds_get(&start_time, &end_time)) {
+            elm_object_disabled_set(view->summary.history_slider, 1);
+            elm_object_disabled_set(view->summary.history_live_btn, 1);
+            return;
+        }
+    }
+
+    if (since && (start_time < since)) start_time = since;
+    if (end_time <= start_time) end_time = start_time + 1;
+
+    view->history.start_time = start_time;
+    view->history.end_time = end_time;
+
+    elm_object_disabled_set(view->summary.history_slider, 0);
+    elm_slider_min_max_set(view->summary.history_slider, start_time, end_time);
+
+    _evisum_ui_process_list_history_state_get(view, &live, NULL, NULL);
+    elm_object_disabled_set(view->summary.history_live_btn, live);
+
+    if (live && !view->history.sliding) {
+        view->history.slider_updating = EINA_TRUE;
+        elm_slider_value_set(view->summary.history_slider, end_time);
+        view->history.slider_updating = EINA_FALSE;
+        _evisum_ui_process_list_history_tooltip_set(view, end_time);
+    }
+}
+
+static uint32_t
+_evisum_ui_process_list_history_time_at_x_get(Evisum_Ui_Process_List_View *view, Evas_Coord canvas_x) {
+    Evas_Coord x, w;
+    double pos;
+
+    if (!view->summary.history_slider) return 0;
+    if (view->history.end_time <= view->history.start_time) return view->history.start_time;
+
+    evas_object_geometry_get(view->summary.history_slider, &x, NULL, &w, NULL);
+    if (w <= 0) return (uint32_t) (elm_slider_value_get(view->summary.history_slider) + 0.5);
+
+    /* Elementary's slider changed signal can lag while scrubbing.  Map the
+     * pointer position directly to the current history bounds for smoother
+     * previews and accurate hover times. */
+    pos = (double) (canvas_x - x) / (double) w;
+    if (pos < 0.0) pos = 0.0;
+    else if (pos > 1.0) pos = 1.0;
+
+    return view->history.start_time
+           + (uint32_t) (((double) (view->history.end_time - view->history.start_time) * pos) + 0.5);
+}
+
+static void
+_evisum_ui_process_list_history_slider_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                                                     void *event_info) {
+    Evisum_Ui_Process_List_View *view = data;
+    Evas_Event_Mouse_Move *ev = event_info;
+    uint32_t t;
+
+    if (!ev) return;
+
+    t = _evisum_ui_process_list_history_time_at_x_get(view, ev->cur.canvas.x);
+    if (view->history.sliding) _evisum_ui_process_list_history_preview_set(view, t);
+    else _evisum_ui_process_list_history_tooltip_set(view, t);
+}
+
+static void
+_evisum_ui_process_list_history_slider_mouse_in_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                                                   void *event_info) {
+    Evisum_Ui_Process_List_View *view = data;
+    Evas_Event_Mouse_In *ev = event_info;
+
+    if (!ev) return;
+
+    _evisum_ui_process_list_history_tooltip_set(view,
+                                                _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x));
+}
+
+static void
+_evisum_ui_process_list_history_slider_mouse_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                                                     void *event_info) {
+    Evisum_Ui_Process_List_View *view = data;
+    Evas_Event_Mouse_Down *ev = event_info;
+
+    if (!ev || ev->button != 1) return;
+
+    if (!view->history.lock_init) return;
+
+    view->history.sliding = EINA_TRUE;
+
+    /* While the mouse is down, only preview the selected time.  The actual
+     * snapshot load is queued on mouse-up so dragging stays responsive. */
+    eina_lock_take(&view->history.lock);
+    view->history.live = EINA_FALSE;
+    view->history.pending = EINA_FALSE;
+    view->history.requested_time = 0;
+    eina_lock_release(&view->history.lock);
+
+    if (view->history.apply_timer) {
+        ecore_timer_del(view->history.apply_timer);
+        view->history.apply_timer = NULL;
+    }
+
+    _evisum_ui_process_list_history_preview_set(
+        view, _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x));
+}
+
+static void
+_evisum_ui_process_list_history_slider_mouse_up_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
+                                                   void *event_info) {
+    Evisum_Ui_Process_List_View *view = data;
+    Evas_Event_Mouse_Up *ev = event_info;
+    uint32_t t;
+
+    if (!ev || ev->button != 1) return;
+
+    if (!view->history.sliding) return;
+
+    view->history.sliding = EINA_FALSE;
+    t = _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x);
+    _evisum_ui_process_list_history_preview_set(view, t);
+    _evisum_ui_process_list_history_request_deferred(view, t);
+}
+
+static void
+_evisum_ui_process_list_history_slider_preview_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED) {
+    Evisum_Ui_Process_List_View *view = data;
+    uint32_t t;
+
+    if (view->history.slider_updating) return;
+
+    t = (uint32_t) (elm_slider_value_get(obj) + 0.5);
+    if (view->history.start_time && (t < view->history.start_time)) t = view->history.start_time;
+    if (view->history.end_time && (t > view->history.end_time)) t = view->history.end_time;
+
+    elm_object_disabled_set(view->summary.history_live_btn, EINA_FALSE);
+    _evisum_ui_process_list_history_tooltip_set(view, t);
+}
+
+static void
+_evisum_ui_process_list_history_live_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED,
+                                                void *event_info EINA_UNUSED) {
+    Evisum_Ui_Process_List_View *view = data;
+
+    evisum_engine_history_live_set();
+
+    if (view->history.apply_timer) {
+        ecore_timer_del(view->history.apply_timer);
+        view->history.apply_timer = NULL;
+    }
+
+    eina_lock_take(&view->history.lock);
+    view->history.live = EINA_TRUE;
+    view->history.pending = EINA_FALSE;
+    view->history.sliding = EINA_FALSE;
+    view->history.requested_time = 0;
+    eina_lock_release(&view->history.lock);
+
+    elm_object_disabled_set(view->summary.history_live_btn, 1);
+    _evisum_ui_process_list_loader_hide(view);
+    view->skip_wait = 1;
+    view->skip_update = 0;
+    _evisum_ui_process_list_history_bounds_update(view);
+}
+
+static Eina_Bool
+_evisum_ui_process_list_history_timer_cb(void *data) {
+    Evisum_Ui_Process_List_View *view = data;
+
+    if (!view->summary.visible || !view->summary.history_slider) {
+        view->history.timer = NULL;
+        return EINA_FALSE;
+    }
+
+    _evisum_ui_process_list_history_bounds_update(view);
+
+    return EINA_TRUE;
+}
+
+static void
 _evisum_ui_process_list_summary_update(Evisum_Ui_Process_List_View *view) {
     Evisum_Ui *ui;
+    Evisum_Engine_Status status = {0};
     Eina_Strbuf *buf;
+    uint64_t mem_used, mem_total;
+    double cpu_usage;
 
     ui = view->ui;
 
     if ((!ui->proc.show_statusbar) || (!view->summary.pb_cpu)) return;
 
+    if (evisum_engine_status_get(&status)) {
+        cpu_usage = status.cpu_usage;
+        mem_total = status.memory.total;
+        mem_used = status.memory.used;
+        if (status.zfs_mounted) mem_used += status.memory.zfs_arc_used;
+    } else {
+        cpu_usage = ui->cpu_usage;
+        mem_total = ui->mem_total;
+        mem_used = ui->mem_used;
+    }
+
     buf = eina_strbuf_new();
 
-    elm_progressbar_value_set(view->summary.pb_cpu, ui->cpu_usage / 100.0);
+    elm_progressbar_value_set(view->summary.pb_cpu, cpu_usage / 100.0);
 
-    if (ui->mem_total) elm_progressbar_value_set(view->summary.pb_mem, (double) ui->mem_used / (double) ui->mem_total);
+    if (mem_total) elm_progressbar_value_set(view->summary.pb_mem, (double) mem_used / (double) mem_total);
     else elm_progressbar_value_set(view->summary.pb_mem, 0.0);
-    eina_strbuf_append_printf(buf, "%s / %s ", evisum_size_format(ui->mem_used, 0),
-                              evisum_size_format(ui->mem_total, 0));
+    eina_strbuf_append_printf(buf, "%s / %s ", evisum_size_format(mem_used, 0),
+                              evisum_size_format(mem_total, 0));
     elm_object_part_text_set(view->summary.pb_mem, "elm.text.status", eina_strbuf_string_get(buf));
 
     eina_strbuf_free(buf);
+
+    _evisum_ui_process_list_history_bounds_update(view);
 }
 
 static void
 _evisum_ui_process_list_summary_add(Evisum_Ui_Process_List_View *view) {
     Evisum_Ui *ui = view->ui;
-    Evas_Object *hbx, *ic, *pb, *bx;
+    Evas_Object *hbx, *ic, *pb, *sli, *btn;
 
     if (!ui->proc.show_statusbar) return;
 
@@ -677,11 +1123,35 @@ _evisum_ui_process_list_summary_add(Evisum_Ui_Process_List_View *view) {
     evas_object_show(pb);
     elm_box_pack_end(hbx, pb);
 
-    bx = elm_box_add(view->win);
-    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(bx, FILL, FILL);
-    elm_box_pack_end(hbx, bx);
-    evas_object_show(bx);
+    view->summary.history_slider = sli = elm_slider_add(hbx);
+    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(sli, FILL, FILL);
+    elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_DEFAULT);
+    elm_slider_indicator_format_function_set_full(sli, _evisum_ui_process_list_history_indicator_format_cb,
+                                                  _evisum_ui_process_list_history_indicator_free_cb, view);
+    elm_object_text_set(sli, NULL);
+    elm_slider_unit_format_set(sli, "");
+    evas_object_smart_callback_add(sli, "changed", _evisum_ui_process_list_history_slider_preview_cb, view);
+    evas_object_event_callback_add(sli, EVAS_CALLBACK_MOUSE_MOVE,
+                                   _evisum_ui_process_list_history_slider_mouse_move_cb, view);
+    evas_object_event_callback_add(sli, EVAS_CALLBACK_MOUSE_IN,
+                                   _evisum_ui_process_list_history_slider_mouse_in_cb, view);
+    evas_object_event_callback_add(sli, EVAS_CALLBACK_MOUSE_DOWN,
+                                   _evisum_ui_process_list_history_slider_mouse_down_cb, view);
+    evas_object_event_callback_add(sli, EVAS_CALLBACK_MOUSE_UP,
+                                   _evisum_ui_process_list_history_slider_mouse_up_cb, view);
+    elm_box_pack_end(hbx, sli);
+    evas_object_show(sli);
+
+    view->summary.history_live_btn = btn = evisum_ui_widget_exel_icon_button_add(hbx, "start", _("Live"), 0.0, FILL,
+                                                                                 _evisum_ui_process_list_history_live_clicked_cb,
+                                                                                 view);
+    elm_object_disabled_set(btn, 1);
+    elm_box_pack_end(hbx, btn);
+    evas_object_show(btn);
+
+    _evisum_ui_process_list_history_bounds_update(view);
+    if (!view->history.timer) view->history.timer = ecore_timer_add(1.0, _evisum_ui_process_list_history_timer_cb, view);
 }
 
 static Eina_List *
@@ -749,33 +1219,24 @@ _evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_Lis
             int64_t id = proc->pid;
 
             if ((cache = eina_hash_find(view->proc_usage_cache, &id))) {
-                uint64_t net_in_abs = 0;
-                uint64_t net_out_abs = 0;
+                uint64_t net_in_abs = proc->net_in;
+                uint64_t net_out_abs = proc->net_out;
                 uint64_t disk_read_abs = proc->disk_read;
                 uint64_t disk_write_abs = proc->disk_write;
-                int elapsed = view->ui->proc.poll_delay;
-                if (elapsed <= 0) elapsed = 1;
-                evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
+                int elapsed = 1;
 
                 if (cache->start != proc->start) {
                     cache->start = proc->start;
-                    cache->cpu_time = proc->cpu_time;
                     cache->net_in = net_in_abs;
                     cache->net_out = net_out_abs;
                     cache->disk_read = proc->disk_read;
                     cache->disk_write = proc->disk_write;
-                    proc->cpu_usage = 0.0;
                     proc->net_in = 0;
                     proc->net_out = 0;
                     proc->disk_read = 0;
                     proc->disk_write = 0;
                     continue;
                 }
-
-                if (cache->cpu_time && proc->cpu_time >= cache->cpu_time)
-                    proc->cpu_usage = (double) (proc->cpu_time - cache->cpu_time) / elapsed;
-                else proc->cpu_usage = 0.0;
-                cache->cpu_time = proc->cpu_time;
 
                 if (cache->net_in && net_in_abs >= cache->net_in) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
                 else proc->net_in = 0;
@@ -799,11 +1260,9 @@ _evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_Lis
             } else {
                 cache = calloc(1, sizeof(Proc_Usage_Cache));
                 if (cache) {
-                    uint64_t net_in_abs = 0;
-                    uint64_t net_out_abs = 0;
-                    evisum_background_proc_net_get(view->ui, proc->pid, &net_in_abs, &net_out_abs);
+                    uint64_t net_in_abs = proc->net_in;
+                    uint64_t net_out_abs = proc->net_out;
                     cache->start = proc->start;
-                    cache->cpu_time = proc->cpu_time;
                     cache->net_in = net_in_abs;
                     cache->net_out = net_out_abs;
                     cache->disk_read = proc->disk_read;
@@ -842,32 +1301,80 @@ static void
 _evisum_ui_process_list_process_list(void *data, Ecore_Thread *thread) {
     Evisum_Ui_Process_List_View *view;
     Eina_List *list;
-    Evisum_Ui *ui;
     Proc_Info *proc;
-    int delay = 1;
+    int ticks = 0;
+    uint64_t seq = 0;
+    Eina_Bool first_run = EINA_TRUE;
 
     view = data;
-    ui = view->ui;
 
     ecore_thread_name_set(thread, "process_list");
 
     while (!ecore_thread_check(thread)) {
-        for (int i = 0; i < delay * 8; i++) {
-            if (ecore_thread_check(thread)) return;
-            if (view->skip_wait) {
-                view->skip_wait = 0;
-                break;
+        Eina_Bool history_live, history_pending;
+        Eina_Bool history_loaded = EINA_FALSE;
+        uint32_t history_time;
+
+        _evisum_ui_process_list_history_state_get(view, &history_live, &history_pending, &history_time);
+        if (!history_live) {
+            /* In history mode the worker sleeps until the UI debounce marks a
+             * timestamp pending. This keeps slider previews cheap. */
+            if (!history_pending && !first_run && !view->skip_wait) {
+                usleep(50000);
+                continue;
             }
-            usleep(125000);
+            if (history_time) {
+                Eina_Bool live_now;
+
+                /* A missing timestamp means the log range changed underneath
+                 * us. Return to live mode and let the UI refresh its bounds. */
+                if (!evisum_engine_history_time_set(history_time)) {
+                    evisum_engine_history_live_set();
+                    _evisum_ui_process_list_history_live_state_set(view);
+                    view->skip_wait = 1;
+                    ecore_thread_feedback(thread, NULL);
+                    continue;
+                }
+                _evisum_ui_process_list_history_state_get(view, &live_now, NULL, NULL);
+                if (live_now) evisum_engine_history_live_set();
+                else {
+                    _evisum_ui_process_list_history_pending_clear(view, history_time);
+                    history_loaded = EINA_TRUE;
+                    /* Snapshot rows can keep the same item count while every
+                     * field changes, so refresh all item content after a load. */
+                    view->update_every_item = 1;
+                }
+            }
+        } else if (!first_run && !view->skip_wait) {
+            int delay_secs = view->ui->proc.poll_delay;
+            int target_ticks;
+            if (delay_secs < 1) delay_secs = 1;
+            else if (delay_secs > 10)
+                delay_secs = 10;
+            target_ticks = delay_secs * 10;
+            if (!evisum_background_update_wait(&seq)) continue;
+            ticks++;
+            if (ticks < target_ticks) continue;
         }
+        view->skip_wait = 0;
+        ticks = 0;
         list = _evisum_ui_process_list_get(view);
-        if (!view->skip_update) ecore_thread_feedback(thread, list);
+        if (!list) {
+            if (!history_live) ecore_thread_feedback(thread, NULL);
+            if (first_run) {
+                if (!evisum_background_update_wait(&seq)) continue;
+            }
+            continue;
+        }
+        first_run = EINA_FALSE;
+        /* Snapshot loads bypass skip_update so the loaded historical state is
+         * always pushed to the UI even during rapid scrubbing. */
+        if (history_loaded || !view->skip_update) ecore_thread_feedback(thread, list);
         else {
             EINA_LIST_FREE(list, proc)
             proc_info_free(proc);
         }
         view->skip_update = 0;
-        delay = ui->proc.poll_delay;
     }
 }
 
@@ -888,7 +1395,12 @@ _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
 
     view = data;
     list = msg;
-    if (!view || !view->widget_exel || !list) return;
+    if (!view || !view->widget_exel) return;
+    if (!list) {
+        _evisum_ui_process_list_loader_hide(view);
+        _evisum_ui_process_list_summary_update(view);
+        return;
+    }
 
     n = eina_list_count(list);
 
@@ -913,6 +1425,15 @@ _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
     view->update_every_item = 0;
 
     _evisum_ui_process_list_summary_update(view);
+    if (!evisum_engine_history_live_get()) {
+        uint32_t history_time = evisum_engine_history_time_get();
+        if (history_time && view->summary.history_slider) {
+            view->history.slider_updating = EINA_TRUE;
+            elm_slider_value_set(view->summary.history_slider, history_time);
+            view->history.slider_updating = EINA_FALSE;
+            _evisum_ui_process_list_history_tooltip_set(view, history_time);
+        }
+    }
 
     Eina_List *real = evisum_ui_widget_exel_genlist_realized_items_get(view->widget_exel);
     n = evisum_ui_widget_exel_item_cache_active_count_get(view->widget_exel);
@@ -925,6 +1446,8 @@ _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
     view->poll_count++;
 
     if (view->ui && evisum_ui_effects_enabled_get(view->ui)) _evisum_ui_process_list_indicator(view);
+
+    _evisum_ui_process_list_loader_hide(view);
 }
 
 static void
@@ -1419,6 +1942,40 @@ _evisum_ui_process_list_win_key_down_search(Evisum_Ui_Process_List_View *view, E
     }
 }
 
+static Eina_Bool
+_evisum_ui_process_list_history_key_step(Evisum_Ui_Process_List_View *view, Evas_Event_Key_Down *ev) {
+    Eina_Bool live;
+    uint32_t t;
+
+    if (!view || !ev || !ev->keyname) return EINA_FALSE;
+    if (view->search.visible) return EINA_FALSE;
+    if (!view->summary.history_slider) return EINA_FALSE;
+    if (strcmp(ev->keyname, "Left") && strcmp(ev->keyname, "Right")
+        && strcmp(ev->keyname, "KP_Left") && strcmp(ev->keyname, "KP_Right"))
+        return EINA_FALSE;
+
+    _evisum_ui_process_list_history_state_get(view, &live, NULL, NULL);
+    if (live && evisum_engine_history_live_get()) return EINA_FALSE;
+
+    /* Arrow stepping is just another debounced history request, using the
+     * loaded engine timestamp when available and the preview slider otherwise. */
+    t = evisum_engine_history_time_get();
+    if (!t) t = (uint32_t) (elm_slider_value_get(view->summary.history_slider) + 0.5);
+
+    if (!strcmp(ev->keyname, "Left") || !strcmp(ev->keyname, "KP_Left")) {
+        if (view->history.start_time && (t <= view->history.start_time)) t = view->history.start_time;
+        else t--;
+    } else {
+        if (view->history.end_time && (t >= view->history.end_time)) t = view->history.end_time;
+        else t++;
+    }
+
+    _evisum_ui_process_list_history_preview_set(view, t);
+    _evisum_ui_process_list_history_request_deferred(view, t);
+    view->skip_wait = 1;
+    return EINA_TRUE;
+}
+
 static void
 _evisum_ui_process_list_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, void *event_info) {
     Evas_Event_Key_Down *ev;
@@ -1437,7 +1994,9 @@ _evisum_ui_process_list_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, v
     if (!strcmp(ev->keyname, "Escape") && !view->search.visible) {
         evas_object_del(view->win);
         return;
-    } else if (!strcmp(ev->keyname, "Prior"))
+    } else if (_evisum_ui_process_list_history_key_step(view, ev))
+        return;
+    else if (!strcmp(ev->keyname, "Prior"))
         evisum_ui_widget_exel_genlist_region_bring_in(view->widget_exel, x, y - 512, w, h);
     else if (!strcmp(ev->keyname, "Next"))
         evisum_ui_widget_exel_genlist_region_bring_in(view->widget_exel, x, y + 512, w, h);
@@ -1472,6 +2031,7 @@ _evisum_ui_process_list_win_resize_cb(void *data, Evas *e, Evas_Object *obj, voi
     else view->resize_timer = ecore_timer_add(0.2, _evisum_ui_process_list_resize_cb, view);
 
     evas_object_lower(view->search.pop);
+    if (view->loader.visible) _evisum_ui_process_list_loader_position(view);
     if (view->main_menu) _evisum_ui_process_list_main_menu_dismissed_cb(view, NULL, NULL);
     evisum_ui_widget_exel_fields_menu_dismiss(view->widget_exel);
 
@@ -1533,7 +2093,6 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
     while (eina_iterator_next(it, &d)) {
         Proc_Usage_Cache *cache = d;
         cache->start = 0;
-        cache->cpu_time = 0;
         cache->net_in = 0;
         cache->net_out = 0;
         cache->disk_read = 0;
@@ -1544,10 +2103,55 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
     evisum_ui_widget_exel_genlist_policy_set(view->widget_exel, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
     view->skip_wait = 1;
 
+    if (view->summary.visible && (view->history.whole != ui->proc.history_whole)) {
+        uint32_t since = 0, history_time;
+
+        view->history.start_time = 0;
+        view->history.end_time = 0;
+
+        if (!ui->proc.history_whole) {
+            uint32_t now = (uint32_t) time(NULL);
+            since = now > 3600 ? now - 3600 : 0;
+        }
+        history_time = evisum_engine_history_time_get();
+        if (since && history_time && (history_time < since)) {
+            evisum_engine_history_live_set();
+            eina_lock_take(&view->history.lock);
+            view->history.live = EINA_TRUE;
+            view->history.pending = EINA_FALSE;
+            view->history.sliding = EINA_FALSE;
+            view->history.requested_time = 0;
+            eina_lock_release(&view->history.lock);
+            _evisum_ui_process_list_loader_hide(view);
+        }
+
+        _evisum_ui_process_list_history_bounds_update(view);
+    }
+
     if ((!view->summary.visible) && (ui->proc.show_statusbar)) _evisum_ui_process_list_summary_add(view);
     else if ((view->summary.visible) && (!ui->proc.show_statusbar)) {
+        evisum_engine_history_live_set();
+        eina_lock_take(&view->history.lock);
+        view->history.live = EINA_TRUE;
+        view->history.pending = EINA_FALSE;
+        view->history.sliding = EINA_FALSE;
+        view->history.requested_time = 0;
+        eina_lock_release(&view->history.lock);
+        if (view->history.timer) {
+            ecore_timer_del(view->history.timer);
+            view->history.timer = NULL;
+        }
+        if (view->history.apply_timer) {
+            ecore_timer_del(view->history.apply_timer);
+            view->history.apply_timer = NULL;
+        }
+        _evisum_ui_process_list_loader_hide(view);
         elm_box_clear(view->summary.hbx);
         view->summary.visible = 0;
+        view->summary.pb_cpu = NULL;
+        view->summary.pb_mem = NULL;
+        view->summary.history_slider = NULL;
+        view->summary.history_live_btn = NULL;
     }
 
     _evisum_ui_process_list_win_alpha_set(view);
@@ -1582,6 +2186,8 @@ _evisum_ui_process_list_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, 
     if (view->search.timer) ecore_timer_del(view->search.timer);
     if (view->resize_timer) ecore_timer_del(view->resize_timer);
     if (view->main_menu_timer) ecore_timer_del(view->main_menu_timer);
+    if (view->history.timer) ecore_timer_del(view->history.timer);
+    if (view->history.apply_timer) ecore_timer_del(view->history.apply_timer);
 
     if (view->menu) evas_object_del(view->menu);
     if (view->main_menu) evas_object_del(view->main_menu);
@@ -1589,6 +2195,8 @@ _evisum_ui_process_list_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, 
     if (view->thread) ecore_thread_cancel(view->thread);
 
     if (view->thread) ecore_thread_wait(view->thread, 0.5);
+
+    evisum_engine_history_live_set();
 
     if (view->handler) ecore_event_handler_del(view->handler);
     if (view->icon_cache) evisum_icon_cache_del(view->icon_cache);
@@ -1601,6 +2209,7 @@ _evisum_ui_process_list_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, 
     if (view->widget_exel) evisum_ui_widget_exel_free(view->widget_exel);
 
     if (view->proc_usage_cache) eina_hash_free(view->proc_usage_cache);
+    if (view->history.lock_init) eina_lock_free(&view->history.lock);
 
     free(view);
     view = NULL;
@@ -1643,6 +2252,11 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
 
     view->selected_pid = -1;
     view->ui = ui;
+    eina_lock_new(&view->history.lock);
+    view->history.lock_init = EINA_TRUE;
+    view->history.live = EINA_TRUE;
+    view->history.whole = ui->proc.history_whole;
+    evisum_engine_history_live_set();
     view->handler
             = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED, _evisum_ui_process_list_config_changed_cb, view);
 
@@ -1675,6 +2289,7 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
                                    view);
 
     _evisum_ui_process_list_search_add(view);
+    _evisum_ui_process_list_loader_add(view);
     _evisum_ui_process_list_effects_add(view, win);
     _evisum_ui_process_list_content_reset(view);
     _evisum_ui_process_list_summary_add(view);
