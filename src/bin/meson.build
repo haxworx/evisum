@@ -22,7 +22,3 @@ executable('evisum', src,
    dependencies         : [ deps, deps_os, deps_nls ],
    link_with            : [ lz4_lib ],
    install              : true)
-
-if host_os == 'freebsd' or host_os == 'dragonfly'
-   meson.add_install_script('perms.sh')
-endif

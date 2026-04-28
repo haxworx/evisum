@@ -29,6 +29,8 @@ typedef struct _Proc_Info
    uint64_t    mem_shared;
    uint64_t    net_in;
    uint64_t    net_out;
+   uint64_t    net_in_raw;
+   uint64_t    net_out_raw;
    uint64_t    disk_read;
    uint64_t    disk_write;
 

@@ -51,6 +51,7 @@ typedef struct {
 
     struct {
         Evas_Object *pop;
+        Evas_Object *fr;
         Evas_Object *pb;
         Eina_Bool visible;
     } loader;
@@ -85,6 +86,8 @@ typedef struct {
         uint32_t start_time;
         uint32_t end_time;
         uint32_t requested_time;
+        uint32_t tooltip_time;
+        Eina_Bool tooltip_available;
     } history;
 
     Elm_Layout *indicator;
@@ -96,7 +99,9 @@ typedef struct {
 #define PROC_COL_MIN_WIDTH        48
 
 typedef struct {
+    int64_t pid;
     int64_t start;
+    uint32_t sample_time;
     uint64_t net_in;
     uint64_t net_out;
     uint64_t disk_read;
@@ -686,11 +691,20 @@ static void
 _evisum_ui_process_list_history_tooltip_set(Evisum_Ui_Process_List_View *view, uint32_t t) {
     char time_buf[32];
     char tip[128];
+    Eina_Bool available;
 
     if (!view->summary.history_slider) return;
 
+    if (view->history.tooltip_time == t) available = view->history.tooltip_available;
+    else {
+        available = evisum_engine_history_time_available_get(t);
+        view->history.tooltip_time = t;
+        view->history.tooltip_available = available;
+    }
+
     _evisum_ui_process_list_history_time_format(t, time_buf, sizeof(time_buf));
-    snprintf(tip, sizeof(tip), _("Process history: %s"), time_buf);
+    if (available) snprintf(tip, sizeof(tip), _("Process history: %s"), time_buf);
+    else snprintf(tip, sizeof(tip), _("Process history: %s (no snapshot)"), time_buf);
     elm_object_tooltip_text_set(view->summary.history_slider, tip);
 }
 
@@ -719,14 +733,36 @@ _evisum_ui_process_list_loader_position(Evisum_Ui_Process_List_View *view) {
 }
 
 static void
+_evisum_ui_process_list_loader_progressbar_reset(Evisum_Ui_Process_List_View *view) {
+    Evas_Object *pb;
+
+    if (!view->loader.fr) return;
+
+    if (view->loader.pb) {
+        evas_object_del(view->loader.pb);
+        view->loader.pb = NULL;
+    }
+
+    view->loader.pb = pb = elm_progressbar_add(view->loader.fr);
+    elm_progressbar_unit_format_set(pb, "");
+    elm_progressbar_span_size_set(pb, ELM_SCALE_SIZE(220));
+    elm_progressbar_pulse_set(pb, EINA_TRUE);
+    evas_object_size_hint_weight_set(pb, 0, 0);
+    evas_object_size_hint_align_set(pb, FILL, 0.5);
+    evas_object_show(pb);
+    elm_object_content_set(view->loader.fr, pb);
+}
+
+static void
 _evisum_ui_process_list_loader_show(Evisum_Ui_Process_List_View *view) {
     if (!view->loader.pop) return;
     if (view->loader.visible) return;
 
+    _evisum_ui_process_list_loader_progressbar_reset(view);
     _evisum_ui_process_list_loader_position(view);
     evas_object_raise(view->loader.pop);
-    elm_progressbar_pulse(view->loader.pb, EINA_TRUE);
     evas_object_show(view->loader.pop);
+    if (view->loader.pb) elm_progressbar_pulse(view->loader.pb, EINA_TRUE);
     view->loader.visible = EINA_TRUE;
 }
 
@@ -734,7 +770,7 @@ static void
 _evisum_ui_process_list_loader_hide(Evisum_Ui_Process_List_View *view) {
     if (!view->loader.pop || !view->loader.visible) return;
 
-    elm_progressbar_pulse(view->loader.pb, EINA_FALSE);
+    if (view->loader.pb) elm_progressbar_pulse(view->loader.pb, EINA_FALSE);
     evas_object_lower(view->loader.pop);
     evas_object_hide(view->loader.pop);
     view->loader.visible = EINA_FALSE;
@@ -742,7 +778,7 @@ _evisum_ui_process_list_loader_hide(Evisum_Ui_Process_List_View *view) {
 
 static void
 _evisum_ui_process_list_loader_add(Evisum_Ui_Process_List_View *view) {
-    Evas_Object *tb, *fr, *rec, *pb;
+    Evas_Object *tb, *fr, *rec;
 
     view->loader.pop = tb = elm_table_add(view->win);
     evas_object_lower(tb);
@@ -752,19 +788,12 @@ _evisum_ui_process_list_loader_add(Evisum_Ui_Process_List_View *view) {
     evas_object_size_hint_max_set(rec, ELM_SCALE_SIZE(220), ELM_SCALE_SIZE(128));
     elm_table_pack(tb, rec, 0, 0, 1, 1);
 
-    fr = elm_frame_add(view->win);
+    view->loader.fr = fr = elm_frame_add(view->win);
     elm_object_text_set(fr, _("Loading snapshot"));
     evas_object_size_hint_weight_set(fr, 0, 0);
     evas_object_size_hint_align_set(fr, FILL, 0.5);
 
-    view->loader.pb = pb = elm_progressbar_add(fr);
-    elm_progressbar_unit_format_set(pb, "");
-    elm_progressbar_span_size_set(pb, ELM_SCALE_SIZE(220));
-    elm_progressbar_pulse_set(pb, EINA_TRUE);
-    evas_object_size_hint_weight_set(pb, 0, 0);
-    evas_object_size_hint_align_set(pb, FILL, 0.5);
-    evas_object_show(pb);
-    elm_object_content_set(fr, pb);
+    _evisum_ui_process_list_loader_progressbar_reset(view);
     elm_table_pack(tb, fr, 0, 0, 1, 1);
     evas_object_show(fr);
 }
@@ -792,9 +821,14 @@ _evisum_ui_process_list_history_apply_timer_cb(void *data) {
     return EINA_FALSE;
 }
 
-static void
+static Eina_Bool
 _evisum_ui_process_list_history_request_deferred(Evisum_Ui_Process_List_View *view, uint32_t t) {
-    if (!view->history.lock_init) return;
+    if (!view->history.lock_init) return EINA_FALSE;
+    if (!evisum_engine_history_time_available_get(t)) {
+        _evisum_ui_process_list_history_tooltip_set(view, t);
+        _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
+        return EINA_FALSE;
+    }
 
     if (view->history.apply_timer) {
         ecore_timer_del(view->history.apply_timer);
@@ -811,6 +845,8 @@ _evisum_ui_process_list_history_request_deferred(Evisum_Ui_Process_List_View *vi
     /* Coalesce slider/key repeats so dragging or holding an arrow key loads the
      * final requested timestamp instead of every intermediate second. */
     view->history.apply_timer = ecore_timer_add(0.5, _evisum_ui_process_list_history_apply_timer_cb, view);
+
+    return EINA_TRUE;
 }
 
 static void
@@ -1025,8 +1061,11 @@ _evisum_ui_process_list_history_slider_mouse_move_cb(void *data, Evas *e EINA_UN
     if (!ev) return;
 
     t = _evisum_ui_process_list_history_time_at_x_get(view, ev->cur.canvas.x);
-    if (view->history.sliding) _evisum_ui_process_list_history_preview_set(view, t);
-    else _evisum_ui_process_list_history_tooltip_set(view, t);
+    if (view->history.sliding) {
+        if (evisum_engine_history_time_available_get(t)) _evisum_ui_process_list_history_preview_set(view, t);
+        else _evisum_ui_process_list_history_tooltip_set(view, t);
+    } else
+        _evisum_ui_process_list_history_tooltip_set(view, t);
 }
 
 static void
@@ -1046,20 +1085,23 @@ _evisum_ui_process_list_history_slider_mouse_down_cb(void *data, Evas *e EINA_UN
                                                      void *event_info) {
     Evisum_Ui_Process_List_View *view = data;
     Evas_Event_Mouse_Down *ev = event_info;
+    uint32_t t;
 
     if (!ev || ev->button != 1) return;
 
     if (!view->history.lock_init) return;
 
+    t = _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x);
+    if (!evisum_engine_history_time_available_get(t)) {
+        _evisum_ui_process_list_history_tooltip_set(view, t);
+        _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
+        return;
+    }
+
     view->history.sliding = EINA_TRUE;
 
     /* While the mouse is down, only preview the selected time.  The actual
      * snapshot load is queued on mouse-up so dragging stays responsive. */
-    eina_lock_take(&view->history.lock);
-    view->history.live = EINA_FALSE;
-    view->history.pending = EINA_FALSE;
-    view->history.requested_time = 0;
-    eina_lock_release(&view->history.lock);
     _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
 
     if (view->history.apply_timer) {
@@ -1067,8 +1109,7 @@ _evisum_ui_process_list_history_slider_mouse_down_cb(void *data, Evas *e EINA_UN
         view->history.apply_timer = NULL;
     }
 
-    _evisum_ui_process_list_history_preview_set(
-        view, _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x));
+    _evisum_ui_process_list_history_preview_set(view, t);
 }
 
 static void
@@ -1084,6 +1125,11 @@ _evisum_ui_process_list_history_slider_mouse_up_cb(void *data, Evas *e EINA_UNUS
 
     view->history.sliding = EINA_FALSE;
     t = _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x);
+    if (!evisum_engine_history_time_available_get(t)) {
+        _evisum_ui_process_list_history_tooltip_set(view, t);
+        _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
+        return;
+    }
     _evisum_ui_process_list_history_preview_set(view, t);
     _evisum_ui_process_list_history_request_deferred(view, t);
 }
@@ -1280,6 +1326,15 @@ _evisum_ui_process_list_usage_cache_free_cb(void *data) {
     free(cache);
 }
 
+static uint32_t
+_evisum_ui_process_list_sample_time_get(void) {
+    uint32_t sample_time;
+
+    sample_time = evisum_engine_history_time_get();
+    if (!sample_time) sample_time = evisum_engine_live_time_get();
+    return sample_time;
+}
+
 static Eina_Bool
 _evisum_ui_process_list_process_ignore(Evisum_Ui_Process_List_View *view, Proc_Info *proc) {
     Evisum_Ui *ui = view->ui;
@@ -1304,16 +1359,26 @@ _evisum_ui_process_list_process_ignore(Evisum_Ui_Process_List_View *view, Proc_I
 static Eina_List *
 _evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_List_View *view) {
     Eina_List *l, *l_next;
+    Eina_List *purge = NULL;
     Proc_Info *proc;
+    Proc_Usage_Cache *cache;
+    Eina_Hash *active_pids;
+    uint32_t sample_time;
+    void *d = NULL;
+
+    sample_time = _evisum_ui_process_list_sample_time_get();
+    active_pids = eina_hash_int64_new(NULL);
 
     EINA_LIST_FOREACH_SAFE(list, l, l_next, proc) {
+        int64_t id = proc->pid;
+
+        if (active_pids)
+            eina_hash_add(active_pids, &id, proc);
+
         if (_evisum_ui_process_list_process_ignore(view, proc)) {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
         } else {
-            Proc_Usage_Cache *cache;
-            int64_t id = proc->pid;
-
             if ((cache = eina_hash_find(view->proc_usage_cache, &id))) {
                 uint64_t net_in_abs = proc->net_in;
                 uint64_t net_out_abs = proc->net_out;
@@ -1321,8 +1386,12 @@ _evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_Lis
                 uint64_t disk_write_abs = proc->disk_write;
                 int elapsed = 1;
 
+                if (sample_time && cache->sample_time && (sample_time > cache->sample_time))
+                    elapsed = sample_time - cache->sample_time;
+
                 if (cache->start != proc->start) {
                     cache->start = proc->start;
+                    cache->sample_time = sample_time;
                     cache->net_in = net_in_abs;
                     cache->net_out = net_out_abs;
                     cache->disk_read = proc->disk_read;
@@ -1353,12 +1422,15 @@ _evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_Lis
                 cache->net_out = net_out_abs;
                 cache->disk_read = disk_read_abs;
                 cache->disk_write = disk_write_abs;
+                cache->sample_time = sample_time;
             } else {
                 cache = calloc(1, sizeof(Proc_Usage_Cache));
                 if (cache) {
                     uint64_t net_in_abs = proc->net_in;
                     uint64_t net_out_abs = proc->net_out;
+                    cache->pid = id;
                     cache->start = proc->start;
+                    cache->sample_time = sample_time;
                     cache->net_in = net_in_abs;
                     cache->net_out = net_out_abs;
                     cache->disk_read = proc->disk_read;
@@ -1367,10 +1439,28 @@ _evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_Lis
                     proc->net_out = 0;
                     proc->disk_read = 0;
                     proc->disk_write = 0;
-                    eina_hash_add(view->proc_usage_cache, &id, cache);
+                    if (!eina_hash_add(view->proc_usage_cache, &id, cache))
+                        free(cache);
                 }
             }
         }
+    }
+
+    if (active_pids) {
+        Eina_Iterator *it = eina_hash_iterator_data_new(view->proc_usage_cache);
+        while (eina_iterator_next(it, &d)) {
+            cache = d;
+            if (!eina_hash_find(active_pids, &cache->pid))
+                purge = eina_list_prepend(purge, cache);
+        }
+        eina_iterator_free(it);
+
+        EINA_LIST_FREE(purge, cache) {
+            int64_t id = cache->pid;
+            eina_hash_del(view->proc_usage_cache, &id, NULL);
+        }
+
+        eina_hash_free(active_pids);
     }
 
     return list;
@@ -2069,9 +2159,14 @@ _evisum_ui_process_list_history_key_step(Evisum_Ui_Process_List_View *view, Evas
         else t++;
     }
 
+    if (!evisum_engine_history_time_available_get(t)) {
+        _evisum_ui_process_list_history_tooltip_set(view, t);
+        _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
+        return EINA_TRUE;
+    }
+
     _evisum_ui_process_list_history_preview_set(view, t);
-    _evisum_ui_process_list_history_request_deferred(view, t);
-    view->skip_wait = 1;
+    if (_evisum_ui_process_list_history_request_deferred(view, t)) view->skip_wait = 1;
     return EINA_TRUE;
 }
 
@@ -2196,6 +2291,7 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
         cache->net_out = 0;
         cache->disk_read = 0;
         cache->disk_write = 0;
+        cache->sample_time = 0;
     }
     eina_iterator_free(it);
 

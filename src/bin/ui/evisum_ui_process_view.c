@@ -106,6 +106,7 @@ typedef struct {
 
 typedef struct {
     int64_t start;
+    uint32_t sample_time;
     int64_t cpu_time;
 #if defined(__linux__)
     uint64_t net_in;
@@ -191,6 +192,14 @@ static void
 _evisum_ui_process_view_usage_cache_free_cb(void *data) {
     Proc_Usage_Cache *cache = data;
     free(cache);
+}
+
+static uint32_t
+_evisum_ui_process_view_sample_time_get(void) {
+    uint32_t sample_time;
+
+    sample_time = evisum_engine_live_time_get();
+    return sample_time;
 }
 
 static Evas_Object *
@@ -843,6 +852,7 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
     Proc_Usage_Cache *cache;
     int64_t id;
     int elapsed;
+    uint32_t sample_time;
 #if defined(__linux__)
     uint64_t net_in_abs = 0;
     uint64_t net_out_abs = 0;
@@ -853,6 +863,7 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
     view = data;
     proc = msg;
     elapsed = 1;
+    sample_time = _evisum_ui_process_view_sample_time_get();
 
     if (!proc || (view->start && (proc->start != view->start))) {
         if (proc) proc_info_free(proc);
@@ -888,6 +899,7 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
         cache = calloc(1, sizeof(Proc_Usage_Cache));
         if (cache) {
             cache->start = proc->start;
+            cache->sample_time = sample_time;
             cache->cpu_time = proc->cpu_time;
 #if defined(__linux__)
             cache->net_in = net_in_abs;
@@ -900,8 +912,8 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
             proc->disk_write = 0;
 #endif
             proc->cpu_usage = 0.0;
-            if (view->proc_usage_cache) eina_hash_add(view->proc_usage_cache, &id, cache);
-            else free(cache);
+            if (!view->proc_usage_cache || !eina_hash_add(view->proc_usage_cache, &id, cache))
+                free(cache);
         } else {
             proc->cpu_usage = 0.0;
 #if defined(__linux__)
@@ -913,6 +925,7 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
         }
     } else if (cache->start != proc->start) {
         cache->start = proc->start;
+        cache->sample_time = sample_time;
         cache->cpu_time = proc->cpu_time;
 #if defined(__linux__)
         cache->net_in = net_in_abs;
@@ -926,10 +939,14 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
 #endif
         proc->cpu_usage = 0.0;
     } else {
+        if (sample_time && cache->sample_time && (sample_time > cache->sample_time))
+            elapsed = sample_time - cache->sample_time;
+
         if (cache->cpu_time && (proc->cpu_time >= cache->cpu_time))
             proc->cpu_usage = (double) (proc->cpu_time - cache->cpu_time) / elapsed;
         else proc->cpu_usage = 0.0;
         cache->cpu_time = proc->cpu_time;
+        cache->sample_time = sample_time;
 #if defined(__linux__)
         if (cache->net_in && (net_in_abs >= cache->net_in)) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
         else proc->net_in = 0;

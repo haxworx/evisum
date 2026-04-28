@@ -32,6 +32,7 @@ pid_t evisum_engine_daemon_pid_get(void);
 Eina_Bool evisum_engine_history_bounds_get(uint32_t *start_time, uint32_t *end_time);
 Eina_Bool evisum_engine_history_bounds_since_get(uint32_t since, uint32_t *start_time, uint32_t *end_time);
 Eina_Bool evisum_engine_history_contiguous_bounds_since_get(uint32_t since, uint32_t *start_time, uint32_t *end_time);
+Eina_Bool evisum_engine_history_time_available_get(uint32_t time);
 Eina_Bool evisum_engine_history_time_set(uint32_t time);
 void evisum_engine_history_live_set(void);
 Eina_Bool evisum_engine_history_live_get(void);

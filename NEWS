@@ -1,4 +1,13 @@
 ============
+Evisum 2.0.1
+============
+
+  * Ensure loading snapshot puises each time it's shown
+  * Fix reliabilty of process network usage.
+  * Display when no snapshot is available (evisum).
+  * Remove redundant BSD permission changes for UI (evisum).
+
+============
 Evisum 2.0.0
 ============
 

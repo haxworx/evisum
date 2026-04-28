@@ -705,6 +705,29 @@ evisum_engine_history_bounds_get(uint32_t *start_time, uint32_t *end_time)
 }
 
 Eina_Bool
+evisum_engine_history_time_available_get(uint32_t time)
+{
+    Eina_List *logs, *l;
+    Evisum_Engine_History_Log *log;
+    Eina_Bool available = EINA_FALSE;
+
+    if (!time) return EINA_FALSE;
+    if (!evisum_engine_ensure_started()) return EINA_FALSE;
+
+    logs = _engine_history_logs_get(EINA_FALSE, 0);
+    EINA_LIST_FOREACH(logs, l, log) {
+        if ((time >= log->start_time) && (time <= log->end_time)) {
+            available = EINA_TRUE;
+            break;
+        }
+    }
+
+    _engine_history_logs_free(logs);
+
+    return available;
+}
+
+Eina_Bool
 evisum_engine_history_time_set(uint32_t time)
 {
     Enigmatic_Client *client, *old;
@@ -1219,15 +1242,59 @@ system_network_ifaces_get(int *n)
 Proc_Net **
 system_network_process_usage_get(int *n)
 {
+    const Snapshot *snap;
+    Eina_List *l;
+    Proc_Info_Log *proc;
+    Proc_Net **procs;
+    int count = 0;
+    int i = 0;
+
     if (n) *n = 0;
-    return NULL;
+    if (!_engine_snapshot_acquire(&snap)) return NULL;
+
+    EINA_LIST_FOREACH(snap->processes, l, proc) {
+        if ((!proc->net_in) && (!proc->net_out)) continue;
+        count++;
+    }
+
+    if (!count) {
+        _engine_snapshot_release();
+        return NULL;
+    }
+
+    procs = calloc(count, sizeof(*procs));
+    if (!procs) {
+        _engine_snapshot_release();
+        return NULL;
+    }
+
+    EINA_LIST_FOREACH(snap->processes, l, proc) {
+        if ((!proc->net_in) && (!proc->net_out)) continue;
+
+        procs[i] = calloc(1, sizeof(**procs));
+        if (!procs[i]) {
+            system_network_process_usage_free(procs, i);
+            _engine_snapshot_release();
+            return NULL;
+        }
+
+        procs[i]->pid = proc->pid;
+        procs[i]->in = proc->net_in;
+        procs[i]->out = proc->net_out;
+        i++;
+    }
+
+    if (n) *n = i;
+    _engine_snapshot_release();
+    return procs;
 }
 
 void
 system_network_process_usage_free(Proc_Net **procs, int n)
 {
-    (void) n;
     if (!procs) return;
+    for (int i = 0; i < n; i++)
+        free(procs[i]);
     free(procs);
 }
 
@@ -1273,6 +1340,8 @@ _proc_from_log(const Proc_Info_Log *src)
     p->mem_shared = src->mem_shared;
     p->net_in = src->net_in;
     p->net_out = src->net_out;
+    p->net_in_raw = src->net_in;
+    p->net_out_raw = src->net_out;
     p->disk_read = src->disk_read;
     p->disk_write = src->disk_write;
     p->numfiles = src->numfiles;

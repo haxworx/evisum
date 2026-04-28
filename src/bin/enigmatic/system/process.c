@@ -364,6 +364,12 @@ typedef struct {
     uint64_t out;
 } Linux_Proc_Net_Stat;
 
+typedef struct {
+    unsigned long *inodes;
+    int count;
+    int capacity;
+} Linux_Proc_Inode_Set;
+
 static int
 _linux_proc_socket_stat_cmp(const void *a, const void *b)
 {
@@ -521,6 +527,28 @@ _linux_proc_socket_stat_find(const Linux_Proc_Socket_Stat *stats, int count, uns
     return bsearch(&key, stats, count, sizeof(*stats), _linux_proc_socket_stat_cmp);
 }
 
+static int
+_linux_proc_inode_seen_add(Linux_Proc_Inode_Set *set, unsigned long inode)
+{
+    unsigned long *tmp;
+    int next_capacity;
+
+    for (int i = 0; i < set->count; i++) {
+        if (set->inodes[i] == inode) return 0;
+    }
+
+    if (set->count >= set->capacity) {
+        next_capacity = set->capacity ? set->capacity * 2 : 16;
+        tmp = realloc(set->inodes, next_capacity * sizeof(*set->inodes));
+        if (!tmp) return -1;
+        set->inodes = tmp;
+        set->capacity = next_capacity;
+    }
+
+    set->inodes[set->count++] = inode;
+    return 1;
+}
+
 static Eina_Bool
 _linux_proc_net_usage_add(Linux_Proc_Net_Stat ***procs, int *n, pid_t pid, uint64_t in, uint64_t out)
 {
@@ -575,6 +603,7 @@ _linux_process_network_usage_get(int *n)
         DIR *fd;
         struct dirent *fd_entry;
         uint64_t in = 0, out = 0;
+        Linux_Proc_Inode_Set seen = { 0 };
 
         if (!isdigit((unsigned char) entry->d_name[0])) continue;
 
@@ -611,6 +640,7 @@ _linux_process_network_usage_get(int *n)
 
             inode = strtoul(target + 8, &end, 10);
             if (!end || (*end != ']')) continue;
+            if (_linux_proc_inode_seen_add(&seen, inode) <= 0) continue;
 
             sock = _linux_proc_socket_stat_find(sockets, socket_count, inode);
             if (!sock) continue;
@@ -620,6 +650,7 @@ _linux_process_network_usage_get(int *n)
         }
 
         closedir(fd);
+        free(seen.inodes);
 
         if ((!in) && (!out)) continue;
         if (!_linux_proc_net_usage_add(&procs, n, pid, in, out)) break;

@@ -183,6 +183,34 @@ _process_log_string(Enigmatic *enigmatic, pid_t pid, Object_Type object_type, co
 }
 
 static void
+_process_network_totals_update(Proc_Info *proc, const Proc_Info *prev)
+{
+   uint64_t raw_in, raw_out;
+
+   if (!proc) return;
+
+   raw_in = proc->net_in;
+   raw_out = proc->net_out;
+   proc->net_in_raw = raw_in;
+   proc->net_out_raw = raw_out;
+
+   if (!prev || (proc->start != prev->start))
+     {
+        proc->net_in = 0;
+        proc->net_out = 0;
+        return;
+     }
+
+   proc->net_in = prev->net_in;
+   proc->net_out = prev->net_out;
+
+   if (raw_in >= prev->net_in_raw)
+     proc->net_in += raw_in - prev->net_in_raw;
+   if (raw_out >= prev->net_out_raw)
+     proc->net_out += raw_out - prev->net_out_raw;
+}
+
+static void
 processes_refresh(Enigmatic *enigmatic, Eina_Hash **cache_hash)
 {
    Eina_List *ordered = NULL, *proc_logs = NULL;
@@ -226,6 +254,7 @@ enigmatic_monitor_processes(Enigmatic *enigmatic, Eina_Hash **cache_hash)
         *cache_hash = eina_hash_int32_new(cb_process_free);
         EINA_LIST_FOREACH(processes, l, proc)
           {
+             _process_network_totals_update(proc, NULL);
              DEBUG("add pid => %i => %s", proc->pid, proc->command);
              proc->is_new = 1;
              int32_t pid = proc->pid;
@@ -282,6 +311,7 @@ enigmatic_monitor_processes(Enigmatic *enigmatic, Eina_Hash **cache_hash)
           {
              Proc_Info_Log proc_log;
 
+             _process_network_totals_update(proc, NULL);
              proc_info_log_fill(proc, &proc_log);
              enigmatic_log_process_write(enigmatic, &proc_log);
 
@@ -290,6 +320,9 @@ enigmatic_monitor_processes(Enigmatic *enigmatic, Eina_Hash **cache_hash)
              eina_hash_add(*cache_hash, &pid, proc);
              continue;
           }
+
+        if (proc != p1)
+          _process_network_totals_update(proc, p1);
 
         proc_info_log_fill(p1, &old_log);
         proc_info_log_fill(proc, &new_log);
