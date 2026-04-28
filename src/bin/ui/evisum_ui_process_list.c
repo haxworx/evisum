@@ -29,6 +29,7 @@ typedef struct {
     Eina_Bool skip_update;
     Eina_Bool update_every_item;
     pid_t selected_pid;
+    pid_t enigmatic_pid;
     int poll_count;
 
     Ecore_Timer *resize_timer;
@@ -80,6 +81,7 @@ typedef struct {
         Eina_Bool whole;
         Ecore_Timer *timer;
         Ecore_Timer *apply_timer;
+        Ecore_Thread *bounds_thread;
         uint32_t start_time;
         uint32_t end_time;
         uint32_t requested_time;
@@ -107,6 +109,15 @@ typedef struct {
     Proc_Sort sort;
     int (*sort_cb)(const void *p1, const void *p2);
 } Proc_Field_Info;
+
+typedef struct {
+    Evisum_Ui_Process_List_View *view;
+    Eina_Bool whole;
+    Eina_Bool ok;
+    uint32_t since;
+    uint32_t start_time;
+    uint32_t end_time;
+} History_Bounds_Request;
 
 static const Proc_Field_Info _proc_field_info[PROC_FIELD_MAX] = {
     [PROC_FIELD_CMD] =        { N_("COMMAND"), N_("Command"),         PROC_SORT_BY_CMD,        proc_sort_by_cmd        },
@@ -684,6 +695,14 @@ _evisum_ui_process_list_history_tooltip_set(Evisum_Ui_Process_List_View *view, u
 }
 
 static void
+_evisum_ui_process_list_history_tooltip_pinned_set(Evisum_Ui_Process_List_View *view, Eina_Bool pinned) {
+    if (!view->summary.history_slider) return;
+
+    if (pinned) elm_object_tooltip_show(view->summary.history_slider);
+    else elm_object_tooltip_hide(view->summary.history_slider);
+}
+
+static void
 _evisum_ui_process_list_history_live_state_set(Evisum_Ui_Process_List_View *view);
 
 static void
@@ -787,6 +806,7 @@ _evisum_ui_process_list_history_request_deferred(Evisum_Ui_Process_List_View *vi
     view->history.requested_time = t;
     view->history.pending = EINA_FALSE;
     eina_lock_release(&view->history.lock);
+    _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
 
     /* Coalesce slider/key repeats so dragging or holding an arrow key loads the
      * final requested timestamp instead of every intermediate second. */
@@ -841,13 +861,107 @@ _evisum_ui_process_list_history_live_state_set(Evisum_Ui_Process_List_View *view
     view->history.sliding = EINA_FALSE;
     view->history.requested_time = 0;
     eina_lock_release(&view->history.lock);
+    _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_FALSE);
+}
+
+static void
+_evisum_ui_process_list_history_bounds_apply(Evisum_Ui_Process_List_View *view, uint32_t start_time, uint32_t end_time) {
+    Eina_Bool live;
+
+    if (!view->summary.history_slider) return;
+
+    if (end_time <= start_time) end_time = start_time + 1;
+
+    view->history.start_time = start_time;
+    view->history.end_time = end_time;
+
+    elm_object_disabled_set(view->summary.history_slider, 0);
+    elm_slider_min_max_set(view->summary.history_slider, start_time, end_time);
+    elm_slider_step_set(view->summary.history_slider, 1.0 / (double) (end_time - start_time));
+
+    _evisum_ui_process_list_history_state_get(view, &live, NULL, NULL);
+    elm_object_disabled_set(view->summary.history_live_btn, live);
+
+    if (live && !view->history.sliding) {
+        view->history.slider_updating = EINA_TRUE;
+        elm_slider_value_set(view->summary.history_slider, end_time);
+        view->history.slider_updating = EINA_FALSE;
+    }
+}
+
+static void
+_evisum_ui_process_list_history_bounds_worker_cb(void *data, Ecore_Thread *thread) {
+    History_Bounds_Request *req = data;
+
+    if (ecore_thread_check(thread)) return;
+
+    if (req->whole) req->ok = evisum_engine_history_bounds_get(&req->start_time, &req->end_time);
+    else req->ok = evisum_engine_history_contiguous_bounds_since_get(req->since, &req->start_time, &req->end_time);
+}
+
+static void
+_evisum_ui_process_list_history_bounds_done_cb(void *data, Ecore_Thread *thread) {
+    History_Bounds_Request *req = data;
+    Evisum_Ui_Process_List_View *view = req->view;
+    uint32_t start_time, end_time;
+
+    if (view->history.bounds_thread == thread) view->history.bounds_thread = NULL;
+
+    if (req->ok) {
+        start_time = req->start_time;
+        end_time = req->end_time;
+        if (req->since && (start_time < req->since)) start_time = req->since;
+        _evisum_ui_process_list_history_bounds_apply(view, start_time, end_time);
+    } else if (!view->history.start_time) {
+        elm_object_disabled_set(view->summary.history_slider, 1);
+        elm_object_disabled_set(view->summary.history_live_btn, 1);
+    }
+
+    free(req);
+}
+
+static void
+_evisum_ui_process_list_history_bounds_cancel_cb(void *data, Ecore_Thread *thread) {
+    History_Bounds_Request *req = data;
+    Evisum_Ui_Process_List_View *view = req->view;
+
+    if (view && (view->history.bounds_thread == thread)) view->history.bounds_thread = NULL;
+
+    free(req);
+}
+
+static void
+_evisum_ui_process_list_history_bounds_refresh(Evisum_Ui_Process_List_View *view, Eina_Bool whole, uint32_t since) {
+    History_Bounds_Request *req;
+
+    if (view->history.bounds_thread) return;
+
+    req = calloc(1, sizeof(*req));
+    if (!req) return;
+
+    req->view = view;
+    req->whole = whole;
+    req->since = since;
+
+    view->history.bounds_thread = ecore_thread_run(_evisum_ui_process_list_history_bounds_worker_cb,
+                                                   _evisum_ui_process_list_history_bounds_done_cb,
+                                                   _evisum_ui_process_list_history_bounds_cancel_cb, req);
+    if (!view->history.bounds_thread) free(req);
+}
+
+static void
+_evisum_ui_process_list_history_bounds_refresh_cancel(Evisum_Ui_Process_List_View *view) {
+    if (!view->history.bounds_thread) return;
+
+    ecore_thread_cancel(view->history.bounds_thread);
+    ecore_thread_wait(view->history.bounds_thread, 0.5);
+    view->history.bounds_thread = NULL;
 }
 
 static void
 _evisum_ui_process_list_history_bounds_update(Evisum_Ui_Process_List_View *view) {
     uint32_t start_time = 0, end_time = 0;
     uint32_t live_time, now, since = 0;
-    Eina_Bool live;
 
     if (!view->summary.history_slider) return;
 
@@ -862,42 +976,21 @@ _evisum_ui_process_list_history_bounds_update(Evisum_Ui_Process_List_View *view)
         view->history.end_time = 0;
     }
     if (!view->ui->proc.history_whole) since = now > 3600 ? now - 3600 : 0;
-    if ((view->history.start_time) && (!since || (view->history.start_time >= since))
+    if ((view->history.start_time) && (!since || (view->history.end_time >= since))
         && (now >= view->history.start_time)) {
         start_time = view->history.start_time;
         end_time = live_time > now ? live_time : now;
     } else {
-        if (since) {
-            if (!evisum_engine_history_contiguous_bounds_since_get(since, &start_time, &end_time)) {
-                elm_object_disabled_set(view->summary.history_slider, 1);
-                elm_object_disabled_set(view->summary.history_live_btn, 1);
-                return;
-            }
-        } else if (!evisum_engine_history_bounds_get(&start_time, &end_time)) {
+        _evisum_ui_process_list_history_bounds_refresh(view, view->ui->proc.history_whole, since);
+        if (!view->history.start_time) {
             elm_object_disabled_set(view->summary.history_slider, 1);
             elm_object_disabled_set(view->summary.history_live_btn, 1);
-            return;
         }
+        return;
     }
 
     if (since && (start_time < since)) start_time = since;
-    if (end_time <= start_time) end_time = start_time + 1;
-
-    view->history.start_time = start_time;
-    view->history.end_time = end_time;
-
-    elm_object_disabled_set(view->summary.history_slider, 0);
-    elm_slider_min_max_set(view->summary.history_slider, start_time, end_time);
-
-    _evisum_ui_process_list_history_state_get(view, &live, NULL, NULL);
-    elm_object_disabled_set(view->summary.history_live_btn, live);
-
-    if (live && !view->history.sliding) {
-        view->history.slider_updating = EINA_TRUE;
-        elm_slider_value_set(view->summary.history_slider, end_time);
-        view->history.slider_updating = EINA_FALSE;
-        _evisum_ui_process_list_history_tooltip_set(view, end_time);
-    }
+    _evisum_ui_process_list_history_bounds_apply(view, start_time, end_time);
 }
 
 static uint32_t
@@ -967,6 +1060,7 @@ _evisum_ui_process_list_history_slider_mouse_down_cb(void *data, Evas *e EINA_UN
     view->history.pending = EINA_FALSE;
     view->history.requested_time = 0;
     eina_lock_release(&view->history.lock);
+    _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
 
     if (view->history.apply_timer) {
         ecore_timer_del(view->history.apply_timer);
@@ -1027,6 +1121,7 @@ _evisum_ui_process_list_history_live_clicked_cb(void *data, Evas_Object *obj EIN
     view->history.sliding = EINA_FALSE;
     view->history.requested_time = 0;
     eina_lock_release(&view->history.lock);
+    _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_FALSE);
 
     elm_object_disabled_set(view->summary.history_live_btn, 1);
     _evisum_ui_process_list_loader_hide(view);
@@ -1083,8 +1178,6 @@ _evisum_ui_process_list_summary_update(Evisum_Ui_Process_List_View *view) {
     elm_object_part_text_set(view->summary.pb_mem, "elm.text.status", eina_strbuf_string_get(buf));
 
     eina_strbuf_free(buf);
-
-    _evisum_ui_process_list_history_bounds_update(view);
 }
 
 static void
@@ -1192,7 +1285,10 @@ _evisum_ui_process_list_process_ignore(Evisum_Ui_Process_List_View *view, Proc_I
     Evisum_Ui *ui = view->ui;
     const char *command;
 
-    if (proc->pid == ui->program_pid) return 1;
+    if (!ui->proc.show_self) {
+        if (proc->pid == ui->program_pid) return 1;
+        if (view->enigmatic_pid && (proc->pid == view->enigmatic_pid)) return 1;
+    }
 
     if (!view->search.text || !view->search.len) return 0;
 
@@ -1286,6 +1382,8 @@ _evisum_ui_process_list_get(Evisum_Ui_Process_List_View *view) {
     Evisum_Ui *ui;
 
     ui = view->ui;
+
+    view->enigmatic_pid = ui->proc.show_self ? 0 : evisum_engine_daemon_pid_get();
 
     list = proc_info_all_get();
 
@@ -1945,7 +2043,7 @@ _evisum_ui_process_list_win_key_down_search(Evisum_Ui_Process_List_View *view, E
 static Eina_Bool
 _evisum_ui_process_list_history_key_step(Evisum_Ui_Process_List_View *view, Evas_Event_Key_Down *ev) {
     Eina_Bool live;
-    uint32_t t;
+    uint32_t requested_time, t;
 
     if (!view || !ev || !ev->keyname) return EINA_FALSE;
     if (view->search.visible) return EINA_FALSE;
@@ -1954,12 +2052,13 @@ _evisum_ui_process_list_history_key_step(Evisum_Ui_Process_List_View *view, Evas
         && strcmp(ev->keyname, "KP_Left") && strcmp(ev->keyname, "KP_Right"))
         return EINA_FALSE;
 
-    _evisum_ui_process_list_history_state_get(view, &live, NULL, NULL);
+    _evisum_ui_process_list_history_state_get(view, &live, NULL, &requested_time);
     if (live && evisum_engine_history_live_get()) return EINA_FALSE;
 
-    /* Arrow stepping is just another debounced history request, using the
-     * loaded engine timestamp when available and the preview slider otherwise. */
-    t = evisum_engine_history_time_get();
+    /* Keep repeated arrow presses anchored to the latest preview request.  The
+     * engine timestamp is only updated after the debounced snapshot load. */
+    t = requested_time;
+    if (!t) t = evisum_engine_history_time_get();
     if (!t) t = (uint32_t) (elm_slider_value_get(view->summary.history_slider) + 0.5);
 
     if (!strcmp(ev->keyname, "Left") || !strcmp(ev->keyname, "KP_Left")) {
@@ -2106,6 +2205,7 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
     if (view->summary.visible && (view->history.whole != ui->proc.history_whole)) {
         uint32_t since = 0, history_time;
 
+        _evisum_ui_process_list_history_bounds_refresh_cancel(view);
         view->history.start_time = 0;
         view->history.end_time = 0;
 
@@ -2122,6 +2222,7 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
             view->history.sliding = EINA_FALSE;
             view->history.requested_time = 0;
             eina_lock_release(&view->history.lock);
+            _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_FALSE);
             _evisum_ui_process_list_loader_hide(view);
         }
 
@@ -2137,6 +2238,7 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
         view->history.sliding = EINA_FALSE;
         view->history.requested_time = 0;
         eina_lock_release(&view->history.lock);
+        _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_FALSE);
         if (view->history.timer) {
             ecore_timer_del(view->history.timer);
             view->history.timer = NULL;
@@ -2145,6 +2247,7 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
             ecore_timer_del(view->history.apply_timer);
             view->history.apply_timer = NULL;
         }
+        _evisum_ui_process_list_history_bounds_refresh_cancel(view);
         _evisum_ui_process_list_loader_hide(view);
         elm_box_clear(view->summary.hbx);
         view->summary.visible = 0;
@@ -2188,6 +2291,7 @@ _evisum_ui_process_list_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, 
     if (view->main_menu_timer) ecore_timer_del(view->main_menu_timer);
     if (view->history.timer) ecore_timer_del(view->history.timer);
     if (view->history.apply_timer) ecore_timer_del(view->history.apply_timer);
+    _evisum_ui_process_list_history_bounds_refresh_cancel(view);
 
     if (view->menu) evas_object_del(view->menu);
     if (view->main_menu) evas_object_del(view->main_menu);

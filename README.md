@@ -30,6 +30,8 @@ aren't too high.
   - `enigmatic_client` follows that stream and builds typed snapshots.
   - evisum consumes one shared background update signal, so windows stay in sync
     without each view implementing its own low-level polling loop.
+  - Historical snapshots can be replayed, making it possible to go back in time
+    and inspect the state of the system as it was recorded.
   - External programs can use the same client API/library to build their own
     monitors and tooling.
 - Tools to monitor:
@@ -52,6 +54,8 @@ Evisum now uses a single data pipeline based on the `enigmatic` daemon and the
   - Follows and parses the Enigmatic log.
   - Maintains an in-memory `Snapshot` with typed objects (`Cpu_Core`, `Meminfo`,
     `Sensor`, `Network_Interface`, `File_System`, `Proc_Info_Log`).
+  - Supports replaying logged snapshots so clients can view earlier system
+    states instead of only the latest live sample.
 - evisum engine/background:
   - Starts/attaches to `enigmatic`.
   - Exposes snapshot-backed data to UI views.
@@ -62,7 +66,9 @@ Evisum now uses a single data pipeline based on the `enigmatic` daemon and the
   - Keep per-view rendering and formatting logic only.
 
 This removes the old duplicated system-querying path and keeps runtime data flow
-centered on one stream source.
+centered on one stream source. Because the stream is logged, evisum can also
+move back through recorded snapshots and show the system state at an earlier
+point in time.
 
 ## 📦 Enigmatic Library
 `Enigmatic_Client` is available as an external installable library so programs
@@ -93,7 +99,8 @@ Typical include:
 ```
 
 At runtime, open a client and register snapshot/event callbacks to receive live
-stream updates.
+stream updates. Clients can also replay recorded snapshots to inspect previous
+system states.
 
 ## 📌 Requirements
 Evisum requires an installation of **EFL (v1.27.0+)**.

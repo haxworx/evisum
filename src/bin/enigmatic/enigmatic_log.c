@@ -13,8 +13,10 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
+#include <limits.h>
 #include <sys/file.h>
 #include <sys/mman.h>
+#include <stdint.h>
 
 void
 enigmatic_log_header(Enigmatic *enigmatic, Event event, Message mesg)
@@ -303,12 +305,13 @@ enigmatic_log_compress(const char *path, Eina_Bool staggered)
    FILE *f;
    int fd;
    char *out;
-   int length;
+   int length, block_capacity;
    struct stat st;
    uint32_t size;
    uint8_t *map;
    char path2[PATH_MAX];
    Eina_Bool ret = 0;
+   size_t blocks, out_capacity, newlength = 0;
 
    fd = open(path, O_RDONLY);
    if (fd == -1) return 0;
@@ -321,15 +324,18 @@ enigmatic_log_compress(const char *path, Eina_Bool staggered)
    if (map == MAP_FAILED)
      ERROR("mmap()");
 
-   length = LZ4_compressBound(size);
-   out = malloc(length);
+   block_capacity = LZ4_compressBound(BLOCK_SIZE);
+   blocks = ((size_t) st.st_size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+   if ((block_capacity <= 0) || (blocks > (SIZE_MAX / (size_t) block_capacity)))
+     ERROR("LZ4_compressBound()");
+
+   out_capacity = blocks * (size_t) block_capacity;
+   out = malloc(out_capacity);
    EINA_SAFETY_ON_NULL_RETURN_VAL(out, 0);
 
    snprintf(path2, sizeof(path2), "%s.lz4.size", path);
    f = fopen(path2, "w");
    EINA_SAFETY_ON_NULL_RETURN_VAL(f, 0);
-
-   int newlength = 0;
 
    for (int off = 0; off < st.st_size; off += BLOCK_SIZE)
      {
@@ -338,7 +344,10 @@ enigmatic_log_compress(const char *path, Eina_Bool staggered)
         else
           size = BLOCK_SIZE;
 
+        length = block_capacity;
         int sz = LZ4_compress_default((char *) map + off, out + newlength, size, length);
+        if (sz <= 0)
+          ERROR("LZ4_compress_default()");
         fprintf(f, "%i-%i,", size, sz);
         newlength += sz;
         if (staggered) usleep(50000);
@@ -349,7 +358,7 @@ enigmatic_log_compress(const char *path, Eina_Bool staggered)
    f = fopen(path2, "wb");
    if (f)
      {
-        int n = fwrite(out, 1, newlength, f);
+        size_t n = fwrite(out, 1, newlength, f);
         if (n == newlength)
           ret = 1;
         fclose(f);
@@ -378,7 +387,12 @@ file_contents(const char *path)
    while ((!feof(f)) && (!ferror(f)))
      {
         tmp = realloc(buf, ++n * (sizeof(char) * block) + 1);
-        if (!tmp) return NULL;
+        if (!tmp)
+          {
+             free(buf);
+             fclose(f);
+             return NULL;
+          }
         buf = tmp;
         len += fread(buf + len, sizeof(char), block, f);
      }
@@ -391,7 +405,10 @@ file_contents(const char *path)
      }
    fclose(f);
 
-   if ((buf[len - 1] == '\n') || (buf[len -1] == '\r'))
+   if (!buf)
+     return NULL;
+
+   if ((len > 0) && ((buf[len - 1] == '\n') || (buf[len -1] == '\r')))
      buf[len - 1] = 0;
    else
      buf[len] = 0;
@@ -407,43 +424,61 @@ enigmatic_log_decompress(const char *path, uint32_t *length)
    char *map;
    char *buf;
    char *out = NULL;
-   int len, total = 0, off = 0, newlength = 0;
+   size_t total = 0, off = 0, newlength = 0;
 
    *length = 0;
 
    fd = open(path, O_RDONLY);
    if (fd == -1) return NULL;
 
-   if (fstat(fd, &st) == -1) ERROR("fstat() %s", strerror(errno));
+   if (fstat(fd, &st) == -1) goto err;
+   if (st.st_size <= 0) goto err;
 
    map = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-   if (map == MAP_FAILED)
-     ERROR("mmap()");
+   if (map == MAP_FAILED) goto err;
 
    char path2[PATH_MAX];
    snprintf(path2, sizeof(path2), "%s.size", path);
 
    buf = file_contents(path2);
+   if (!buf) goto err_mmap;
+
    char *tok = strtok(buf, ",");
    while (tok)
      {
-        int sz, csz;
-        if ((sscanf(tok, "%i-%i", &sz, &csz)) != 2)
-          ERROR("%s (token parsing)", path2);
+        int len;
+        long sz, csz;
+        char extra;
 
-        total += sz + 1;
+        if ((sscanf(tok, "%ld-%ld%c", &sz, &csz, &extra)) != 2)
+          goto err_buf;
+        if ((sz <= 0) || (csz <= 0))
+          goto err_buf;
+        if ((sz > INT_MAX) || (csz > INT_MAX))
+          goto err_buf;
+        if (off > (size_t) st.st_size)
+          goto err_buf;
+        if ((size_t) csz > ((size_t) st.st_size - off))
+          goto err_buf;
+        if ((size_t) sz > (SIZE_MAX - total))
+          goto err_buf;
+        if ((size_t) sz > (UINT32_MAX - newlength))
+          goto err_buf;
+
+        total += (size_t) sz;
         void *t = realloc(out, total);
-        EINA_SAFETY_ON_NULL_RETURN_VAL(t, NULL);
+        if (!t) goto err_buf;
         out = t;
 
-        len = LZ4_decompress_safe((const char *) map + off, out + newlength, csz, total);
+        len = LZ4_decompress_safe((const char *) map + off, out + newlength,
+                                   (int) csz, (int) sz);
         if (len < 0)
-          ERROR("LZ4_decompress_safe error (%i)", len);
+          goto err_buf;
         if (len != sz)
-          ERROR("LZ4_decompress_safe mismatched sizes");
+          goto err_buf;
 
-        off += csz;
-        newlength += sz;
+        off += (size_t) csz;
+        newlength += (size_t) sz;
         tok = strtok(NULL, ",");
      }
 
@@ -454,6 +489,15 @@ enigmatic_log_decompress(const char *path, uint32_t *length)
    *length = newlength;
 
    return out;
+
+err_buf:
+   free(out);
+   free(buf);
+err_mmap:
+   munmap(map, st.st_size);
+err:
+   close(fd);
+   return NULL;
 }
 
 static void *

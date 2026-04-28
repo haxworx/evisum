@@ -28,6 +28,7 @@ Eina_Bool evisum_engine_status_get(Evisum_Engine_Status *status);
 uint64_t evisum_engine_update_seq_get(void);
 Eina_Bool evisum_engine_update_wait(uint64_t *seq);
 Eina_Bool evisum_engine_daemon_running_get(void);
+pid_t evisum_engine_daemon_pid_get(void);
 Eina_Bool evisum_engine_history_bounds_get(uint32_t *start_time, uint32_t *end_time);
 Eina_Bool evisum_engine_history_bounds_since_get(uint32_t since, uint32_t *start_time, uint32_t *end_time);
 Eina_Bool evisum_engine_history_contiguous_bounds_since_get(uint32_t since, uint32_t *start_time, uint32_t *end_time);

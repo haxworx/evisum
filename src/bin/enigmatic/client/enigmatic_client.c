@@ -1310,6 +1310,34 @@ event_end_of_file(Enigmatic_Client *client EINA_UNUSED)
 
 }
 
+static Eina_Bool
+client_filename_is_compressed(const char *filename)
+{
+   const char *ext;
+
+   if (!filename) return 0;
+
+   ext = strrchr(filename, '.');
+
+   return ((ext) && (!strcmp(ext, ".lz4")));
+}
+
+static Eina_Bool
+client_log_open(Enigmatic_Client *client)
+{
+   if ((!client) || (!client->filename)) return 0;
+   if (client->compressed) return 1;
+   if (client->fd != -1) return 1;
+
+   client->fd = open(client->filename, O_RDONLY);
+   if (client->fd == -1)
+     return 0;
+
+   client->retries = 0;
+
+   return 1;
+}
+
 Enigmatic_Client *
 enigmatic_client_open(void)
 {
@@ -1325,16 +1353,9 @@ enigmatic_client_path_open(char *filename)
    client->fd = -1;
    client->directory = enigmatic_log_directory();
    client->filename = filename;
+   client->compressed = client_filename_is_compressed(filename);
 
-   char *ext = strrchr(filename, '.');
-   if ((ext) && (!strcmp(ext, ".lz4")))
-     client->compressed = 1;
-   else
-     {
-        client->fd = open(client->filename, O_RDONLY);
-        if (client->fd == -1)
-          ERROR("No log");
-     }
+   client_log_open(client);
 
    return client;
 }
@@ -1353,19 +1374,9 @@ enigmatic_client_reopen(Enigmatic_Client *client, char *filename)
    client->fd = -1;
    client->directory = enigmatic_log_directory();
    client->filename = filename;
+   client->compressed = client_filename_is_compressed(filename);
 
-   char *ext = strrchr(filename, '.');
-   if ((ext) && (!strcmp(ext, ".lz4")))
-     client->compressed = 1;
-   else
-     {
-        client->fd = open(client->filename, O_RDONLY);
-        if (client->fd == -1)
-          ERROR("No log");
-        client->compressed = 0;
-     }
-
-   return 1;
+   return client_log_open(client);
 }
 
 void
@@ -1375,7 +1386,12 @@ enigmatic_client_del(Enigmatic_Client *client)
      {
 #if defined(__linux__)
         eio_monitor_del(client->mon);
-        ecore_event_handler_del(client->handler);
+        if (client->handler)
+          ecore_event_handler_del(client->handler);
+        if (client->handler_created)
+          ecore_event_handler_del(client->handler_created);
+        if (client->handler_deleted)
+          ecore_event_handler_del(client->handler_deleted);
 #elif defined(__FreeBSD__) || defined(__OpenBSD__)
         ecore_thread_cancel(client->thread);
         ecore_thread_wait(client->thread, 1.0);
@@ -1422,13 +1438,17 @@ enigmatic_client_read(Enigmatic_Client *client)
    if (LZ4F_isError(status))
      ERROR("create decompress context");
 
+   if (!client->compressed && !client_log_open(client))
+     goto done;
+
    if (client->truncated)
      {
-        close(client->fd);
-        client->fd = open(client->filename, O_RDONLY);
-        if (client->fd == -1)
-          ERROR("open() %s\n", strerror(errno));
+        if (client->fd != -1)
+          close(client->fd);
+        client->fd = -1;
         enigmatic_client_reset(client);
+        if (!client_log_open(client))
+          goto done;
      }
 
    if (!client->compressed)
@@ -1446,11 +1466,13 @@ enigmatic_client_read(Enigmatic_Client *client)
                   client->offset = seek_offset;
                }
           }
+        client->file_size = st.st_size;
      }
    else
      {
         client->zbuf.data = (uint8_t *) enigmatic_log_decompress(client->filename, &client->zbuf.length);
         st.st_size = client->zbuf.length;
+        client->file_size = st.st_size;
      }
 
    client->changes = 0;
@@ -1572,7 +1594,20 @@ enigmatic_client_read(Enigmatic_Client *client)
         if (client->compressed)
           break;
      }
+done:
    LZ4F_freeDecompressionContext(dctx);
+}
+
+static void
+client_snapshot_callbacks_fire(Enigmatic_Client *client)
+{
+   if (client->event_snapshot_init.callback)
+     {
+        client->event_snapshot_init.callback(client, &client->snapshot, client->event_snapshot_init.data);
+        client->event_snapshot_init.callback = NULL;
+     }
+   if (client->event_snapshot.callback)
+     client->event_snapshot.callback(client, &client->snapshot, client->event_snapshot.data);
 }
 
 static Eina_Bool
@@ -1585,6 +1620,13 @@ cb_file_modified(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
      client->retries = 0;
    else
      {
+        if (client->fd != -1)
+          {
+             close(client->fd);
+             client->fd = -1;
+          }
+        client->file_size = 0;
+        client->offset = 0;
         client->retries++;
         if ((client->retries == 10) || ((client->retries % 100) == 0))
           {
@@ -1593,21 +1635,17 @@ cb_file_modified(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
         return 1;
      }
 
-   if ((st.st_size) && (st.st_size < client->file_size))
+   if ((client->fd == -1) || (st.st_size < client->file_size))
      {
         client->truncated = 1;
         enigmatic_client_read(client);
+        if (st.st_size > 0)
+          client_snapshot_callbacks_fire(client);
      }
    else if (st.st_size > client->file_size)
      {
         enigmatic_client_read(client);
-        if (client->event_snapshot_init.callback)
-          {
-             client->event_snapshot_init.callback(client, &client->snapshot, client->event_snapshot_init.data);
-             client->event_snapshot_init.callback = NULL;
-          }
-        if (client->event_snapshot.callback)
-          client->event_snapshot.callback(client, &client->snapshot, client->event_snapshot.data);
+        client_snapshot_callbacks_fire(client);
      }
 
    return 1;
@@ -1716,6 +1754,10 @@ enigmatic_client_monitor_add(Enigmatic_Client *client, Snapshot_Callback *cb_eve
    client->mon = eio_monitor_add(client->directory);
    client->handler =
       ecore_event_handler_add(EIO_MONITOR_FILE_MODIFIED, cb_file_modified, client);
+   client->handler_created =
+      ecore_event_handler_add(EIO_MONITOR_FILE_CREATED, cb_file_modified, client);
+   client->handler_deleted =
+      ecore_event_handler_add(EIO_MONITOR_FILE_DELETED, cb_file_modified, client);
 #elif defined(__FreeBSD__) || defined(__OpenBSD__)
    client->thread = ecore_thread_feedback_run(cb_thread_fallback, cb_thread_fallback_feedback, NULL, NULL, client, 0);
 #endif

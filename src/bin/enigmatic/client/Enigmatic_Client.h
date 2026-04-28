@@ -88,6 +88,8 @@ struct _Enigmatic_Client
    Eio_Monitor          *mon;
    Ecore_Thread         *thread;
    Ecore_Event_Handler  *handler;
+   Ecore_Event_Handler  *handler_created;
+   Ecore_Event_Handler  *handler_deleted;
 
    struct
    {

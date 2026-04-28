@@ -11,6 +11,8 @@
 #include <limits.h>
 #include <time.h>
 #include <dirent.h>
+#include <errno.h>
+#include <signal.h>
 #include <sys/stat.h>
 
 #define LOCK() eina_lock_take(&_state.lock)
@@ -24,6 +26,7 @@ typedef struct {
     Eina_Condition cond;
     Eina_Bool cond_init;
     Eina_Bool started;
+    pid_t daemon_pid;
     uint64_t snapshot_seq;
 
     Enigmatic_Client *client;
@@ -32,6 +35,9 @@ typedef struct {
     uint32_t history_time;
     Eina_List *history_logs;
     time_t history_logs_scan_at;
+    Eina_List *history_recent_logs;
+    uint32_t history_recent_since;
+    time_t history_recent_logs_scan_at;
 } Evisum_Engine_State;
 
 typedef struct {
@@ -50,6 +56,65 @@ _engine_snapshot_release(void);
 
 static void
 _engine_history_logs_free(Eina_List *logs);
+
+static Eina_Bool
+_engine_pid_alive(pid_t pid)
+{
+    if (pid <= 1) return EINA_FALSE;
+    if (kill(pid, 0) == 0) return EINA_TRUE;
+    return errno == EPERM;
+}
+
+static Eina_Bool
+_engine_pid_is_daemon(pid_t pid)
+{
+#if defined(__linux__)
+    char path[PATH_MAX];
+    char name[32];
+    FILE *f;
+
+    if (!_engine_pid_alive(pid)) return EINA_FALSE;
+
+    snprintf(path, sizeof(path), "/proc/%d/comm", pid);
+    f = fopen(path, "r");
+    if (!f) return EINA_FALSE;
+
+    if (!fgets(name, sizeof(name), f)) {
+        fclose(f);
+        return EINA_FALSE;
+    }
+    fclose(f);
+
+    char *nl = strchr(name, '\n');
+    if (nl) *nl = '\0';
+
+    return !strcmp(name, "enigmatic");
+#else
+    return _engine_pid_alive(pid);
+#endif
+}
+
+static pid_t
+_engine_daemon_pid_read(void)
+{
+    char *path;
+    pid_t pid;
+
+    path = enigmatic_pidfile_path();
+    if (!path) return 0;
+
+    pid = (pid_t) enigmatic_pidfile_pid_get(path);
+    free(path);
+
+    return _engine_pid_is_daemon(pid) ? pid : 0;
+}
+
+static pid_t
+_engine_daemon_pid_refresh_locked(void)
+{
+    _state.daemon_pid = _engine_daemon_pid_read();
+    return _state.daemon_pid;
+}
 
 static void
 _cb_snapshot_init(Enigmatic_Client *client EINA_UNUSED, Snapshot *s EINA_UNUSED, void *data EINA_UNUSED)
@@ -88,6 +153,7 @@ _engine_start_locked(void)
     }
 
     enigmatic_client_monitor_add(_state.client, _cb_snapshot_init, _cb_snapshot, NULL);
+    _engine_daemon_pid_refresh_locked();
     _state.started = EINA_TRUE;
     return EINA_TRUE;
 }
@@ -129,8 +195,13 @@ evisum_engine_shutdown(void)
     _engine_history_logs_free(_state.history_logs);
     _state.history_logs = NULL;
     _state.history_logs_scan_at = 0;
+    _engine_history_logs_free(_state.history_recent_logs);
+    _state.history_recent_logs = NULL;
+    _state.history_recent_since = 0;
+    _state.history_recent_logs_scan_at = 0;
 
     _state.started = EINA_FALSE;
+    _state.daemon_pid = 0;
     _state.history_enabled = EINA_FALSE;
     _state.history_time = 0;
     if (_state.cond_init) eina_condition_broadcast(&_state.cond);
@@ -172,7 +243,7 @@ evisum_engine_update_wait(uint64_t *seq)
 
     target = *seq ? *seq : _state.snapshot_seq;
     while (_state.started && _state.client) {
-        if (enigmatic_running() && (_state.snapshot_seq != target)) {
+        if (_state.snapshot_seq != target) {
             *seq = _state.snapshot_seq;
             UNLOCK();
             return EINA_TRUE;
@@ -187,7 +258,37 @@ evisum_engine_update_wait(uint64_t *seq)
 Eina_Bool
 evisum_engine_daemon_running_get(void)
 {
-    return enigmatic_running();
+    Eina_Bool running;
+
+    if (!_state.lock_init) return EINA_FALSE;
+
+    LOCK();
+    if (_state.daemon_pid && !_engine_pid_is_daemon(_state.daemon_pid))
+        _state.daemon_pid = 0;
+    if (!_state.daemon_pid && _state.started && _state.client)
+        _engine_daemon_pid_refresh_locked();
+    running = !!_state.daemon_pid;
+    UNLOCK();
+
+    return running;
+}
+
+pid_t
+evisum_engine_daemon_pid_get(void)
+{
+    pid_t pid;
+
+    if (!_state.lock_init) return 0;
+
+    LOCK();
+    if (_state.daemon_pid && !_engine_pid_is_daemon(_state.daemon_pid))
+        _state.daemon_pid = 0;
+    if (!_state.daemon_pid && _state.started && _state.client)
+        _engine_daemon_pid_refresh_locked();
+    pid = _state.daemon_pid;
+    UNLOCK();
+
+    return pid;
 }
 
 static Enigmatic_Client *
@@ -277,6 +378,7 @@ _engine_history_archive_name_is_valid(const char *name)
 
     len = strlen(name);
     if (len > 5 && !strcmp(name + len - 5, ".size")) return EINA_FALSE;
+    if (len > 7 && !strcmp(name + len - 7, ".bounds")) return EINA_FALSE;
 
     if (len > 4 && !strcmp(name + len - 4, ".lz4")) len -= 4;
     if (len < 2) return EINA_FALSE;
@@ -306,31 +408,102 @@ _engine_history_log_sort_cb(const void *d1, const void *d2)
     return 0;
 }
 
+static char *
+_engine_history_log_bounds_cache_path_get(const char *path)
+{
+    char buf[PATH_MAX];
+
+    if (!path) return NULL;
+
+    snprintf(buf, sizeof(buf), "%s.bounds", path);
+    return strdup(buf);
+}
+
 static Eina_Bool
-_engine_history_log_add(Eina_List **logs, char *path)
+_engine_history_log_bounds_cache_get(const char *path, const struct stat *st, uint32_t *start_time, uint32_t *end_time)
+{
+    char *cache_path;
+    FILE *f;
+    long long mtime = 0, size = 0;
+    uint32_t start = 0, end = 0;
+    Eina_Bool ok = EINA_FALSE;
+
+    if (!path || !st || !start_time || !end_time) return EINA_FALSE;
+
+    cache_path = _engine_history_log_bounds_cache_path_get(path);
+    if (!cache_path) return EINA_FALSE;
+
+    f = fopen(cache_path, "r");
+    free(cache_path);
+    if (!f) return EINA_FALSE;
+
+    if (fscanf(f, "%lld %lld %u %u", &mtime, &size, &start, &end) == 4) {
+        ok = ((mtime == (long long) st->st_mtime) && (size == (long long) st->st_size) && start && end);
+    }
+    fclose(f);
+
+    if (!ok) return EINA_FALSE;
+
+    *start_time = start;
+    *end_time = end;
+
+    return EINA_TRUE;
+}
+
+static void
+_engine_history_log_bounds_cache_set(const char *path, const struct stat *st, uint32_t start_time, uint32_t end_time)
+{
+    char *cache_path;
+    FILE *f;
+
+    if (!path || !st || !start_time || !end_time) return;
+
+    cache_path = _engine_history_log_bounds_cache_path_get(path);
+    if (!cache_path) return;
+
+    f = fopen(cache_path, "w");
+    free(cache_path);
+    if (!f) return;
+
+    fprintf(f, "%lld %lld %u %u\n", (long long) st->st_mtime, (long long) st->st_size, start_time, end_time);
+    fclose(f);
+}
+
+static Eina_Bool
+_engine_history_log_add(Eina_List **logs, char *path, const struct stat *st_in)
 {
     Enigmatic_Client *client;
     Evisum_Engine_History_Log *log;
     uint32_t start_time = 0, end_time = 0;
+    struct stat st;
 
     if (!logs || !path) {
         free(path);
         return EINA_FALSE;
     }
 
-    client = _engine_history_client_for_path_read(strdup(path), 0);
-    if (!client) {
+    if (st_in) st = *st_in;
+    else if (stat(path, &st) == -1) {
         free(path);
         return EINA_FALSE;
     }
 
-    if (!enigmatic_client_time_bounds_get(client, &start_time, &end_time) || !start_time || !end_time) {
+    if (!_engine_history_log_bounds_cache_get(path, &st, &start_time, &end_time)) {
+        client = _engine_history_client_for_path_read(strdup(path), 0);
+        if (!client) {
+            free(path);
+            return EINA_FALSE;
+        }
+
+        if (!enigmatic_client_time_bounds_get(client, &start_time, &end_time) || !start_time || !end_time) {
+            enigmatic_client_del(client);
+            free(path);
+            return EINA_FALSE;
+        }
+
         enigmatic_client_del(client);
-        free(path);
-        return EINA_FALSE;
+        _engine_history_log_bounds_cache_set(path, &st, start_time, end_time);
     }
-
-    enigmatic_client_del(client);
 
     log = calloc(1, sizeof(*log));
     if (!log) {
@@ -356,7 +529,7 @@ _engine_history_logs_scan(uint32_t since)
     char *dir, *current_path;
 
     current_path = enigmatic_log_path();
-    _engine_history_log_add(&logs, current_path);
+    _engine_history_log_add(&logs, current_path, NULL);
 
     dir = enigmatic_log_directory();
     if (!dir) return logs;
@@ -379,13 +552,30 @@ _engine_history_logs_scan(uint32_t since)
         if (access(path, R_OK) != 0) continue;
         if (since && st.st_mtime && ((uint32_t) st.st_mtime < since)) continue;
 
-        _engine_history_log_add(&logs, strdup(path));
+        _engine_history_log_add(&logs, strdup(path), &st);
     }
 
     closedir(dp);
     free(dir);
 
     return eina_list_sort(logs, eina_list_count(logs), _engine_history_log_sort_cb);
+}
+
+static Eina_List *
+_engine_history_logs_since_trim(Eina_List *logs, uint32_t since)
+{
+    Eina_List *l, *l_next;
+    Evisum_Engine_History_Log *log;
+
+    if (!since) return logs;
+
+    EINA_LIST_FOREACH_SAFE(logs, l, l_next, log) {
+        if (log && log->end_time && (log->end_time >= since)) continue;
+        logs = eina_list_remove_list(logs, l);
+        _engine_history_log_free(log);
+    }
+
+    return logs;
 }
 
 static Eina_List *
@@ -396,23 +586,35 @@ _engine_history_logs_get(Eina_Bool refresh, uint32_t since)
 
     now = time(NULL);
 
-    if (!since && !refresh && _state.lock_init) {
+    if (!refresh && _state.lock_init) {
         LOCK();
-        if (_state.history_logs && ((now - _state.history_logs_scan_at) < HISTORY_LOG_CACHE_TTL))
-            copy = _engine_history_logs_clone(_state.history_logs);
+        if (!since) {
+            if (_state.history_logs && ((now - _state.history_logs_scan_at) < HISTORY_LOG_CACHE_TTL))
+                copy = _engine_history_logs_clone(_state.history_logs);
+        } else if (_state.history_recent_logs && (since >= _state.history_recent_since)
+                   && ((now - _state.history_recent_logs_scan_at) < HISTORY_LOG_CACHE_TTL)) {
+            copy = _engine_history_logs_clone(_state.history_recent_logs);
+        }
         UNLOCK();
-        if (copy) return copy;
+        if (copy) return _engine_history_logs_since_trim(copy, since);
     }
 
     logs = _engine_history_logs_scan(since);
     if (!logs) return NULL;
 
-    if (!since && _state.lock_init) {
+    if (_state.lock_init) {
         copy = _engine_history_logs_clone(logs);
         LOCK();
-        _engine_history_logs_free(_state.history_logs);
-        _state.history_logs = copy;
-        _state.history_logs_scan_at = now;
+        if (since) {
+            _engine_history_logs_free(_state.history_recent_logs);
+            _state.history_recent_logs = copy;
+            _state.history_recent_since = since;
+            _state.history_recent_logs_scan_at = now;
+        } else {
+            _engine_history_logs_free(_state.history_logs);
+            _state.history_logs = copy;
+            _state.history_logs_scan_at = now;
+        }
         UNLOCK();
     }
 

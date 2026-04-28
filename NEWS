@@ -1,9 +1,11 @@
 ============
-Evisum 1.9.9
+Evisum 2.0.0
 ============
 
   * Move to enigmatic back-end.
   * Introduce libenigmatic.
+  * Let's go back in time :-)
+  * Going to maintain 1.2.x and 2.0 seperately.
 
 ============
 Evisum 1.2.5

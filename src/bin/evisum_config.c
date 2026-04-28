@@ -61,6 +61,8 @@ config_init(void) {
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_user", proc.show_user,
                                   EET_T_UCHAR);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_self", proc.show_self,
+                                  EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.poll_delay", proc.poll_delay,
                                   EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_type", proc.sort_type,
@@ -220,6 +222,7 @@ _config_init() {
     cfg->proc.show_kthreads = 0;
     cfg->proc.show_statusbar = 1;
     cfg->proc.show_user = 1;
+    cfg->proc.show_self = 0;
     cfg->proc.poll_delay = 1;
     cfg->proc.sort_type = PROC_SORT_BY_CMD;
     cfg->proc.transparent = 0;
