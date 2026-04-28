@@ -62,11 +62,13 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
         if (!evisum_background_update_wait(&seq)) continue;
         Cpu_Core **cores = system_cpu_state_get(&ncpu);
         if (!cores || ncpu <= 0) continue;
-        Core *cores_out = calloc(ncpu, sizeof(Core));
+        Core *cores_out = calloc(ext->cpu_count, sizeof(Core));
 
         if (cores_out) {
-            for (int n = 0; n < ncpu; n++) {
+            for (int n = 0; n < ext->cpu_count; n++) {
                 int id = ext->cpu_order[n];
+                if ((id < 0) || (id >= ncpu)) id = n;
+                if (id >= ncpu) continue;
                 Core *core = &(cores_out[n]);
                 core->id = id;
                 core->percent = cores[id]->percent;
@@ -317,6 +319,11 @@ evisum_ui_cpu_visual_default(Evas_Object *parent_box) {
     if ((system_cpu_n_temperature_get(0)) != -1) ext->cpu_temp = 1;
 
     ext->cpu_order = cpu_order = malloc((ext->cpu_count) * sizeof(int));
+    if (!cpu_order) {
+        free(ext);
+        free(pd);
+        return NULL;
+    }
     for (i = 0; i < ext->cpu_count; i++) cpu_order[i] = i;
     system_cpu_topology_get(cpu_order, ext->cpu_count);
 
@@ -415,6 +422,7 @@ evisum_ui_cpu_visual_default(Evas_Object *parent_box) {
         elm_table_pack(tbl, tbl2, 4, i, 1, 1);
 
         Explainer *exp = malloc(sizeof(Explainer));
+        if (!exp) continue;
         exp->rec = rec;
         exp->lb = lb;
 

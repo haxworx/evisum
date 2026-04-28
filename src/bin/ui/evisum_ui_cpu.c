@@ -160,6 +160,11 @@ evisum_ui_cpu_win_add(Evisum_Ui *ui) {
         exit(1);
     }
     pd = vis->func(box);
+    if (!pd) {
+        evas_object_del(win);
+        ui->cpu.win = NULL;
+        return;
+    }
     pd->win = win;
     pd->ui = ui;
 

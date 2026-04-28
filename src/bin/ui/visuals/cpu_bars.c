@@ -64,11 +64,13 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
         if (!evisum_background_update_wait(&seq)) continue;
         Cpu_Core **cores = system_cpu_state_get(&ncpu);
         if (!cores || ncpu <= 0) continue;
-        Core *cores_out = calloc(ncpu, sizeof(Core));
+        Core *cores_out = calloc(ext->cpu_count, sizeof(Core));
 
         if (cores_out) {
-            for (int n = 0; n < ncpu; n++) {
+            for (int n = 0; n < ext->cpu_count; n++) {
                 int id = ext->cpu_order[n];
+                if ((id < 0) || (id >= ncpu)) id = n;
+                if (id >= ncpu) continue;
                 Core *core = &(cores_out[n]);
                 core->id = id;
                 core->percent = cores[id]->percent;
@@ -150,7 +152,6 @@ evisum_ui_cpu_visual_bars(Evas_Object *parent_bx) {
     ext->cpu_count = system_cpu_count_get();
     ext->cpu_order = malloc((ext->cpu_count) * sizeof(int));
     ext->cpu_smooth = malloc((ext->cpu_count) * sizeof(int));
-    for (i = 0; i < ext->cpu_count; i++) ext->cpu_order[i] = i;
     if (!ext->cpu_order || !ext->cpu_smooth) {
         free(ext->cpu_order);
         free(ext->cpu_smooth);
@@ -158,6 +159,7 @@ evisum_ui_cpu_visual_bars(Evas_Object *parent_bx) {
         free(pd);
         return NULL;
     }
+    for (i = 0; i < ext->cpu_count; i++) ext->cpu_order[i] = i;
     for (i = 0; i < ext->cpu_count; i++) ext->cpu_smooth[i] = -1;
     system_cpu_topology_get(ext->cpu_order, ext->cpu_count);
 

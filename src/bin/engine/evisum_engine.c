@@ -878,9 +878,13 @@ system_cpu_online_count_get(void)
     const Snapshot *snap;
     int n;
 
-    if (!_engine_snapshot_acquire(&snap)) return 1;
+    if (!_engine_snapshot_acquire(&snap)) {
+        n = (int) sysconf(_SC_NPROCESSORS_ONLN);
+        return n > 0 ? n : 1;
+    }
     n = eina_list_count(snap->cores);
     _engine_snapshot_release();
+    if (n <= 0) n = (int) sysconf(_SC_NPROCESSORS_ONLN);
     return n > 0 ? n : 1;
 }
 
