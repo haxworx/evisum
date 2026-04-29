@@ -186,6 +186,13 @@ config_init(void) {
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "network.y", network.y, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "network.restart", network.restart,
                                   EET_T_UCHAR);
+
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc_view.width", proc_view.width,
+                                  EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc_view.height", proc_view.height,
+                                  EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc_view.x", proc_view.x, EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc_view.y", proc_view.y, EET_T_INT);
 }
 
 void

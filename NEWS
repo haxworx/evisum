@@ -1,4 +1,13 @@
 ============
+Evisum 2.0.2
+============
+
+  * Fix process view child-process tree view.
+  * Remember process view size in our config.
+  * Remove thread graph from process view until a solution can be found.
+    I don't want to break ABI or do some dirty hack.
+
+============
 Evisum 2.0.1
 ============
 

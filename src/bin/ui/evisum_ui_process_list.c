@@ -1743,15 +1743,6 @@ _evisum_ui_process_list_item_menu_manual_cb(void *data, Evas_Object *obj EINA_UN
 }
 
 static void
-_evisum_ui_process_list_item_menu_threads_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Evisum_Ui_Process_List_View *view = data;
-
-    _evisum_ui_process_list_item_menu_cancel_cb(view, NULL, NULL);
-
-    evisum_ui_process_view_win_add(view->ui, view->selected_pid, PROC_VIEW_THREADS);
-}
-
-static void
 _evisum_ui_process_list_item_menu_children_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
     Evisum_Ui_Process_List_View *view = data;
 
@@ -1776,8 +1767,6 @@ _evisum_ui_process_list_item_menu_info_add(Evas_Object *menu, Elm_Object_Item *m
                                           _evisum_ui_process_list_item_menu_general_cb, view);
     _evisum_ui_process_list_item_menu_add(menu, menu_it, "proc", _("Children"),
                                           _evisum_ui_process_list_item_menu_children_cb, view);
-    _evisum_ui_process_list_item_menu_add(menu, menu_it, "threads", _("Threads"),
-                                          _evisum_ui_process_list_item_menu_threads_cb, view);
     _evisum_ui_process_list_item_menu_add(menu, menu_it, "manual", _("Manual"),
                                           _evisum_ui_process_list_item_menu_manual_cb, view);
 }

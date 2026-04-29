@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x001E
+#define CONFIG_VERSION 0x001F
 
 typedef struct _Evisum_Config {
     int version;
@@ -68,6 +68,12 @@ typedef struct _Evisum_Config {
         int x, y;
         Eina_Bool restart;
     } network;
+
+    struct {
+        int width;
+        int height;
+        int x, y;
+    } proc_view;
 
 } Evisum_Config;
 

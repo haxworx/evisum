@@ -133,6 +133,11 @@ evisum_ui_config_save(Evisum_Ui *ui) {
         config()->network.restart = ui->network.restart;
     }
 
+    config()->proc_view.width = ui->proc_view.width;
+    config()->proc_view.height = ui->proc_view.height;
+    config()->proc_view.x = ui->proc_view.x;
+    config()->proc_view.y = ui->proc_view.y;
+
     config_save(config());
 
     if (notify) ecore_event_add(EVISUM_EVENT_CONFIG_CHANGED, NULL, NULL, NULL);
@@ -210,6 +215,11 @@ evisum_ui_config_load(Evisum_Ui *ui) {
     ui->network.x = config()->network.x;
     ui->network.y = config()->network.y;
     ui->network.restart = config()->network.restart;
+
+    ui->proc_view.width = config()->proc_view.width;
+    ui->proc_view.height = config()->proc_view.height;
+    ui->proc_view.x = config()->proc_view.x;
+    ui->proc_view.y = config()->proc_view.y;
 }
 
 void

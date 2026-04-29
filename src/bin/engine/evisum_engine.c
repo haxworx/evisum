@@ -1420,29 +1420,6 @@ proc_info_by_pid(pid_t pid)
         break;
     }
 
-    if (ret) {
-        EINA_LIST_FOREACH(snap->processes, l, p) {
-            Proc_Info *t;
-            if (p->pid != pid) continue;
-            if (p->tid <= 0) continue;
-            t = _proc_from_log(p);
-            if (!t) continue;
-            ret->threads = eina_list_append(ret->threads, t);
-        }
-        if (!ret->threads) {
-            Proc_Info *t = calloc(1, sizeof(Proc_Info));
-            if (t) {
-                t->tid = ret->tid > 0 ? ret->tid : ret->pid;
-                t->cpu_id = ret->cpu_id;
-                t->cpu_time = ret->cpu_time;
-                t->cpu_usage = ret->cpu_usage;
-                snprintf(t->state, sizeof(t->state), "%s", ret->state);
-                t->thread_name = strdup(ret->command ? ret->command : "thread");
-                ret->threads = eina_list_append(ret->threads, t);
-            }
-        }
-    }
-
     _engine_snapshot_release();
     return ret;
 }
@@ -1481,33 +1458,70 @@ proc_info_all_children_get(void)
     return roots;
 }
 
+static Eina_Bool
+_proc_info_child_add(Eina_List *parents, Proc_Info *child)
+{
+    Eina_List *l;
+    Proc_Info *parent;
+
+    EINA_LIST_FOREACH(parents, l, parent) {
+        if (parent != child && parent->pid == child->ppid) {
+            parent->children = eina_list_append(parent->children, child);
+            return EINA_TRUE;
+        }
+    }
+
+    return EINA_FALSE;
+}
+
+static Eina_List *
+_proc_info_children_append(Eina_List *wanted, Eina_List *children)
+{
+    Eina_List *l;
+    Proc_Info *child;
+
+    EINA_LIST_FOREACH(children, l, child) {
+        wanted = eina_list_append(wanted, child);
+        if (!wanted) return NULL;
+        if (child->children)
+            wanted = _proc_info_children_append(wanted, child->children);
+    }
+
+    return wanted;
+}
+
 Eina_List *
 proc_info_pid_children_get(pid_t pid)
 {
-    Eina_List *roots, *l;
-    Proc_Info *p;
-    Eina_List *out = NULL;
+    Eina_List *procs, *l;
+    Proc_Info *proc;
+    Eina_List *wanted = NULL;
 
-    roots = proc_info_all_children_get();
-    EINA_LIST_FOREACH(roots, l, p) {
-        if (p->pid == pid) {
-            out = eina_list_append(out, p);
+    procs = _proc_list_get();
+    if (!procs) return NULL;
+
+    EINA_LIST_FOREACH(procs, l, proc)
+        _proc_info_child_add(procs, proc);
+
+    EINA_LIST_FOREACH(procs, l, proc) {
+        if (proc->pid == pid) {
+            wanted = eina_list_append(wanted, proc);
+            if (wanted && proc->children)
+                wanted = _proc_info_children_append(wanted, proc->children);
             break;
         }
     }
 
-    if (!out) {
-        EINA_LIST_FREE(roots, p) proc_info_pid_children_free(p);
-        return NULL;
+    EINA_LIST_FREE(procs, proc) {
+        if (!eina_list_data_find(wanted, proc)) {
+            Eina_List *children = proc->children;
+            proc->children = NULL;
+            proc_info_free(proc);
+            eina_list_free(children);
+        }
     }
 
-    EINA_LIST_FOREACH(roots, l, p) {
-        if (p == eina_list_data_get(out)) continue;
-        proc_info_pid_children_free(p);
-    }
-    eina_list_free(roots);
-
-    return out;
+    return wanted;
 }
 
 void

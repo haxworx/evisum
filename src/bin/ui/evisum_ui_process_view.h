@@ -6,8 +6,7 @@
 typedef enum {
     PROC_VIEW_DEFAULT = 0,
     PROC_VIEW_CHILDREN = 1,
-    PROC_VIEW_THREADS = 2,
-    PROC_VIEW_MANUAL = 3,
+    PROC_VIEW_MANUAL = 2,
 } Evisum_Proc_Action;
 
 void evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action action);

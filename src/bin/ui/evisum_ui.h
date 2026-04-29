@@ -101,6 +101,12 @@ typedef struct _Evisum_Ui {
         Eina_Bool restart;
     } network;
 
+    struct {
+        int width;
+        int height;
+        int x, y;
+    } proc_view;
+
 } Evisum_Ui;
 
 Evisum_Ui *evisum_ui_init(void);
