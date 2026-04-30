@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <limits.h>
+#include "enigmatic_visibility.h"
 
 #if defined(__linux__)
 # include <linux/limits.h>
@@ -107,69 +108,69 @@ typedef struct
 
 // Power
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 power_ac_present(void);
 
-Eina_List *
+ENIGMATIC_API Eina_List *
 batteries_find(void);
 
-void
+ENIGMATIC_API void
 batteries_update(Eina_List *batteries);
 
-void
+ENIGMATIC_API void
 battery_update(Battery *bat);
 
 // Sensors
 
-Eina_List *
+ENIGMATIC_API Eina_List *
 sensors_find(void);
 
-void
+ENIGMATIC_API void
 sensors_update(Eina_List *sensors);
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 sensor_update(Sensor *sensor);
 
 // Network
 
-Eina_List *
+ENIGMATIC_API Eina_List *
 network_interfaces_find(void);
 
 // Memory
 
-void
+ENIGMATIC_API void
 memory_info(Meminfo *memory);
 
 // CPU Cores
 
-Eina_List *
+ENIGMATIC_API Eina_List *
 cores_find(void);
 
-void
+ENIGMATIC_API void
 cores_update(Eina_List *cores);
 
-int
+ENIGMATIC_API int
 cores_count(void);
 
-int
+ENIGMATIC_API int
 cores_online_count(void);
 
-void
+ENIGMATIC_API void
 cores_topology(Eina_List *cores);
 
-int
+ENIGMATIC_API int
 cores_frequency(void);
 
-int
+ENIGMATIC_API int
 core_id_frequency(int id);
 
-int
+ENIGMATIC_API int
 core_id_temperature(int id);
 
-int
+ENIGMATIC_API int
 cores_temperature_min_max(int *min, int *max);
 
-int
+ENIGMATIC_API int
 cores_frequency_min_max(int *min, int *max);
 
 #endif

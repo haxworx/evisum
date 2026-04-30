@@ -97,13 +97,43 @@ _evisum_ui_sensors_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED, vo
 
 static void
 _evisum_ui_sensors_sensor_name_set(char *buf, size_t len, Sensor *s) {
+    char *p;
+    size_t left;
+    size_t copy;
+
+    if (!buf || !len) return;
+
     if (!s || !s->name[0]) {
         snprintf(buf, len, "%s", _("Sensor"));
         return;
     }
 
     if (!s->child_name[0]) snprintf(buf, len, "%s", s->name);
-    else snprintf(buf, len, "%s (%s)", s->name, s->child_name);
+    else {
+        p = buf;
+        left = len - 1;
+
+        copy = strlen(s->name);
+        if (copy > left) copy = left;
+        memcpy(p, s->name, copy);
+        p += copy;
+        left -= copy;
+
+        copy = 2;
+        if (copy > left) copy = left;
+        memcpy(p, " (", copy);
+        p += copy;
+        left -= copy;
+
+        copy = strlen(s->child_name);
+        if (copy > left) copy = left;
+        memcpy(p, s->child_name, copy);
+        p += copy;
+        left -= copy;
+
+        if (left) *p++ = ')';
+        *p = '\0';
+    }
 }
 
 static void

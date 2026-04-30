@@ -3,40 +3,41 @@
 
 #include <Eina.h>
 #include <stdint.h>
+#include "enigmatic_visibility.h"
 
 typedef struct _Enigmatic Enigmatic;
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 enigmatic_pidfile_create(Enigmatic *enigmatic);
 
-char *
+ENIGMATIC_API char *
 enigmatic_pidfile_path(void);
 
-const char *
+ENIGMATIC_API const char *
 enigmatic_cache_dir_get(void);
 
-void
+ENIGMATIC_API void
 enigmatic_pidfile_delete(Enigmatic *enigmatic);
 
-uint32_t
+ENIGMATIC_API uint32_t
 enigmatic_pidfile_pid_get(const char *path);
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 enigmatic_terminate(void);
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 enigmatic_launch(void);
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 enigmatic_running(void);
 
-char *
+ENIGMATIC_API char *
 enigmatic_log_path(void);
 
-char *
+ENIGMATIC_API char *
 enigmatic_log_directory(void);
 
-void
+ENIGMATIC_API void
 enigmatic_about(void);
 
 #endif

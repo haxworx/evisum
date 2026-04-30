@@ -123,6 +123,12 @@ file_systems_find(void)
    return list;
 }
 
+void
+file_system_info_free(File_System *fs)
+{
+   free(fs);
+}
+
 Eina_Bool
 file_system_in_use(const char *name)
 {
@@ -138,7 +144,7 @@ file_system_in_use(const char *name)
         if ((fs->type_name[0]) && (!strcasecmp(fs->type_name, name)))
           mounted = 1;
 
-        free(fs);
+        file_system_info_free(fs);
      }
 
    return mounted;

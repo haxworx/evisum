@@ -3,6 +3,7 @@
 
 #include "Events.h"
 #include "enigmatic_util.h"
+#include "enigmatic_visibility.h"
 #include "intl/gettext.h"
 #define _(STR) gettext(STR)
 
@@ -151,49 +152,49 @@ typedef enum
    EVENT_RECORD_DELAY      = 15,
 } Enigmatic_Client_Event_Type;
 
-Enigmatic_Client *
+ENIGMATIC_API Enigmatic_Client *
 enigmatic_client_open(void);
 
-void
+ENIGMATIC_API void
 enigmatic_client_monitor_add(Enigmatic_Client *client, Snapshot_Callback *cb_event_change_init, Snapshot_Callback *cb_event_change, void *data);
 
-void
+ENIGMATIC_API void
 enigmatic_client_event_callback_add(Enigmatic_Client *client, Enigmatic_Client_Event_Type type, Event_Callback *cb_event, void *data);
 
-void
+ENIGMATIC_API void
 enigmatic_client_read(Enigmatic_Client *client);
 
-Enigmatic_Client *
+ENIGMATIC_API Enigmatic_Client *
 enigmatic_client_path_open(char *filename);
 
-void
+ENIGMATIC_API void
 enigmatic_client_del(Enigmatic_Client *client);
 
-Enigmatic_Client *
+ENIGMATIC_API Enigmatic_Client *
 enigmatic_client_add(void);
 
-void
+ENIGMATIC_API void
 enigmatic_client_follow_enabled_set(Enigmatic_Client *client, Eina_Bool enabled);
 
-void
+ENIGMATIC_API void
 enigmatic_client_snapshot_callback_set(Enigmatic_Client *client, Snapshot_Callback *cb_event_change, void *data);
 
 /* Some events occur multiple times between block end. We can check for a snapshot event to reduce
  * the polling granuality when we don't want sub-second data.
  */
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 enigmatic_client_event_is_snapshot(Enigmatic_Client *client);
 
-void
+ENIGMATIC_API void
 enigmatic_client_replay_time_start_set(Enigmatic_Client *client, uint32_t secs);
 
-void
+ENIGMATIC_API void
 enigmatic_client_replay_time_end_set(Enigmatic_Client *client, uint32_t secs);
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 enigmatic_client_replay(Enigmatic_Client *client);
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 enigmatic_client_time_bounds_get(Enigmatic_Client *client, uint32_t *start_time, uint32_t *end_time);
 
 #endif

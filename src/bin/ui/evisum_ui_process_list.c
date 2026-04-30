@@ -673,20 +673,6 @@ _evisum_ui_process_list_history_time_format(uint32_t t, char *buf, size_t len) {
     strftime(buf, len, "%Y-%m-%d %H:%M:%S", &tm_buf);
 }
 
-static char *
-_evisum_ui_process_list_history_indicator_format_cb(double value, void *data EINA_UNUSED) {
-    char buf[32];
-
-    _evisum_ui_process_list_history_time_format((uint32_t) (value + 0.5), buf, sizeof(buf));
-
-    return strdup(buf);
-}
-
-static void
-_evisum_ui_process_list_history_indicator_free_cb(char *str) {
-    free(str);
-}
-
 static void
 _evisum_ui_process_list_history_tooltip_set(Evisum_Ui_Process_List_View *view, uint32_t t) {
     char time_buf[32];
@@ -1265,9 +1251,7 @@ _evisum_ui_process_list_summary_add(Evisum_Ui_Process_List_View *view) {
     view->summary.history_slider = sli = elm_slider_add(hbx);
     evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
     evas_object_size_hint_align_set(sli, FILL, FILL);
-    elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_DEFAULT);
-    elm_slider_indicator_format_function_set_full(sli, _evisum_ui_process_list_history_indicator_format_cb,
-                                                  _evisum_ui_process_list_history_indicator_free_cb, view);
+    elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_NONE);
     elm_object_text_set(sli, NULL);
     elm_slider_unit_format_set(sli, "");
     evas_object_smart_callback_add(sli, "changed", _evisum_ui_process_list_history_slider_preview_cb, view);
@@ -1497,6 +1481,13 @@ _evisum_ui_process_list_process_list(void *data, Ecore_Thread *thread) {
     view = data;
 
     ecore_thread_name_set(thread, "process_list");
+    /* Allow time for initial sizing calculations, we obtain our data
+     * instantaneously using enigmatic, launch can be problematic.
+     *
+     * For reference macOS Activity Monitor waits 3 seconds, this is
+     * not painful and is visually pleasing.
+     */
+    usleep(1000000);
 
     while (!ecore_thread_check(thread)) {
         Eina_Bool history_live, history_pending;

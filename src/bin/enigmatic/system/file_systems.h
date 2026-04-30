@@ -3,6 +3,7 @@
 
 #include <Eina.h>
 #include <limits.h>
+#include "enigmatic_visibility.h"
 
 #if defined(__linux__)
 # include <linux/limits.h>
@@ -23,13 +24,13 @@ typedef struct _File_System {
    int          unique_id;
 } File_System;
 
-Eina_List *
+ENIGMATIC_API Eina_List *
 file_systems_find(void);
 
-void
+ENIGMATIC_API void
 file_system_info_free(File_System *fs);
 
-Eina_Bool
+ENIGMATIC_API Eina_Bool
 file_system_in_use(const char *name);
 
 #endif

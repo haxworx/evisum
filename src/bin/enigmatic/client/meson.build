@@ -29,6 +29,7 @@ enigmatic_client_dep = declare_dependency(
 )
 
 install_headers('../Events.h', subdir : 'enigmatic')
+install_headers('../enigmatic_visibility.h', subdir : 'enigmatic')
 install_headers('../enigmatic_util.h', subdir : 'enigmatic')
 install_headers('Enigmatic_Client.h', subdir : 'enigmatic')
 install_headers('../system/machine.h', '../system/file_systems.h', '../system/process.h', subdir : 'enigmatic/system')

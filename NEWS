@@ -1,4 +1,18 @@
 ============
+Evisum 2.0.4
+============
+
+  * Fix build with stricter CFLAGS.
+  * Fix flickering of process view.
+
+============
+Evisum 2.0.3
+============
+
+  * Fix initial process list sizing.
+  * No need for two tooltips with our persistent popup.
+
+============
 Evisum 2.0.2
 ============
 

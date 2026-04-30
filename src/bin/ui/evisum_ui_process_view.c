@@ -79,13 +79,24 @@ typedef struct {
     int64_t start;
     uint32_t sample_time;
     int64_t cpu_time;
+    double cpu_usage;
 #if defined(__linux__)
     uint64_t net_in;
     uint64_t net_out;
     uint64_t disk_read;
     uint64_t disk_write;
+    uint64_t net_in_rate;
+    uint64_t net_out_rate;
+    uint64_t disk_read_rate;
+    uint64_t disk_write_rate;
 #endif
 } Proc_Usage_Cache;
+
+static uint64_t _evisum_ui_process_view_mem_total_get(Evisum_Ui_Process_View *view);
+static void _evisum_ui_process_view_progressbar_unset(Evas_Object *pb);
+static void _evisum_ui_process_view_progressbar_mem_set(Evas_Object *pb, uint64_t used,
+                                                        uint64_t total);
+static void _evisum_ui_process_view_progressbar_percent_set(Evas_Object *pb, double percent);
 
 Eina_List *
 _evisum_ui_process_view_exe_response(const char *command) {
@@ -377,6 +388,7 @@ _evisum_ui_process_view_manual_init(Evisum_Ui_Process_View *view) {
 static void
 _evisum_ui_process_view_general_view_update(Evisum_Ui_Process_View *view, Proc_Info *proc) {
     struct passwd *pwd_entry;
+    uint64_t mem_total;
     char *s;
 
     if (!strcmp(proc->state, _("stopped"))) {
@@ -400,18 +412,23 @@ _evisum_ui_process_view_general_view_update(Evisum_Ui_Process_View *view, Proc_I
     elm_object_text_set(view->general.entry_ppid, eina_slstr_printf("%d", proc->ppid));
     elm_object_text_set(view->general.entry_threads, eina_slstr_printf("%d", proc->numthreads));
     elm_object_text_set(view->general.entry_files, eina_slstr_printf("%d", proc->numfiles));
-    if (!proc->is_kernel) elm_object_text_set(view->general.entry_virt, evisum_size_format(proc->mem_virt, 0));
-    else elm_object_text_set(view->general.entry_virt, _("-"));
+    mem_total = _evisum_ui_process_view_mem_total_get(view);
+
+    if (!proc->is_kernel)
+        _evisum_ui_process_view_progressbar_mem_set(view->general.entry_virt, proc->mem_virt, mem_total);
+    else _evisum_ui_process_view_progressbar_unset(view->general.entry_virt);
 
     if ((!proc->is_kernel) || (view->kthreads_has_rss))
-        elm_object_text_set(view->general.entry_rss, evisum_size_format(proc->mem_rss, 0));
-    else elm_object_text_set(view->general.entry_rss, _("-"));
+        _evisum_ui_process_view_progressbar_mem_set(view->general.entry_rss, proc->mem_rss, mem_total);
+    else _evisum_ui_process_view_progressbar_unset(view->general.entry_rss);
 
-    if (!proc->is_kernel) elm_object_text_set(view->general.entry_shared, evisum_size_format(proc->mem_shared, 0));
-    else elm_object_text_set(view->general.entry_shared, _("-"));
+    if (!proc->is_kernel)
+        _evisum_ui_process_view_progressbar_mem_set(view->general.entry_shared, proc->mem_shared, mem_total);
+    else _evisum_ui_process_view_progressbar_unset(view->general.entry_shared);
 
-    if (!proc->is_kernel) elm_object_text_set(view->general.entry_size, evisum_size_format(proc->mem_size, 0));
-    else elm_object_text_set(view->general.entry_size, _("-"));
+    if (!proc->is_kernel)
+        _evisum_ui_process_view_progressbar_mem_set(view->general.entry_size, proc->mem_size, mem_total);
+    else _evisum_ui_process_view_progressbar_unset(view->general.entry_size);
 
     s = _evisum_ui_process_view_run_time_string(proc->run_time);
     if (s) {
@@ -428,7 +445,7 @@ _evisum_ui_process_view_general_view_update(Evisum_Ui_Process_View *view, Proc_I
     if (proc->wchan[0] && ((proc->state[0] == 's' && proc->state[1] == 'l')))
         elm_object_text_set(view->general.entry_state, proc->wchan);
     else elm_object_text_set(view->general.entry_state, proc->state);
-    elm_object_text_set(view->general.entry_cpu_usage, eina_slstr_printf("%.0f%%", proc->cpu_usage));
+    _evisum_ui_process_view_progressbar_percent_set(view->general.entry_cpu_usage, proc->cpu_usage);
 
 #if defined(__linux__)
     if (!proc->is_kernel) {
@@ -563,30 +580,43 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
         proc->disk_write = 0;
 #endif
         proc->cpu_usage = 0.0;
+    } else if (sample_time <= cache->sample_time) {
+        proc->cpu_usage = cache->cpu_usage;
+#if defined(__linux__)
+        proc->net_in = cache->net_in_rate;
+        proc->net_out = cache->net_out_rate;
+        proc->disk_read = cache->disk_read_rate;
+        proc->disk_write = cache->disk_write_rate;
+#endif
     } else {
         if (sample_time && cache->sample_time && (sample_time > cache->sample_time))
             elapsed = sample_time - cache->sample_time;
 
-        if (cache->cpu_time && (proc->cpu_time >= cache->cpu_time))
+        if (proc->cpu_time >= cache->cpu_time)
             proc->cpu_usage = (double) (proc->cpu_time - cache->cpu_time) / elapsed;
         else proc->cpu_usage = 0.0;
+        cache->cpu_usage = proc->cpu_usage;
         cache->cpu_time = proc->cpu_time;
         cache->sample_time = sample_time;
 #if defined(__linux__)
-        if (cache->net_in && (net_in_abs >= cache->net_in)) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
+        if (net_in_abs >= cache->net_in) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
         else proc->net_in = 0;
 
-        if (cache->net_out && (net_out_abs >= cache->net_out)) proc->net_out = (net_out_abs - cache->net_out) / elapsed;
+        if (net_out_abs >= cache->net_out) proc->net_out = (net_out_abs - cache->net_out) / elapsed;
         else proc->net_out = 0;
 
-        if (cache->disk_read && (disk_read_abs >= cache->disk_read))
+        if (disk_read_abs >= cache->disk_read)
             proc->disk_read = (disk_read_abs - cache->disk_read) / elapsed;
         else proc->disk_read = 0;
 
-        if (cache->disk_write && (disk_write_abs >= cache->disk_write))
+        if (disk_write_abs >= cache->disk_write)
             proc->disk_write = (disk_write_abs - cache->disk_write) / elapsed;
         else proc->disk_write = 0;
 
+        cache->net_in_rate = proc->net_in;
+        cache->net_out_rate = proc->net_out;
+        cache->disk_read_rate = proc->disk_read;
+        cache->disk_write_rate = proc->disk_write;
         cache->net_in = net_in_abs;
         cache->net_out = net_out_abs;
         cache->disk_read = disk_read_abs;
@@ -638,6 +668,70 @@ _evisum_ui_process_view_entry_add(Evas_Object *parent) {
     evas_object_show(entry);
 
     return entry;
+}
+
+static Evas_Object *
+_evisum_ui_process_view_progressbar_add(Evas_Object *parent) {
+    Evas_Object *pb = elm_progressbar_add(parent);
+
+    elm_object_text_set(pb, NULL);
+    elm_progressbar_span_size_set(pb, ELM_SCALE_SIZE(220));
+    elm_progressbar_unit_format_set(pb, _("0 B / 0 B"));
+    evas_object_size_hint_min_set(pb, 0, ELM_SCALE_SIZE(24));
+    evas_object_size_hint_max_set(pb, -1, ELM_SCALE_SIZE(24));
+    evas_object_size_hint_weight_set(pb, EXPAND, 0.0);
+    evas_object_size_hint_align_set(pb, FILL, 0.5);
+    evas_object_show(pb);
+
+    return pb;
+}
+
+static double
+_evisum_ui_process_view_progress_ratio_get(uint64_t used, uint64_t total) {
+    double value = 0.0;
+
+    if (total) value = (double) used / (double) total;
+    if (value < 0.0) value = 0.0;
+    if (value > 1.0) value = 1.0;
+
+    return value;
+}
+
+static uint64_t
+_evisum_ui_process_view_mem_total_get(Evisum_Ui_Process_View *view) {
+    Evisum_Engine_Status status = {0};
+
+    if (evisum_engine_status_get(&status) && status.memory.total)
+        return status.memory.total;
+
+    return view->ui->mem_total;
+}
+
+static void
+_evisum_ui_process_view_progressbar_unset(Evas_Object *pb) {
+    elm_progressbar_value_set(pb, 0.0);
+    elm_progressbar_unit_format_set(pb, _("-"));
+    elm_object_disabled_set(pb, EINA_TRUE);
+}
+
+static void
+_evisum_ui_process_view_progressbar_mem_set(Evas_Object *pb, uint64_t used, uint64_t total) {
+    elm_object_disabled_set(pb, EINA_FALSE);
+    elm_progressbar_value_set(pb, _evisum_ui_process_view_progress_ratio_get(used, total));
+    elm_progressbar_unit_format_set(pb, eina_slstr_printf("%s / %s", evisum_size_format(used, 0),
+                                                          evisum_size_format(total, 0)));
+}
+
+static void
+_evisum_ui_process_view_progressbar_percent_set(Evas_Object *pb, double percent) {
+    double value = percent / 100.0;
+
+    if (value < 0.0) value = 0.0;
+    if (value > 1.0) value = 1.0;
+
+    elm_object_disabled_set(pb, EINA_FALSE);
+    elm_progressbar_value_set(pb, value);
+    elm_progressbar_unit_format_set(pb, eina_slstr_printf("%.0f%%", percent));
 }
 
 static Evas_Object *
@@ -708,6 +802,31 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
     view->general.entry_cmd_args = entry = _evisum_ui_process_view_entry_add(parent);
     elm_table_pack(tb, entry, 1, i++, 1, 1);
 
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Memory :"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_size = entry = _evisum_ui_process_view_progressbar_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Shared memory:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_shared = entry = _evisum_ui_process_view_progressbar_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Resident memory:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_rss = entry = _evisum_ui_process_view_progressbar_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+    lb = _evisum_ui_process_view_lb_add(parent, _(" Virtual memory:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_virt = entry = _evisum_ui_process_view_progressbar_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
+    lb = _evisum_ui_process_view_lb_add(parent, _("CPU %:"));
+    elm_table_pack(tb, lb, 0, i, 1, 1);
+    view->general.entry_cpu_usage = entry = _evisum_ui_process_view_progressbar_add(parent);
+    elm_table_pack(tb, entry, 1, i++, 1, 1);
+
     lb = _evisum_ui_process_view_lb_add(parent, _("PID:"));
     elm_table_pack(tb, lb, 0, i, 1, 1);
     view->general.entry_pid = entry = _evisum_ui_process_view_entry_add(parent);
@@ -751,26 +870,6 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
     lb = _evisum_ui_process_view_lb_add(parent, _("Open Files:"));
     elm_table_pack(tb, lb, 0, i, 1, 1);
     view->general.entry_files = entry = _evisum_ui_process_view_entry_add(parent);
-    elm_table_pack(tb, entry, 1, i++, 1, 1);
-
-    lb = _evisum_ui_process_view_lb_add(parent, _(" Memory :"));
-    elm_table_pack(tb, lb, 0, i, 1, 1);
-    view->general.entry_size = entry = _evisum_ui_process_view_entry_add(parent);
-    elm_table_pack(tb, entry, 1, i++, 1, 1);
-
-    lb = _evisum_ui_process_view_lb_add(parent, _(" Shared memory:"));
-    elm_table_pack(tb, lb, 0, i, 1, 1);
-    view->general.entry_shared = entry = _evisum_ui_process_view_entry_add(parent);
-    elm_table_pack(tb, entry, 1, i++, 1, 1);
-
-    lb = _evisum_ui_process_view_lb_add(parent, _(" Resident memory:"));
-    elm_table_pack(tb, lb, 0, i, 1, 1);
-    view->general.entry_rss = entry = _evisum_ui_process_view_entry_add(parent);
-    elm_table_pack(tb, entry, 1, i++, 1, 1);
-
-    lb = _evisum_ui_process_view_lb_add(parent, _(" Virtual memory:"));
-    elm_table_pack(tb, lb, 0, i, 1, 1);
-    view->general.entry_virt = entry = _evisum_ui_process_view_entry_add(parent);
     elm_table_pack(tb, entry, 1, i++, 1, 1);
 
 #if defined(__linux__)
@@ -818,11 +917,6 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
     lb = _evisum_ui_process_view_lb_add(parent, _("State:"));
     elm_table_pack(tb, lb, 0, i, 1, 1);
     view->general.entry_state = entry = _evisum_ui_process_view_entry_add(parent);
-    elm_table_pack(tb, entry, 1, i++, 1, 1);
-
-    lb = _evisum_ui_process_view_lb_add(parent, _("CPU %:"));
-    elm_table_pack(tb, lb, 0, i, 1, 1);
-    view->general.entry_cpu_usage = entry = _evisum_ui_process_view_entry_add(parent);
     elm_table_pack(tb, entry, 1, i++, 1, 1);
 
     hbx = elm_box_add(parent);
