@@ -83,8 +83,9 @@ typedef enum
 typedef enum
 {
    INTERVAL_NORMAL = 1,
+   INTERVAL_FAST   = 2,
    INTERVAL_MEDIUM = 3,
-   INTERVAL_SLOW   = 5,
+   INTERVAL_SLOW   = 4,
 } Interval;
 
 typedef enum

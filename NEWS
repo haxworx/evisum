@@ -1,4 +1,24 @@
 ============
+Evisum 2.0.7
+============
+
+  * Fix where buffer length can be zero.
+
+============
+Evisum 2.0.6
+============
+
+  * Control enigmatic polling via evisum UI.
+  * Add additional helpers to engine.
+
+============
+Evisum 2.0.5
+============
+
+  * Improve graph rendering at different scaling.
+  * Fix leak of objects when cache is pruned.
+
+============
 Evisum 2.0.4
 ============
 

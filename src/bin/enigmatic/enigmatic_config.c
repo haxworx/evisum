@@ -41,6 +41,7 @@ enigmatic_config_init(void)
    EET_DATA_DESCRIPTOR_ADD_BASIC(_enigmatic_conf_desc, Enigmatic_Config, "log.save_history", log.save_history, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_enigmatic_conf_desc, Enigmatic_Config, "log.rotate_every_hour", log.rotate_every_hour, EET_T_UCHAR);
    EET_DATA_DESCRIPTOR_ADD_BASIC(_enigmatic_conf_desc, Enigmatic_Config, "log.rotate_every_minute", log.rotate_every_minute, EET_T_UCHAR);
+   EET_DATA_DESCRIPTOR_ADD_BASIC(_enigmatic_conf_desc, Enigmatic_Config, "interval", interval, EET_T_INT);
 }
 
 void
@@ -59,6 +60,7 @@ _config_defaults(void)
   config->log.save_history = 1;
   config->log.rotate_every_minute = 0;
   config->log.rotate_every_hour = 1;
+  config->interval = INTERVAL_NORMAL;
 
   return config;
 }

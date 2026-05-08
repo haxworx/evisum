@@ -3,6 +3,7 @@
 #include "evisum_config.h"
 #include "evisum_server.h"
 
+#include "../enigmatic/Events.h"
 #include "../engine/evisum_engine.h"
 #include "background/evisum_background.h"
 
@@ -167,9 +168,9 @@ evisum_ui_config_load(Evisum_Ui *ui) {
     ui->proc.show_user = config()->proc.show_user;
     ui->proc.show_self = config()->proc.show_self;
     ui->proc.poll_delay = config()->proc.poll_delay;
-    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = 1;
-    else if (ui->proc.poll_delay > 10)
-        ui->proc.poll_delay = 10;
+    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = INTERVAL_NORMAL;
+    else if (ui->proc.poll_delay > INTERVAL_SLOW)
+        ui->proc.poll_delay = INTERVAL_SLOW;
     ui->proc.show_statusbar = config()->proc.show_statusbar;
     ui->proc.history_whole = config()->proc.history_whole;
     ui->proc.transparent = config()->proc.transparent;
@@ -370,9 +371,11 @@ _main_menu_slider_poll_delay_changed_cb(void *data EINA_UNUSED, Evas_Object *obj
     Evisum_Ui *ui = data;
 
     ui->proc.poll_delay = elm_slider_value_get(obj) + 0.5;
-    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = 1;
-    else if (ui->proc.poll_delay > 10)
-        ui->proc.poll_delay = 10;
+    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = INTERVAL_NORMAL;
+    else if (ui->proc.poll_delay > INTERVAL_SLOW)
+        ui->proc.poll_delay = INTERVAL_SLOW;
+
+    evisum_engine_interval_set(ui->proc.poll_delay);
 
     evisum_ui_config_save(ui);
 }
@@ -618,12 +621,12 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
 
     _slider_poll_delay = sli = elm_slider_add(o);
     evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
-    elm_slider_min_max_set(sli, 1.0, 10.0);
+    elm_slider_min_max_set(sli, (double) INTERVAL_NORMAL, (double) INTERVAL_SLOW);
     elm_slider_span_size_set(sli, 100.0);
-    elm_slider_step_set(sli, 1 / 9.0);
+    elm_slider_step_set(sli, 1 / 3.0);
     elm_slider_unit_format_set(sli, _("%1.0f s"));
     elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_NONE);
-    elm_object_tooltip_text_set(sli, _("Delay in seconds"));
+    elm_object_tooltip_text_set(sli, _("Enigmatic Update Interval"));
     elm_slider_value_set(sli, ui->proc.poll_delay);
     evas_object_size_hint_align_set(sli, FILL, FILL);
     evas_object_smart_callback_add(sli, "slider,drag,stop", _main_menu_slider_poll_delay_changed_cb, ui);

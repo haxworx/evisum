@@ -33,6 +33,11 @@ _enigmatic_server_client_data_cb(void *data, int type, void *event)
         contentious_update = 1;
         interval = INTERVAL_MEDIUM;
      }
+   else if (!strcmp(msg, "interval-fast"))
+     {
+        contentious_update = 1;
+        interval = INTERVAL_FAST;
+     }
    else if (!strcmp(msg, "interval-normal"))
      {
         contentious_update = 1;

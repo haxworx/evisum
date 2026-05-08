@@ -30,6 +30,7 @@ evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs) {
     Evas_Object *o;
 
     EINA_LIST_FOREACH_SAFE(cache->active, l, l_next, it) {
+        if (!it) continue;
         int found = 0;
         EINA_LIST_FOREACH(objs, l2, o) {
             if (it->obj == o) {
@@ -39,6 +40,7 @@ evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs) {
         }
         if (!found) {
             cache->active = eina_list_remove_list(cache->active, l);
+            if (it->obj) evas_object_del(it->obj);
             free(it);
         }
     }
@@ -134,7 +136,7 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj) {
         if (it->obj == obj) {
             cache->active = eina_list_remove_list(cache->active, l);
             if (n > 10) {
-                evas_object_del(it->obj);
+                //evas_object_del(it->obj);
                 free(it);
             } else {
                 evas_object_hide(it->obj);

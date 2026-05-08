@@ -1398,6 +1398,8 @@ enigmatic_client_del(Enigmatic_Client *client)
 #endif
      }
    free_snapshot(&client->snapshot);
+   buffer_clear(&client->zbuf);
+   buffer_clear(&client->buf);
    if (client->fd != -1)
      close(client->fd);
    free(client->filename);
@@ -1544,10 +1546,13 @@ enigmatic_client_read(Enigmatic_Client *client)
                     ERROR("decompress: stalled frame decode");
 
                   client->buf.length += dec_size;
-                  void *tmp = realloc(client->buf.data, client->buf.length);
-                  EINA_SAFETY_ON_NULL_RETURN(tmp);
-                  client->buf.data = tmp;
-                  memcpy(&client->buf.data[client->buf.length - dec_size], dst, dec_size);
+		  if (client->buf.length)
+	            {
+                       void *tmp = realloc(client->buf.data, client->buf.length);
+                       EINA_SAFETY_ON_NULL_RETURN(tmp);
+                       client->buf.data = tmp;
+                       memcpy(&client->buf.data[client->buf.length - dec_size], dst, dec_size);
+		    }
                }
              offset += pos;
              free(dst);

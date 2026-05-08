@@ -1618,9 +1618,21 @@ evisum_ui_widget_exel_item_cache_reset(Evisum_Ui_Widget_Exel *wx, void (*done_cb
 }
 
 void
-evisum_ui_widget_exel_item_cache_steal(Evisum_Ui_Widget_Exel *wx, Eina_List *objs) {
+evisum_ui_widget_exel_item_cache_steal(Evisum_Ui_Widget_Exel *wx, Eina_List *items) {
+    Eina_List *contents = NULL;
+    Eina_List *l;
+    Elm_Object_Item *it;
+    Evas_Object *content;
+
     if (!wx || !wx->cache) return;
-    evisum_ui_item_cache_steal(wx->cache, objs);
+
+    EINA_LIST_FOREACH(items, l, it) {
+        content = elm_object_item_part_content_get(it, "elm.swallow.content");
+        if (content) contents = eina_list_append(contents, content);
+    }
+
+    evisum_ui_item_cache_steal(wx->cache, contents);
+    eina_list_free(contents);
 }
 
 unsigned int

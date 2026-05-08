@@ -1601,3 +1601,67 @@ file_system_in_use(const char *name)
 
     return mounted;
 }
+
+static char *
+_evisum_engine_exe_response(const char *command)
+{
+   FILE *p;
+   char buf[8192];
+   Eina_Strbuf *lines;
+   char *out;
+   ssize_t len;
+
+   p = popen(command, "r");
+   if (!p) return NULL;
+
+   lines = eina_strbuf_new();
+
+   while ((fgets(buf, sizeof(buf), p)) != NULL)
+     eina_strbuf_append(lines, buf);
+
+   pclose(p);
+
+   len = eina_strbuf_length_get(lines);
+   eina_strbuf_remove(lines, len -1, len);
+
+   out = strdup(eina_strbuf_string_get(lines));
+
+   eina_strbuf_free(lines);
+
+   return out;
+}
+
+Eina_Bool
+evisum_engine_interval_set(Interval interval)
+{
+   Eina_Bool success = EINA_FALSE;
+   Eina_Strbuf *buf = eina_strbuf_new();
+
+   eina_strbuf_append(buf, "enigmatic ");
+   switch (interval)
+     {
+        case INTERVAL_NORMAL:
+          eina_strbuf_append_printf(buf, "--interval-normal");
+          break;
+        case INTERVAL_FAST:
+          eina_strbuf_append_printf(buf, "--interval-fast");
+          break;
+        case INTERVAL_MEDIUM:
+          eina_strbuf_append_printf(buf, "--interval-medium");
+          break;
+        case INTERVAL_SLOW:
+          eina_strbuf_append_printf(buf, "--interval-slow");;
+          break;
+     }
+
+   char *out = _evisum_engine_exe_response(eina_strbuf_string_get(buf));
+   if (out)
+     {
+        if (!strcmp(out, "OK"))
+          success = EINA_TRUE;
+        free(out);
+     }
+   eina_strbuf_free(buf);
+
+   return success;
+}

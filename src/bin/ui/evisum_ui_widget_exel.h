@@ -271,9 +271,9 @@ Evas_Object *evisum_ui_widget_exel_item_cache_object_get(Evisum_Ui_Widget_Exel *
  * Use this after column/field layout changes so row object structure is recreated safely. */
 void evisum_ui_widget_exel_item_cache_reset(Evisum_Ui_Widget_Exel *wx, void (*done_cb)(void *data), void *data);
 
-/* Steal non-realized cache objects using the provided realized object list.
+/* Steal non-realized cache objects using the provided realized genlist item list.
  * Use this to cap cache growth under churn without leaking stale pooled objects. */
-void evisum_ui_widget_exel_item_cache_steal(Evisum_Ui_Widget_Exel *wx, Eina_List *objs);
+void evisum_ui_widget_exel_item_cache_steal(Evisum_Ui_Widget_Exel *wx, Eina_List *items);
 
 /* Return the number of active objects currently tracked by the widget-owned cache.
  * This is useful for deciding when to compact cache state after feedback updates. */

@@ -97,7 +97,10 @@ enigmatic_system_monitor(void *data, Ecore_Thread *thread)
 
              eina_lock_take(&enigmatic->update_lock);
              if (enigmatic->interval != enigmatic->interval_update)
-               enigmatic->interval = enigmatic->interval_update;
+               {
+                  enigmatic->config->interval = enigmatic->interval = enigmatic->interval_update;
+                  enigmatic_config_save(enigmatic->config);
+               }
              eina_lock_release(&enigmatic->update_lock);
           }
 
@@ -133,13 +136,13 @@ enigmatic_init(Enigmatic *enigmatic)
    enigmatic->pid = getpid();
    enigmatic_pidfile_create(enigmatic);
 
-   enigmatic->device_refresh_interval = 900 * 10;
-   enigmatic->log.hour = -1;
-   enigmatic->interval = enigmatic->interval_update = INTERVAL_NORMAL;
-   enigmatic->broadcast = 1;
-
    enigmatic_config_init();
    enigmatic->config = enigmatic_config_load();
+
+   enigmatic->device_refresh_interval = 900 * 10;
+   enigmatic->log.hour = -1;
+   enigmatic->interval = enigmatic->interval_update = enigmatic->config->interval;
+   enigmatic->broadcast = 1;
 
    enigmatic_server_init(enigmatic);
 
@@ -187,6 +190,7 @@ usage(void)
           "   -s                 Stop enigmatic daemon.\n"
           "   -p                 Ping enigmatic daemon.\n"
           "   --interval-normal  Set enigmatic daemon poll interval (normal).\n"
+          "   --interval-fast    Set enigmatic daemon poll interval (fast).\n"
           "   --interval-medium  Set enigmatic daemon poll interval (medium).\n"
           "   --interval-slow    Set enigmatic daemon poll interval (slow).\n"
           "   -v | --version     Enigmatic version.\n"
@@ -207,6 +211,8 @@ int main(int argc, char **argv)
           exit(!enigmatic_query_send("PING"));
         else if (!strcmp(argv[i], "--interval-normal"))
           exit(!enigmatic_query_send("interval-normal"));
+        else if (!strcmp(argv[i], "--interval-fast"))
+          exit(!enigmatic_query_send("interval-fast"));
         else if (!strcmp(argv[i], "--interval-medium"))
           exit(!enigmatic_query_send("interval-medium"));
         else if (!strcmp(argv[i], "--interval-slow"))
