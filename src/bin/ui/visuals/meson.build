@@ -1,4 +1,5 @@
 src += files([
+  '../../enigmatic/system/machine.c',
   'cpu_default.c',
   'cpu_default.h',
   'cpu_basic.c',

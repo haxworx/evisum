@@ -51,10 +51,10 @@ _core_times_main_cb(void *data, Ecore_Thread *thread) {
     uint64_t seq = 0;
     Ext *ext = pd->ext;
 
-    if (!system_cpu_frequency_min_max_get(&ext->freq_min, &ext->freq_max)) ext->cpu_freq = 1;
+    if (!cores_frequency_min_max(&ext->freq_min, &ext->freq_max)) ext->cpu_freq = 1;
 
-    system_cpu_temperature_min_max_get(&ext->temp_min, &ext->temp_max);
-    if ((system_cpu_n_temperature_get(0)) != -1) ext->cpu_temp = 1;
+    cores_temperature_min_max(&ext->temp_min, &ext->temp_max);
+    if ((core_id_temperature(0)) != -1) ext->cpu_temp = 1;
 
     ecore_thread_name_set(thread, "cpu");
 
@@ -313,10 +313,10 @@ evisum_ui_cpu_visual_default(Evas_Object *parent_box) {
     EINA_SAFETY_ON_NULL_RETURN_VAL(ext, NULL);
 
     ext->cpu_count = system_cpu_count_get();
-    if (!system_cpu_frequency_min_max_get(&ext->freq_min, &ext->freq_max)) ext->cpu_freq = 1;
+    if (!cores_frequency_min_max(&ext->freq_min, &ext->freq_max)) ext->cpu_freq = 1;
 
-    system_cpu_temperature_min_max_get(&ext->temp_min, &ext->temp_max);
-    if ((system_cpu_n_temperature_get(0)) != -1) ext->cpu_temp = 1;
+    cores_temperature_min_max(&ext->temp_min, &ext->temp_max);
+    if ((core_id_temperature(0)) != -1) ext->cpu_temp = 1;
 
     ext->cpu_order = cpu_order = malloc((ext->cpu_count) * sizeof(int));
     if (!cpu_order) {

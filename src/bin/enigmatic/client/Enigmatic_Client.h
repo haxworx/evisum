@@ -148,7 +148,6 @@ typedef enum
    EVENT_FILE_SYSTEM_DEL   = 12,
    EVENT_PROCESS_ADD       = 13,
    EVENT_PROCESS_DEL       = 14,
-
    EVENT_RECORD_DELAY      = 15,
 } Enigmatic_Client_Event_Type;
 
