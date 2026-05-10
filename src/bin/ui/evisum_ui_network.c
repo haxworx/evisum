@@ -28,7 +28,6 @@ typedef struct {
 #define NETWORK_GRAPH_SAMPLES       120
 #define NETWORK_GRID_X_STEP_SAMPLES 5
 #define NETWORK_GRID_Y_STEP_PERCENT 10
-#define NETWORK_POLL_USEC           1000000
 #define WIN_WIDTH                   320
 #define WIN_HEIGHT                  480
 
@@ -39,11 +38,11 @@ typedef struct {
     uint64_t total_in;
     uint64_t total_out;
 
-    uint64_t peak_in;
-    uint64_t peak_out;
-
     uint64_t in;
     uint64_t out;
+    uint64_t peak_in;
+    uint64_t peak_out;
+    double last_sample_time;
 
     double history[NETWORK_GRAPH_SAMPLES];
     int history_count;
@@ -67,6 +66,7 @@ typedef struct {
     char name[255];
     uint64_t total_in;
     uint64_t total_out;
+    double sample_time;
 } Network_Update_Sample;
 
 static void _evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces);
@@ -82,6 +82,18 @@ static Eina_Bool
 _evisum_ui_network_graph_objects_valid(Evisum_Ui_Network_View *view) {
     return view && view->graph_bg && view->graph_img && evas_object_evas_get(view->graph_bg)
            && evas_object_evas_get(view->graph_img);
+}
+
+static int
+_evisum_ui_network_poll_delay_get(Evisum_Ui *ui) {
+    int delay_secs = INTERVAL_NORMAL;
+
+    if (ui) delay_secs = ui->proc.poll_delay;
+    if (delay_secs < INTERVAL_NORMAL) delay_secs = INTERVAL_NORMAL;
+    else if (delay_secs > INTERVAL_SLOW)
+        delay_secs = INTERVAL_SLOW;
+
+    return delay_secs;
 }
 
 static void
@@ -310,19 +322,25 @@ _evisum_ui_network_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Obje
 }
 
 static void
-_evisum_ui_network_update(void *data EINA_UNUSED, Ecore_Thread *thread) {
+_evisum_ui_network_update(void *data, Ecore_Thread *thread) {
+    Evisum_Ui_Network_View *view = data;
     uint64_t seq = 0;
-    int ticks = 9;
+    double last_sample_time = 0.0;
 
     ecore_thread_name_set(thread, "network");
 
     while (!ecore_thread_check(thread)) {
         Eina_List *samples = NULL;
+        double sample_time;
+        int delay_secs;
 
         if (!evisum_background_update_wait(&seq)) continue;
-        ticks++;
-        if (ticks < 10) continue;
-        ticks = 0;
+
+        sample_time = ecore_time_get();
+        delay_secs = _evisum_ui_network_poll_delay_get(view ? view->ui : NULL);
+        if ((last_sample_time > 0.0) && ((sample_time - last_sample_time) < ((double) delay_secs - 0.05)))
+            continue;
+
         int n;
         Network_Interface *nwif, **ifaces = system_network_ifaces_get(&n);
         if (!ifaces) continue;
@@ -336,13 +354,17 @@ _evisum_ui_network_update(void *data EINA_UNUSED, Ecore_Thread *thread) {
                 snprintf(s->name, sizeof(s->name), "%s", nwif->name);
                 s->total_in = nwif->total_in;
                 s->total_out = nwif->total_out;
+                s->sample_time = sample_time;
                 samples = eina_list_append(samples, s);
             }
 
         }
 
         free(ifaces);
-        if (samples) ecore_thread_feedback(thread, samples);
+        if (samples) {
+            last_sample_time = sample_time;
+            ecore_thread_feedback(thread, samples);
+        }
     }
 }
 
@@ -376,15 +398,30 @@ _evisum_ui_network_update_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUS
             snprintf(iface->name, sizeof(iface->name), "%s", s->name);
             iface->total_in = s->total_in;
             iface->total_out = s->total_out;
+            iface->last_sample_time = s->sample_time;
             view->interfaces = eina_list_append(view->interfaces, iface);
             graph_reset_needed = EINA_TRUE;
         } else {
-            iface->in = (iface->total_in == 0 || s->total_in < iface->total_in) ? 0 : (s->total_in - iface->total_in);
-            iface->out = (iface->total_out == 0 || s->total_out < iface->total_out) ? 0 : (s->total_out - iface->total_out);
+            double elapsed = s->sample_time - iface->last_sample_time;
+            uint64_t delta_in = (iface->total_in == 0 || s->total_in < iface->total_in)
+                                    ? 0
+                                    : (s->total_in - iface->total_in);
+            uint64_t delta_out = (iface->total_out == 0 || s->total_out < iface->total_out)
+                                     ? 0
+                                     : (s->total_out - iface->total_out);
+
+            if (elapsed > 0.0) {
+                iface->in = (uint64_t) ((double) delta_in / elapsed);
+                iface->out = (uint64_t) ((double) delta_out / elapsed);
+            } else {
+                iface->in = 0;
+                iface->out = 0;
+            }
             if (iface->in > iface->peak_in) iface->peak_in = iface->in;
             if (iface->out > iface->peak_out) iface->peak_out = iface->out;
             iface->total_in = s->total_in;
             iface->total_out = s->total_out;
+            iface->last_sample_time = s->sample_time;
         }
         iface->delete_me = EINA_FALSE;
     }

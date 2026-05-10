@@ -1,4 +1,10 @@
 ============
+Evisum 2.0.9
+============
+
+  * Fix network UI calculation to calculate based on elapsed time.
+
+============
 Evisum 2.0.8
 ============
 
