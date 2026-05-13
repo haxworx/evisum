@@ -80,12 +80,6 @@ int system_cpu_online_count_get(void);
 /* Counts all CPU cores known to the system. */
 int system_cpu_count_get(void);
 
-/* Gets the latest CPU usage for each core. */
-Cpu_Core **system_cpu_usage_get(int *ncpu);
-
-/* Gets CPU usage after waiting briefly, for a fresher sample. */
-Cpu_Core **system_cpu_usage_delayed_get(int *ncpu, int usecs);
-
 /* Gets the current state of each CPU core. */
 Cpu_Core **system_cpu_state_get(int *ncpu);
 

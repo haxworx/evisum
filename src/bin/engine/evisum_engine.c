@@ -933,19 +933,6 @@ system_cpu_state_get(int *ncpu)
     return arr;
 }
 
-Cpu_Core **
-system_cpu_usage_delayed_get(int *ncpu, int usecs)
-{
-    (void) usecs;
-    return system_cpu_state_get(ncpu);
-}
-
-Cpu_Core **
-system_cpu_usage_get(int *ncpu)
-{
-    return system_cpu_usage_delayed_get(ncpu, 1000000);
-}
-
 int
 system_cpu_frequency_get(void)
 {

@@ -1392,7 +1392,7 @@ enigmatic_client_del(Enigmatic_Client *client)
           ecore_event_handler_del(client->handler_created);
         if (client->handler_deleted)
           ecore_event_handler_del(client->handler_deleted);
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MacOS__)
         ecore_thread_cancel(client->thread);
         ecore_thread_wait(client->thread, 1.0);
 #endif
@@ -1656,7 +1656,7 @@ cb_file_modified(void *data, int type EINA_UNUSED, void *event EINA_UNUSED)
    return 1;
 }
 
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MacOS__)
 
 static void
 cb_thread_fallback(void *data, Ecore_Thread *thread)
@@ -1763,7 +1763,7 @@ enigmatic_client_monitor_add(Enigmatic_Client *client, Snapshot_Callback *cb_eve
       ecore_event_handler_add(EIO_MONITOR_FILE_CREATED, cb_file_modified, client);
    client->handler_deleted =
       ecore_event_handler_add(EIO_MONITOR_FILE_DELETED, cb_file_modified, client);
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MacOS__)
    client->thread = ecore_thread_feedback_run(cb_thread_fallback, cb_thread_fallback_feedback, NULL, NULL, client, 0);
 #endif
 }
