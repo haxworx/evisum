@@ -182,32 +182,75 @@ _process_log_string(Enigmatic *enigmatic, pid_t pid, Object_Type object_type, co
    *changed = 1;
 }
 
-static void
-_process_network_totals_update(Proc_Info *proc, const Proc_Info *prev)
+static int64_t
+_process_elapsed_get(const Enigmatic *enigmatic, const Proc_Info *prev)
 {
-   uint64_t raw_in, raw_out;
+   int64_t elapsed = 0;
+
+   if ((prev) && (enigmatic->poll_time > prev->sample_time))
+     elapsed = enigmatic->poll_time - prev->sample_time;
+   if (elapsed <= 0)
+     elapsed = enigmatic->interval;
+   if (elapsed <= 0)
+     elapsed = 1;
+
+   return elapsed;
+}
+
+static void
+_process_io_rates_update(Enigmatic *enigmatic, Proc_Info *proc, const Proc_Info *prev)
+{
+   uint64_t raw_in, raw_out, raw_disk_read, raw_disk_write;
+   uint64_t total_in, total_out;
+   int64_t elapsed;
 
    if (!proc) return;
 
    raw_in = proc->net_in;
    raw_out = proc->net_out;
+   raw_disk_read = proc->disk_read;
+   raw_disk_write = proc->disk_write;
+
    proc->net_in_raw = raw_in;
    proc->net_out_raw = raw_out;
+   proc->disk_read_raw = raw_disk_read;
+   proc->disk_write_raw = raw_disk_write;
+   proc->sample_time = enigmatic->poll_time;
 
    if (!prev || (proc->start != prev->start))
      {
         proc->net_in = 0;
         proc->net_out = 0;
+        proc->net_in_total = 0;
+        proc->net_out_total = 0;
+        proc->disk_read = 0;
+        proc->disk_write = 0;
         return;
      }
 
-   proc->net_in = prev->net_in;
-   proc->net_out = prev->net_out;
+   elapsed = _process_elapsed_get(enigmatic, prev);
 
+   total_in = prev->net_in_total;
+   total_out = prev->net_out_total;
    if (raw_in >= prev->net_in_raw)
-     proc->net_in += raw_in - prev->net_in_raw;
+     total_in += raw_in - prev->net_in_raw;
    if (raw_out >= prev->net_out_raw)
-     proc->net_out += raw_out - prev->net_out_raw;
+     total_out += raw_out - prev->net_out_raw;
+
+   proc->net_in_total = total_in;
+   proc->net_out_total = total_out;
+   proc->net_in = (total_in - prev->net_in_total) / elapsed;
+   proc->net_out = (total_out - prev->net_out_total) / elapsed;
+
+   if (raw_disk_read >= prev->disk_read_raw)
+     proc->disk_read = (raw_disk_read - prev->disk_read_raw) / elapsed;
+   else
+     proc->disk_read = 0;
+
+   if (raw_disk_write >= prev->disk_write_raw)
+     proc->disk_write = (raw_disk_write - prev->disk_write_raw) / elapsed;
+   else
+     proc->disk_write = 0;
 }
 
 static void
@@ -254,7 +297,7 @@ enigmatic_monitor_processes(Enigmatic *enigmatic, Eina_Hash **cache_hash)
         *cache_hash = eina_hash_int32_new(cb_process_free);
         EINA_LIST_FOREACH(processes, l, proc)
           {
-             _process_network_totals_update(proc, NULL);
+             _process_io_rates_update(enigmatic, proc, NULL);
              DEBUG("add pid => %i => %s", proc->pid, proc->command);
              proc->is_new = 1;
              int32_t pid = proc->pid;
@@ -303,7 +346,7 @@ enigmatic_monitor_processes(Enigmatic *enigmatic, Eina_Hash **cache_hash)
    EINA_LIST_FREE(processes, proc)
      {
         Proc_Info_Log old_log, new_log;
-        int64_t cpu_time_delta, cpu_usage_now, cpu_usage_prev;
+        int64_t cpu_time_delta, cpu_usage_now, cpu_usage_prev, elapsed;
 
         int32_t pid = proc->pid;
         p1 = eina_hash_find(*cache_hash, &pid);
@@ -311,7 +354,7 @@ enigmatic_monitor_processes(Enigmatic *enigmatic, Eina_Hash **cache_hash)
           {
              Proc_Info_Log proc_log;
 
-             _process_network_totals_update(proc, NULL);
+             _process_io_rates_update(enigmatic, proc, NULL);
              proc_info_log_fill(proc, &proc_log);
              enigmatic_log_process_write(enigmatic, &proc_log);
 
@@ -321,15 +364,17 @@ enigmatic_monitor_processes(Enigmatic *enigmatic, Eina_Hash **cache_hash)
              continue;
           }
 
+        elapsed = _process_elapsed_get(enigmatic, p1);
+
         if (proc != p1)
-          _process_network_totals_update(proc, p1);
+          _process_io_rates_update(enigmatic, proc, p1);
 
         proc_info_log_fill(p1, &old_log);
         proc_info_log_fill(proc, &new_log);
 
         cpu_time_delta = new_log.cpu_time - old_log.cpu_time;
         cpu_usage_prev = (int64_t) old_log.cpu_usage;
-        cpu_usage_now = cpu_time_delta / enigmatic->interval;
+        cpu_usage_now = cpu_time_delta / elapsed;
         _process_log_delta(enigmatic, proc->pid, PROCESS_PPID, (int64_t) new_log.ppid - (int64_t) old_log.ppid, &changed);
         _process_log_delta(enigmatic, proc->pid, PROCESS_UID, (int64_t) new_log.uid - (int64_t) old_log.uid, &changed);
         _process_log_delta(enigmatic, proc->pid, PROCESS_NICE, new_log.nice - old_log.nice, &changed);

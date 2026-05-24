@@ -621,6 +621,19 @@ _engine_history_logs_get(Eina_Bool refresh, uint32_t since)
     return logs;
 }
 
+static Eina_Bool
+_engine_history_logs_time_available_get(Eina_List *logs, uint32_t history_time)
+{
+    Eina_List *l;
+    Evisum_Engine_History_Log *log;
+
+    EINA_LIST_FOREACH(logs, l, log) {
+        if ((history_time >= log->start_time) && (history_time <= log->end_time)) return EINA_TRUE;
+    }
+
+    return EINA_FALSE;
+}
+
 Eina_Bool
 evisum_engine_history_bounds_since_get(uint32_t since, uint32_t *start_time, uint32_t *end_time)
 {
@@ -705,23 +718,40 @@ evisum_engine_history_bounds_get(uint32_t *start_time, uint32_t *end_time)
 }
 
 Eina_Bool
-evisum_engine_history_time_available_get(uint32_t time)
+evisum_engine_history_time_available_get(uint32_t history_time)
 {
-    Eina_List *logs, *l;
-    Evisum_Engine_History_Log *log;
-    Eina_Bool available = EINA_FALSE;
+    return evisum_engine_history_time_available_since_get(history_time, 0);
+}
 
-    if (!time) return EINA_FALSE;
+Eina_Bool
+evisum_engine_history_time_available_since_get(uint32_t history_time, uint32_t since)
+{
+    Eina_List *logs;
+    Eina_Bool available = EINA_FALSE;
+    Eina_Bool cached = EINA_FALSE;
+    time_t now;
+
+    if (!history_time) return EINA_FALSE;
     if (!evisum_engine_ensure_started()) return EINA_FALSE;
 
-    logs = _engine_history_logs_get(EINA_FALSE, 0);
-    EINA_LIST_FOREACH(logs, l, log) {
-        if ((time >= log->start_time) && (time <= log->end_time)) {
-            available = EINA_TRUE;
-            break;
+    now = time(NULL);
+
+    if (_state.lock_init) {
+        LOCK();
+        if (!since) {
+            cached = _state.history_logs && ((now - _state.history_logs_scan_at) < HISTORY_LOG_CACHE_TTL);
+            if (cached) available = _engine_history_logs_time_available_get(_state.history_logs, history_time);
+        } else {
+            cached = _state.history_recent_logs && (since >= _state.history_recent_since)
+                     && ((now - _state.history_recent_logs_scan_at) < HISTORY_LOG_CACHE_TTL);
+            if (cached) available = _engine_history_logs_time_available_get(_state.history_recent_logs, history_time);
         }
+        UNLOCK();
+        if (cached) return available;
     }
 
+    logs = _engine_history_logs_get(EINA_FALSE, since);
+    available = _engine_history_logs_time_available_get(logs, history_time);
     _engine_history_logs_free(logs);
 
     return available;

@@ -29,7 +29,6 @@ typedef struct {
     Eina_Bool ignore_initial_resize;
 
     Eina_Hash *icon_cache;
-    Eina_Hash *proc_usage_cache;
 
     struct {
         Evas_Object *entry_cmd;
@@ -75,23 +74,6 @@ typedef struct {
 
 } Evisum_Ui_Process_View;
 
-typedef struct {
-    int64_t start;
-    uint32_t sample_time;
-    int64_t cpu_time;
-    double cpu_usage;
-#if defined(__linux__)
-    uint64_t net_in;
-    uint64_t net_out;
-    uint64_t disk_read;
-    uint64_t disk_write;
-    uint64_t net_in_rate;
-    uint64_t net_out_rate;
-    uint64_t disk_read_rate;
-    uint64_t disk_write_rate;
-#endif
-} Proc_Usage_Cache;
-
 static uint64_t _evisum_ui_process_view_mem_total_get(Evisum_Ui_Process_View *view);
 static void _evisum_ui_process_view_progressbar_unset(Evas_Object *pb);
 static void _evisum_ui_process_view_progressbar_mem_set(Evas_Object *pb, uint64_t used,
@@ -116,20 +98,6 @@ _evisum_ui_process_view_exe_response(const char *command) {
     pclose(p);
 
     return lines;
-}
-
-static void
-_evisum_ui_process_view_usage_cache_free_cb(void *data) {
-    Proc_Usage_Cache *cache = data;
-    free(cache);
-}
-
-static uint32_t
-_evisum_ui_process_view_sample_time_get(void) {
-    uint32_t sample_time;
-
-    sample_time = evisum_engine_live_time_get();
-    return sample_time;
 }
 
 static void
@@ -499,21 +467,9 @@ static void
 _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, void *msg) {
     Evisum_Ui_Process_View *view;
     Proc_Info *proc;
-    Proc_Usage_Cache *cache;
-    int64_t id;
-    int elapsed;
-    uint32_t sample_time;
-#if defined(__linux__)
-    uint64_t net_in_abs = 0;
-    uint64_t net_out_abs = 0;
-    uint64_t disk_read_abs = 0;
-    uint64_t disk_write_abs = 0;
-#endif
 
     view = data;
     proc = msg;
-    elapsed = 1;
-    sample_time = _evisum_ui_process_view_sample_time_get();
 
     if (!proc || (view->start && (proc->start != view->start))) {
         if (proc) proc_info_free(proc);
@@ -524,104 +480,6 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
     if (ecore_thread_check(thread)) {
         proc_info_free(proc);
         return;
-    }
-
-    if (!view->proc_usage_cache)
-        view->proc_usage_cache = eina_hash_int64_new(_evisum_ui_process_view_usage_cache_free_cb);
-
-    id = proc->pid;
-    cache = view->proc_usage_cache ? eina_hash_find(view->proc_usage_cache, &id) : NULL;
-#if defined(__linux__)
-    disk_read_abs = proc->disk_read;
-    disk_write_abs = proc->disk_write;
-    net_in_abs = proc->net_in;
-    net_out_abs = proc->net_out;
-#endif
-    if (!cache) {
-        cache = calloc(1, sizeof(Proc_Usage_Cache));
-        if (cache) {
-            cache->start = proc->start;
-            cache->sample_time = sample_time;
-            cache->cpu_time = proc->cpu_time;
-#if defined(__linux__)
-            cache->net_in = net_in_abs;
-            cache->net_out = net_out_abs;
-            cache->disk_read = disk_read_abs;
-            cache->disk_write = disk_write_abs;
-            proc->net_in = 0;
-            proc->net_out = 0;
-            proc->disk_read = 0;
-            proc->disk_write = 0;
-#endif
-            proc->cpu_usage = 0.0;
-            if (!view->proc_usage_cache || !eina_hash_add(view->proc_usage_cache, &id, cache))
-                free(cache);
-        } else {
-            proc->cpu_usage = 0.0;
-#if defined(__linux__)
-            proc->net_in = 0;
-            proc->net_out = 0;
-            proc->disk_read = 0;
-            proc->disk_write = 0;
-#endif
-        }
-    } else if (cache->start != proc->start) {
-        cache->start = proc->start;
-        cache->sample_time = sample_time;
-        cache->cpu_time = proc->cpu_time;
-#if defined(__linux__)
-        cache->net_in = net_in_abs;
-        cache->net_out = net_out_abs;
-        cache->disk_read = disk_read_abs;
-        cache->disk_write = disk_write_abs;
-        proc->net_in = 0;
-        proc->net_out = 0;
-        proc->disk_read = 0;
-        proc->disk_write = 0;
-#endif
-        proc->cpu_usage = 0.0;
-    } else if (sample_time <= cache->sample_time) {
-        proc->cpu_usage = cache->cpu_usage;
-#if defined(__linux__)
-        proc->net_in = cache->net_in_rate;
-        proc->net_out = cache->net_out_rate;
-        proc->disk_read = cache->disk_read_rate;
-        proc->disk_write = cache->disk_write_rate;
-#endif
-    } else {
-        if (sample_time && cache->sample_time && (sample_time > cache->sample_time))
-            elapsed = sample_time - cache->sample_time;
-
-        if (proc->cpu_time >= cache->cpu_time)
-            proc->cpu_usage = (double) (proc->cpu_time - cache->cpu_time) / elapsed;
-        else proc->cpu_usage = 0.0;
-        cache->cpu_usage = proc->cpu_usage;
-        cache->cpu_time = proc->cpu_time;
-        cache->sample_time = sample_time;
-#if defined(__linux__)
-        if (net_in_abs >= cache->net_in) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
-        else proc->net_in = 0;
-
-        if (net_out_abs >= cache->net_out) proc->net_out = (net_out_abs - cache->net_out) / elapsed;
-        else proc->net_out = 0;
-
-        if (disk_read_abs >= cache->disk_read)
-            proc->disk_read = (disk_read_abs - cache->disk_read) / elapsed;
-        else proc->disk_read = 0;
-
-        if (disk_write_abs >= cache->disk_write)
-            proc->disk_write = (disk_write_abs - cache->disk_write) / elapsed;
-        else proc->disk_write = 0;
-
-        cache->net_in_rate = proc->net_in;
-        cache->net_out_rate = proc->net_out;
-        cache->disk_read_rate = proc->disk_read;
-        cache->disk_write_rate = proc->disk_write;
-        cache->net_in = net_in_abs;
-        cache->net_out = net_out_abs;
-        cache->disk_read = disk_read_abs;
-        cache->disk_write = disk_write_abs;
-#endif
     }
 
     _evisum_ui_process_view_general_view_update(view, proc);
@@ -1131,7 +989,6 @@ _evisum_ui_process_view_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object 
 
     evisum_ui_config_save(view->ui);
 
-    if (view->proc_usage_cache) eina_hash_free(view->proc_usage_cache);
     free(view->selected_cmd);
     if (view->children.widget_exel) evisum_ui_widget_exel_free(view->children.widget_exel);
 

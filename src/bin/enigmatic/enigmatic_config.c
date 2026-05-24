@@ -4,6 +4,10 @@
 #include <Eina.h>
 #include <Eet.h>
 #include <Ecore_File.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 static Eet_Data_Descriptor *_enigmatic_conf_desc = NULL;
 
@@ -65,12 +69,108 @@ _config_defaults(void)
   return config;
 }
 
+static Eina_Bool
+_path_join(char *buf, size_t size, const char *dir, const char *name)
+{
+   int n;
+
+   n = snprintf(buf, size, "%s/%s", dir, name);
+   return ((n >= 0) && ((size_t) n < size));
+}
+
+static Eina_Bool
+_cache_entry_remove(const char *path)
+{
+   struct stat st;
+
+   if (lstat(path, &st) == -1)
+     return (errno == ENOENT);
+
+   if (S_ISDIR(st.st_mode))
+     {
+        DIR *dir;
+        struct dirent *entry;
+
+        dir = opendir(path);
+        if (!dir)
+          return EINA_FALSE;
+
+        while ((entry = readdir(dir)))
+          {
+             char child[PATH_MAX];
+
+             if ((!strcmp(entry->d_name, ".")) || (!strcmp(entry->d_name, "..")))
+               continue;
+
+             if (!_path_join(child, sizeof(child), path, entry->d_name))
+               {
+                  closedir(dir);
+                  return EINA_FALSE;
+               }
+             if (!_cache_entry_remove(child))
+               {
+                  closedir(dir);
+                  return EINA_FALSE;
+               }
+          }
+
+        closedir(dir);
+        return !rmdir(path);
+     }
+
+   return !unlink(path);
+}
+
+static void
+_cache_dir_clear(void)
+{
+   char path[PATH_MAX];
+   DIR *dir;
+   struct dirent *entry;
+   Eina_Bool ok = EINA_TRUE;
+
+   snprintf(path, sizeof(path), "%s/%s", enigmatic_cache_dir_get(), PACKAGE);
+
+   dir = opendir(path);
+   if (!dir)
+     {
+        if (errno == ENOENT)
+          ok = EINA_TRUE;
+        else
+          ok = EINA_FALSE;
+        goto done;
+     }
+
+   while ((entry = readdir(dir)))
+     {
+        char child[PATH_MAX];
+
+        if ((!strcmp(entry->d_name, ".")) || (!strcmp(entry->d_name, "..")))
+          continue;
+
+        if (!_path_join(child, sizeof(child), path, entry->d_name))
+          {
+             ok = EINA_FALSE;
+             continue;
+          }
+        if (!_cache_entry_remove(child))
+          ok = EINA_FALSE;
+     }
+
+   closedir(dir);
+
+done:
+   if (ok)
+     fprintf(stdout, "Enigmatic cache directory cleared after config version change.\n");
+   else
+     fprintf(stdout, "Enigmatic cache directory cleanup after config version change was incomplete.\n");
+}
+
 Enigmatic_Config *
 enigmatic_config_load(void)
 {
    Eet_File *f;
    char *path;
-   int maj, min;
    Enigmatic_Config *config = NULL;
 
    path = enigmatic_config_file_path();
@@ -93,16 +193,12 @@ enigmatic_config_load(void)
 
              eet_close(f);
 
-             maj = config->version >> 16 & 0xffff;
-             min = config->version & 0xffff;
-             if ((maj) && (maj != ENIGMATIC_CONFIG_VERSION_MAJOR))
-               ERROR("config version mismatch.");
-
-             if (min != ENIGMATIC_CONFIG_VERSION_MINOR)
+             if (config->version != ENIGMATIC_CONFIG_VERSION)
                {
-                  fprintf(stderr, "reinitialising configuration\n");
+                  _cache_dir_clear();
                   free(config);
                   config = _config_defaults();
+                  enigmatic_config_save(config);
                }
           }
         free(path);

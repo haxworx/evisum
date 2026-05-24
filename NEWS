@@ -1,4 +1,11 @@
-============
+=============
+Evisum 2.0.10
+=============
+
+  * Move process i/o calculations completely into enigmatic.
+    Evisum only displays values.
+  * Fix process list updates to match snapshot creation.
+
 Evisum 2.0.9
 ============
 

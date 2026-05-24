@@ -57,7 +57,8 @@ Eina_Bool evisum_engine_history_bounds_since_get(uint32_t since, uint32_t *start
 Eina_Bool evisum_engine_history_contiguous_bounds_since_get(uint32_t since, uint32_t *start_time, uint32_t *end_time);
 
 /* Checks whether history data exists for a given time. */
-Eina_Bool evisum_engine_history_time_available_get(uint32_t time);
+Eina_Bool evisum_engine_history_time_available_get(uint32_t history_time);
+Eina_Bool evisum_engine_history_time_available_since_get(uint32_t history_time, uint32_t since);
 
 /* Switches the engine view to a chosen history time. */
 Eina_Bool evisum_engine_history_time_set(uint32_t time);

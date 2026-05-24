@@ -31,8 +31,13 @@ typedef struct _Proc_Info
    uint64_t    net_out;
    uint64_t    net_in_raw;
    uint64_t    net_out_raw;
+   uint64_t    net_in_total;
+   uint64_t    net_out_total;
    uint64_t    disk_read;
    uint64_t    disk_write;
+   uint64_t    disk_read_raw;
+   uint64_t    disk_write_raw;
+   uint32_t    sample_time;
 
    char       *command;
    char       *arguments;

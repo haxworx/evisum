@@ -136,9 +136,6 @@ enigmatic_init(Enigmatic *enigmatic)
    enigmatic->pid = getpid();
    enigmatic_pidfile_create(enigmatic);
 
-   enigmatic_config_init();
-   enigmatic->config = enigmatic_config_load();
-
    enigmatic->device_refresh_interval = 900 * 10;
    enigmatic->log.hour = -1;
    enigmatic->interval = enigmatic->interval_update = enigmatic->config->interval;
@@ -225,13 +222,16 @@ int main(int argc, char **argv)
           }
      }
 
-   lock_fd = enigmatic_log_lock();
-   atexit(cb_exit);
-
    ecore_init();
 
    Enigmatic *enigmatic = calloc(1, sizeof(Enigmatic));
    EINA_SAFETY_ON_NULL_RETURN_VAL(enigmatic, 1);
+
+   enigmatic_config_init();
+   enigmatic->config = enigmatic_config_load();
+
+   lock_fd = enigmatic_log_lock();
+   atexit(cb_exit);
    enigmatic->lock_fd = lock_fd;
 
    enigmatic_init(enigmatic);

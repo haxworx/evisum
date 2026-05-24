@@ -24,7 +24,6 @@ typedef struct {
     Ecore_Thread *thread;
     Eina_Hash *icon_cache;
     Ecore_Event_Handler *handler;
-    Eina_Hash *proc_usage_cache;
     Eina_Bool skip_wait;
     Eina_Bool skip_update;
     Eina_Bool update_every_item;
@@ -97,16 +96,6 @@ typedef struct {
 
 #define PROC_COL_RESIZE_HIT_WIDTH 8
 #define PROC_COL_MIN_WIDTH        48
-
-typedef struct {
-    int64_t pid;
-    int64_t start;
-    uint32_t sample_time;
-    uint64_t net_in;
-    uint64_t net_out;
-    uint64_t disk_read;
-    uint64_t disk_write;
-} Proc_Usage_Cache;
 
 typedef struct {
     const char *name;
@@ -673,6 +662,16 @@ _evisum_ui_process_list_history_time_format(uint32_t t, char *buf, size_t len) {
     strftime(buf, len, "%Y-%m-%d %H:%M:%S", &tm_buf);
 }
 
+static Eina_Bool
+_evisum_ui_process_list_history_time_available_get(Evisum_Ui_Process_List_View *view, uint32_t t) {
+    uint32_t since = 0;
+
+    if (!view) return EINA_FALSE;
+    if (!view->ui->proc.history_whole) since = view->history.start_time;
+
+    return evisum_engine_history_time_available_since_get(t, since);
+}
+
 static void
 _evisum_ui_process_list_history_tooltip_set(Evisum_Ui_Process_List_View *view, uint32_t t) {
     char time_buf[32];
@@ -683,7 +682,7 @@ _evisum_ui_process_list_history_tooltip_set(Evisum_Ui_Process_List_View *view, u
 
     if (view->history.tooltip_time == t) available = view->history.tooltip_available;
     else {
-        available = evisum_engine_history_time_available_get(t);
+        available = _evisum_ui_process_list_history_time_available_get(view, t);
         view->history.tooltip_time = t;
         view->history.tooltip_available = available;
     }
@@ -810,7 +809,7 @@ _evisum_ui_process_list_history_apply_timer_cb(void *data) {
 static Eina_Bool
 _evisum_ui_process_list_history_request_deferred(Evisum_Ui_Process_List_View *view, uint32_t t) {
     if (!view->history.lock_init) return EINA_FALSE;
-    if (!evisum_engine_history_time_available_get(t)) {
+    if (!_evisum_ui_process_list_history_time_available_get(view, t)) {
         _evisum_ui_process_list_history_tooltip_set(view, t);
         _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
         return EINA_FALSE;
@@ -1048,7 +1047,7 @@ _evisum_ui_process_list_history_slider_mouse_move_cb(void *data, Evas *e EINA_UN
 
     t = _evisum_ui_process_list_history_time_at_x_get(view, ev->cur.canvas.x);
     if (view->history.sliding) {
-        if (evisum_engine_history_time_available_get(t)) _evisum_ui_process_list_history_preview_set(view, t);
+        if (_evisum_ui_process_list_history_time_available_get(view, t)) _evisum_ui_process_list_history_preview_set(view, t);
         else _evisum_ui_process_list_history_tooltip_set(view, t);
     } else
         _evisum_ui_process_list_history_tooltip_set(view, t);
@@ -1078,7 +1077,7 @@ _evisum_ui_process_list_history_slider_mouse_down_cb(void *data, Evas *e EINA_UN
     if (!view->history.lock_init) return;
 
     t = _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x);
-    if (!evisum_engine_history_time_available_get(t)) {
+    if (!_evisum_ui_process_list_history_time_available_get(view, t)) {
         _evisum_ui_process_list_history_tooltip_set(view, t);
         _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
         return;
@@ -1111,7 +1110,7 @@ _evisum_ui_process_list_history_slider_mouse_up_cb(void *data, Evas *e EINA_UNUS
 
     view->history.sliding = EINA_FALSE;
     t = _evisum_ui_process_list_history_time_at_x_get(view, ev->canvas.x);
-    if (!evisum_engine_history_time_available_get(t)) {
+    if (!_evisum_ui_process_list_history_time_available_get(view, t)) {
         _evisum_ui_process_list_history_tooltip_set(view, t);
         _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
         return;
@@ -1304,21 +1303,6 @@ _evisum_ui_process_list_uid_trim(Eina_List *list, uid_t uid) {
     return list;
 }
 
-static void
-_evisum_ui_process_list_usage_cache_free_cb(void *data) {
-    Proc_Usage_Cache *cache = data;
-    free(cache);
-}
-
-static uint32_t
-_evisum_ui_process_list_sample_time_get(void) {
-    uint32_t sample_time;
-
-    sample_time = evisum_engine_history_time_get();
-    if (!sample_time) sample_time = evisum_engine_live_time_get();
-    return sample_time;
-}
-
 static Eina_Bool
 _evisum_ui_process_list_process_ignore(Evisum_Ui_Process_List_View *view, Proc_Info *proc) {
     Evisum_Ui *ui = view->ui;
@@ -1341,113 +1325,30 @@ _evisum_ui_process_list_process_ignore(Evisum_Ui_Process_List_View *view, Proc_I
 }
 
 static Eina_List *
-_evisum_ui_process_list_search_trim_cache(Eina_List *list, Evisum_Ui_Process_List_View *view) {
+_evisum_ui_process_list_search_trim(Eina_List *list, Evisum_Ui_Process_List_View *view) {
     Eina_List *l, *l_next;
-    Eina_List *purge = NULL;
     Proc_Info *proc;
-    Proc_Usage_Cache *cache;
-    Eina_Hash *active_pids;
-    uint32_t sample_time;
-    void *d = NULL;
-
-    sample_time = _evisum_ui_process_list_sample_time_get();
-    active_pids = eina_hash_int64_new(NULL);
 
     EINA_LIST_FOREACH_SAFE(list, l, l_next, proc) {
-        int64_t id = proc->pid;
-
-        if (active_pids)
-            eina_hash_add(active_pids, &id, proc);
-
         if (_evisum_ui_process_list_process_ignore(view, proc)) {
             proc_info_free(proc);
             list = eina_list_remove_list(list, l);
-        } else {
-            if ((cache = eina_hash_find(view->proc_usage_cache, &id))) {
-                uint64_t net_in_abs = proc->net_in;
-                uint64_t net_out_abs = proc->net_out;
-                uint64_t disk_read_abs = proc->disk_read;
-                uint64_t disk_write_abs = proc->disk_write;
-                int elapsed = 1;
-
-                if (sample_time && cache->sample_time && (sample_time > cache->sample_time))
-                    elapsed = sample_time - cache->sample_time;
-
-                if (cache->start != proc->start) {
-                    cache->start = proc->start;
-                    cache->sample_time = sample_time;
-                    cache->net_in = net_in_abs;
-                    cache->net_out = net_out_abs;
-                    cache->disk_read = proc->disk_read;
-                    cache->disk_write = proc->disk_write;
-                    proc->net_in = 0;
-                    proc->net_out = 0;
-                    proc->disk_read = 0;
-                    proc->disk_write = 0;
-                    continue;
-                }
-
-                if (cache->net_in && net_in_abs >= cache->net_in) proc->net_in = (net_in_abs - cache->net_in) / elapsed;
-                else proc->net_in = 0;
-
-                if (cache->net_out && net_out_abs >= cache->net_out)
-                    proc->net_out = (net_out_abs - cache->net_out) / elapsed;
-                else proc->net_out = 0;
-
-                if (cache->disk_read && disk_read_abs >= cache->disk_read)
-                    proc->disk_read = (disk_read_abs - cache->disk_read) / elapsed;
-                else proc->disk_read = 0;
-
-                if (cache->disk_write && disk_write_abs >= cache->disk_write)
-                    proc->disk_write = (disk_write_abs - cache->disk_write) / elapsed;
-                else proc->disk_write = 0;
-
-                cache->net_in = net_in_abs;
-                cache->net_out = net_out_abs;
-                cache->disk_read = disk_read_abs;
-                cache->disk_write = disk_write_abs;
-                cache->sample_time = sample_time;
-            } else {
-                cache = calloc(1, sizeof(Proc_Usage_Cache));
-                if (cache) {
-                    uint64_t net_in_abs = proc->net_in;
-                    uint64_t net_out_abs = proc->net_out;
-                    cache->pid = id;
-                    cache->start = proc->start;
-                    cache->sample_time = sample_time;
-                    cache->net_in = net_in_abs;
-                    cache->net_out = net_out_abs;
-                    cache->disk_read = proc->disk_read;
-                    cache->disk_write = proc->disk_write;
-                    proc->net_in = 0;
-                    proc->net_out = 0;
-                    proc->disk_read = 0;
-                    proc->disk_write = 0;
-                    if (!eina_hash_add(view->proc_usage_cache, &id, cache))
-                        free(cache);
-                }
-            }
         }
-    }
-
-    if (active_pids) {
-        Eina_Iterator *it = eina_hash_iterator_data_new(view->proc_usage_cache);
-        while (eina_iterator_next(it, &d)) {
-            cache = d;
-            if (!eina_hash_find(active_pids, &cache->pid))
-                purge = eina_list_prepend(purge, cache);
-        }
-        eina_iterator_free(it);
-
-        EINA_LIST_FREE(purge, cache) {
-            int64_t id = cache->pid;
-            eina_hash_del(view->proc_usage_cache, &id, NULL);
-        }
-
-        eina_hash_free(active_pids);
     }
 
     return list;
+}
+
+static int
+_evisum_ui_process_list_poll_delay_get(Evisum_Ui_Process_List_View *view) {
+    int delay_secs = INTERVAL_NORMAL;
+
+    if (view && view->ui) delay_secs = view->ui->proc.poll_delay;
+    if (delay_secs < INTERVAL_NORMAL) delay_secs = INTERVAL_NORMAL;
+    else if (delay_secs > INTERVAL_SLOW)
+        delay_secs = INTERVAL_SLOW;
+
+    return delay_secs;
 }
 
 static Eina_List *
@@ -1463,7 +1364,7 @@ _evisum_ui_process_list_get(Evisum_Ui_Process_List_View *view) {
 
     if (ui->proc.show_user) list = _evisum_ui_process_list_uid_trim(list, getuid());
 
-    list = _evisum_ui_process_list_search_trim_cache(list, view);
+    list = _evisum_ui_process_list_search_trim(list, view);
     list = _evisum_ui_process_list_sort(list, view);
 
     return list;
@@ -1474,9 +1375,9 @@ _evisum_ui_process_list_process_list(void *data, Ecore_Thread *thread) {
     Evisum_Ui_Process_List_View *view;
     Eina_List *list;
     Proc_Info *proc;
-    int ticks = 0;
     uint64_t seq = 0;
     Eina_Bool first_run = EINA_TRUE;
+    double last_live_update_time = 0.0;
 
     view = data;
 
@@ -1492,6 +1393,7 @@ _evisum_ui_process_list_process_list(void *data, Ecore_Thread *thread) {
     while (!ecore_thread_check(thread)) {
         Eina_Bool history_live, history_pending;
         Eina_Bool history_loaded = EINA_FALSE;
+        Eina_Bool forced_update;
         uint32_t history_time;
 
         _evisum_ui_process_list_history_state_get(view, &history_live, &history_pending, &history_time);
@@ -1525,18 +1427,22 @@ _evisum_ui_process_list_process_list(void *data, Ecore_Thread *thread) {
                 }
             }
         } else if (!first_run && !view->skip_wait) {
-            int delay_secs = view->ui->proc.poll_delay;
-            int target_ticks;
-            if (delay_secs < 1) delay_secs = 1;
-            else if (delay_secs > 10)
-                delay_secs = 10;
-            target_ticks = delay_secs * 10;
             if (!evisum_background_update_wait(&seq)) continue;
-            ticks++;
-            if (ticks < target_ticks) continue;
         }
+        forced_update = first_run || view->skip_wait;
         view->skip_wait = 0;
-        ticks = 0;
+
+        if (history_live && !forced_update) {
+            double update_time = ecore_time_get();
+            int delay_secs = _evisum_ui_process_list_poll_delay_get(view);
+
+            if ((last_live_update_time > 0.0) &&
+                ((update_time - last_live_update_time) < ((double) delay_secs - 0.05)))
+                continue;
+            last_live_update_time = update_time;
+        } else if (history_live)
+            last_live_update_time = ecore_time_get();
+
         list = _evisum_ui_process_list_get(view);
         if (!list) {
             if (!history_live) ecore_thread_feedback(thread, NULL);
@@ -2139,7 +2045,7 @@ _evisum_ui_process_list_history_key_step(Evisum_Ui_Process_List_View *view, Evas
         else t++;
     }
 
-    if (!evisum_engine_history_time_available_get(t)) {
+    if (!_evisum_ui_process_list_history_time_available_get(view, t)) {
         _evisum_ui_process_list_history_tooltip_set(view, t);
         _evisum_ui_process_list_history_tooltip_pinned_set(view, EINA_TRUE);
         return EINA_TRUE;
@@ -2255,25 +2161,11 @@ _evisum_ui_process_list_win_alpha_set(Evisum_Ui_Process_List_View *view) {
 
 static Eina_Bool
 _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED) {
-    Eina_Iterator *it;
     Evisum_Ui *ui;
     Evisum_Ui_Process_List_View *view;
-    void *d = NULL;
 
     view = data;
     ui = view->ui;
-
-    it = eina_hash_iterator_data_new(view->proc_usage_cache);
-    while (eina_iterator_next(it, &d)) {
-        Proc_Usage_Cache *cache = d;
-        cache->start = 0;
-        cache->net_in = 0;
-        cache->net_out = 0;
-        cache->disk_read = 0;
-        cache->disk_write = 0;
-        cache->sample_time = 0;
-    }
-    eina_iterator_free(it);
 
     evisum_ui_widget_exel_genlist_policy_set(view->widget_exel, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
     view->skip_wait = 1;
@@ -2388,7 +2280,6 @@ _evisum_ui_process_list_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, 
 
     if (view->widget_exel) evisum_ui_widget_exel_free(view->widget_exel);
 
-    if (view->proc_usage_cache) eina_hash_free(view->proc_usage_cache);
     if (view->history.lock_init) eina_lock_free(&view->history.lock);
 
     free(view);
@@ -2459,7 +2350,6 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     elm_object_content_set(win, content);
 
     view->icon_cache = evisum_icon_cache_new();
-    view->proc_usage_cache = eina_hash_int64_new(_evisum_ui_process_list_usage_cache_free_cb);
 
     evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_process_list_win_del_cb, view);
     evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_process_list_win_resize_cb, view);
