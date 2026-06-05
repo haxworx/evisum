@@ -450,6 +450,8 @@ message_file_system(Enigmatic_Client *client)
                             {
                                fs2->usage.total = fs->usage.total;
                                fs2->usage.used = fs->usage.used;
+                               fs2->usage.read = fs->usage.read;
+                               fs2->usage.write = fs->usage.write;
                             }
                        }
                      free(fs);
@@ -487,6 +489,10 @@ message_file_system(Enigmatic_Client *client)
                        fs->usage.total += change;
                      else if (msg->object_type == FILE_SYSTEM_USED)
                        fs->usage.used += change;
+                     else if (msg->object_type == FILE_SYSTEM_READ)
+                       fs->usage.read += change;
+                     else if (msg->object_type == FILE_SYSTEM_WRITE)
+                       fs->usage.write += change;
                   }
              }
            break;
@@ -551,6 +557,8 @@ message_network(Enigmatic_Client *client)
                             {
                                iface2->total_in = iface->total_in;
                                iface2->total_out = iface->total_out;
+                               iface2->in = iface->in;
+                               iface2->out = iface->out;
                             }
                        }
                      free(iface);
@@ -588,6 +596,10 @@ message_network(Enigmatic_Client *client)
                        iface->total_in += change;
                      else if (msg->object_type == NETWORK_OUTGOING)
                        iface->total_out += change;
+                     else if (msg->object_type == NETWORK_INCOMING_RATE)
+                       iface->in += change;
+                     else if (msg->object_type == NETWORK_OUTGOING_RATE)
+                       iface->out += change;
                   }
              }
            break;
@@ -1146,10 +1158,14 @@ message_mod(Enigmatic_Client *client)
            break;
         case NETWORK_INCOMING:
         case NETWORK_OUTGOING:
+        case NETWORK_INCOMING_RATE:
+        case NETWORK_OUTGOING_RATE:
            message_network(client);
            break;
         case FILE_SYSTEM_TOTAL:
         case FILE_SYSTEM_USED:
+        case FILE_SYSTEM_READ:
+        case FILE_SYSTEM_WRITE:
            message_file_system(client);
            break;
         case PROCESS_PPID:

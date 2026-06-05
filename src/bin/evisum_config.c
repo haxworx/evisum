@@ -172,6 +172,8 @@ config_init(void) {
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.x", disk.x, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.y", disk.y, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.restart", disk.restart, EET_T_UCHAR);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "disk.graph_mode", disk.graph_mode,
+                                  EET_T_INT);
 
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "sensors.width", sensors.width, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "sensors.height", sensors.height, EET_T_INT);
@@ -247,6 +249,7 @@ _config_init() {
     for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) cfg->proc.field_order[i] = i;
 
     cfg->cpu.visual = eina_stringshare_add("default");
+    cfg->disk.graph_mode = EVISUM_DISK_GRAPH_USAGE;
 
     return cfg;
 }

@@ -163,6 +163,8 @@ enigmatic_shutdown(Enigmatic *enigmatic)
    enigmatic_monitor_batteries_shutdown();
    enigmatic_monitor_sensors_shutdown();
    enigmatic_monitor_power_shutdown();
+   enigmatic_monitor_file_systems_shutdown();
+   enigmatic_monitor_network_interfaces_shutdown();
 
    enigmatic_server_shutdown(enigmatic);
 

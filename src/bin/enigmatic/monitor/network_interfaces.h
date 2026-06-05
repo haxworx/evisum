@@ -6,4 +6,7 @@
 Eina_Bool
 enigmatic_monitor_network_interfaces(Enigmatic *enigmatic, Eina_Hash **cache_hash);
 
+void
+enigmatic_monitor_network_interfaces_shutdown(void);
+
 #endif

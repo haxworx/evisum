@@ -1,6 +1,5 @@
 #include "file_systems.h"
 
-#include <stdio.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +7,8 @@
 
 #if defined(__linux__)
  #include <sys/vfs.h>
+ #include <sys/stat.h>
+ #include <sys/sysmacros.h>
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -28,73 +29,180 @@
 # include <sys/mount.h>
 #endif
 
+#if defined(__linux__)
+typedef struct
+{
+   uint64_t read;
+   uint64_t write;
+} Linux_Disk_Usage;
+
+static void
+_linux_proc_unescape(char *s)
+{
+   char *src, *dst;
+
+   src = dst = s;
+   while (*src)
+     {
+        if ((src[0] == '\\') &&
+            (src[1] >= '0') && (src[1] <= '7') &&
+            (src[2] >= '0') && (src[2] <= '7') &&
+            (src[3] >= '0') && (src[3] <= '7'))
+          {
+             *dst++ = (char) (((src[1] - '0') << 6) |
+                              ((src[2] - '0') << 3) |
+                              (src[3] - '0'));
+             src += 4;
+          }
+        else
+          {
+             *dst++ = *src++;
+          }
+     }
+   *dst = '\0';
+}
+
+static Eina_Hash *
+_linux_disk_usage_hash_get(void)
+{
+   Eina_Hash *hash;
+   FILE *f;
+   char buf[4096];
+
+   f = fopen("/proc/diskstats", "r");
+   if (!f) return NULL;
+
+   hash = eina_hash_string_superfast_new(free);
+   if (!hash)
+     {
+        fclose(f);
+        return NULL;
+     }
+
+   while (fgets(buf, sizeof(buf), f))
+     {
+        unsigned int major_id, minor_id;
+        unsigned long long reads, reads_merged, sectors_read, ms_read;
+        unsigned long long writes, writes_merged, sectors_written;
+        char name[128];
+
+        if (sscanf(buf, " %u %u %127s %llu %llu %llu %llu %llu %llu %llu",
+                   &major_id, &minor_id, name, &reads, &reads_merged,
+                   &sectors_read, &ms_read, &writes, &writes_merged,
+                   &sectors_written) == 10)
+          {
+             Linux_Disk_Usage *usage;
+             char key[64];
+
+             usage = calloc(1, sizeof(Linux_Disk_Usage));
+             if (!usage) continue;
+
+             usage->read = sectors_read * 512ULL;
+             usage->write = sectors_written * 512ULL;
+             snprintf(key, sizeof(key), "%u:%u", major_id, minor_id);
+             eina_hash_set(hash, key, usage);
+          }
+     }
+
+   fclose(f);
+
+   return hash;
+}
+
+static Eina_Bool
+_linux_file_system_disk_usage_key_set(File_System *fs, Eina_Hash *disk_usage, unsigned int major_id,
+                                      unsigned int minor_id)
+{
+   Linux_Disk_Usage *usage;
+   char key[64];
+
+   if (!disk_usage) return EINA_FALSE;
+
+   snprintf(key, sizeof(key), "%u:%u", major_id, minor_id);
+   usage = eina_hash_find(disk_usage, key);
+   if (!usage) return EINA_FALSE;
+
+   fs->usage.read = usage->read;
+   fs->usage.write = usage->write;
+   return EINA_TRUE;
+}
+
+static void
+_linux_file_system_disk_usage_set(File_System *fs, Eina_Hash *disk_usage, unsigned int major_id, unsigned int minor_id)
+{
+   struct stat st;
+
+   if (_linux_file_system_disk_usage_key_set(fs, disk_usage, major_id, minor_id))
+     return;
+
+   if ((stat(fs->path, &st) < 0) || (!S_ISBLK(st.st_mode)))
+     return;
+
+   _linux_file_system_disk_usage_key_set(fs, disk_usage, major(st.st_rdev), minor(st.st_rdev));
+}
+#endif
+
 Eina_List *
 file_systems_find(void)
 {
    Eina_List *list = NULL;
 # if defined(__linux__)
    FILE *f;
-   char *dev, *mount, *type_name, *cp, *end;
+   char *separator, *post_separator;
    struct statfs stats;
    char buf[4096];
+   Eina_Hash *disk_usage;
 
-   f = fopen("/proc/mounts", "r");
+   f = fopen("/proc/self/mountinfo", "r");
    if (!f) return NULL;
+
+   disk_usage = _linux_disk_usage_hash_get();
 
    while ((fgets(buf, sizeof(buf), f)) != NULL)
      {
-        cp = strchr(buf, ' ');
-        if (!cp) continue;
-        mount = cp + 1;
-        dev = strndup(buf, mount - buf - 1);
-        if (!dev) continue;
+        unsigned int major_id, minor_id;
+        char mount[PATH_MAX], path[PATH_MAX], type_name[64], options[4096];
 
-        cp = strchr(mount, ' ');
-        if (!cp) {
-           free(dev);
-           continue;
-        }
-        end = cp;
-        *end = '\0';
-        cp++;
-        end = strchr(cp, ' ');
-        if (!end) {
-           free(dev);
-           continue;
-        }
-        type_name = strndup(cp, end - cp);
-        if (!type_name) {
-           free(dev);
-           continue;
-        }
+        separator = strstr(buf, " - ");
+        if (!separator) continue;
 
-        cp = end + 1; /* options field */
+        *separator = '\0';
+        post_separator = separator + 3;
+
+        if (sscanf(buf, "%*u %*u %u:%u %*4095s %4095s %4095s",
+                   &major_id, &minor_id, mount, options) != 4)
+          continue;
+
+        if (sscanf(post_separator, "%63s %4095s", type_name, path) != 2)
+          continue;
+
+        _linux_proc_unescape(mount);
+        _linux_proc_unescape(path);
+        _linux_proc_unescape(type_name);
 
         Eina_Bool ok = EINA_TRUE;
         if ((strcmp(type_name, "fuseblk")) && (strcmp(type_name, "exfat"))) ok = EINA_FALSE;
 
-        if (((!ok) && strstr(cp, "nodev")) ||
+        if (((!ok) && strstr(options, "nodev")) ||
             (statfs(mount, &stats) < 0) ||
             (stats.f_blocks == 0 && stats.f_bfree == 0))
-          {
-             free(dev);
-             free(type_name);
-             continue;
-          }
+          continue;
 
         File_System *fs = calloc(1, sizeof(File_System));
         if (fs)
           {
              snprintf(fs->mount, sizeof(fs->mount), "%s", mount);
-             snprintf(fs->path, sizeof(fs->path), "%s", dev);
+             snprintf(fs->path, sizeof(fs->path), "%s", path);
              snprintf(fs->type_name, sizeof(fs->type_name), "%s", type_name);
              fs->usage.total = stats.f_bsize * stats.f_blocks;
              fs->usage.used  = fs->usage.total - (stats.f_bsize * stats.f_bfree);
-             free(dev); free(type_name);
+             _linux_file_system_disk_usage_set(fs, disk_usage, major_id, minor_id);
              list = eina_list_append(list, fs);
           }
      }
    fclose(f);
+   if (disk_usage)
+     eina_hash_free(disk_usage);
 # else
    struct statfs *mounts;
    int i, count;

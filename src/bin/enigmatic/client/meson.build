@@ -32,7 +32,7 @@ install_headers('../Events.h', subdir : 'enigmatic')
 install_headers('../enigmatic_visibility.h', subdir : 'enigmatic')
 install_headers('../enigmatic_util.h', subdir : 'enigmatic')
 install_headers('Enigmatic_Client.h', subdir : 'enigmatic')
-install_headers('../system/machine.h', '../system/file_systems.h', '../system/process.h', subdir : 'enigmatic/system')
+install_headers('../system/machine.h', '../system/file_systems.h', '../system/process.h', '../system/uptime.h', subdir : 'enigmatic/system')
 install_headers('../intl/gettext.h', subdir : 'enigmatic/intl')
 
 pkg = import('pkgconfig')

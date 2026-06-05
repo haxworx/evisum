@@ -57,6 +57,9 @@ _engine_snapshot_release(void);
 static void
 _engine_history_logs_free(Eina_List *logs);
 
+static void
+_engine_history_logs_current_end_update(Eina_List *logs);
+
 static Eina_Bool
 _engine_pid_alive(pid_t pid)
 {
@@ -516,6 +519,7 @@ _engine_history_log_add(Eina_List **logs, char *path, const struct stat *st_in)
     log->end_time = end_time;
 
     *logs = eina_list_append(*logs, log);
+    if (!st_in) _engine_history_logs_current_end_update(*logs);
 
     return EINA_TRUE;
 }
@@ -596,11 +600,15 @@ _engine_history_logs_get(Eina_Bool refresh, uint32_t since)
             copy = _engine_history_logs_clone(_state.history_recent_logs);
         }
         UNLOCK();
-        if (copy) return _engine_history_logs_since_trim(copy, since);
+        if (copy) {
+            _engine_history_logs_current_end_update(copy);
+            return _engine_history_logs_since_trim(copy, since);
+        }
     }
 
     logs = _engine_history_logs_scan(since);
     if (!logs) return NULL;
+    _engine_history_logs_current_end_update(logs);
 
     if (_state.lock_init) {
         copy = _engine_history_logs_clone(logs);
@@ -619,6 +627,29 @@ _engine_history_logs_get(Eina_Bool refresh, uint32_t since)
     }
 
     return logs;
+}
+
+static void
+_engine_history_logs_current_end_update(Eina_List *logs)
+{
+    Eina_List *l;
+    Evisum_Engine_History_Log *log;
+    char *current_path;
+    uint32_t now;
+
+    if (!logs) return;
+
+    current_path = enigmatic_log_path();
+    if (!current_path) return;
+
+    now = (uint32_t) time(NULL);
+    EINA_LIST_FOREACH(logs, l, log) {
+        if (!log || !log->path || strcmp(log->path, current_path)) continue;
+        if (log->end_time < now) log->end_time = now;
+        break;
+    }
+
+    free(current_path);
 }
 
 static Eina_Bool

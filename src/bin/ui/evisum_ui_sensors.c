@@ -347,22 +347,26 @@ _evisum_ui_sensors_poll(void *data, Ecore_Thread *thread) {
     Sensor **sensors;
     Evisum_Ui_Sensors_View *view = data;
     uint64_t seq = 0;
-    int ticks = 9;
+    uint32_t last_snapshot_time = 0;
 
     ecore_thread_name_set(thread, "sensors");
 
     while (!ecore_thread_check(thread)) {
+        Eina_Bool forced_update = EINA_FALSE;
+        uint32_t snapshot_time;
+
         if (view->skip_wait) {
             view->skip_wait = 0;
-            ticks = 9;
+            forced_update = EINA_TRUE;
         } else if (!evisum_background_update_wait(&seq)) continue;
-        ticks++;
-        if (ticks < 10) continue;
-        ticks = 0;
+
+        snapshot_time = evisum_engine_live_time_get();
+        if (!forced_update && (!snapshot_time || (snapshot_time == last_snapshot_time))) continue;
 
         sensors = system_sensors_thermal_get(&view->n_sensors);
         if (!sensors) continue;
 
+        if (snapshot_time) last_snapshot_time = snapshot_time;
         ecore_thread_feedback(thread, sensors);
     }
 }

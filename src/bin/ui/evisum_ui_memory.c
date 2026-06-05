@@ -333,19 +333,23 @@ _evisum_ui_memory_mem_usage_main(void *data, Ecore_Thread *thread) {
     Evisum_Ui_Memory_View *view = data;
     static Meminfo memory;
     uint64_t seq = 0;
-    int ticks = 9;
+    uint32_t last_snapshot_time = 0;
 
     ecore_thread_name_set(thread, "memory");
 
     while (!ecore_thread_check(thread)) {
+        uint32_t snapshot_time;
+
         if (!evisum_background_update_wait(&seq)) continue;
-        ticks++;
-        if (ticks < 10) continue;
-        ticks = 0;
+
+        snapshot_time = evisum_engine_live_time_get();
+        if (!snapshot_time || (snapshot_time == last_snapshot_time)) continue;
+
         memset(&memory, 0, sizeof(memory));
         system_memory_usage_get(&memory);
         if (view->ui->mem.zfs_mounted) memory.used += memory.zfs_arc_used;
 
+        last_snapshot_time = snapshot_time;
         ecore_thread_feedback(thread, &memory);
     }
 }

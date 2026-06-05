@@ -3,6 +3,89 @@
 #include "uid.h"
 #include "enigmatic_log.h"
 
+typedef struct
+{
+   uint64_t in;
+   uint64_t out;
+   uint32_t sample_time;
+} Network_Interface_Raw;
+
+static Eina_Hash *_network_interface_raw_cache;
+
+static Eina_Hash *
+_network_interface_raw_cache_get(void)
+{
+   if (!_network_interface_raw_cache)
+     _network_interface_raw_cache = eina_hash_string_superfast_new(free);
+
+   return _network_interface_raw_cache;
+}
+
+static int64_t
+_network_interface_elapsed_get(Enigmatic *enigmatic, Network_Interface_Raw *raw)
+{
+   int64_t elapsed = 0;
+
+   if ((raw) && (enigmatic->poll_time > raw->sample_time))
+     elapsed = enigmatic->poll_time - raw->sample_time;
+   if (elapsed <= 0)
+     elapsed = enigmatic->interval;
+   if (elapsed <= 0)
+     elapsed = 1;
+
+   return elapsed;
+}
+
+static void
+_network_interface_rates_update(Enigmatic *enigmatic, Network_Interface *iface)
+{
+   Eina_Hash *cache;
+   Network_Interface_Raw *raw;
+   uint64_t raw_in, raw_out;
+   int64_t elapsed;
+
+   raw_in = iface->total_in;
+   raw_out = iface->total_out;
+   iface->in = 0;
+   iface->out = 0;
+
+   cache = _network_interface_raw_cache_get();
+   if (!cache) return;
+
+   raw = eina_hash_find(cache, iface->name);
+   if (!raw)
+     {
+        raw = calloc(1, sizeof(Network_Interface_Raw));
+        if (!raw) return;
+
+        raw->in = raw_in;
+        raw->out = raw_out;
+        raw->sample_time = enigmatic->poll_time;
+        if (!eina_hash_add(cache, iface->name, raw))
+          free(raw);
+        return;
+     }
+
+   elapsed = _network_interface_elapsed_get(enigmatic, raw);
+   if (raw_in >= raw->in)
+     iface->in = (raw_in - raw->in) / elapsed;
+   if (raw_out >= raw->out)
+     iface->out = (raw_out - raw->out) / elapsed;
+
+   raw->in = raw_in;
+   raw->out = raw_out;
+   raw->sample_time = enigmatic->poll_time;
+}
+
+void
+enigmatic_monitor_network_interfaces_shutdown(void)
+{
+   if (!_network_interface_raw_cache) return;
+
+   eina_hash_free(_network_interface_raw_cache);
+   _network_interface_raw_cache = NULL;
+}
+
 static void
 cb_network_interface_free(void *data)
 {
@@ -72,6 +155,7 @@ enigmatic_monitor_network_interfaces(Enigmatic *enigmatic, Eina_Hash **cache_has
                {
                   DEBUG("iface add: %s", iface->name);
                   memcpy(iface2, iface, sizeof(Network_Interface));
+                  _network_interface_rates_update(enigmatic, iface2);
                   iface2->unique_id = unique_id_find(&enigmatic->unique_ids);
                   eina_hash_add(*cache_hash, iface->name, iface2);
                }
@@ -113,6 +197,8 @@ enigmatic_monitor_network_interfaces(Enigmatic *enigmatic, Eina_Hash **cache_has
         enigmatic_log_header(enigmatic, EVENT_MESSAGE, msg);
 
         unique_id_release(&enigmatic->unique_ids, iface->unique_id);
+        if (_network_interface_raw_cache)
+          eina_hash_del(_network_interface_raw_cache, iface->name, NULL);
         eina_hash_del(*cache_hash, iface->name, NULL);
      }
 
@@ -122,6 +208,7 @@ enigmatic_monitor_network_interfaces(Enigmatic *enigmatic, Eina_Hash **cache_has
         if (!iface2)
           {
              iface->unique_id = unique_id_find(&enigmatic->unique_ids);
+             _network_interface_rates_update(enigmatic, iface);
 
              Message msg;
              msg.type = MESG_ADD;
@@ -136,6 +223,8 @@ enigmatic_monitor_network_interfaces(Enigmatic *enigmatic, Eina_Hash **cache_has
 
         Message msg;
         msg.type = MESG_MOD;
+
+        _network_interface_rates_update(enigmatic, iface);
 
         if (iface2->total_in != iface->total_in)
           {
@@ -156,11 +245,31 @@ enigmatic_monitor_network_interfaces(Enigmatic *enigmatic, Eina_Hash **cache_has
              DEBUG("%s out :%i", iface2->name, (int) iface->total_out - (int) iface2->total_out);
              changed = 1;
           }
+        if (iface2->in != iface->in)
+          {
+             msg.object_type = NETWORK_INCOMING_RATE;
+             msg.number = iface2->unique_id;
+             enigmatic_log_diff(enigmatic, msg, (int64_t) iface->in - (int64_t) iface2->in);
+
+             DEBUG("%s in rate :%i", iface2->name, (int) iface->in - (int) iface2->in);
+             changed = 1;
+          }
+
+        if (iface2->out != iface->out)
+          {
+             msg.object_type = NETWORK_OUTGOING_RATE;
+             msg.number = iface2->unique_id;
+             enigmatic_log_diff(enigmatic, msg, (int64_t) iface->out - (int64_t) iface2->out);
+
+             DEBUG("%s out rate :%i", iface2->name, (int) iface->out - (int) iface2->out);
+             changed = 1;
+          }
         iface2->total_in = iface->total_in;
         iface2->total_out = iface->total_out;
+        iface2->in = iface->in;
+        iface2->out = iface->out;
         free(iface);
      }
 
    return changed;
 }
-

@@ -12,6 +12,8 @@
 typedef struct {
    uint64_t total;
    uint64_t used;
+   uint64_t read;
+   uint64_t write;
 } _Usage;
 
 typedef struct _File_System {

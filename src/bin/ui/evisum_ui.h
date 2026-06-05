@@ -83,6 +83,7 @@ typedef struct _Evisum_Ui {
         int height;
         int x, y;
         Eina_Bool restart;
+        int graph_mode;
     } disk;
 
     struct {

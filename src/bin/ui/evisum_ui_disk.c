@@ -2,6 +2,7 @@
 #include "evisum_ui_graph.h"
 #include "../engine/evisum_engine.h"
 #include "../background/evisum_background.h"
+#include "../evisum_config.h"
 #include "config.h"
 #include "evisum_ui_colors.h"
 
@@ -16,6 +17,7 @@ typedef struct {
     Eina_Bool skip_wait;
     Eina_List *history;
     Eina_Bool btn_visible;
+    double graph_peak;
 
     Evisum_Ui *ui;
 } Evisum_Ui_Disk_View;
@@ -24,23 +26,36 @@ typedef struct {
 #define DISK_GRID_X_STEP_SAMPLES 5
 #define DISK_GRID_Y_STEP_PERCENT 10
 
+typedef enum {
+    DISK_LINE_USAGE,
+    DISK_LINE_READ,
+    DISK_LINE_WRITE,
+    DISK_LINE_MAX
+} Disk_Line;
+
 typedef struct {
     char *key;
     char *name;
-    uint8_t color_r;
-    uint8_t color_g;
-    uint8_t color_b;
-    double history[DISK_GRAPH_SAMPLES];
-    int history_count;
+    uint8_t color_r[DISK_LINE_MAX];
+    uint8_t color_g[DISK_LINE_MAX];
+    uint8_t color_b[DISK_LINE_MAX];
+    double history[DISK_LINE_MAX][DISK_GRAPH_SAMPLES];
+    int history_count[DISK_LINE_MAX];
     Eina_Bool seen;
-    Eina_Bool enabled;
+    Eina_Bool enabled[DISK_LINE_MAX];
     Evisum_Ui_Disk_View *view;
-    Evas_Object *legend_row;
-    Evas_Object *legend_btn;
-    Evas_Object *legend_swatch;
-    Evas_Object *legend_label;
-    Evas_Object *legend_pb;
+    Evas_Object *legend_row[DISK_LINE_MAX];
+    Evas_Object *legend_btn[DISK_LINE_MAX];
+    Evas_Object *legend_swatch[DISK_LINE_MAX];
+    Evas_Object *legend_label[DISK_LINE_MAX];
+    Evas_Object *legend_pb[DISK_LINE_MAX];
+    void *legend_data[DISK_LINE_MAX];
 } Disk_History;
+
+typedef struct {
+    Disk_History *entry;
+    Disk_Line line;
+} Disk_Legend_Data;
 
 static void _evisum_ui_disk_graph_redraw(Evisum_Ui_Disk_View *view);
 static const Evisum_Ui_Graph_Layer _disk_layers[] = {
@@ -55,27 +70,49 @@ _evisum_ui_disk_graph_objects_valid(Evisum_Ui_Disk_View *view) {
            && evas_object_evas_get(view->graph_img);
 }
 
+static Eina_Bool
+_evisum_ui_disk_transfer_mode_get(Evisum_Ui_Disk_View *view) {
+    return view && view->ui && (view->ui->disk.graph_mode == EVISUM_DISK_GRAPH_TRANSFER);
+}
+
 static void
-_evisum_ui_disk_legend_toggle_state_apply(Disk_History *entry) {
+_evisum_ui_disk_legend_toggle_state_apply(Disk_History *entry, Disk_Line line) {
     if (!entry) return;
 
-    if (!entry->enabled && entry->legend_swatch) evas_object_hide(entry->legend_swatch);
-    else if (entry->enabled && entry->legend_swatch) evas_object_show(entry->legend_swatch);
+    if (!entry->enabled[line] && entry->legend_swatch[line]) evas_object_hide(entry->legend_swatch[line]);
+    else if (entry->enabled[line] && entry->legend_swatch[line]) evas_object_show(entry->legend_swatch[line]);
 
-    if (entry->legend_pb && evas_object_evas_get(entry->legend_pb))
-        elm_object_disabled_set(entry->legend_pb, !entry->enabled);
-    else entry->legend_pb = NULL;
+    if ((line == DISK_LINE_READ) || (line == DISK_LINE_WRITE)) {
+        if (entry->legend_pb[DISK_LINE_READ] && evas_object_evas_get(entry->legend_pb[DISK_LINE_READ]))
+            elm_object_disabled_set(entry->legend_pb[DISK_LINE_READ],
+                                    !entry->enabled[DISK_LINE_READ] && !entry->enabled[DISK_LINE_WRITE]);
+        else entry->legend_pb[DISK_LINE_READ] = NULL;
+    } else if (entry->legend_pb[line] && evas_object_evas_get(entry->legend_pb[line]))
+        elm_object_disabled_set(entry->legend_pb[line], !entry->enabled[line]);
+    else entry->legend_pb[line] = NULL;
 }
 
 static void
 _evisum_ui_disk_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Disk_History *entry = data;
+    Disk_Legend_Data *legend = data;
+    Disk_History *entry;
 
-    if (!entry || !entry->view || !entry->legend_btn || !entry->legend_row) return;
+    if (!legend) return;
+    entry = legend->entry;
+    if (!entry || !entry->view || !entry->legend_btn[legend->line]) return;
+    if (!entry->legend_row[legend->line] && !entry->legend_row[DISK_LINE_READ]) return;
     if (!_evisum_ui_disk_graph_objects_valid(entry->view)) return;
-    entry->enabled = !entry->enabled;
-    _evisum_ui_disk_legend_toggle_state_apply(entry);
+    entry->enabled[legend->line] = !entry->enabled[legend->line];
+    _evisum_ui_disk_legend_toggle_state_apply(entry, legend->line);
     _evisum_ui_disk_graph_redraw(entry->view);
+}
+
+static Eina_Bool
+_evisum_ui_disk_line_visible(Evisum_Ui_Disk_View *view, Disk_Line line) {
+    if (_evisum_ui_disk_transfer_mode_get(view))
+        return (line == DISK_LINE_READ) || (line == DISK_LINE_WRITE);
+
+    return line == DISK_LINE_USAGE;
 }
 
 static void
@@ -89,30 +126,92 @@ _evisum_ui_disk_history_legend_repack(Evisum_Ui_Disk_View *view) {
     elm_table_clear(view->legend_tb, 0);
 
     EINA_LIST_FOREACH(view->history, l, entry) {
-        if (!entry->legend_row || !entry->legend_pb) continue;
-        elm_table_pack(view->legend_tb, entry->legend_row, 0, row, 1, 1);
-        elm_table_pack(view->legend_tb, entry->legend_pb, 1, row, 1, 1);
-        evas_object_show(entry->legend_row);
-        evas_object_show(entry->legend_pb);
-        row++;
+        if (_evisum_ui_disk_transfer_mode_get(view)) {
+            if (!entry->legend_row[DISK_LINE_READ] || !entry->legend_pb[DISK_LINE_READ]) continue;
+            elm_table_pack(view->legend_tb, entry->legend_row[DISK_LINE_READ], 0, row, 1, 1);
+            elm_table_pack(view->legend_tb, entry->legend_pb[DISK_LINE_READ], 1, row, 1, 1);
+            evas_object_show(entry->legend_row[DISK_LINE_READ]);
+            evas_object_show(entry->legend_pb[DISK_LINE_READ]);
+            row++;
+        } else {
+            if (!entry->legend_row[DISK_LINE_USAGE] || !entry->legend_pb[DISK_LINE_USAGE]) continue;
+            elm_table_pack(view->legend_tb, entry->legend_row[DISK_LINE_USAGE], 0, row, 1, 1);
+            elm_table_pack(view->legend_tb, entry->legend_pb[DISK_LINE_USAGE], 1, row, 1, 1);
+            evas_object_show(entry->legend_row[DISK_LINE_USAGE]);
+            evas_object_show(entry->legend_pb[DISK_LINE_USAGE]);
+            row++;
+        }
     }
 }
 
 static void
-_evisum_ui_disk_history_add_sample(Disk_History *entry, double value) {
-    if (entry->history_count < DISK_GRAPH_SAMPLES) entry->history[entry->history_count++] = value;
+_evisum_ui_disk_history_add_sample(Disk_History *entry, Disk_Line line, double value) {
+    if (entry->history_count[line] < DISK_GRAPH_SAMPLES) entry->history[line][entry->history_count[line]++] = value;
     else {
-        memmove(&entry->history[0], &entry->history[1], sizeof(double) * (DISK_GRAPH_SAMPLES - 1));
-        entry->history[DISK_GRAPH_SAMPLES - 1] = value;
+        memmove(&entry->history[line][0], &entry->history[line][1], sizeof(double) * (DISK_GRAPH_SAMPLES - 1));
+        entry->history[line][DISK_GRAPH_SAMPLES - 1] = value;
     }
 }
 
 static void
-_evisum_ui_disk_history_legend_add(Evisum_Ui_Disk_View *view, Disk_History *entry) {
-    Evas_Object *left, *swatch, *lb, *pb, *btn;
+_evisum_ui_disk_history_seed_zero(Evisum_Ui_Disk_View *view, Disk_History *entry) {
+    if (!_evisum_ui_disk_transfer_mode_get(view)) return;
+
+    for (Disk_Line line = DISK_LINE_USAGE; line < DISK_LINE_MAX; line++) {
+        if (!_evisum_ui_disk_line_visible(view, line)) continue;
+        if (entry->history_count[line]) continue;
+        _evisum_ui_disk_history_add_sample(entry, line, 0.0);
+    }
+}
+
+static void
+_evisum_ui_disk_legend_swatch_add(Disk_History *entry, Disk_Line line, Evas_Object *left) {
+    Evas_Object *btn, *swatch;
+    Disk_Legend_Data *legend;
     Evas *evas;
 
-    if (!view->legend_tb || entry->legend_row) return;
+    if (!entry || !left || entry->legend_btn[line]) return;
+
+    evas = evas_object_evas_get(left);
+    btn = elm_button_add(left);
+    evas_object_size_hint_min_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
+    evas_object_size_hint_max_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
+    evas_object_size_hint_align_set(btn, 0.0, 0.5);
+    evas_object_show(btn);
+    legend = calloc(1, sizeof(*legend));
+    if (legend) {
+        legend->entry = entry;
+        legend->line = line;
+        entry->legend_data[line] = legend;
+        evas_object_smart_callback_add(btn, "clicked", _evisum_ui_disk_legend_toggle_cb, legend);
+    }
+    elm_box_pack_end(left, btn);
+
+    swatch = evas_object_rectangle_add(evas);
+    evas_object_color_set(swatch, entry->color_r[line], entry->color_g[line], entry->color_b[line], 255);
+    evas_object_size_hint_min_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
+    evas_object_size_hint_max_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
+    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
+    elm_object_content_set(btn, swatch);
+    evas_object_show(swatch);
+
+    entry->legend_btn[line] = btn;
+    entry->legend_swatch[line] = swatch;
+    _evisum_ui_disk_legend_toggle_state_apply(entry, line);
+}
+
+static void
+_evisum_ui_disk_history_legend_add(Evisum_Ui_Disk_View *view, Disk_History *entry, Disk_Line line) {
+    Evas_Object *left, *lb, *pb;
+    Eina_Bool transfer_mode;
+
+    if (!view->legend_tb) return;
+
+    transfer_mode = _evisum_ui_disk_transfer_mode_get(view);
+    if (transfer_mode) {
+        line = DISK_LINE_READ;
+        if (entry->legend_row[line]) return;
+    } else if (entry->legend_row[line]) return;
 
     left = elm_box_add(view->legend_tb);
     elm_box_horizontal_set(left, EINA_TRUE);
@@ -121,22 +220,10 @@ _evisum_ui_disk_history_legend_add(Evisum_Ui_Disk_View *view, Disk_History *entr
     evas_object_size_hint_align_set(left, EVAS_HINT_FILL, 0.5);
     evas_object_show(left);
 
-    evas = evas_object_evas_get(left);
-    btn = elm_button_add(left);
-    evas_object_size_hint_min_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
-    evas_object_size_hint_max_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
-    evas_object_size_hint_align_set(btn, 0.0, 0.5);
-    evas_object_show(btn);
-    evas_object_smart_callback_add(btn, "clicked", _evisum_ui_disk_legend_toggle_cb, entry);
-    elm_box_pack_end(left, btn);
-
-    swatch = evas_object_rectangle_add(evas);
-    evas_object_color_set(swatch, entry->color_r, entry->color_g, entry->color_b, 255);
-    evas_object_size_hint_min_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
-    evas_object_size_hint_max_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
-    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
-    elm_object_content_set(btn, swatch);
-    evas_object_show(swatch);
+    if (transfer_mode) {
+        _evisum_ui_disk_legend_swatch_add(entry, DISK_LINE_READ, left);
+        _evisum_ui_disk_legend_swatch_add(entry, DISK_LINE_WRITE, left);
+    } else _evisum_ui_disk_legend_swatch_add(entry, DISK_LINE_USAGE, left);
 
     lb = elm_label_add(left);
     evas_object_size_hint_weight_set(lb, EVAS_HINT_EXPAND, 0.0);
@@ -146,42 +233,96 @@ _evisum_ui_disk_history_legend_add(Evisum_Ui_Disk_View *view, Disk_History *entr
     evas_object_show(lb);
 
     pb = elm_progressbar_add(view->legend_tb);
+    if (transfer_mode) elm_object_style_set(pb, "double");
     elm_object_text_set(pb, NULL);
     elm_progressbar_span_size_set(pb, ELM_SCALE_SIZE(220));
     elm_progressbar_unit_format_set(pb, _("0 B / 0 B"));
+    if (transfer_mode) {
+        elm_progressbar_part_value_set(pb, "elm.cur.progressbar", 0.0);
+        elm_progressbar_part_value_set(pb, "elm.cur.progressbar1", 0.0);
+    }
     evas_object_size_hint_weight_set(pb, EVAS_HINT_EXPAND, 0.0);
     evas_object_size_hint_align_set(pb, EVAS_HINT_FILL, 0.5);
     evas_object_show(pb);
 
-    entry->legend_row = left;
-    entry->legend_btn = btn;
-    entry->legend_swatch = swatch;
-    entry->legend_label = lb;
-    entry->legend_pb = pb;
-    _evisum_ui_disk_legend_toggle_state_apply(entry);
+    entry->legend_row[line] = left;
+    entry->legend_label[line] = lb;
+    entry->legend_pb[line] = pb;
     _evisum_ui_disk_history_legend_repack(view);
 }
 
 static void
 _evisum_ui_disk_history_legend_del(Disk_History *entry) {
-    if (entry->legend_pb) evas_object_del(entry->legend_pb);
-    if (entry->legend_row) evas_object_del(entry->legend_row);
+    for (Disk_Line line = DISK_LINE_USAGE; line < DISK_LINE_MAX; line++) {
+        if (entry->legend_pb[line]) evas_object_del(entry->legend_pb[line]);
+        if (entry->legend_row[line]) evas_object_del(entry->legend_row[line]);
+        free(entry->legend_data[line]);
+        entry->legend_row[line] = NULL;
+        entry->legend_btn[line] = NULL;
+        entry->legend_swatch[line] = NULL;
+        entry->legend_label[line] = NULL;
+        entry->legend_pb[line] = NULL;
+        entry->legend_data[line] = NULL;
+    }
     entry->view = NULL;
-    entry->legend_row = NULL;
-    entry->legend_btn = NULL;
-    entry->legend_swatch = NULL;
-    entry->legend_label = NULL;
-    entry->legend_pb = NULL;
 }
 
 static void
-_evisum_ui_disk_history_legend_update(Disk_History *entry, double used_percent, int64_t used, int64_t total) {
-    if (!entry->legend_pb || !entry->legend_label) return;
+_evisum_ui_disk_transfer_format(char *buf, size_t buflen, uint64_t rate) {
+    if (!buf || !buflen) return;
 
-    elm_object_text_set(entry->legend_label, entry->name ? entry->name : entry->key);
-    elm_progressbar_value_set(entry->legend_pb, used_percent / 100.0);
-    elm_progressbar_unit_format_set(
-            entry->legend_pb, eina_slstr_printf("%s / %s", evisum_size_format(used, 0), evisum_size_format(total, 0)));
+    snprintf(buf, buflen, "%s/s", evisum_size_format(rate, 0));
+}
+
+static double
+_evisum_ui_disk_progress_ratio_get(uint64_t value, double max) {
+    double ratio;
+
+    if (max < 1.0) return 0.0;
+
+    ratio = (double)value / max;
+    if (ratio < 0.0) return 0.0;
+    if (ratio > 1.0) return 1.0;
+
+    return ratio;
+}
+
+static void
+_evisum_ui_disk_history_legend_update(Disk_History *entry, const File_System *fs, double used_percent,
+                                      double transfer_peak) {
+    if (entry->view && _evisum_ui_disk_transfer_mode_get(entry->view)) {
+        char read_buf[64];
+        char write_buf[64];
+
+        if (transfer_peak < 1.0) transfer_peak = 1.0;
+        _evisum_ui_disk_transfer_format(read_buf, sizeof(read_buf), fs->usage.read);
+        _evisum_ui_disk_transfer_format(write_buf, sizeof(write_buf), fs->usage.write);
+
+        if (entry->legend_label[DISK_LINE_READ])
+            elm_object_text_set(entry->legend_label[DISK_LINE_READ], entry->name ? entry->name : entry->key);
+        if (entry->legend_pb[DISK_LINE_READ]) {
+            double read = entry->enabled[DISK_LINE_READ]
+                              ? _evisum_ui_disk_progress_ratio_get(fs->usage.read, transfer_peak)
+                              : 0.0;
+            double write = entry->enabled[DISK_LINE_WRITE]
+                               ? _evisum_ui_disk_progress_ratio_get(fs->usage.write, transfer_peak)
+                               : 0.0;
+
+            elm_progressbar_part_value_set(entry->legend_pb[DISK_LINE_READ], "elm.cur.progressbar", read);
+            elm_progressbar_part_value_set(entry->legend_pb[DISK_LINE_READ], "elm.cur.progressbar1", write);
+            elm_progressbar_unit_format_set(entry->legend_pb[DISK_LINE_READ],
+                                            eina_slstr_printf(_("Read %s | Write %s"), read_buf, write_buf));
+        }
+    } else {
+        if (entry->legend_label[DISK_LINE_USAGE])
+            elm_object_text_set(entry->legend_label[DISK_LINE_USAGE], entry->name ? entry->name : entry->key);
+        if (entry->legend_pb[DISK_LINE_USAGE]) {
+            elm_progressbar_value_set(entry->legend_pb[DISK_LINE_USAGE], used_percent / 100.0);
+            elm_progressbar_unit_format_set(entry->legend_pb[DISK_LINE_USAGE],
+                                            eina_slstr_printf("%s / %s", evisum_size_format(fs->usage.used, 0),
+                                                              evisum_size_format(fs->usage.total, 0)));
+        }
+    }
 }
 
 static Disk_History *
@@ -227,10 +368,16 @@ _evisum_ui_disk_history_find_or_create(Evisum_Ui_Disk_View *view, const File_Sys
 
     entry->name = strdup(fs->mount);
     if (!entry->name) entry->name = strdup(fs->path);
-    entry->enabled = EINA_TRUE;
+    for (Disk_Line line = DISK_LINE_USAGE; line < DISK_LINE_MAX; line++)
+        entry->enabled[line] = EINA_TRUE;
     entry->view = view;
 
-    evisum_graph_color_get(entry->key, &entry->color_r, &entry->color_g, &entry->color_b);
+    evisum_graph_color_get(entry->key, &entry->color_r[DISK_LINE_USAGE], &entry->color_g[DISK_LINE_USAGE],
+                           &entry->color_b[DISK_LINE_USAGE]);
+    evisum_graph_color_get(eina_slstr_printf("%s|read", entry->key), &entry->color_r[DISK_LINE_READ],
+                           &entry->color_g[DISK_LINE_READ], &entry->color_b[DISK_LINE_READ]);
+    evisum_graph_color_get(eina_slstr_printf("%s|write", entry->key), &entry->color_r[DISK_LINE_WRITE],
+                           &entry->color_g[DISK_LINE_WRITE], &entry->color_b[DISK_LINE_WRITE]);
 
     view->history = eina_list_append(view->history, entry);
     if (created) *created = EINA_TRUE;
@@ -260,9 +407,13 @@ _evisum_ui_disk_history_reset(Evisum_Ui_Disk_View *view) {
     Disk_History *entry;
 
     EINA_LIST_FOREACH(view->history, l, entry) {
-        entry->history_count = 0;
-        memset(entry->history, 0, sizeof(entry->history));
+        for (Disk_Line line = DISK_LINE_USAGE; line < DISK_LINE_MAX; line++) {
+            entry->history_count[line] = 0;
+            memset(entry->history[line], 0, sizeof(entry->history[line]));
+        }
+        _evisum_ui_disk_history_seed_zero(view, entry);
     }
+    view->graph_peak = 0.0;
 }
 
 static void
@@ -274,23 +425,27 @@ _evisum_ui_disk_graph_redraw(Evisum_Ui_Disk_View *view) {
 
     if (!_evisum_ui_disk_graph_objects_valid(view)) return;
 
-    total = eina_list_count(view->history);
+    total = eina_list_count(view->history) * (_evisum_ui_disk_transfer_mode_get(view) ? 2 : 1);
     nseries = 0;
     series = calloc(total, sizeof(Evisum_Ui_Graph_Series));
     if ((total > 0) && (!series)) return;
 
     EINA_LIST_FOREACH(view->history, l, entry) {
-        if (!entry->enabled || (entry->history_count < 2)) continue;
-        series[nseries].history = entry->history;
-        series[nseries].history_count = entry->history_count;
-        series[nseries].color_r = entry->color_r;
-        series[nseries].color_g = entry->color_g;
-        series[nseries].color_b = entry->color_b;
-        nseries++;
+        for (Disk_Line line = DISK_LINE_USAGE; line < DISK_LINE_MAX; line++) {
+            if (!_evisum_ui_disk_line_visible(view, line)) continue;
+            if (!entry->enabled[line] || (entry->history_count[line] < 2)) continue;
+            series[nseries].history = entry->history[line];
+            series[nseries].history_count = entry->history_count[line];
+            series[nseries].color_r = entry->color_r[line];
+            series[nseries].color_g = entry->color_g[line];
+            series[nseries].color_b = entry->color_b[line];
+            nseries++;
+        }
     }
 
     evisum_ui_graph_draw(view->graph_bg, view->graph_img, DISK_GRAPH_SAMPLES, DISK_GRID_X_STEP_SAMPLES,
-                         DISK_GRID_Y_STEP_PERCENT, 100.0, series, nseries, _disk_layers,
+                         DISK_GRID_Y_STEP_PERCENT,
+                         view->ui->disk.graph_mode == EVISUM_DISK_GRAPH_TRANSFER ? view->graph_peak : 100.0, series, nseries, _disk_layers,
                          EINA_C_ARRAY_LENGTH(_disk_layers));
     free(series);
 }
@@ -307,19 +462,24 @@ static void
 _evisum_ui_disk_disks_poll(void *data, Ecore_Thread *thread) {
     Evisum_Ui_Disk_View *view = data;
     uint64_t seq = 0;
-    int ticks = 9;
+    uint32_t last_snapshot_time = 0;
 
     while (!ecore_thread_check(thread)) {
+        Eina_Bool forced_update = EINA_FALSE;
         Eina_List *mounted;
+        uint32_t snapshot_time;
+
         if (view->skip_wait) {
             view->skip_wait = 0;
-            ticks = 9;
+            forced_update = EINA_TRUE;
         } else if (!evisum_background_update_wait(&seq)) continue;
-        ticks++;
-        if (ticks < 10) continue;
-        ticks = 0;
+
+        snapshot_time = evisum_engine_live_time_get();
+        if (!forced_update && (!snapshot_time || (snapshot_time == last_snapshot_time))) continue;
+
         mounted = file_system_info_all_get();
         if (!mounted) continue;
+        if (snapshot_time) last_snapshot_time = snapshot_time;
         ecore_thread_feedback(thread, mounted);
     }
 }
@@ -344,12 +504,26 @@ _evisum_ui_disk_disks_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNU
 
         entry = _evisum_ui_disk_history_find_or_create(view, fs, &created);
         if (!entry) continue;
-        if (created) graph_reset_needed = EINA_TRUE;
+        if (created) {
+            graph_reset_needed = EINA_TRUE;
+            _evisum_ui_disk_history_seed_zero(view, entry);
+        }
     }
 
     if (graph_reset_needed) {
         _evisum_ui_disk_history_reset(view);
         evisum_ui_graph_reset(view->graph_img);
+    }
+
+    if (_evisum_ui_disk_transfer_mode_get(view)) {
+        EINA_LIST_FOREACH(mounted, l, fs) {
+            double read = (double) fs->usage.read;
+            double write = (double) fs->usage.write;
+
+            if (read > view->graph_peak) view->graph_peak = read;
+            if (write > view->graph_peak) view->graph_peak = write;
+        }
+        if (view->graph_peak < 1.0) view->graph_peak = 1.0;
     }
 
     EINA_LIST_FOREACH(mounted, l, fs) {
@@ -363,9 +537,17 @@ _evisum_ui_disk_disks_poll_feedback_cb(void *data, Ecore_Thread *thread EINA_UNU
         if (used_percent < 0.0) used_percent = 0.0;
         if (used_percent > 100.0) used_percent = 100.0;
 
-        _evisum_ui_disk_history_add_sample(entry, used_percent);
-        _evisum_ui_disk_history_legend_add(view, entry);
-        _evisum_ui_disk_history_legend_update(entry, used_percent, fs->usage.used, fs->usage.total);
+        if (_evisum_ui_disk_transfer_mode_get(view)) {
+            _evisum_ui_disk_history_add_sample(entry, DISK_LINE_READ, (double) fs->usage.read);
+            _evisum_ui_disk_history_add_sample(entry, DISK_LINE_WRITE, (double) fs->usage.write);
+            _evisum_ui_disk_history_legend_add(view, entry, DISK_LINE_READ);
+            _evisum_ui_disk_history_legend_add(view, entry, DISK_LINE_WRITE);
+        } else {
+            _evisum_ui_disk_history_add_sample(entry, DISK_LINE_USAGE, used_percent);
+            _evisum_ui_disk_history_legend_add(view, entry, DISK_LINE_USAGE);
+        }
+
+        _evisum_ui_disk_history_legend_update(entry, fs, used_percent, view->graph_peak);
         entry->seen = EINA_TRUE;
     }
     _evisum_ui_disk_history_compact(view);
@@ -579,4 +761,14 @@ evisum_ui_disk_win_add(Evisum_Ui *ui) {
 
     view->thread = ecore_thread_feedback_run(_evisum_ui_disk_disks_poll, _evisum_ui_disk_disks_poll_feedback_cb, NULL,
                                              NULL, view, 1);
+}
+
+void
+evisum_ui_disk_win_restart(Evisum_Ui *ui) {
+    if (!ui || !ui->disk.win) return;
+
+    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_NONE);
+    evas_object_del(ui->disk.win);
+    elm_policy_set(ELM_POLICY_QUIT, ELM_POLICY_QUIT_LAST_WINDOW_CLOSED);
+    evisum_ui_disk_win_add(ui);
 }

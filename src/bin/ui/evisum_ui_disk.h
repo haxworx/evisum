@@ -5,4 +5,6 @@
 
 void evisum_ui_disk_win_add(Evisum_Ui *ui);
 
+void evisum_ui_disk_win_restart(Evisum_Ui *ui);
+
 #endif

@@ -1,4 +1,15 @@
 =============
+Evisum 2.0.11
+=============
+
+  * Improve efficiency of UI memory usage when not in history mode.
+  * Keep track of disk read and writes.
+  * Fix the history bounds to include up to the current time.
+  * Add a basic uptime API libenigmatic can provide.
+  * Add UI for disk i/o as well as disk usage.
+  * Add read/write network i/o swatches to the network UI.
+
+=============
 Evisum 2.0.10
 =============
 

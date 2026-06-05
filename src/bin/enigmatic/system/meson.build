@@ -3,6 +3,8 @@ src_system = files([
    'machine.h',
    'file_systems.c',
    'file_systems.h',
+   'uptime.c',
+   'uptime.h',
 ])
 
 src_process = files([

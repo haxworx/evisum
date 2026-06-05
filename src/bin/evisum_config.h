@@ -3,7 +3,12 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x0020
+#define CONFIG_VERSION 0x0021
+
+typedef enum {
+    EVISUM_DISK_GRAPH_USAGE = 0,
+    EVISUM_DISK_GRAPH_TRANSFER = 1,
+} Evisum_Disk_Graph_Mode;
 
 typedef struct _Evisum_Config {
     int version;
@@ -53,6 +58,7 @@ typedef struct _Evisum_Config {
         int height;
         int x, y;
         Eina_Bool restart;
+        int graph_mode;
     } disk;
 
     struct {

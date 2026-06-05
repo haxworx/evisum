@@ -6,4 +6,7 @@
 Eina_Bool
 enigmatic_monitor_file_systems(Enigmatic *enigmatic, Eina_Hash **cache_hash);
 
+void
+enigmatic_monitor_file_systems_shutdown(void);
+
 #endif

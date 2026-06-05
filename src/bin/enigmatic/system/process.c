@@ -689,52 +689,34 @@ _linux_process_network_usage_apply(Proc_Info *p, Eina_Hash *by_pid)
 }
 #endif
 
-static uint64_t
-_disk_write_get(pid_t pid) {
+static void
+_disk_io_get(pid_t pid, uint64_t *read_bytes, uint64_t *write_bytes) {
     FILE *f;
     char path[PATH_MAX];
     char buf[4096];
-    uint64_t write_bytes = 0;
+
+    if (read_bytes) *read_bytes = 0;
+    if (write_bytes) *write_bytes = 0;
 
     snprintf(path, sizeof(path), "/proc/%d/io", pid);
     f = fopen(path, "r");
-    if (!f) return 0;
+    if (!f) return;
 
     while (fgets(buf, sizeof(buf), f)) {
         unsigned long long value = 0;
-        if (sscanf(buf, "write_bytes: %llu", &value) == 1) {
-            write_bytes = value;
-            break;
+
+        if ((read_bytes) && (sscanf(buf, "read_bytes: %llu", &value) == 1)) {
+            *read_bytes = value;
+            continue;
+        }
+
+        if ((write_bytes) && (sscanf(buf, "write_bytes: %llu", &value) == 1)) {
+            *write_bytes = value;
+            continue;
         }
     }
 
     fclose(f);
-
-    return write_bytes;
-}
-
-static uint64_t
-_disk_read_get(pid_t pid) {
-    FILE *f;
-    char path[PATH_MAX];
-    char buf[4096];
-    uint64_t read_bytes = 0;
-
-    snprintf(path, sizeof(path), "/proc/%d/io", pid);
-    f = fopen(path, "r");
-    if (!f) return 0;
-
-    while (fgets(buf, sizeof(buf), f)) {
-        unsigned long long value = 0;
-        if (sscanf(buf, "read_bytes: %llu", &value) == 1) {
-            read_bytes = value;
-            break;
-        }
-    }
-
-    fclose(f);
-
-    return read_bytes;
 }
 
 static Eina_List *
@@ -797,8 +779,7 @@ _process_list_linux_get(void) {
         _mem_size(p);
         _cmd_args(p, st.name, sizeof(st.name));
         _linux_process_network_usage_apply(p, proc_net_hash);
-        p->disk_read = _disk_read_get(pid);
-        p->disk_write = _disk_write_get(pid);
+        _disk_io_get(pid, &p->disk_read, &p->disk_write);
 
         Eina_List *next = eina_list_append(list, p);
         if (!next) {
@@ -906,8 +887,7 @@ proc_info_by_pid(pid_t pid) {
         }
         _linux_process_network_usage_free(proc_net, proc_net_count);
     }
-    p->disk_read = _disk_read_get(pid);
-    p->disk_write = _disk_write_get(pid);
+    _disk_io_get(pid, &p->disk_read, &p->disk_write);
 
     _proc_thread_info(p);
 

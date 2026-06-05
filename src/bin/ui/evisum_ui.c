@@ -116,6 +116,7 @@ evisum_ui_config_save(Evisum_Ui *ui) {
         config()->disk.x = ui->disk.x;
         config()->disk.y = ui->disk.y;
         config()->disk.restart = ui->disk.restart;
+        config()->disk.graph_mode = ui->disk.graph_mode;
     }
 
     if (ui->sensors.win) {
@@ -204,6 +205,9 @@ evisum_ui_config_load(Evisum_Ui *ui) {
     ui->disk.x = config()->disk.x;
     ui->disk.y = config()->disk.y;
     ui->disk.restart = config()->disk.restart;
+    ui->disk.graph_mode = config()->disk.graph_mode;
+    if ((ui->disk.graph_mode < EVISUM_DISK_GRAPH_USAGE) || (ui->disk.graph_mode > EVISUM_DISK_GRAPH_TRANSFER))
+        ui->disk.graph_mode = EVISUM_DISK_GRAPH_USAGE;
 
     ui->sensors.width = config()->sensors.width;
     ui->sensors.height = config()->sensors.height;
@@ -364,6 +368,20 @@ _main_menu_history_range_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, vo
 
     ui->proc.history_whole = elm_radio_value_get(obj) == 1;
     evisum_ui_config_save(ui);
+}
+
+static void
+_main_menu_disk_graph_mode_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
+    Evisum_Ui *ui = data;
+    int graph_mode;
+
+    graph_mode = elm_radio_value_get(obj);
+    if ((graph_mode < EVISUM_DISK_GRAPH_USAGE) || (graph_mode > EVISUM_DISK_GRAPH_TRANSFER)) return;
+    if (ui->disk.graph_mode == graph_mode) return;
+
+    ui->disk.graph_mode = graph_mode;
+    evisum_ui_config_save(ui);
+    if (ui->disk.win) evisum_ui_disk_win_restart(ui);
 }
 
 static void
@@ -573,6 +591,45 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
             evas_object_smart_callback_add(btn, "clicked", _cpu_visual_clicked_cb, ui);
             free(name);
         }
+
+        return o;
+    }
+
+    if (parent == ui->disk.win) {
+        options_fr = elm_frame_add(o);
+        elm_object_text_set(options_fr, _("Storage Graph"));
+        evas_object_size_hint_weight_set(options_fr, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(options_fr, FILL, FILL);
+        evas_object_show(options_fr);
+
+        hbx = elm_box_add(o);
+        evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+        evas_object_size_hint_align_set(hbx, FILL, FILL);
+        elm_box_horizontal_set(hbx, 1);
+        evas_object_show(hbx);
+
+        radio_group = radio = elm_radio_add(hbx);
+        elm_object_text_set(radio, _("Usage"));
+        elm_radio_state_value_set(radio, EVISUM_DISK_GRAPH_USAGE);
+        evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(radio, FILL, FILL);
+        evas_object_smart_callback_add(radio, "changed", _main_menu_disk_graph_mode_changed_cb, ui);
+        elm_box_pack_end(hbx, radio);
+        evas_object_show(radio);
+
+        radio = elm_radio_add(hbx);
+        elm_object_text_set(radio, _("Transfer"));
+        elm_radio_state_value_set(radio, EVISUM_DISK_GRAPH_TRANSFER);
+        elm_radio_group_add(radio, radio_group);
+        evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
+        evas_object_size_hint_align_set(radio, FILL, FILL);
+        evas_object_smart_callback_add(radio, "changed", _main_menu_disk_graph_mode_changed_cb, ui);
+        elm_box_pack_end(hbx, radio);
+        evas_object_show(radio);
+        elm_radio_value_set(radio_group, ui->disk.graph_mode);
+
+        elm_object_content_set(options_fr, hbx);
+        elm_box_pack_end(obx, options_fr);
 
         return o;
     }

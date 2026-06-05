@@ -3,10 +3,93 @@
 #include "uid.h"
 #include "enigmatic_log.h"
 
+typedef struct
+{
+   uint64_t read;
+   uint64_t write;
+   uint32_t sample_time;
+} File_System_Raw;
+
+static Eina_Hash *_file_system_raw_cache;
+
 void
 file_system_key(char *buf, size_t len, File_System *fs)
 {
    snprintf(buf, len, "%s:%s", fs->path, fs->mount);
+}
+
+static Eina_Hash *
+_file_system_raw_cache_get(void)
+{
+   if (!_file_system_raw_cache)
+     _file_system_raw_cache = eina_hash_string_superfast_new(free);
+
+   return _file_system_raw_cache;
+}
+
+static int64_t
+_file_system_elapsed_get(Enigmatic *enigmatic, File_System_Raw *raw)
+{
+   int64_t elapsed = 0;
+
+   if ((raw) && (enigmatic->poll_time > raw->sample_time))
+     elapsed = enigmatic->poll_time - raw->sample_time;
+   if (elapsed <= 0)
+     elapsed = enigmatic->interval;
+   if (elapsed <= 0)
+     elapsed = 1;
+
+   return elapsed;
+}
+
+static void
+_file_system_rates_update(Enigmatic *enigmatic, const char *key, File_System *fs)
+{
+   Eina_Hash *cache;
+   File_System_Raw *raw;
+   uint64_t raw_read, raw_write;
+   int64_t elapsed;
+
+   raw_read = fs->usage.read;
+   raw_write = fs->usage.write;
+   fs->usage.read = 0;
+   fs->usage.write = 0;
+
+   cache = _file_system_raw_cache_get();
+   if (!cache) return;
+
+   raw = eina_hash_find(cache, key);
+   if (!raw)
+     {
+        raw = calloc(1, sizeof(File_System_Raw));
+        if (!raw) return;
+
+        raw->read = raw_read;
+        raw->write = raw_write;
+        raw->sample_time = enigmatic->poll_time;
+        if (!eina_hash_add(cache, key, raw))
+          free(raw);
+        return;
+     }
+
+   elapsed = _file_system_elapsed_get(enigmatic, raw);
+   if (raw_read >= raw->read)
+     fs->usage.read = (raw_read - raw->read) / elapsed;
+   if (raw_write >= raw->write)
+     fs->usage.write = (raw_write - raw->write) / elapsed;
+
+   raw->read = raw_read;
+   raw->write = raw_write;
+   raw->sample_time = enigmatic->poll_time;
+}
+
+void
+enigmatic_monitor_file_systems_shutdown(void)
+{
+   if (!_file_system_raw_cache) return;
+
+   eina_hash_free(_file_system_raw_cache);
+   _file_system_raw_cache = NULL;
 }
 
 static void
@@ -82,6 +165,7 @@ enigmatic_monitor_file_systems(Enigmatic *enigmatic, Eina_Hash **cache_hash)
                   file_system_key(key, sizeof(key), fs);
                   DEBUG("fs add: %s", key);
 
+                  _file_system_rates_update(enigmatic, key, fs2);
                   fs2->unique_id = unique_id_find(&enigmatic->unique_ids);
                   eina_hash_add(*cache_hash, key, fs2);
               }
@@ -128,6 +212,8 @@ enigmatic_monitor_file_systems(Enigmatic *enigmatic, Eina_Hash **cache_hash)
 
         file_system_key(key, sizeof(key), fs);
         unique_id_release(&enigmatic->unique_ids, fs->unique_id);
+        if (_file_system_raw_cache)
+          eina_hash_del(_file_system_raw_cache, key, NULL);
         eina_hash_del(*cache_hash, key, NULL);
      }
 
@@ -138,6 +224,7 @@ enigmatic_monitor_file_systems(Enigmatic *enigmatic, Eina_Hash **cache_hash)
         if (!fs2)
           {
              fs->unique_id = unique_id_find(&enigmatic->unique_ids);
+             _file_system_rates_update(enigmatic, key, fs);
 
              Message msg;
              msg.type = MESG_ADD;
@@ -153,6 +240,8 @@ enigmatic_monitor_file_systems(Enigmatic *enigmatic, Eina_Hash **cache_hash)
 
         Message msg;
         msg.type = MESG_MOD;
+
+        _file_system_rates_update(enigmatic, key, fs);
 
         if (fs2->usage.total != fs->usage.total)
           {
@@ -174,11 +263,30 @@ enigmatic_monitor_file_systems(Enigmatic *enigmatic, Eina_Hash **cache_hash)
              DEBUG("%s :%i", key, (int) ((fs->usage.used - fs2->usage.used)));
              changed = 1;
           }
+        if (fs2->usage.read != fs->usage.read)
+          {
+             msg.object_type = FILE_SYSTEM_READ;
+             msg.number = fs2->unique_id;
+             enigmatic_log_diff(enigmatic, msg, (fs->usage.read - fs2->usage.read));
+
+             DEBUG("%s read :%i", key, (int) ((fs->usage.read - fs2->usage.read)));
+             changed = 1;
+          }
+        if (fs2->usage.write != fs->usage.write)
+          {
+             msg.object_type = FILE_SYSTEM_WRITE;
+             msg.number = fs2->unique_id;
+             enigmatic_log_diff(enigmatic, msg, (fs->usage.write - fs2->usage.write));
+
+             DEBUG("%s write :%i", key, (int) ((fs->usage.write - fs2->usage.write)));
+             changed = 1;
+          }
         fs2->usage.total = fs->usage.total;
         fs2->usage.used = fs->usage.used;
+        fs2->usage.read = fs->usage.read;
+        fs2->usage.write = fs->usage.write;
         free(fs);
      }
 
    return changed;
 }
-

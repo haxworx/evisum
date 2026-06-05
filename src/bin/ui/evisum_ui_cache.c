@@ -40,7 +40,6 @@ evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs) {
         }
         if (!found) {
             cache->active = eina_list_remove_list(cache->active, l);
-            if (it->obj) evas_object_del(it->obj);
             free(it);
         }
     }
