@@ -22,14 +22,14 @@
 static const char *about_msg[] = { "The greatest of all time...",
                                    "Remember to take your medication!",
                                    "Choose love!",
-                                   "Schizophrenia!!!",
                                    "I endorse this message!",
                                    "Hack the planet!",
                                    "Remember what you need to carry!",
-				   "When Chuck Norris uses malloc, he frees memory",
                                    "Be kind to others",
                                    "Be patient with yourself",
                                    "Trust me",
+                                   "Positive thinking",
+                                   "Be kind to yourself",
                                    "Well done my son." };
 
 static const char *about_text_fmt

@@ -52,6 +52,12 @@ config_init(void) {
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "version", version, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "effects", effects, EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "backgrounds", backgrounds, EET_T_UCHAR);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "global.poll_delay", global.poll_delay,
+                                  EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "global.history_whole",
+                                  global.history_whole, EET_T_UCHAR);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "global.monitor_on_exit",
+                                  global.monitor_on_exit, EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.width", proc.width, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.height", proc.height, EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.x", proc.x, EET_T_INT);
@@ -63,8 +69,6 @@ config_init(void) {
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_self", proc.show_self,
                                   EET_T_UCHAR);
-    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.poll_delay", proc.poll_delay,
-                                  EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_type", proc.sort_type,
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.sort_reverse", proc.sort_reverse,
@@ -148,8 +152,6 @@ config_init(void) {
                                   proc.field_order[PROC_FIELD_CPU_USAGE], EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_statusbar", proc.show_statusbar,
                                   EET_T_UCHAR);
-    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.history_whole", proc.history_whole,
-                                  EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.transparent", proc.transparent,
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.alpha", proc.alpha, EET_T_UCHAR);
@@ -232,7 +234,8 @@ _config_init() {
     cfg->proc.show_statusbar = 1;
     cfg->proc.show_user = 1;
     cfg->proc.show_self = 0;
-    cfg->proc.poll_delay = 1;
+    cfg->global.poll_delay = 1;
+    cfg->global.monitor_on_exit = 1;
     cfg->proc.sort_type = PROC_SORT_BY_CMD;
     cfg->proc.transparent = 0;
     cfg->proc.fields = (1u << PROC_FIELD_CMD)

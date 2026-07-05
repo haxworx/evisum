@@ -1,4 +1,11 @@
 =============
+Evisum 2.0.12
+=============
+
+  * Include option to terminate enigmatic on exit.
+  * Move global config options into appropriate namespace.
+
+=============
 Evisum 2.0.11
 =============
 

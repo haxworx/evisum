@@ -30,6 +30,12 @@ typedef struct _Evisum_Ui {
     uint64_t mem_total;
     uint64_t mem_used;
 
+    struct {
+        int poll_delay;
+        Eina_Bool history_whole;
+        Eina_Bool monitor_on_exit;
+    } global;
+
     Eina_Bool kthreads_has_rss;
     struct {
         Evas_Object *win;
@@ -41,7 +47,6 @@ typedef struct _Evisum_Ui {
         Eina_Bool has_kthreads;
         Eina_Bool has_wchan;
 
-        int poll_delay;
         int sort_type;
         unsigned int fields;
         int field_widths[EVISUM_PROC_FIELD_WIDTHS_MAX];
@@ -54,7 +59,6 @@ typedef struct _Evisum_Ui {
         unsigned char alpha;
         Eina_Bool transparent;
         Eina_Bool show_statusbar;
-        Eina_Bool history_whole;
     } proc;
 
     Evas_Object *win_about;

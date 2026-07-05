@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x0021
+#define CONFIG_VERSION 0x0024
 
 typedef enum {
     EVISUM_DISK_GRAPH_USAGE = 0,
@@ -17,6 +17,12 @@ typedef struct _Evisum_Config {
     Eina_Bool backgrounds;
 
     struct {
+        int poll_delay;
+        Eina_Bool history_whole;
+        Eina_Bool monitor_on_exit;
+    } global;
+
+    struct {
         int width;
         int height;
         int x, y;
@@ -24,7 +30,6 @@ typedef struct _Evisum_Config {
 
         Eina_Bool show_kthreads;
         Eina_Bool show_user;
-        int poll_delay;
         unsigned char sort_type;
         Eina_Bool sort_reverse;
         Eina_Bool show_self;
@@ -33,7 +38,6 @@ typedef struct _Evisum_Config {
         int field_order[EVISUM_PROC_FIELD_WIDTHS_MAX];
 
         Eina_Bool show_statusbar;
-        Eina_Bool history_whole;
         Eina_Bool transparent;
         unsigned char alpha;
     } proc;

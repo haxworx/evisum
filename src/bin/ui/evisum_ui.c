@@ -4,6 +4,7 @@
 #include "evisum_server.h"
 
 #include "../enigmatic/Events.h"
+#include "../enigmatic/enigmatic_util.h"
 #include "../engine/evisum_engine.h"
 #include "background/evisum_background.h"
 
@@ -20,7 +21,17 @@
 int EVISUM_EVENT_CONFIG_CHANGED;
 
 static Evas_Object *_slider_alpha = NULL;
-static Evas_Object *_slider_poll_delay = NULL;
+
+typedef struct {
+    Evisum_Ui *ui;
+    Ecore_Timer *timer;
+    Ecore_Event_Handler *config_changed_handler;
+    Evas_Object *it_focus;
+    Evas_Object *poll_delay_slider;
+    Evas_Object *history_range_radio;
+    Evas_Object *monitor_on_exit_check;
+    Eina_Bool updating;
+} Menu_Inst;
 
 static void
 _proc_field_order_sanitize(int *order) {
@@ -61,12 +72,21 @@ evisum_ui_config_save(Evisum_Ui *ui) {
     config()->effects = ui->effects;
     config()->backgrounds = 0;
 
+    if ((config()->global.poll_delay != ui->global.poll_delay)
+        || (config()->global.history_whole != ui->global.history_whole)
+        || (config()->global.monitor_on_exit != ui->global.monitor_on_exit)) {
+        notify = 1;
+    }
+
+    config()->global.poll_delay = ui->global.poll_delay;
+    config()->global.history_whole = ui->global.history_whole;
+    config()->global.monitor_on_exit = ui->global.monitor_on_exit;
+
     if (ui->proc.win) {
         if ((config()->proc.show_kthreads != ui->proc.show_kthreads)
             || (config()->proc.show_user != ui->proc.show_user)
             || (config()->proc.show_self != ui->proc.show_self)
             || (config()->proc.show_statusbar != ui->proc.show_statusbar)
-            || (config()->proc.history_whole != ui->proc.history_whole)
             || (config()->proc.transparent != ui->proc.transparent) || (config()->proc.alpha != ui->proc.alpha)) {
             notify = 1;
         }
@@ -81,9 +101,7 @@ evisum_ui_config_save(Evisum_Ui *ui) {
         config()->proc.show_kthreads = ui->proc.show_kthreads;
         config()->proc.show_user = ui->proc.show_user;
         config()->proc.show_self = ui->proc.show_self;
-        config()->proc.poll_delay = ui->proc.poll_delay;
         config()->proc.show_statusbar = ui->proc.show_statusbar;
-        config()->proc.history_whole = ui->proc.history_whole;
         config()->proc.transparent = ui->proc.transparent;
         config()->proc.alpha = ui->proc.alpha;
         config()->proc.fields = ui->proc.fields;
@@ -168,12 +186,13 @@ evisum_ui_config_load(Evisum_Ui *ui) {
     proc_info_kthreads_show_set(ui->proc.show_kthreads);
     ui->proc.show_user = config()->proc.show_user;
     ui->proc.show_self = config()->proc.show_self;
-    ui->proc.poll_delay = config()->proc.poll_delay;
-    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = INTERVAL_NORMAL;
-    else if (ui->proc.poll_delay > INTERVAL_SLOW)
-        ui->proc.poll_delay = INTERVAL_SLOW;
+    ui->global.poll_delay = config()->global.poll_delay;
+    if (ui->global.poll_delay < 1) ui->global.poll_delay = INTERVAL_NORMAL;
+    else if (ui->global.poll_delay > INTERVAL_SLOW)
+        ui->global.poll_delay = INTERVAL_SLOW;
     ui->proc.show_statusbar = config()->proc.show_statusbar;
-    ui->proc.history_whole = config()->proc.history_whole;
+    ui->global.history_whole = config()->global.history_whole;
+    ui->global.monitor_on_exit = config()->global.monitor_on_exit;
     ui->proc.transparent = config()->proc.transparent;
     ui->proc.alpha = config()->proc.alpha;
     for (int i = 0; i < EVISUM_PROC_FIELD_WIDTHS_MAX; i++) ui->proc.field_widths[i] = config()->proc.field_widths[i];
@@ -363,10 +382,49 @@ _main_menu_show_statusbar_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, v
 }
 
 static void
-_main_menu_history_range_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
-    Evisum_Ui *ui = data;
+_main_menu_global_values_update(Menu_Inst *inst) {
+    if (!inst || !inst->ui) return;
 
-    ui->proc.history_whole = elm_radio_value_get(obj) == 1;
+    inst->updating = EINA_TRUE;
+    if (inst->poll_delay_slider)
+        elm_slider_value_set(inst->poll_delay_slider, inst->ui->global.poll_delay);
+    if (inst->history_range_radio)
+        elm_radio_value_set(inst->history_range_radio, inst->ui->global.history_whole ? 1 : 0);
+    if (inst->monitor_on_exit_check)
+        elm_check_state_set(inst->monitor_on_exit_check, inst->ui->global.monitor_on_exit);
+    inst->updating = EINA_FALSE;
+}
+
+static Eina_Bool
+_main_menu_config_changed_cb(void *data, int type EINA_UNUSED, void *event EINA_UNUSED) {
+    Menu_Inst *inst = data;
+
+    _main_menu_global_values_update(inst);
+
+    return ECORE_CALLBACK_PASS_ON;
+}
+
+static void
+_main_menu_history_range_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
+    Menu_Inst *inst = data;
+    Evisum_Ui *ui;
+
+    if (!inst || inst->updating) return;
+    ui = inst->ui;
+
+    ui->global.history_whole = elm_radio_value_get(obj) == 1;
+    evisum_ui_config_save(ui);
+}
+
+static void
+_main_menu_monitor_on_exit_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
+    Menu_Inst *inst = data;
+    Evisum_Ui *ui;
+
+    if (!inst || inst->updating) return;
+    ui = inst->ui;
+
+    ui->global.monitor_on_exit = elm_check_state_get(obj);
     evisum_ui_config_save(ui);
 }
 
@@ -386,14 +444,18 @@ _main_menu_disk_graph_mode_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, 
 
 static void
 _main_menu_slider_poll_delay_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
-    Evisum_Ui *ui = data;
+    Menu_Inst *inst = data;
+    Evisum_Ui *ui;
 
-    ui->proc.poll_delay = elm_slider_value_get(obj) + 0.5;
-    if (ui->proc.poll_delay < 1) ui->proc.poll_delay = INTERVAL_NORMAL;
-    else if (ui->proc.poll_delay > INTERVAL_SLOW)
-        ui->proc.poll_delay = INTERVAL_SLOW;
+    if (!inst || inst->updating) return;
+    ui = inst->ui;
 
-    evisum_engine_interval_set(ui->proc.poll_delay);
+    ui->global.poll_delay = elm_slider_value_get(obj) + 0.5;
+    if (ui->global.poll_delay < 1) ui->global.poll_delay = INTERVAL_NORMAL;
+    else if (ui->global.poll_delay > INTERVAL_SLOW)
+        ui->global.poll_delay = INTERVAL_SLOW;
+
+    evisum_engine_interval_set(ui->global.poll_delay);
 
     evisum_ui_config_save(ui);
 }
@@ -415,11 +477,6 @@ _main_menu_show_self_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *
     evisum_ui_config_save(ui);
 }
 
-typedef struct {
-    Ecore_Timer *timer;
-    Evas_Object *it_focus;
-} Menu_Inst;
-
 static void
 _main_menu_deleted_cb(void *data EINA_UNUSED, Evas_Object *obj, Evas *e, void *event_info EINA_UNUSED) {
     Menu_Inst *inst = data;
@@ -427,6 +484,8 @@ _main_menu_deleted_cb(void *data EINA_UNUSED, Evas_Object *obj, Evas *e, void *e
     inst->it_focus = NULL;
     if (inst->timer) ecore_timer_del(inst->timer);
     inst->timer = NULL;
+    if (inst->config_changed_handler) ecore_event_handler_del(inst->config_changed_handler);
+    inst->config_changed_handler = NULL;
     free(inst);
 }
 
@@ -449,6 +508,98 @@ _cpu_visual_clicked_cb(void *data EINA_UNUSED, Evas_Object *obj, void *event_inf
 
     eina_stringshare_replace(&ui->cpu.visual, txt);
     evisum_ui_cpu_win_restart(ui);
+}
+
+static void
+_main_menu_global_options_add(Menu_Inst *inst, Evas_Object *popup, Evas_Object *container) {
+    Evisum_Ui *ui = inst->ui;
+    Evas_Object *fr, *history_fr, *bx, *hbx, *history_bx, *sli, *chk, *radio, *radio_group;
+
+    inst->updating = EINA_TRUE;
+
+    fr = elm_frame_add(popup);
+    elm_object_text_set(fr, _("Global"));
+    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(fr, FILL, FILL);
+    evas_object_show(fr);
+
+    bx = elm_box_add(popup);
+    evas_object_size_hint_weight_set(bx, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(bx, FILL, FILL);
+    evas_object_show(bx);
+
+    sli = elm_slider_add(popup);
+    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
+    elm_slider_min_max_set(sli, (double) INTERVAL_NORMAL, (double) INTERVAL_SLOW);
+    elm_slider_span_size_set(sli, 100.0);
+    elm_slider_step_set(sli, 1 / 3.0);
+    elm_slider_unit_format_set(sli, _("%1.0f s"));
+    elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_NONE);
+    elm_object_tooltip_text_set(sli, _("Enigmatic Update Interval"));
+    elm_slider_value_set(sli, ui->global.poll_delay);
+    evas_object_size_hint_align_set(sli, FILL, FILL);
+    evas_object_smart_callback_add(sli, "slider,drag,stop", _main_menu_slider_poll_delay_changed_cb, inst);
+    evas_object_smart_callback_add(sli, "changed", _main_menu_slider_poll_delay_changed_cb, inst);
+    evas_object_show(sli);
+    elm_box_pack_end(bx, sli);
+    inst->poll_delay_slider = sli;
+
+    history_fr = elm_frame_add(popup);
+    elm_object_text_set(history_fr, _("History"));
+    evas_object_size_hint_weight_set(history_fr, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(history_fr, FILL, FILL);
+    evas_object_show(history_fr);
+
+    history_bx = elm_box_add(popup);
+    evas_object_size_hint_weight_set(history_bx, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(history_bx, FILL, FILL);
+    evas_object_show(history_bx);
+
+    hbx = elm_box_add(popup);
+    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
+    evas_object_size_hint_align_set(hbx, FILL, FILL);
+    elm_box_horizontal_set(hbx, 1);
+    evas_object_show(hbx);
+
+    radio_group = radio = elm_radio_add(hbx);
+    elm_object_text_set(radio, _("Last hour"));
+    elm_radio_state_value_set(radio, 0);
+    evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(radio, FILL, FILL);
+    evas_object_smart_callback_add(radio, "changed", _main_menu_history_range_changed_cb, inst);
+    elm_box_pack_end(hbx, radio);
+    evas_object_show(radio);
+
+    radio = elm_radio_add(hbx);
+    elm_object_text_set(radio, _("Whole history"));
+    elm_radio_state_value_set(radio, 1);
+    elm_radio_group_add(radio, radio_group);
+    evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(radio, FILL, FILL);
+    evas_object_smart_callback_add(radio, "changed", _main_menu_history_range_changed_cb, inst);
+    elm_box_pack_end(hbx, radio);
+    evas_object_show(radio);
+    elm_radio_value_set(radio_group, ui->global.history_whole ? 1 : 0);
+    elm_box_pack_end(history_bx, hbx);
+    inst->history_range_radio = radio_group;
+
+    chk = elm_check_add(history_bx);
+    evas_object_size_hint_weight_set(chk, EXPAND, EXPAND);
+    evas_object_size_hint_align_set(chk, FILL, FILL);
+    elm_object_text_set(chk, _("Keep monitoring on exit?"));
+    elm_check_state_set(chk, ui->global.monitor_on_exit);
+    evas_object_show(chk);
+    evas_object_smart_callback_add(chk, "changed", _main_menu_monitor_on_exit_changed_cb, inst);
+    elm_box_pack_end(history_bx, chk);
+    inst->monitor_on_exit_check = chk;
+
+    elm_object_content_set(history_fr, history_bx);
+    elm_box_pack_end(bx, history_fr);
+
+    elm_object_content_set(fr, bx);
+    elm_box_pack_end(container, fr);
+
+    inst->updating = EINA_FALSE;
 }
 
 Evas_Object *
@@ -553,7 +704,9 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
 
     Menu_Inst *inst = calloc(1, sizeof(Menu_Inst));
     if (!inst) return NULL;
+    inst->ui = ui;
     inst->timer = ecore_timer_add(0.5, _main_menu_focus_timer_cb, inst);
+    inst->config_changed_handler = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED, _main_menu_config_changed_cb, inst);
     inst->it_focus = it_focus;
     evas_object_event_callback_add(o, EVAS_CALLBACK_DEL, _main_menu_deleted_cb, inst);
 
@@ -562,6 +715,7 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
     evas_object_move(o, ox + (ow / 2), oy + oh);
     evas_object_show(o);
 
+    _main_menu_global_options_add(inst, o, obx);
 
     if (parent == ui->cpu.win) {
         fr = elm_frame_add(o);
@@ -675,56 +829,6 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
     evas_object_show(chk);
     evas_object_smart_callback_add(chk, "changed", _main_menu_show_self_changed_cb, ui);
     elm_box_pack_end(bx, chk);
-
-    _slider_poll_delay = sli = elm_slider_add(o);
-    evas_object_size_hint_weight_set(sli, EXPAND, EXPAND);
-    elm_slider_min_max_set(sli, (double) INTERVAL_NORMAL, (double) INTERVAL_SLOW);
-    elm_slider_span_size_set(sli, 100.0);
-    elm_slider_step_set(sli, 1 / 3.0);
-    elm_slider_unit_format_set(sli, _("%1.0f s"));
-    elm_slider_indicator_visible_mode_set(sli, ELM_SLIDER_INDICATOR_VISIBLE_MODE_NONE);
-    elm_object_tooltip_text_set(sli, _("Enigmatic Update Interval"));
-    elm_slider_value_set(sli, ui->proc.poll_delay);
-    evas_object_size_hint_align_set(sli, FILL, FILL);
-    evas_object_smart_callback_add(sli, "slider,drag,stop", _main_menu_slider_poll_delay_changed_cb, ui);
-    evas_object_smart_callback_add(sli, "changed", _main_menu_slider_poll_delay_changed_cb, ui);
-    evas_object_show(sli);
-    elm_box_pack_end(bx, sli);
-
-    fr = elm_frame_add(o);
-    elm_object_text_set(fr, _("History"));
-    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(fr, FILL, FILL);
-    evas_object_show(fr);
-
-    hbx = elm_box_add(o);
-    evas_object_size_hint_weight_set(hbx, EXPAND, 0);
-    evas_object_size_hint_align_set(hbx, FILL, FILL);
-    elm_box_horizontal_set(hbx, 1);
-    evas_object_show(hbx);
-
-    radio_group = radio = elm_radio_add(hbx);
-    elm_object_text_set(radio, _("Last hour"));
-    elm_radio_state_value_set(radio, 0);
-    evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(radio, FILL, FILL);
-    evas_object_smart_callback_add(radio, "changed", _main_menu_history_range_changed_cb, ui);
-    elm_box_pack_end(hbx, radio);
-    evas_object_show(radio);
-
-    radio = elm_radio_add(hbx);
-    elm_object_text_set(radio, _("Whole history"));
-    elm_radio_state_value_set(radio, 1);
-    elm_radio_group_add(radio, radio_group);
-    evas_object_size_hint_weight_set(radio, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(radio, FILL, FILL);
-    evas_object_smart_callback_add(radio, "changed", _main_menu_history_range_changed_cb, ui);
-    elm_box_pack_end(hbx, radio);
-    evas_object_show(radio);
-    elm_radio_value_set(radio_group, ui->proc.history_whole ? 1 : 0);
-
-    elm_object_content_set(fr, hbx);
-    elm_box_pack_end(bx, fr);
 
     elm_object_content_set(options_fr, bx);
     elm_box_pack_end(obx, options_fr);
@@ -878,6 +982,7 @@ evisum_ui_shutdown(Evisum_Ui *ui) {
     ecore_thread_wait(ui->background_poll_thread, 0.5);
     evisum_background_shutdown(ui);
     evisum_engine_shutdown();
+    if (!ui->global.monitor_on_exit) enigmatic_terminate();
 
     if (ui->cpu.visual) eina_stringshare_del(ui->cpu.visual);
     free(ui);

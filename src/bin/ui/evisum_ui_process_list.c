@@ -667,7 +667,7 @@ _evisum_ui_process_list_history_time_available_get(Evisum_Ui_Process_List_View *
     uint32_t since = 0;
 
     if (!view) return EINA_FALSE;
-    if (!view->ui->proc.history_whole) since = view->history.start_time;
+    if (!view->ui->global.history_whole) since = view->history.start_time;
 
     return evisum_engine_history_time_available_since_get(t, since);
 }
@@ -991,18 +991,18 @@ _evisum_ui_process_list_history_bounds_update(Evisum_Ui_Process_List_View *view)
 
     /* The default history view is the recent contiguous range only.  Whole
      * history mode deliberately keeps the older broad bounds behaviour. */
-    if (view->history.whole != view->ui->proc.history_whole) {
-        view->history.whole = view->ui->proc.history_whole;
+    if (view->history.whole != view->ui->global.history_whole) {
+        view->history.whole = view->ui->global.history_whole;
         view->history.start_time = 0;
         view->history.end_time = 0;
     }
-    if (!view->ui->proc.history_whole) since = now > 3600 ? now - 3600 : 0;
+    if (!view->ui->global.history_whole) since = now > 3600 ? now - 3600 : 0;
     if ((view->history.start_time) && (!since || (view->history.end_time >= since))
         && (now >= view->history.start_time)) {
         start_time = view->history.start_time;
         end_time = live_time > now ? live_time : now;
     } else {
-        _evisum_ui_process_list_history_bounds_refresh(view, view->ui->proc.history_whole, since);
+        _evisum_ui_process_list_history_bounds_refresh(view, view->ui->global.history_whole, since);
         if (!view->history.start_time) {
             elm_object_disabled_set(view->summary.history_slider, 1);
             elm_object_disabled_set(view->summary.history_live_btn, 1);
@@ -1343,7 +1343,7 @@ static int
 _evisum_ui_process_list_poll_delay_get(Evisum_Ui_Process_List_View *view) {
     int delay_secs = INTERVAL_NORMAL;
 
-    if (view && view->ui) delay_secs = view->ui->proc.poll_delay;
+    if (view && view->ui) delay_secs = view->ui->global.poll_delay;
     if (delay_secs < INTERVAL_NORMAL) delay_secs = INTERVAL_NORMAL;
     else if (delay_secs > INTERVAL_SLOW)
         delay_secs = INTERVAL_SLOW;
@@ -2170,14 +2170,14 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
     evisum_ui_widget_exel_genlist_policy_set(view->widget_exel, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
     view->skip_wait = 1;
 
-    if (view->summary.visible && (view->history.whole != ui->proc.history_whole)) {
+    if (view->summary.visible && (view->history.whole != ui->global.history_whole)) {
         uint32_t since = 0, history_time;
 
         _evisum_ui_process_list_history_bounds_refresh_cancel(view);
         view->history.start_time = 0;
         view->history.end_time = 0;
 
-        if (!ui->proc.history_whole) {
+        if (!ui->global.history_whole) {
             uint32_t now = (uint32_t) time(NULL);
             since = now > 3600 ? now - 3600 : 0;
         }
@@ -2326,7 +2326,7 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui) {
     eina_lock_new(&view->history.lock);
     view->history.lock_init = EINA_TRUE;
     view->history.live = EINA_TRUE;
-    view->history.whole = ui->proc.history_whole;
+    view->history.whole = ui->global.history_whole;
     evisum_engine_history_live_set();
     view->handler
             = ecore_event_handler_add(EVISUM_EVENT_CONFIG_CHANGED, _evisum_ui_process_list_config_changed_cb, view);
