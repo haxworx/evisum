@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: evisum\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-04-02 13:16+0200\n"
+"POT-Creation-Date: 2026-07-20 12:57+0200\n"
 "PO-Revision-Date: 2023-02-10 15:43+0100\n"
 "Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <(nothing)>\n"
@@ -18,590 +18,842 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.2.2\n"
 
-#: src/bin/system/process.c:76 src/bin/ui/ui_process_list.c:927
+#: src/bin/enigmatic/system/process.c:84
 msgid "dsleep"
 msgstr "dsleep"
 
-#: src/bin/system/process.c:77 src/bin/system/process.c:84
-#: src/bin/ui/ui_process_list.c:921
+#: src/bin/enigmatic/system/process.c:85 src/bin/enigmatic/system/process.c:92
 msgid "idle"
 msgstr "უქმე"
 
-#: src/bin/system/process.c:78 src/bin/system/process.c:85
-#: src/bin/system/process.c:96 src/bin/ui/ui_process_list.c:915
-msgid "running"
+#: src/bin/enigmatic/system/process.c:86 src/bin/enigmatic/system/process.c:93
+#: src/bin/enigmatic/system/process.c:104
+#, fuzzy
+msgid "run"
 msgstr "გაშვებულია"
 
-#: src/bin/system/process.c:79 src/bin/system/process.c:86
-#: src/bin/ui/ui_process_list.c:917
-msgid "sleeping"
-msgstr "სძინავს"
+#: src/bin/enigmatic/system/process.c:87 src/bin/enigmatic/system/process.c:94
+#, fuzzy
+msgid "sleep"
+msgstr "dsleep"
 
-#: src/bin/system/process.c:80 src/bin/system/process.c:87
-#: src/bin/ui/ui_process_list.c:919
-msgid "stopped"
-msgstr "შეჩერებულია"
+#: src/bin/enigmatic/system/process.c:88 src/bin/enigmatic/system/process.c:95
+#: src/bin/ui/evisum_ui_process_view.c:799
+msgid "stop"
+msgstr "stop"
 
-#: src/bin/system/process.c:81 src/bin/ui/ui_process_list.c:925
+#: src/bin/enigmatic/system/process.c:89
 msgid "dead"
 msgstr "მკვდარი"
 
-#: src/bin/system/process.c:82 src/bin/system/process.c:92
-#: src/bin/system/process.c:95 src/bin/ui/ui_process_list.c:923
+#: src/bin/enigmatic/system/process.c:90 src/bin/enigmatic/system/process.c:100
+#: src/bin/enigmatic/system/process.c:103
 msgid "zombie"
 msgstr "ზომბი"
 
-#: src/bin/system/process.c:90
+#: src/bin/enigmatic/system/process.c:98
 msgid "wait"
 msgstr "wait"
 
-#: src/bin/system/process.c:91
+#: src/bin/enigmatic/system/process.c:99
 msgid "lock"
 msgstr "ჩაკეტვა"
 
-#: src/bin/ui/evisum_ui.c:308 src/bin/ui/evisum_ui.c:541
-#, c-format
-msgid "%1.0f secs"
+#: src/bin/ui/evisum_ui.c:521
+msgid "Global"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:536
+#, fuzzy, c-format
+msgid "%1.0f s"
 msgstr "%1.0f წამი"
 
-#: src/bin/ui/evisum_ui.c:310
-#, c-format
-msgid "%1.0f sec"
-msgstr "%1.0f წამი"
+#: src/bin/ui/evisum_ui.c:538
+msgid "Enigmatic Update Interval"
+msgstr ""
 
-#: src/bin/ui/evisum_ui.c:420 src/bin/ui/ui_process_list.c:1384
+#: src/bin/ui/evisum_ui.c:548
+msgid "History"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:565
+msgid "Last hour"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:574
+msgid "Whole history"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:589
+msgid "Keep monitoring on exit?"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:624 src/bin/ui/evisum_ui_process_list.c:1691
 msgid "Actions"
 msgstr "მოქმედებები"
 
-#: src/bin/ui/evisum_ui.c:437
+#: src/bin/ui/evisum_ui.c:641
 msgid "Processes"
 msgstr "პროცესები"
 
-#: src/bin/ui/evisum_ui.c:444
+#: src/bin/ui/evisum_ui.c:647 src/bin/ui/evisum_ui_process_list.c:121
 msgid "CPU"
 msgstr "პროცესორი"
 
-#: src/bin/ui/evisum_ui.c:451
+#: src/bin/ui/evisum_ui.c:653
 msgid "Memory"
 msgstr "მეხსიერება"
 
-#: src/bin/ui/evisum_ui.c:458 src/bin/ui/ui_disk.c:566
+#: src/bin/ui/evisum_ui.c:659 src/bin/ui/evisum_ui_disk.c:675
 msgid "Storage"
 msgstr "საცავი"
 
-#: src/bin/ui/evisum_ui.c:465 src/bin/ui/ui_sensors.c:270
+#: src/bin/ui/evisum_ui.c:665 src/bin/ui/evisum_ui_sensors.c:530
+#: src/bin/ui/evisum_ui_sensors.c:592
 msgid "Sensors"
 msgstr "სენსორები"
 
-#: src/bin/ui/evisum_ui.c:472 src/bin/ui/ui_network.c:351
+#: src/bin/ui/evisum_ui.c:671 src/bin/ui/evisum_ui_network.c:551
 msgid "Network"
 msgstr "ქსელი"
 
-#: src/bin/ui/evisum_ui.c:486
+#: src/bin/ui/evisum_ui.c:684
 msgid "Effects"
 msgstr "ეფექტები"
 
-#: src/bin/ui/evisum_ui.c:500 src/bin/ui/ui_util.c:421
+#: src/bin/ui/evisum_ui.c:697
 msgid "About"
 msgstr "შესახებ"
 
-#: src/bin/ui/evisum_ui.c:525 src/bin/ui/ui_cpu.c:728
+#: src/bin/ui/evisum_ui.c:724
+msgid "Visuals"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:754
+#, fuzzy
+msgid "Storage Graph"
+msgstr "საცავი"
+
+#: src/bin/ui/evisum_ui.c:766
+#, fuzzy
+msgid "Usage"
+msgstr "გამოყენება"
+
+#: src/bin/ui/evisum_ui.c:775
+msgid "Transfer"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:794 src/bin/ui/visuals/cpu_default.c:544
 msgid "Options"
 msgstr "გამართვა"
 
-#: src/bin/ui/evisum_ui.c:544
-msgid "Poll delay"
-msgstr "გამოთხოვის დაყოვნება"
-
-#: src/bin/ui/evisum_ui.c:565
+#: src/bin/ui/evisum_ui.c:808
 msgid "Show kernel threads?"
 msgstr "ვაჩვენო ბირთვის ნაკადები?"
 
-#: src/bin/ui/evisum_ui.c:576
+#: src/bin/ui/evisum_ui.c:818
 msgid "User only?"
 msgstr "მხოლოდ მომხმარებლის?"
 
-#: src/bin/ui/evisum_ui.c:587
+#: src/bin/ui/evisum_ui.c:827
+msgid "Show Evisum and Enigmatic?"
+msgstr ""
+
+#: src/bin/ui/evisum_ui.c:837
 msgid "Display"
 msgstr "დროის ჩვენება"
 
-#: src/bin/ui/evisum_ui.c:600
-msgid "Display scroll bar?"
+#: src/bin/ui/evisum_ui.c:850
+#, fuzzy
+msgid "Display status bar?"
 msgstr "ვაჩვენო ჩოჩიას ზოლი?"
 
-#: src/bin/ui/evisum_ui.c:616
+#: src/bin/ui/evisum_ui.c:865
 msgid "Alpha"
 msgstr "ალფა"
 
-#: src/bin/ui/evisum_ui.c:628
+#: src/bin/ui/evisum_ui.c:876 src/bin/ui/evisum_ui_process_list.c:253
+#: src/bin/ui/evisum_ui_process_list.c:616
 #, c-format
 msgid "%1.0f %%"
 msgstr "%1.0f %%"
 
-#: src/bin/ui/ui_cpu.c:651
-msgid "Legend"
-msgstr "შინაარსი"
-
-#: src/bin/ui/ui_cpu.c:741
-msgid "Overlay CPU frequency?"
-msgstr "ვაჩვენო ზემოდან CPU-ის სიხშირე?"
-
-#: src/bin/ui/ui_cpu.c:750
-msgid "Overlay CPU temperatures?"
-msgstr "ვაჩვენო ზემოდან CPU-ის ტემპერატურა?"
-
-#: src/bin/ui/ui_cpu.c:759
-msgid "Confused?"
-msgstr "დაიბენით?"
-
-#: src/bin/ui/ui_cpu.c:805
+#: src/bin/ui/evisum_ui_cpu.c:126
 msgid "CPU Activity"
 msgstr "CPU-ის აქტივობა"
 
-#: src/bin/ui/ui_disk.c:588
-msgid "device"
-msgstr "მოწყობილობა"
+#: src/bin/ui/evisum_ui_disk.c:239 src/bin/ui/evisum_ui_memory.c:173
+#: src/bin/ui/evisum_ui_process_view.c:537
+msgid "0 B / 0 B"
+msgstr ""
 
-#: src/bin/ui/ui_disk.c:597
-msgid "mount"
+#: src/bin/ui/evisum_ui_disk.c:314
+#, c-format
+msgid "Read %s | Write %s"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_disk.c:732
+#, fuzzy
+msgid "Mounts"
 msgstr "მიმაგრება"
 
-#: src/bin/ui/ui_disk.c:606
-msgid "type"
-msgstr "ტიპი"
-
-#: src/bin/ui/ui_disk.c:615
-msgid "total"
-msgstr "ჯამში"
-
-#: src/bin/ui/ui_disk.c:626
-msgid "used"
-msgstr "გამოყენებულია"
-
-#: src/bin/ui/ui_disk.c:637
-msgid "free"
-msgstr "თავისუფალია"
-
-#: src/bin/ui/ui_disk.c:648
-msgid "usage"
-msgstr "გამოყენება"
-
-#: src/bin/ui/ui_memory.c:226
-msgid "Memory Usage"
-msgstr "მეხსიერების გამოყენება"
-
-#: src/bin/ui/ui_memory.c:253
+#: src/bin/ui/evisum_ui_memory.c:247
 msgid "Used"
 msgstr "გამოყენებულია"
 
-#: src/bin/ui/ui_memory.c:260
+#: src/bin/ui/evisum_ui_memory.c:251
 msgid "Cached"
 msgstr "დაქეშილი"
 
-#: src/bin/ui/ui_memory.c:267
+#: src/bin/ui/evisum_ui_memory.c:255
 msgid "Buffered"
 msgstr "ბუფერი"
 
-#: src/bin/ui/ui_memory.c:274
+#: src/bin/ui/evisum_ui_memory.c:259
 msgid "Shared"
 msgstr "გაზიარებული"
 
-#: src/bin/ui/ui_memory.c:281
+#: src/bin/ui/evisum_ui_memory.c:263
 msgid "Swapped"
 msgstr "სვოპში"
 
-#: src/bin/ui/ui_memory.c:290
+#: src/bin/ui/evisum_ui_memory.c:268
 msgid "Video"
 msgstr "ვიდეო"
 
-#: src/bin/ui/ui_network.c:163
-msgid "<hilight>Total In/Out</>"
-msgstr "<hilight>სულ შეყვანა/გატანა</>"
+#: src/bin/ui/evisum_ui_memory.c:474
+msgid "Memory Usage"
+msgstr "მეხსიერების გამოყენება"
 
-#: src/bin/ui/ui_network.c:174
-msgid "<hilight>Peak In/Out</>"
-msgstr "<hilight>პიკური შეტანა/გატანა</>"
+#: src/bin/ui/evisum_ui_memory.c:537
+#, fuzzy
+msgid "Memory Types"
+msgstr "მეხსიერების ზომა"
 
-#: src/bin/ui/ui_network.c:185
-msgid "<hilight>In/Out</>"
-msgstr "<hilight>შეტანა/გატანა</>"
+#: src/bin/ui/evisum_ui_network.c:162 src/bin/ui/evisum_ui_process_list.c:486
+#: src/bin/ui/evisum_ui_process_view.c:277
+msgid "B/s"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:121
+#: src/bin/ui/evisum_ui_network.c:167 src/bin/ui/evisum_ui_process_list.c:491
+#: src/bin/ui/evisum_ui_process_view.c:283
+msgid "GB/s"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_network.c:170 src/bin/ui/evisum_ui_process_list.c:494
+#: src/bin/ui/evisum_ui_process_view.c:286
+msgid "MB/s"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_network.c:173 src/bin/ui/evisum_ui_process_list.c:497
+#: src/bin/ui/evisum_ui_process_view.c:289
+msgid "KB/s"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_network.c:606
+msgid "Interfaces"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:117
+msgid "COMMAND"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:117
 msgid "Command"
 msgstr "ბრძანება"
 
-#: src/bin/ui/ui_process_list.c:123
+#: src/bin/ui/evisum_ui_process_list.c:118
+msgid "USER"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:118
 msgid "User"
 msgstr "მომხმარებელი"
 
-#: src/bin/ui/ui_process_list.c:125
+#: src/bin/ui/evisum_ui_process_list.c:119
+#, fuzzy
+msgid "PID"
+msgstr "PID:"
+
+#: src/bin/ui/evisum_ui_process_list.c:119
 msgid "Process ID"
 msgstr "პროცესის ID"
 
-#: src/bin/ui/ui_process_list.c:127 src/bin/ui/ui_process_list.c:1355
-#: src/bin/ui/ui_process_view.c:1669
+#: src/bin/ui/evisum_ui_process_list.c:120
+msgid "THR"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:120
 msgid "Threads"
 msgstr "ნაკადები"
 
-#: src/bin/ui/ui_process_list.c:129
+#: src/bin/ui/evisum_ui_process_list.c:121
 msgid "CPU #"
 msgstr "CPU #"
 
-#: src/bin/ui/ui_process_list.c:131
+#: src/bin/ui/evisum_ui_process_list.c:122
+msgid "PRI"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:122
 msgid "Priority"
 msgstr "პრიორიტეტი"
 
-#: src/bin/ui/ui_process_list.c:133
+#: src/bin/ui/evisum_ui_process_list.c:123
+msgid "NI"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:123
 msgid "Nice"
 msgstr "ნისი"
 
-#: src/bin/ui/ui_process_list.c:135
+#: src/bin/ui/evisum_ui_process_list.c:124
+msgid "FD"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:124
 msgid "Open Files"
 msgstr "ფაილების გახსნა"
 
-#: src/bin/ui/ui_process_list.c:137
+#: src/bin/ui/evisum_ui_process_list.c:125
+msgid "SIZE"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:125
 msgid "Memory Size"
 msgstr "მეხსიერების ზომა"
 
-#: src/bin/ui/ui_process_list.c:139
+#: src/bin/ui/evisum_ui_process_list.c:126
+msgid "VIRT"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:126
 msgid "Memory Virtual"
 msgstr "ვირტუალური მეხსიერება"
 
-#: src/bin/ui/ui_process_list.c:141
+#: src/bin/ui/evisum_ui_process_list.c:127
+msgid "RES"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:127
 msgid "Memory Reserved"
 msgstr "დარეზერვებულია მეხსიერება"
 
-#: src/bin/ui/ui_process_list.c:143
+#: src/bin/ui/evisum_ui_process_list.c:128
+msgid "SHR"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:128
 msgid "Memory Shared"
 msgstr "გაზიარებული მეხსიერება"
 
-#: src/bin/ui/ui_process_list.c:145
+#: src/bin/ui/evisum_ui_process_list.c:129
+msgid "S"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:129
 msgid "State"
 msgstr "მდგომარეობა"
 
-#: src/bin/ui/ui_process_list.c:147
+#: src/bin/ui/evisum_ui_process_list.c:130
+msgid "TIME+"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:130
 msgid "Time"
 msgstr "დრო"
 
-#: src/bin/ui/ui_process_list.c:149
+#: src/bin/ui/evisum_ui_process_list.c:131
+msgid "CPU%"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:131
 msgid "CPU Usage"
 msgstr "CPU -ის გამოყენება"
 
-#: src/bin/ui/ui_process_list.c:162
-msgid "command"
-msgstr "ბრძანება"
+#: src/bin/ui/evisum_ui_process_list.c:132
+msgid "RX/s"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:164
-msgid "user"
-msgstr "მომხმარებელი"
+#: src/bin/ui/evisum_ui_process_list.c:132
+#, fuzzy
+msgid "Network In"
+msgstr "ქსელი"
 
-#: src/bin/ui/ui_process_list.c:166
-msgid "pid"
-msgstr "pid"
+#: src/bin/ui/evisum_ui_process_list.c:133
+msgid "TX/s"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:168
-msgid "thr"
-msgstr "ნკდ"
+#: src/bin/ui/evisum_ui_process_list.c:133
+#, fuzzy
+msgid "Network Out"
+msgstr "ქსელი"
 
-#: src/bin/ui/ui_process_list.c:170
-msgid "cpu"
-msgstr "პროცესორი"
+#: src/bin/ui/evisum_ui_process_list.c:134
+msgid "R/s"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:172
-msgid "pri"
-msgstr "პრი"
+#: src/bin/ui/evisum_ui_process_list.c:134
+msgid "Disk Read"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:174
-msgid "nice"
-msgstr "პრიორიტეტი"
+#: src/bin/ui/evisum_ui_process_list.c:135
+msgid "W/s"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:176
-msgid "files"
-msgstr "ფაილები"
+#: src/bin/ui/evisum_ui_process_list.c:135
+msgid "Disk Write"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:178
-msgid "size"
-msgstr "ზომა"
+#: src/bin/ui/evisum_ui_process_list.c:609
+#: src/bin/ui/evisum_ui_process_list.c:610
+#: src/bin/ui/evisum_ui_process_list.c:1689
+#: src/bin/ui/evisum_ui_process_view.c:444
+#: src/bin/ui/evisum_ui_process_view.c:445
+#: src/bin/ui/evisum_ui_process_view.c:446
+#: src/bin/ui/evisum_ui_process_view.c:447
+#: src/bin/ui/evisum_ui_process_view.c:571
+msgid "-"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:180
-msgid "virt"
-msgstr "ვირტ"
-
-#: src/bin/ui/ui_process_list.c:182
-msgid "res"
-msgstr "რეს"
-
-#: src/bin/ui/ui_process_list.c:184
-msgid "shr"
-msgstr "გაზ"
-
-#: src/bin/ui/ui_process_list.c:186 src/bin/ui/ui_process_view.c:1440
-msgid "state"
-msgstr "მდგომარეობა"
-
-#: src/bin/ui/ui_process_list.c:188
-msgid "time"
-msgstr "დრო"
-
-#: src/bin/ui/ui_process_list.c:190 src/bin/ui/ui_process_view.c:1461
-msgid "cpu %"
-msgstr "cpu %"
-
-#: src/bin/ui/ui_process_list.c:888
+#: src/bin/ui/evisum_ui_process_list.c:691
 #, c-format
-msgid "%i processes: "
-msgstr "%i პროცესი: "
+msgid "Process history: %s"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:890
+#: src/bin/ui/evisum_ui_process_list.c:692
 #, c-format
-msgid "%i running, "
-msgstr "%i გაშვებულია, "
+msgid "Process history: %s (no snapshot)"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:892
-#, c-format
-msgid "%i sleeping, "
-msgstr "%i-ს სძინავს, "
+#: src/bin/ui/evisum_ui_process_list.c:777
+msgid "Loading snapshot"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:894
-#, c-format
-msgid "%i stopped, "
-msgstr "%i გაჩერებულია, "
+#: src/bin/ui/evisum_ui_process_list.c:1233
+#, fuzzy, c-format
+msgid "%1.2f %%"
+msgstr "%1.0f %%"
 
-#: src/bin/ui/ui_process_list.c:896
-#, c-format
-msgid "%i idle, "
-msgstr "%i უქმეა, "
+#: src/bin/ui/evisum_ui_process_list.c:1268
+msgid "Live"
+msgstr ""
 
-#: src/bin/ui/ui_process_list.c:898
-#, c-format
-msgid "%i dead, "
-msgstr "%i მკვდარია, "
-
-#: src/bin/ui/ui_process_list.c:900
-#, c-format
-msgid "%i dsleep, "
-msgstr "%i ღრმძილი, "
-
-#: src/bin/ui/ui_process_list.c:902
-#, c-format
-msgid "%i zombie, "
-msgstr "%i ზომბი, "
-
-#: src/bin/ui/ui_process_list.c:1300
+#: src/bin/ui/evisum_ui_process_list.c:1629
 msgid "Debug"
 msgstr "პროგრამის შეცდომის პოვნა"
 
-#: src/bin/ui/ui_process_list.c:1351
+#: src/bin/ui/evisum_ui_process_list.c:1663
 msgid "General"
 msgstr "ზოგადი"
 
-#: src/bin/ui/ui_process_list.c:1353 src/bin/ui/ui_process_view.c:1658
+#: src/bin/ui/evisum_ui_process_list.c:1665
+#: src/bin/ui/evisum_ui_process_view.c:950
 msgid "Children"
 msgstr "ბავშვები"
 
-#: src/bin/ui/ui_process_list.c:1357 src/bin/ui/ui_process_view.c:1680
+#: src/bin/ui/evisum_ui_process_list.c:1667
+#: src/bin/ui/evisum_ui_process_view.c:961
 msgid "Manual"
 msgstr "ხელით"
 
-#: src/bin/ui/ui_process_list.c:1389
+#: src/bin/ui/evisum_ui_process_list.c:1695
 msgid "Start"
 msgstr "გაშვება"
 
-#: src/bin/ui/ui_process_list.c:1393
+#: src/bin/ui/evisum_ui_process_list.c:1699
 msgid "Stop"
 msgstr "შეჩერება"
 
-#: src/bin/ui/ui_process_list.c:1401
+#: src/bin/ui/evisum_ui_process_list.c:1703
+msgid "Kill"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_list.c:1707
 msgid "Info"
 msgstr "ინფორმაცია"
 
-#: src/bin/ui/ui_process_list.c:1406
+#: src/bin/ui/evisum_ui_process_list.c:1711
 msgid "Cancel"
 msgstr "გაუქმება"
 
-#: src/bin/ui/ui_process_list.c:1569
+#: src/bin/ui/evisum_ui_process_list.c:1844
 msgid "Menu"
 msgstr "მენიუ"
 
-#: src/bin/ui/ui_process_list.c:1879
+#: src/bin/ui/evisum_ui_process_list.c:1981
 msgid "Search"
 msgstr "ძებნა"
 
-#: src/bin/ui/ui_process_list.c:2196
-msgid "Process Explorer"
-msgstr "პროცესების ბრაუზერი"
+#: src/bin/ui/evisum_ui_process_list.c:2336
+msgid "Evisum"
+msgstr ""
 
-#: src/bin/ui/ui_process_view.c:680
-#, c-format
-msgid "<b>CPU: %.0f%%<br>Size: %s<br>Reserved: %s<br>Virtual: %s</>"
-msgstr "<b>CPU: %.0f%%<br>ზომა: %s<br>დარეზერვებული: %s<br>ვირტუალური: %s</>"
-
-#: src/bin/ui/ui_process_view.c:857
+#: src/bin/ui/evisum_ui_process_view.c:314
 #, c-format
 msgid "No documentation found for %s."
 msgstr "%s-სთვის დოკუმენტაცია ვერ ვიპოვე."
 
-#: src/bin/ui/ui_process_view.c:986
+#: src/bin/ui/evisum_ui_process_view.c:362
+msgid "stopped"
+msgstr "შეჩერებულია"
+
+#: src/bin/ui/evisum_ui_process_view.c:454
 #, c-format
 msgid "%s (%d) - Not running"
 msgstr "%s (%d) - გაშვებული არაა"
 
-#: src/bin/ui/ui_process_view.c:1153
+#: src/bin/ui/evisum_ui_process_view.c:649
 msgid "Command:"
 msgstr "ბრძანება:"
 
-#: src/bin/ui/ui_process_view.c:1162
+#: src/bin/ui/evisum_ui_process_view.c:658
 msgid "Command line:"
 msgstr "ბრძანების სტრიქონი:"
 
-#: src/bin/ui/ui_process_view.c:1167
-msgid "PID:"
-msgstr "PID:"
-
-#: src/bin/ui/ui_process_view.c:1172
-msgid "Username:"
-msgstr "მომხმარებელი:"
-
-#: src/bin/ui/ui_process_view.c:1177
-msgid "UID:"
-msgstr "UID:"
-
-#: src/bin/ui/ui_process_view.c:1182
-msgid "PPID:"
-msgstr "PPID:"
-
-#: src/bin/ui/ui_process_view.c:1188
-msgid "WQ #:"
-msgstr "WQ #:"
-
-#: src/bin/ui/ui_process_view.c:1190
-msgid "CPU #:"
-msgstr "CPU #:"
-
-#: src/bin/ui/ui_process_view.c:1196
-msgid "Threads:"
-msgstr "ნაკადები:"
-
-#: src/bin/ui/ui_process_view.c:1201
-msgid "Open Files:"
-msgstr "ღია ფაილები:"
-
-#: src/bin/ui/ui_process_view.c:1206
+#: src/bin/ui/evisum_ui_process_view.c:663
 msgid " Memory :"
 msgstr " მეხსიერება:"
 
-#: src/bin/ui/ui_process_view.c:1211
+#: src/bin/ui/evisum_ui_process_view.c:668
 msgid " Shared memory:"
 msgstr " გაზიარებული მეხსიერება:"
 
-#: src/bin/ui/ui_process_view.c:1216
+#: src/bin/ui/evisum_ui_process_view.c:673
 msgid " Resident memory:"
 msgstr " რეზიდენტული მეხსიერება:"
 
-#: src/bin/ui/ui_process_view.c:1221
+#: src/bin/ui/evisum_ui_process_view.c:678
 msgid " Virtual memory:"
 msgstr " ვირტუალური მეხსიერება:"
 
-#: src/bin/ui/ui_process_view.c:1226
-msgid " Start time:"
-msgstr " დაწყების დრო:"
-
-#: src/bin/ui/ui_process_view.c:1231
-msgid " Run time:"
-msgstr " გაშვებულობის დრო:"
-
-#: src/bin/ui/ui_process_view.c:1236
-msgid "Nice:"
-msgstr "პრიო:"
-
-#: src/bin/ui/ui_process_view.c:1241
-msgid "Priority:"
-msgstr "პრიორიტეტი:"
-
-#: src/bin/ui/ui_process_view.c:1246
-msgid "State:"
-msgstr "მდგომარეობა:"
-
-#: src/bin/ui/ui_process_view.c:1251
+#: src/bin/ui/evisum_ui_process_view.c:683
 msgid "CPU %:"
 msgstr "CPU %:"
 
-#: src/bin/ui/ui_process_view.c:1275
-msgid "stop"
-msgstr "stop"
+#: src/bin/ui/evisum_ui_process_view.c:688
+msgid "PID:"
+msgstr "PID:"
 
-#: src/bin/ui/ui_process_view.c:1281
+#: src/bin/ui/evisum_ui_process_view.c:693
+msgid "Username:"
+msgstr "მომხმარებელი:"
+
+#: src/bin/ui/evisum_ui_process_view.c:698
+msgid "UID:"
+msgstr "UID:"
+
+#: src/bin/ui/evisum_ui_process_view.c:706
+msgid "PPID:"
+msgstr "PPID:"
+
+#: src/bin/ui/evisum_ui_process_view.c:715
+msgid "WQ #:"
+msgstr "WQ #:"
+
+#: src/bin/ui/evisum_ui_process_view.c:717
+msgid "CPU #:"
+msgstr "CPU #:"
+
+#: src/bin/ui/evisum_ui_process_view.c:723
+msgid "Threads:"
+msgstr "ნაკადები:"
+
+#: src/bin/ui/evisum_ui_process_view.c:728
+msgid "Open Files:"
+msgstr "ღია ფაილები:"
+
+#: src/bin/ui/evisum_ui_process_view.c:734
+msgid " Disk Read:"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_view.c:739
+msgid " Disk Write:"
+msgstr ""
+
+#: src/bin/ui/evisum_ui_process_view.c:744
+#, fuzzy
+msgid " Network In:"
+msgstr "ქსელი"
+
+#: src/bin/ui/evisum_ui_process_view.c:749
+#, fuzzy
+msgid " Network Out:"
+msgstr "ქსელი"
+
+#: src/bin/ui/evisum_ui_process_view.c:755
+msgid " Start time:"
+msgstr " დაწყების დრო:"
+
+#: src/bin/ui/evisum_ui_process_view.c:760
+msgid " Run time:"
+msgstr " გაშვებულობის დრო:"
+
+#: src/bin/ui/evisum_ui_process_view.c:765
+msgid "Nice:"
+msgstr "პრიო:"
+
+#: src/bin/ui/evisum_ui_process_view.c:770
+msgid "Priority:"
+msgstr "პრიორიტეტი:"
+
+#: src/bin/ui/evisum_ui_process_view.c:775
+msgid "State:"
+msgstr "მდგომარეობა:"
+
+#: src/bin/ui/evisum_ui_process_view.c:804
 msgid "start"
 msgstr "გაშვება"
 
-#: src/bin/ui/ui_process_view.c:1287
+#: src/bin/ui/evisum_ui_process_view.c:809
 msgid "kill"
 msgstr "მოკვლა"
 
-#: src/bin/ui/ui_process_view.c:1422
-msgid "id"
-msgstr "id"
-
-#: src/bin/ui/ui_process_view.c:1431
-msgid "name"
-msgstr "სახელი"
-
-#: src/bin/ui/ui_process_view.c:1449
-msgid "cpu id"
-msgstr "cpu id"
-
-#: src/bin/ui/ui_process_view.c:1647
+#: src/bin/ui/evisum_ui_process_view.c:939
 msgid "Process"
 msgstr "პროცესი"
 
-#: src/bin/ui/ui_process_view.c:1787
+#: src/bin/ui/evisum_ui_process_view.c:1071
 msgid "Unknown"
 msgstr "უცნობი"
 
-#: src/bin/ui/ui_sensors.c:292
-msgid "Power"
-msgstr "კვება"
+#: src/bin/ui/evisum_ui_sensors.c:107
+#, fuzzy
+msgid "Sensor"
+msgstr "სენსორები"
 
-#: src/bin/ui/ui_sensors.c:347
-msgid "Select..."
-msgstr "აირჩიეთ..."
+#: src/bin/ui/evisum_ui_sensors.c:208
+#, c-format
+msgid "%1.1f°C"
+msgstr ""
 
-#: src/bin/ui/ui_sensors.c:358
-msgid "Thermal"
-msgstr "თერმალი"
-
-#: src/bin/ui/ui_util.c:114
+#: src/bin/ui/evisum_ui_util_text.c:15
 msgid "B"
 msgstr "სი"
 
-#: src/bin/ui/ui_util.c:114
-msgid "K"
-msgstr "K"
+#: src/bin/ui/evisum_ui_util_text.c:15
+msgid "KiB"
+msgstr ""
 
-#: src/bin/ui/ui_util.c:114
-msgid "M"
-msgstr "ს"
+#: src/bin/ui/evisum_ui_util_text.c:15
+msgid "MiB"
+msgstr ""
 
-#: src/bin/ui/ui_util.c:114
-msgid "G"
-msgstr "გ"
+#: src/bin/ui/evisum_ui_util_text.c:15
+msgid "GiB"
+msgstr ""
 
-#: src/bin/ui/ui_util.c:115
-msgid "T"
-msgstr "სა"
+#: src/bin/ui/evisum_ui_util_text.c:15
+msgid "TiB"
+msgstr ""
 
-#: src/bin/ui/ui_util.c:115
-msgid "P"
-msgstr "P"
+#: src/bin/ui/evisum_ui_util_text.c:15
+msgid "PiB"
+msgstr ""
 
-#: src/bin/ui/ui_util.c:115
-msgid "E"
-msgstr "მი"
+#: src/bin/ui/evisum_ui_util_text.c:15
+msgid "EiB"
+msgstr ""
 
-#: src/bin/ui/ui_util.c:115
-msgid "Z"
-msgstr "ზეტა"
+#: src/bin/ui/evisum_ui_util_text.c:15
+msgid "ZiB"
+msgstr ""
 
-#: src/bin/ui/ui_util.c:511
-msgid "Close"
-msgstr "დაკეტვა"
+#: src/bin/ui/visuals/cpu_bars.c:207 src/bin/ui/visuals/cpu_basic.c:241
+#: src/bin/ui/visuals/cpu_default.c:453
+msgid "Legend"
+msgstr "შინაარსი"
+
+#: src/bin/ui/visuals/cpu_bars.c:243 src/bin/ui/visuals/cpu_basic.c:277
+#: src/bin/ui/visuals/cpu_default.c:522
+msgid "Description"
+msgstr ""
+
+#: src/bin/ui/visuals/cpu_bars.c:251
+msgid "<align=left>This view shows CPU usage only.</align>"
+msgstr ""
+
+#: src/bin/ui/visuals/cpu_basic.c:285
+msgid ""
+"<align=left>Size shows activity level (frequency when available, otherwise "
+"load). Color and the 0%-100% legend show CPU usage percentage.</align>"
+msgstr ""
+
+#: src/bin/ui/visuals/cpu_default.c:531
+msgid ""
+"<align=left>This view shows CPU activity over time. It can also show "
+"frequency and temperature when available.</align>"
+msgstr ""
+
+#: src/bin/ui/visuals/cpu_default.c:557
+msgid "Overlay CPU frequency?"
+msgstr "ვაჩვენო ზემოდან CPU-ის სიხშირე?"
+
+#: src/bin/ui/visuals/cpu_default.c:566
+msgid "Overlay CPU temperatures?"
+msgstr "ვაჩვენო ზემოდან CPU-ის ტემპერატურა?"
+
+#: src/bin/ui/visuals/cpu_default.c:576
+msgid "Confused?"
+msgstr "დაიბენით?"
+
+#~ msgid "sleeping"
+#~ msgstr "სძინავს"
+
+#, c-format
+#~ msgid "%1.0f secs"
+#~ msgstr "%1.0f წამი"
+
+#~ msgid "Poll delay"
+#~ msgstr "გამოთხოვის დაყოვნება"
+
+#~ msgid "device"
+#~ msgstr "მოწყობილობა"
+
+#~ msgid "type"
+#~ msgstr "ტიპი"
+
+#~ msgid "total"
+#~ msgstr "ჯამში"
+
+#~ msgid "used"
+#~ msgstr "გამოყენებულია"
+
+#~ msgid "free"
+#~ msgstr "თავისუფალია"
+
+#~ msgid "<hilight>Total In/Out</>"
+#~ msgstr "<hilight>სულ შეყვანა/გატანა</>"
+
+#~ msgid "<hilight>Peak In/Out</>"
+#~ msgstr "<hilight>პიკური შეტანა/გატანა</>"
+
+#~ msgid "<hilight>In/Out</>"
+#~ msgstr "<hilight>შეტანა/გატანა</>"
+
+#~ msgid "command"
+#~ msgstr "ბრძანება"
+
+#~ msgid "user"
+#~ msgstr "მომხმარებელი"
+
+#~ msgid "pid"
+#~ msgstr "pid"
+
+#~ msgid "thr"
+#~ msgstr "ნკდ"
+
+#~ msgid "cpu"
+#~ msgstr "პროცესორი"
+
+#~ msgid "pri"
+#~ msgstr "პრი"
+
+#~ msgid "nice"
+#~ msgstr "პრიორიტეტი"
+
+#~ msgid "files"
+#~ msgstr "ფაილები"
+
+#~ msgid "size"
+#~ msgstr "ზომა"
+
+#~ msgid "virt"
+#~ msgstr "ვირტ"
+
+#~ msgid "res"
+#~ msgstr "რეს"
+
+#~ msgid "shr"
+#~ msgstr "გაზ"
+
+#~ msgid "state"
+#~ msgstr "მდგომარეობა"
+
+#~ msgid "time"
+#~ msgstr "დრო"
+
+#~ msgid "cpu %"
+#~ msgstr "cpu %"
+
+#, c-format
+#~ msgid "%i processes: "
+#~ msgstr "%i პროცესი: "
+
+#, c-format
+#~ msgid "%i running, "
+#~ msgstr "%i გაშვებულია, "
+
+#, c-format
+#~ msgid "%i sleeping, "
+#~ msgstr "%i-ს სძინავს, "
+
+#, c-format
+#~ msgid "%i stopped, "
+#~ msgstr "%i გაჩერებულია, "
+
+#, c-format
+#~ msgid "%i idle, "
+#~ msgstr "%i უქმეა, "
+
+#, c-format
+#~ msgid "%i dead, "
+#~ msgstr "%i მკვდარია, "
+
+#, c-format
+#~ msgid "%i dsleep, "
+#~ msgstr "%i ღრმძილი, "
+
+#, c-format
+#~ msgid "%i zombie, "
+#~ msgstr "%i ზომბი, "
+
+#~ msgid "Process Explorer"
+#~ msgstr "პროცესების ბრაუზერი"
+
+#, c-format
+#~ msgid "<b>CPU: %.0f%%<br>Size: %s<br>Reserved: %s<br>Virtual: %s</>"
+#~ msgstr ""
+#~ "<b>CPU: %.0f%%<br>ზომა: %s<br>დარეზერვებული: %s<br>ვირტუალური: %s</>"
+
+#~ msgid "id"
+#~ msgstr "id"
+
+#~ msgid "name"
+#~ msgstr "სახელი"
+
+#~ msgid "cpu id"
+#~ msgstr "cpu id"
+
+#~ msgid "Power"
+#~ msgstr "კვება"
+
+#~ msgid "Select..."
+#~ msgstr "აირჩიეთ..."
+
+#~ msgid "Thermal"
+#~ msgstr "თერმალი"
+
+#~ msgid "K"
+#~ msgstr "K"
+
+#~ msgid "M"
+#~ msgstr "ს"
+
+#~ msgid "G"
+#~ msgstr "გ"
+
+#~ msgid "T"
+#~ msgstr "სა"
+
+#~ msgid "P"
+#~ msgstr "P"
+
+#~ msgid "E"
+#~ msgstr "მი"
+
+#~ msgid "Z"
+#~ msgstr "ზეტა"
+
+#~ msgid "Close"
+#~ msgstr "დაკეტვა"
