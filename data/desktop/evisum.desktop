@@ -4,6 +4,7 @@ Name=Evisum
 GenericName=System Monitor
 GenericName[fr]=Activité des processus
 GenericName[it]=Attività del sistema
+GenericName[pl]=Aktywność systemu
 GenericName[ru]=Системная активность
 Exec=evisum
 Icon=evisum

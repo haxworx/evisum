@@ -3,6 +3,7 @@ Type=Application
 Name=Memory Usage
 Name[fr]=Utilisation de la mémoire
 Name[it]=Utilizzo della memoria
+Name[pl]=Wykorzystanie pamięci
 Exec=evisum -m
 Icon=evisum_mem
 Categories=System;Monitor;
