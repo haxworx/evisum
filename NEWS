@@ -1,4 +1,14 @@
 =============
+Evisum 2.0.13
+=============
+
+  * Update translations (thanks diekrz2).
+  * Make swatches in sensor view disabled on first run.
+  * Scroll content in storage when necessary.
+  * French translations (thank you maxerba).
+  * ...
+
+=============
 Evisum 2.0.12
 =============
 

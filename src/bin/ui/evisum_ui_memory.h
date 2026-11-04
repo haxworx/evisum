@@ -4,6 +4,7 @@
 #include "evisum_ui.h"
 #include "../engine/evisum_engine.h"
 
-void evisum_ui_mem_win_add(Evisum_Ui *ui);
+void
+evisum_ui_mem_win_add(Evisum_Ui *ui);
 
 #endif

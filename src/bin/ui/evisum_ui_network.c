@@ -9,20 +9,21 @@
    Authored by Alastair Poole and Codex AI Agent.
 */
 
-typedef struct {
-    Ecore_Thread *thread;
-    Evas_Object *win;
-    Evas_Object *menu;
-    Evas_Object *graph_bg;
-    Evas_Object *graph_img;
-    Evas_Object *legend_bx;
-    Elm_Layout *btn_menu;
-    Eina_Bool btn_visible;
+typedef struct
+{
+   Ecore_Thread *thread;
+   Evas_Object *win;
+   Evas_Object *menu;
+   Evas_Object *graph_bg;
+   Evas_Object *graph_img;
+   Evas_Object *legend_bx;
+   Elm_Layout *btn_menu;
+   Eina_Bool btn_visible;
 
-    Eina_List *interfaces;
-    double graph_peak;
+   Eina_List *interfaces;
+   double graph_peak;
 
-    Evisum_Ui *ui;
+   Evisum_Ui *ui;
 } Evisum_Ui_Network_View;
 
 #define NETWORK_GRAPH_SAMPLES       120
@@ -31,341 +32,379 @@ typedef struct {
 #define WIN_WIDTH                   320
 #define WIN_HEIGHT                  480
 
-typedef enum {
-    NETWORK_LINE_IN,
-    NETWORK_LINE_OUT,
-    NETWORK_LINE_MAX
+typedef enum
+{
+   NETWORK_LINE_IN,
+   NETWORK_LINE_OUT,
+   NETWORK_LINE_MAX
 } Network_Line;
 
-typedef struct {
-    char name[255];
+typedef struct
+{
+   char name[255];
 
-    uint64_t in;
-    uint64_t out;
-    uint64_t peak_in;
-    uint64_t peak_out;
+   uint64_t in;
+   uint64_t out;
+   uint64_t peak_in;
+   uint64_t peak_out;
 
-    double history[NETWORK_LINE_MAX][NETWORK_GRAPH_SAMPLES];
-    int history_count[NETWORK_LINE_MAX];
+   double history[NETWORK_LINE_MAX][NETWORK_GRAPH_SAMPLES];
+   int history_count[NETWORK_LINE_MAX];
 
-    uint8_t color_r[NETWORK_LINE_MAX];
-    uint8_t color_g[NETWORK_LINE_MAX];
-    uint8_t color_b[NETWORK_LINE_MAX];
+   uint8_t color_r[NETWORK_LINE_MAX];
+   uint8_t color_g[NETWORK_LINE_MAX];
+   uint8_t color_b[NETWORK_LINE_MAX];
 
-    Evas_Object *legend_row;
-    Evas_Object *legend_btn[NETWORK_LINE_MAX];
-    Evas_Object *legend_swatch[NETWORK_LINE_MAX];
-    Evas_Object *legend_label;
-    void *legend_data[NETWORK_LINE_MAX];
-    Eina_Bool enabled[NETWORK_LINE_MAX];
-    Evisum_Ui_Network_View *view;
+   Evas_Object *legend_row;
+   Evas_Object *legend_btn[NETWORK_LINE_MAX];
+   Evas_Object *legend_swatch[NETWORK_LINE_MAX];
+   Evas_Object *legend_label;
+   void *legend_data[NETWORK_LINE_MAX];
+   Eina_Bool enabled[NETWORK_LINE_MAX];
+   Evisum_Ui_Network_View *view;
 
-    Eina_Bool is_new;
-    Eina_Bool delete_me;
+   Eina_Bool is_new;
+   Eina_Bool delete_me;
 } Network_View_Interface;
 
-typedef struct {
-    Network_View_Interface *iface;
-    Network_Line line;
+typedef struct
+{
+   Network_View_Interface *iface;
+   Network_Line line;
 } Network_Legend_Data;
 
-typedef struct {
-    char name[255];
-    uint64_t in;
-    uint64_t out;
+typedef struct
+{
+   char name[255];
+   uint64_t in;
+   uint64_t out;
 } Network_Update_Sample;
 
-static void _evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces);
+static void
+_evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces);
 static const Evisum_Ui_Graph_Layer _network_layers[] = {
-    { -0.6, 0.28 },
-    { 0.6,  0.28 },
-    { -1.2, 0.14 },
-    { 1.2,  0.14 },
-    { 0.0,  0.95 },
+   { -0.6, 0.28 }, { 0.6, 0.28 }, { -1.2, 0.14 }, { 1.2, 0.14 }, { 0.0, 0.95 },
 };
 
 static Eina_Bool
-_evisum_ui_network_graph_objects_valid(Evisum_Ui_Network_View *view) {
-    return view && view->graph_bg && view->graph_img && evas_object_evas_get(view->graph_bg)
-           && evas_object_evas_get(view->graph_img);
+_evisum_ui_network_graph_objects_valid(Evisum_Ui_Network_View *view)
+{
+   return view && view->graph_bg && view->graph_img && evas_object_evas_get(view->graph_bg)
+          && evas_object_evas_get(view->graph_img);
 }
 
 static void
-_evisum_ui_network_legend_toggle_state_apply(Network_View_Interface *iface, Network_Line line) {
-    if (!iface) return;
+_evisum_ui_network_legend_toggle_state_apply(Network_View_Interface *iface, Network_Line line)
+{
+   if (!iface) return;
 
-    if (!iface->enabled[line] && iface->legend_swatch[line]) evas_object_hide(iface->legend_swatch[line]);
-    else if (iface->enabled[line] && iface->legend_swatch[line]) evas_object_show(iface->legend_swatch[line]);
+   if (!iface->enabled[line] && iface->legend_swatch[line]) evas_object_hide(iface->legend_swatch[line]);
+   else if (iface->enabled[line] && iface->legend_swatch[line]) evas_object_show(iface->legend_swatch[line]);
 
-    if (iface->legend_label && evas_object_evas_get(iface->legend_label))
-        elm_object_disabled_set(iface->legend_label,
-                                !iface->enabled[NETWORK_LINE_IN] && !iface->enabled[NETWORK_LINE_OUT]);
-    else iface->legend_label = NULL;
+   if (iface->legend_label && evas_object_evas_get(iface->legend_label))
+      elm_object_disabled_set(iface->legend_label,
+                              !iface->enabled[NETWORK_LINE_IN] && !iface->enabled[NETWORK_LINE_OUT]);
+   else iface->legend_label = NULL;
 }
 
 static void
-_evisum_ui_network_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED) {
-    Network_Legend_Data *legend = data;
-    Network_View_Interface *iface;
+_evisum_ui_network_legend_toggle_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+{
+   Network_Legend_Data *legend = data;
+   Network_View_Interface *iface;
 
-    if (!legend) return;
-    iface = legend->iface;
-    if (!iface || !iface->view || !iface->legend_btn[legend->line] || !iface->legend_row) return;
-    if (!_evisum_ui_network_graph_objects_valid(iface->view)) return;
-    iface->enabled[legend->line] = !iface->enabled[legend->line];
-    _evisum_ui_network_legend_toggle_state_apply(iface, legend->line);
-    _evisum_ui_network_graph_redraw(iface->view, iface->view->interfaces);
+   if (!legend) return;
+   iface = legend->iface;
+   if (!iface || !iface->view || !iface->legend_btn[legend->line] || !iface->legend_row) return;
+   if (!_evisum_ui_network_graph_objects_valid(iface->view)) return;
+   iface->enabled[legend->line] = !iface->enabled[legend->line];
+   _evisum_ui_network_legend_toggle_state_apply(iface, legend->line);
+   _evisum_ui_network_graph_redraw(iface->view, iface->view->interfaces);
 }
 
 static void
-_evisum_ui_network_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info) {
-    Evisum_Ui_Network_View *view = data;
-    Evas_Coord w, h;
-    Evas_Event_Mouse_Move *ev;
+_evisum_ui_network_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
+{
+   Evisum_Ui_Network_View *view = data;
+   Evas_Coord w, h;
+   Evas_Event_Mouse_Move *ev;
 
-    ev = event_info;
-    evas_object_geometry_get(obj, NULL, NULL, &w, &h);
+   ev = event_info;
+   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
 
-    if ((ev->cur.canvas.x >= (w - 128)) && (ev->cur.canvas.y <= 128)) {
-        if (!view->btn_visible) {
-            elm_object_signal_emit(view->btn_menu, "menu,show", "evisum/menu");
-            view->btn_visible = 1;
-        }
-    } else if ((view->btn_visible) && (!view->menu)) {
+   if ((ev->cur.canvas.x >= (w - 128)) && (ev->cur.canvas.y <= 128))
+     {
+        if (!view->btn_visible)
+          {
+             elm_object_signal_emit(view->btn_menu, "menu,show", "evisum/menu");
+             view->btn_visible = 1;
+          }
+     }
+   else if ((view->btn_visible) && (!view->menu))
+     {
         elm_object_signal_emit(view->btn_menu, "menu,hide", "evisum/menu");
         view->btn_visible = 0;
-    }
+     }
 }
 
 static void
-_evisum_ui_network_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED) {
-    Evisum_Ui_Network_View *view = data;
-    Evisum_Ui *ui = view->ui;
+_evisum_ui_network_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Evisum_Ui_Network_View *view = data;
+   Evisum_Ui *ui = view->ui;
 
-    if (!view->menu) view->menu = evisum_ui_main_menu_create(ui, ui->network.win, obj);
-    else {
+   if (!view->menu) view->menu = evisum_ui_main_menu_create(ui, ui->network.win, obj);
+   else
+     {
         evas_object_del(view->menu);
         view->menu = NULL;
-    }
+     }
 }
 
 static void
-_evisum_ui_network_iface_color_apply(Network_View_Interface *iface) {
-    evisum_graph_color_get(eina_slstr_printf("%s|in", iface->name), &iface->color_r[NETWORK_LINE_IN],
-                           &iface->color_g[NETWORK_LINE_IN], &iface->color_b[NETWORK_LINE_IN]);
-    evisum_graph_color_get(eina_slstr_printf("%s|out", iface->name), &iface->color_r[NETWORK_LINE_OUT],
-                           &iface->color_g[NETWORK_LINE_OUT], &iface->color_b[NETWORK_LINE_OUT]);
+_evisum_ui_network_iface_color_apply(Network_View_Interface *iface)
+{
+   evisum_graph_color_get(eina_slstr_printf("%s|in", iface->name), &iface->color_r[NETWORK_LINE_IN],
+                          &iface->color_g[NETWORK_LINE_IN], &iface->color_b[NETWORK_LINE_IN]);
+   evisum_graph_color_get(eina_slstr_printf("%s|out", iface->name), &iface->color_r[NETWORK_LINE_OUT],
+                          &iface->color_g[NETWORK_LINE_OUT], &iface->color_b[NETWORK_LINE_OUT]);
 }
 
 static char *
-_evisum_ui_network_transfer_format(double rate) {
-    const char *unit = _("B/s");
-    char buf[256];
+_evisum_ui_network_transfer_format(double rate)
+{
+   const char *unit = _("B/s");
+   char buf[256];
 
-    if (rate > 1073741824) {
+   if (rate > 1073741824)
+     {
         rate /= 1073741824;
         unit = _("GB/s");
-    } else if (rate > 1048576) {
+     }
+   else if (rate > 1048576)
+     {
         rate /= 1048576;
         unit = _("MB/s");
-    } else if ((rate > 1024) && (rate < 1048576)) {
+     }
+   else if ((rate > 1024) && (rate < 1048576))
+     {
         rate /= 1024;
         unit = _("KB/s");
-    }
+     }
 
-    snprintf(buf, sizeof(buf), "%.2f %s", rate, unit);
-    return strdup(buf);
+   snprintf(buf, sizeof(buf), "%.2f %s", rate, unit);
+   return strdup(buf);
 }
 
 static void
-_evisum_ui_network_legend_swatch_add(Network_View_Interface *iface, Network_Line line, Evas_Object *row) {
-    Evas_Object *btn, *swatch;
-    Network_Legend_Data *legend;
-    Evas *evas;
+_evisum_ui_network_legend_swatch_add(Network_View_Interface *iface, Network_Line line, Evas_Object *row)
+{
+   Evas_Object *btn, *swatch;
+   Network_Legend_Data *legend;
+   Evas *evas;
 
-    if (!iface || !row || iface->legend_btn[line]) return;
+   if (!iface || !row || iface->legend_btn[line]) return;
 
-    evas = evas_object_evas_get(row);
-    btn = elm_button_add(row);
-    evas_object_size_hint_min_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
-    evas_object_size_hint_max_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
-    evas_object_size_hint_align_set(btn, 0.0, 0.5);
-    evas_object_show(btn);
-    legend = calloc(1, sizeof(*legend));
-    if (legend) {
+   evas = evas_object_evas_get(row);
+   btn = elm_button_add(row);
+   evas_object_size_hint_min_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
+   evas_object_size_hint_max_set(btn, 16 * elm_config_scale_get(), 16 * elm_config_scale_get());
+   evas_object_size_hint_align_set(btn, 0.0, 0.5);
+   evas_object_show(btn);
+   legend = calloc(1, sizeof(*legend));
+   if (legend)
+     {
         legend->iface = iface;
         legend->line = line;
         iface->legend_data[line] = legend;
         evas_object_smart_callback_add(btn, "clicked", _evisum_ui_network_legend_toggle_cb, legend);
-    }
-    elm_box_pack_end(row, btn);
+     }
+   elm_box_pack_end(row, btn);
 
-    swatch = evas_object_rectangle_add(evas);
-    evas_object_color_set(swatch, iface->color_r[line], iface->color_g[line], iface->color_b[line], 255);
-    evas_object_size_hint_min_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
-    evas_object_size_hint_max_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
-    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
-    elm_object_content_set(btn, swatch);
-    evas_object_show(swatch);
+   swatch = evas_object_rectangle_add(evas);
+   evas_object_color_set(swatch, iface->color_r[line], iface->color_g[line], iface->color_b[line], 255);
+   evas_object_size_hint_min_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
+   evas_object_size_hint_max_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
+   evas_object_size_hint_align_set(swatch, 0.0, 0.5);
+   elm_object_content_set(btn, swatch);
+   evas_object_show(swatch);
 
-    iface->legend_btn[line] = btn;
-    iface->legend_swatch[line] = swatch;
-    _evisum_ui_network_legend_toggle_state_apply(iface, line);
+   iface->legend_btn[line] = btn;
+   iface->legend_swatch[line] = swatch;
+   _evisum_ui_network_legend_toggle_state_apply(iface, line);
 }
 
 static void
-_evisum_ui_network_iface_legend_add(Evisum_Ui_Network_View *view, Network_View_Interface *iface) {
-    Evas_Object *row, *lb;
+_evisum_ui_network_iface_legend_add(Evisum_Ui_Network_View *view, Network_View_Interface *iface)
+{
+   Evas_Object *row, *lb;
 
-    if (!view->legend_bx || iface->legend_row) return;
+   if (!view->legend_bx || iface->legend_row) return;
 
-    row = elm_box_add(view->legend_bx);
-    elm_box_horizontal_set(row, EINA_TRUE);
-    elm_box_padding_set(row, 4 * elm_config_scale_get(), 0);
-    evas_object_size_hint_weight_set(row, EVAS_HINT_EXPAND, 0.0);
-    evas_object_size_hint_align_set(row, EVAS_HINT_FILL, 0.5);
-    elm_box_pack_end(view->legend_bx, row);
-    evas_object_show(row);
+   row = elm_box_add(view->legend_bx);
+   elm_box_horizontal_set(row, EINA_TRUE);
+   elm_box_padding_set(row, 4 * elm_config_scale_get(), 0);
+   evas_object_size_hint_weight_set(row, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(row, EVAS_HINT_FILL, 0.5);
+   elm_box_pack_end(view->legend_bx, row);
+   evas_object_show(row);
 
-    _evisum_ui_network_legend_swatch_add(iface, NETWORK_LINE_IN, row);
-    _evisum_ui_network_legend_swatch_add(iface, NETWORK_LINE_OUT, row);
+   _evisum_ui_network_legend_swatch_add(iface, NETWORK_LINE_IN, row);
+   _evisum_ui_network_legend_swatch_add(iface, NETWORK_LINE_OUT, row);
 
-    lb = elm_label_add(row);
-    evas_object_size_hint_weight_set(lb, EVAS_HINT_EXPAND, 0.0);
-    evas_object_size_hint_align_set(lb, 0.0, 0.5);
-    elm_object_text_set(lb, iface->name);
-    elm_box_pack_end(row, lb);
-    evas_object_show(lb);
+   lb = elm_label_add(row);
+   evas_object_size_hint_weight_set(lb, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(lb, 0.0, 0.5);
+   elm_object_text_set(lb, iface->name);
+   elm_box_pack_end(row, lb);
+   evas_object_show(lb);
 
-    iface->legend_row = row;
-    iface->legend_label = lb;
-    iface->view = view;
-    _evisum_ui_network_legend_toggle_state_apply(iface, NETWORK_LINE_IN);
-    _evisum_ui_network_legend_toggle_state_apply(iface, NETWORK_LINE_OUT);
+   iface->legend_row = row;
+   iface->legend_label = lb;
+   iface->view = view;
+   _evisum_ui_network_legend_toggle_state_apply(iface, NETWORK_LINE_IN);
+   _evisum_ui_network_legend_toggle_state_apply(iface, NETWORK_LINE_OUT);
 }
 
 static void
-_evisum_ui_network_iface_legend_del(Network_View_Interface *iface) {
-    if (iface->legend_row) evas_object_del(iface->legend_row);
-    for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++) {
+_evisum_ui_network_iface_legend_del(Network_View_Interface *iface)
+{
+   if (iface->legend_row) evas_object_del(iface->legend_row);
+   for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++)
+     {
         free(iface->legend_data[line]);
         iface->legend_btn[line] = NULL;
         iface->legend_swatch[line] = NULL;
         iface->legend_data[line] = NULL;
-    }
-    iface->legend_row = NULL;
-    iface->legend_label = NULL;
-    iface->view = NULL;
+     }
+   iface->legend_row = NULL;
+   iface->legend_label = NULL;
+   iface->view = NULL;
 }
 
 static void
-_evisum_ui_network_iface_legend_update(Network_View_Interface *iface) {
-    char *s1, *s2;
+_evisum_ui_network_iface_legend_update(Network_View_Interface *iface)
+{
+   char *s1, *s2;
 
-    if (!iface->legend_label) return;
+   if (!iface->legend_label) return;
 
-    s1 = _evisum_ui_network_transfer_format(iface->in);
-    s2 = _evisum_ui_network_transfer_format(iface->out);
-    elm_object_text_set(iface->legend_label, eina_slstr_printf("%s (%s / %s)", iface->name, s1, s2));
-    free(s1);
-    free(s2);
+   s1 = _evisum_ui_network_transfer_format(iface->in);
+   s2 = _evisum_ui_network_transfer_format(iface->out);
+   elm_object_text_set(iface->legend_label, eina_slstr_printf("%s (%s / %s)", iface->name, s1, s2));
+   free(s1);
+   free(s2);
 }
 
 static void
-_evisum_ui_network_iface_history_add(Network_View_Interface *iface, Network_Line line, double value) {
-    if (iface->history_count[line] < NETWORK_GRAPH_SAMPLES) iface->history[line][iface->history_count[line]++] = value;
-    else {
+_evisum_ui_network_iface_history_add(Network_View_Interface *iface, Network_Line line, double value)
+{
+   if (iface->history_count[line] < NETWORK_GRAPH_SAMPLES) iface->history[line][iface->history_count[line]++] = value;
+   else
+     {
         memmove(&iface->history[line][0], &iface->history[line][1], sizeof(double) * (NETWORK_GRAPH_SAMPLES - 1));
         iface->history[line][NETWORK_GRAPH_SAMPLES - 1] = value;
-    }
+     }
 }
 
 static void
-_evisum_ui_network_histories_reset(Eina_List *interfaces) {
-    Eina_List *l;
-    Network_View_Interface *iface;
+_evisum_ui_network_histories_reset(Eina_List *interfaces)
+{
+   Eina_List *l;
+   Network_View_Interface *iface;
 
-    EINA_LIST_FOREACH(interfaces, l, iface) {
-        for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++) {
-            iface->history_count[line] = 0;
-            memset(iface->history[line], 0, sizeof(iface->history[line]));
-            _evisum_ui_network_iface_history_add(iface, line, 0.0);
-        }
-    }
+   EINA_LIST_FOREACH (interfaces, l, iface)
+     {
+        for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++)
+          {
+             iface->history_count[line] = 0;
+             memset(iface->history[line], 0, sizeof(iface->history[line]));
+             _evisum_ui_network_iface_history_add(iface, line, 0.0);
+          }
+     }
 }
 
 static void
-_evisum_ui_network_update_samples_free(Eina_List *samples) {
-    Network_Update_Sample *s;
-    EINA_LIST_FREE(samples, s) free(s);
+_evisum_ui_network_update_samples_free(Eina_List *samples)
+{
+   Network_Update_Sample *s;
+   EINA_LIST_FREE (samples, s) free(s);
 }
 
 static Network_View_Interface *
-_evisum_ui_network_iface_find(Eina_List *interfaces, const char *name) {
-    Eina_List *l;
-    Network_View_Interface *iface;
+_evisum_ui_network_iface_find(Eina_List *interfaces, const char *name)
+{
+   Eina_List *l;
+   Network_View_Interface *iface;
 
-    EINA_LIST_FOREACH(interfaces, l, iface) {
+   EINA_LIST_FOREACH (interfaces, l, iface)
+     {
         if (!strcmp(iface->name, name)) return iface;
-    }
-    return NULL;
+     }
+   return NULL;
 }
 
 static void
-_evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces) {
-    Eina_List *l;
-    Network_View_Interface *iface;
-    double peak;
-    int total, nseries;
-    Evisum_Ui_Graph_Series *series;
+_evisum_ui_network_graph_redraw(Evisum_Ui_Network_View *view, Eina_List *interfaces)
+{
+   Eina_List *l;
+   Network_View_Interface *iface;
+   double peak;
+   int total, nseries;
+   Evisum_Ui_Graph_Series *series;
 
-    if (!_evisum_ui_network_graph_objects_valid(view)) return;
+   if (!_evisum_ui_network_graph_objects_valid(view)) return;
 
-    peak = view->graph_peak;
-    if (peak < 1.0) peak = 1.0;
+   peak = view->graph_peak;
+   if (peak < 1.0) peak = 1.0;
 
-    total = eina_list_count(interfaces) * NETWORK_LINE_MAX;
-    nseries = 0;
-    series = calloc(total, sizeof(Evisum_Ui_Graph_Series));
-    if ((total > 0) && (!series)) return;
+   total = eina_list_count(interfaces) * NETWORK_LINE_MAX;
+   nseries = 0;
+   series = calloc(total, sizeof(Evisum_Ui_Graph_Series));
+   if ((total > 0) && (!series)) return;
 
-    EINA_LIST_FOREACH(interfaces, l, iface) {
+   EINA_LIST_FOREACH (interfaces, l, iface)
+     {
         if (iface->delete_me) continue;
-        for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++) {
-            if (!iface->enabled[line] || (iface->history_count[line] < 2)) continue;
-            series[nseries].history = iface->history[line];
-            series[nseries].history_count = iface->history_count[line];
-            series[nseries].color_r = iface->color_r[line];
-            series[nseries].color_g = iface->color_g[line];
-            series[nseries].color_b = iface->color_b[line];
-            nseries++;
-        }
-    }
+        for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++)
+          {
+             if (!iface->enabled[line] || (iface->history_count[line] < 2)) continue;
+             series[nseries].history = iface->history[line];
+             series[nseries].history_count = iface->history_count[line];
+             series[nseries].color_r = iface->color_r[line];
+             series[nseries].color_g = iface->color_g[line];
+             series[nseries].color_b = iface->color_b[line];
+             nseries++;
+          }
+     }
 
-    evisum_ui_graph_draw(view->graph_bg, view->graph_img, NETWORK_GRAPH_SAMPLES, NETWORK_GRID_X_STEP_SAMPLES,
-                         NETWORK_GRID_Y_STEP_PERCENT, peak, series, nseries, _network_layers,
-                         EINA_C_ARRAY_LENGTH(_network_layers));
-    free(series);
+   evisum_ui_graph_draw(view->graph_bg, view->graph_img, NETWORK_GRAPH_SAMPLES, NETWORK_GRID_X_STEP_SAMPLES,
+                        NETWORK_GRID_Y_STEP_PERCENT, peak, series, nseries, _network_layers,
+                        EINA_C_ARRAY_LENGTH(_network_layers));
+   free(series);
 }
 
 static void
 _evisum_ui_network_graph_bg_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                                      void *event_info EINA_UNUSED) {
-    Evisum_Ui_Network_View *view = data;
+                                      void *event_info EINA_UNUSED)
+{
+   Evisum_Ui_Network_View *view = data;
 
-    _evisum_ui_network_graph_redraw(view, view->interfaces);
+   _evisum_ui_network_graph_redraw(view, view->interfaces);
 }
 
 static void
-_evisum_ui_network_update(void *data, Ecore_Thread *thread) {
-    uint64_t seq = 0;
-    uint32_t last_snapshot_time = 0;
+_evisum_ui_network_update(void *data, Ecore_Thread *thread)
+{
+   uint64_t seq = 0;
+   uint32_t last_snapshot_time = 0;
 
-    (void) data;
+   (void) data;
 
-    ecore_thread_name_set(thread, "network");
+   ecore_thread_name_set(thread, "network");
 
-    while (!ecore_thread_check(thread)) {
+   while (!ecore_thread_check(thread))
+     {
         Eina_List *samples = NULL;
         uint32_t snapshot_time;
 
@@ -378,275 +417,297 @@ _evisum_ui_network_update(void *data, Ecore_Thread *thread) {
         Network_Interface *nwif, **ifaces = system_network_ifaces_get(&n);
         if (!ifaces) continue;
 
-        for (int i = 0; i < n; i++) {
-            Network_Update_Sample *s;
+        for (int i = 0; i < n; i++)
+          {
+             Network_Update_Sample *s;
 
-            nwif = ifaces[i];
-            s = calloc(1, sizeof(*s));
-            if (s) {
-                snprintf(s->name, sizeof(s->name), "%s", nwif->name);
-                s->in = nwif->in;
-                s->out = nwif->out;
-                samples = eina_list_append(samples, s);
-            }
-
-        }
+             nwif = ifaces[i];
+             s = calloc(1, sizeof(*s));
+             if (s)
+               {
+                  snprintf(s->name, sizeof(s->name), "%s", nwif->name);
+                  s->in = nwif->in;
+                  s->out = nwif->out;
+                  samples = eina_list_append(samples, s);
+               }
+          }
 
         free(ifaces);
-        if (samples) {
-          last_snapshot_time = snapshot_time;
-          ecore_thread_feedback(thread, samples);
-        }
-    }
+        if (samples)
+          {
+             last_snapshot_time = snapshot_time;
+             ecore_thread_feedback(thread, samples);
+          }
+     }
 }
 
 static void
-_evisum_ui_network_update_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata) {
-    Evisum_Ui_Network_View *view = data;
-    Eina_List *samples = msgdata;
-    Eina_List *l, *l2;
-    Network_View_Interface *iface;
-    Network_Update_Sample *s;
-    Eina_Bool graph_reset_needed = EINA_FALSE;
+_evisum_ui_network_update_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msgdata)
+{
+   Evisum_Ui_Network_View *view = data;
+   Eina_List *samples = msgdata;
+   Eina_List *l, *l2;
+   Network_View_Interface *iface;
+   Network_Update_Sample *s;
+   Eina_Bool graph_reset_needed = EINA_FALSE;
 
-    if (!samples) return;
-    if (!view || !view->win || !evas_object_evas_get(view->win)) {
+   if (!samples) return;
+   if (!view || !view->win || !evas_object_evas_get(view->win))
+     {
         _evisum_ui_network_update_samples_free(samples);
         return;
-    }
+     }
 
-    EINA_LIST_FOREACH(view->interfaces, l, iface) {
+   EINA_LIST_FOREACH (view->interfaces, l, iface)
+     {
         iface->is_new = EINA_FALSE;
         iface->delete_me = EINA_TRUE;
-    }
+     }
 
-    EINA_LIST_FOREACH(samples, l, s) {
+   EINA_LIST_FOREACH (samples, l, s)
+     {
         iface = _evisum_ui_network_iface_find(view->interfaces, s->name);
-        if (!iface) {
-            iface = calloc(1, sizeof(*iface));
-            if (!iface) continue;
-            iface->is_new = EINA_TRUE;
-            for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++)
+        if (!iface)
+          {
+             iface = calloc(1, sizeof(*iface));
+             if (!iface) continue;
+             iface->is_new = EINA_TRUE;
+             for (Network_Line line = NETWORK_LINE_IN; line < NETWORK_LINE_MAX; line++)
                 iface->enabled[line] = EINA_TRUE;
-            snprintf(iface->name, sizeof(iface->name), "%s", s->name);
-            iface->in = s->in;
-            iface->out = s->out;
-            view->interfaces = eina_list_append(view->interfaces, iface);
-            graph_reset_needed = EINA_TRUE;
-        } else {
-            iface->in = s->in;
-            iface->out = s->out;
-            if (iface->in > iface->peak_in) iface->peak_in = iface->in;
-            if (iface->out > iface->peak_out) iface->peak_out = iface->out;
-        }
+             snprintf(iface->name, sizeof(iface->name), "%s", s->name);
+             iface->in = s->in;
+             iface->out = s->out;
+             view->interfaces = eina_list_append(view->interfaces, iface);
+             graph_reset_needed = EINA_TRUE;
+          }
+        else
+          {
+             iface->in = s->in;
+             iface->out = s->out;
+             if (iface->in > iface->peak_in) iface->peak_in = iface->in;
+             if (iface->out > iface->peak_out) iface->peak_out = iface->out;
+          }
         iface->delete_me = EINA_FALSE;
-    }
+     }
 
-    _evisum_ui_network_update_samples_free(samples);
+   _evisum_ui_network_update_samples_free(samples);
 
-    EINA_LIST_FOREACH_SAFE(view->interfaces, l, l2, iface) {
+   EINA_LIST_FOREACH_SAFE (view->interfaces, l, l2, iface)
+     {
         if (!iface->delete_me) continue;
         _evisum_ui_network_iface_legend_del(iface);
         free(iface);
         view->interfaces = eina_list_remove_list(view->interfaces, l);
-    }
+     }
 
-    if (graph_reset_needed) {
+   if (graph_reset_needed)
+     {
         _evisum_ui_network_histories_reset(view->interfaces);
         evisum_ui_graph_reset(view->graph_img);
         view->graph_peak = 0.0;
-    }
+     }
 
-    EINA_LIST_FOREACH(view->interfaces, l, iface) {
+   EINA_LIST_FOREACH (view->interfaces, l, iface)
+     {
         double in = (double) iface->in;
         double out = (double) iface->out;
-        if (iface->is_new) {
-            _evisum_ui_network_iface_color_apply(iface);
-            _evisum_ui_network_iface_legend_add(view, iface);
-        }
+        if (iface->is_new)
+          {
+             _evisum_ui_network_iface_color_apply(iface);
+             _evisum_ui_network_iface_legend_add(view, iface);
+          }
         _evisum_ui_network_iface_history_add(iface, NETWORK_LINE_IN, in);
         _evisum_ui_network_iface_history_add(iface, NETWORK_LINE_OUT, out);
         if (in > view->graph_peak) view->graph_peak = in;
         if (out > view->graph_peak) view->graph_peak = out;
         if (view->graph_peak < 1.0) view->graph_peak = 1.0;
         _evisum_ui_network_iface_legend_update(iface);
-    }
+     }
 
-    _evisum_ui_network_graph_redraw(view, view->interfaces);
+   _evisum_ui_network_graph_redraw(view, view->interfaces);
 }
 
 static void
-_evisum_ui_network_win_key_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info) {
-    Evisum_Ui_Network_View *view = data;
-    Evas_Event_Key_Down *ev = event_info;
+_evisum_ui_network_win_key_down_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
+{
+   Evisum_Ui_Network_View *view = data;
+   Evas_Event_Key_Down *ev = event_info;
 
-    if (!ev || !ev->keyname) return;
+   if (!ev || !ev->keyname) return;
 
-    if (!strcmp(ev->keyname, "Escape")) evas_object_del(view->ui->network.win);
+   if (!strcmp(ev->keyname, "Escape")) evas_object_del(view->ui->network.win);
 }
 
 static void
-_evisum_ui_network_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
-    Evisum_Ui_Network_View *view = data;
-    Evisum_Ui *ui = view->ui;
+_evisum_ui_network_win_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Evisum_Ui_Network_View *view = data;
+   Evisum_Ui *ui = view->ui;
 
-    evas_object_geometry_get(obj, &ui->network.x, &ui->network.y, NULL, NULL);
+   evas_object_geometry_get(obj, &ui->network.x, &ui->network.y, NULL, NULL);
 }
 
 static void
-_evisum_ui_network_win_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
-    Evisum_Ui_Network_View *view = data;
-    Evisum_Ui *ui = view->ui;
+_evisum_ui_network_win_resize_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Evisum_Ui_Network_View *view = data;
+   Evisum_Ui *ui = view->ui;
 
-    evas_object_geometry_get(obj, NULL, NULL, &ui->network.width, &ui->network.height);
-    _evisum_ui_network_graph_redraw(view, view->interfaces);
+   evas_object_geometry_get(obj, NULL, NULL, &ui->network.width, &ui->network.height);
+   _evisum_ui_network_graph_redraw(view, view->interfaces);
 }
 
 static void
 _evisum_ui_network_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                              void *event_info EINA_UNUSED) {
-    Evisum_Ui_Network_View *view = data;
-    Evisum_Ui *ui = view->ui;
+                              void *event_info EINA_UNUSED)
+{
+   Evisum_Ui_Network_View *view = data;
+   Evisum_Ui *ui = view->ui;
 
-    view->win = NULL;
-    if (view->menu) evas_object_del(view->menu);
+   view->win = NULL;
+   if (view->menu) evas_object_del(view->menu);
 
-    evisum_ui_config_save(ui);
-    if (view->thread) {
+   evisum_ui_config_save(ui);
+   if (view->thread)
+     {
         ecore_thread_cancel(view->thread);
         ecore_thread_wait(view->thread, 1.0);
         view->thread = NULL;
-    }
+     }
 
-    if (view->interfaces) {
+   if (view->interfaces)
+     {
         Network_View_Interface *iface;
-        EINA_LIST_FREE(view->interfaces, iface) {
-            _evisum_ui_network_iface_legend_del(iface);
-            free(iface);
-        }
+        EINA_LIST_FREE (view->interfaces, iface)
+          {
+             _evisum_ui_network_iface_legend_del(iface);
+             free(iface);
+          }
         view->interfaces = NULL;
-    }
+     }
 
-    ui->network.win = NULL;
-    free(view);
+   ui->network.win = NULL;
+   free(view);
 }
 
 void
-evisum_ui_network_win_add(Evisum_Ui *ui) {
-    Evas_Object *win, *root_bx, *graph_bx, *graph_tb, *legend_fr;
-    Evas_Object *tb, *btn, *ic;
-    Elm_Layout *lay;
-    Evas *evas;
-    int scale;
+evisum_ui_network_win_add(Evisum_Ui *ui)
+{
+   Evas_Object *win, *root_bx, *graph_bx, *graph_tb, *legend_fr;
+   Evas_Object *tb, *btn, *ic;
+   Elm_Layout *lay;
+   Evas *evas;
+   int scale;
 
-    if (ui->network.win) {
+   if (ui->network.win)
+     {
         elm_win_raise(ui->network.win);
         return;
-    }
+     }
 
-    Evisum_Ui_Network_View *view = calloc(1, sizeof(Evisum_Ui_Network_View));
-    if (!view) return;
-    view->ui = ui;
+   Evisum_Ui_Network_View *view = calloc(1, sizeof(Evisum_Ui_Network_View));
+   if (!view) return;
+   view->ui = ui;
 
-    ui->network.win = view->win = win = elm_win_util_standard_add("evisum", _("Network"));
-    elm_win_autodel_set(win, 1);
-    evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
-    evas_object_size_hint_align_set(win, FILL, FILL);
-    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_network_win_del_cb, view);
-    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_network_win_move_cb, view);
-    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_network_win_resize_cb, view);
+   ui->network.win = view->win = win = elm_win_util_standard_add("evisum", _("Network"));
+   elm_win_autodel_set(win, 1);
+   evas_object_size_hint_weight_set(win, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(win, FILL, FILL);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_network_win_del_cb, view);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_network_win_move_cb, view);
+   evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_network_win_resize_cb, view);
 
-    scale = elm_config_scale_get();
-    evas = evas_object_evas_get(win);
+   scale = elm_config_scale_get();
+   evas = evas_object_evas_get(win);
 
-    tb = elm_table_add(win);
-    evas_object_size_hint_align_set(tb, FILL, FILL);
-    evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
-    evas_object_show(tb);
-    elm_win_resize_object_add(win, tb);
+   tb = elm_table_add(win);
+   evas_object_size_hint_align_set(tb, FILL, FILL);
+   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
+   evas_object_show(tb);
+   elm_win_resize_object_add(win, tb);
 
-    root_bx = elm_box_add(win);
-    elm_box_padding_set(root_bx, 0, 6 * scale);
-    evas_object_size_hint_weight_set(root_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-    evas_object_size_hint_align_set(root_bx, EVAS_HINT_FILL, EVAS_HINT_FILL);
-    elm_table_pack(tb, root_bx, 0, 0, 1, 1);
-    evas_object_show(root_bx);
+   root_bx = elm_box_add(win);
+   elm_box_padding_set(root_bx, 0, 6 * scale);
+   evas_object_size_hint_weight_set(root_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(root_bx, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_pack(tb, root_bx, 0, 0, 1, 1);
+   evas_object_show(root_bx);
 
-    graph_bx = elm_box_add(win);
-    elm_box_padding_set(graph_bx, 0, 6 * scale);
-    evas_object_size_hint_weight_set(graph_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-    evas_object_size_hint_align_set(graph_bx, EVAS_HINT_FILL, EVAS_HINT_FILL);
-    elm_box_pack_end(root_bx, graph_bx);
-    evas_object_show(graph_bx);
+   graph_bx = elm_box_add(win);
+   elm_box_padding_set(graph_bx, 0, 6 * scale);
+   evas_object_size_hint_weight_set(graph_bx, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(graph_bx, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_box_pack_end(root_bx, graph_bx);
+   evas_object_show(graph_bx);
 
-    graph_tb = elm_table_add(win);
-    evas_object_size_hint_weight_set(graph_tb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-    evas_object_size_hint_align_set(graph_tb, EVAS_HINT_FILL, EVAS_HINT_FILL);
-    evas_object_size_hint_min_set(graph_tb, 420 * scale, 260 * scale);
-    elm_box_pack_end(graph_bx, graph_tb);
-    evas_object_show(graph_tb);
+   graph_tb = elm_table_add(win);
+   evas_object_size_hint_weight_set(graph_tb, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(graph_tb, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   evas_object_size_hint_min_set(graph_tb, 420 * scale, 260 * scale);
+   elm_box_pack_end(graph_bx, graph_tb);
+   evas_object_show(graph_tb);
 
-    view->graph_bg = evas_object_rectangle_add(evas);
-    evisum_ui_graph_bg_set(view->graph_bg);
-    evas_object_size_hint_weight_set(view->graph_bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-    evas_object_size_hint_align_set(view->graph_bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
-    elm_table_pack(graph_tb, view->graph_bg, 0, 0, 1, 1);
-    evas_object_show(view->graph_bg);
-    evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_network_graph_bg_resize_cb, view);
-    evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_network_graph_bg_resize_cb, view);
+   view->graph_bg = evas_object_rectangle_add(evas);
+   evisum_ui_graph_bg_set(view->graph_bg);
+   evas_object_size_hint_weight_set(view->graph_bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(view->graph_bg, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_pack(graph_tb, view->graph_bg, 0, 0, 1, 1);
+   evas_object_show(view->graph_bg);
+   evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_RESIZE, _evisum_ui_network_graph_bg_resize_cb, view);
+   evas_object_event_callback_add(view->graph_bg, EVAS_CALLBACK_MOVE, _evisum_ui_network_graph_bg_resize_cb, view);
 
-    view->graph_img = evas_object_vg_add(evas);
-    evas_object_size_hint_weight_set(view->graph_img, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-    evas_object_size_hint_align_set(view->graph_img, EVAS_HINT_FILL, EVAS_HINT_FILL);
-    elm_table_pack(graph_tb, view->graph_img, 0, 0, 1, 1);
-    evas_object_show(view->graph_img);
-    evas_object_stack_above(view->graph_img, view->graph_bg);
+   view->graph_img = evas_object_vg_add(evas);
+   evas_object_size_hint_weight_set(view->graph_img, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+   evas_object_size_hint_align_set(view->graph_img, EVAS_HINT_FILL, EVAS_HINT_FILL);
+   elm_table_pack(graph_tb, view->graph_img, 0, 0, 1, 1);
+   evas_object_show(view->graph_img);
+   evas_object_stack_above(view->graph_img, view->graph_bg);
 
-    legend_fr = elm_frame_add(win);
-    elm_object_text_set(legend_fr, _("Interfaces"));
-    evas_object_size_hint_weight_set(legend_fr, EVAS_HINT_EXPAND, 0.0);
-    evas_object_size_hint_align_set(legend_fr, EVAS_HINT_FILL, 0.0);
-    elm_box_pack_end(root_bx, legend_fr);
-    evas_object_show(legend_fr);
+   legend_fr = elm_frame_add(win);
+   elm_object_text_set(legend_fr, _("Interfaces"));
+   evas_object_size_hint_weight_set(legend_fr, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(legend_fr, EVAS_HINT_FILL, 0.0);
+   elm_box_pack_end(root_bx, legend_fr);
+   evas_object_show(legend_fr);
 
-    view->legend_bx = elm_box_add(legend_fr);
-    elm_box_padding_set(view->legend_bx, 0, 2 * scale);
-    evas_object_size_hint_weight_set(view->legend_bx, EVAS_HINT_EXPAND, 0.0);
-    evas_object_size_hint_align_set(view->legend_bx, EVAS_HINT_FILL, 0.0);
-    evas_object_size_hint_min_set(view->legend_bx, 420 * scale, 0);
-    elm_object_content_set(legend_fr, view->legend_bx);
-    evas_object_show(view->legend_bx);
+   view->legend_bx = elm_box_add(legend_fr);
+   elm_box_padding_set(view->legend_bx, 0, 2 * scale);
+   evas_object_size_hint_weight_set(view->legend_bx, EVAS_HINT_EXPAND, 0.0);
+   evas_object_size_hint_align_set(view->legend_bx, EVAS_HINT_FILL, 0.0);
+   evas_object_size_hint_min_set(view->legend_bx, 420 * scale, 0);
+   elm_object_content_set(legend_fr, view->legend_bx);
+   evas_object_show(view->legend_bx);
 
-    btn = elm_button_add(win);
-    ic = elm_icon_add(btn);
-    elm_icon_standard_set(ic, "menu");
-    elm_object_part_content_set(btn, "icon", ic);
-    evas_object_show(ic);
-    elm_object_focus_allow_set(btn, 0);
-    evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-    evas_object_smart_callback_add(btn, "clicked", _evisum_ui_network_btn_menu_clicked_cb, view);
+   btn = elm_button_add(win);
+   ic = elm_icon_add(btn);
+   elm_icon_standard_set(ic, "menu");
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
+   elm_object_focus_allow_set(btn, 0);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
+   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_network_btn_menu_clicked_cb, view);
 
-    view->btn_menu = lay = elm_layout_add(win);
-    evas_object_size_hint_weight_set(lay, 1.0, 1.0);
-    evas_object_size_hint_align_set(lay, 0.99, 0.01);
-    elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
-    elm_layout_content_set(lay, "evisum/menu", btn);
-    elm_table_pack(tb, lay, 0, 0, 1, 1);
-    evas_object_show(lay);
+   view->btn_menu = lay = elm_layout_add(win);
+   evas_object_size_hint_weight_set(lay, 1.0, 1.0);
+   evas_object_size_hint_align_set(lay, 0.99, 0.01);
+   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
+   elm_layout_content_set(lay, "evisum/menu", btn);
+   elm_table_pack(tb, lay, 0, 0, 1, 1);
+   evas_object_show(lay);
 
-    if ((ui->network.width > 0) && (ui->network.height > 0))
-        evas_object_resize(win, ui->network.width, ui->network.height);
-    else evas_object_resize(win, WIN_WIDTH, WIN_HEIGHT);
+   if ((ui->network.width > 0) && (ui->network.height > 0))
+      evas_object_resize(win, ui->network.width, ui->network.height);
+   else evas_object_resize(win, WIN_WIDTH, WIN_HEIGHT);
 
-    if ((ui->network.x > 0) && (ui->network.y > 0)) evas_object_move(win, ui->network.x, ui->network.y);
-    else elm_win_center(win, 1, 1);
+   if ((ui->network.x > 0) && (ui->network.y > 0)) evas_object_move(win, ui->network.x, ui->network.y);
+   else elm_win_center(win, 1, 1);
 
-    elm_object_focus_allow_set(tb, EINA_TRUE);
-    elm_object_focus_set(tb, EINA_TRUE);
-    evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_network_win_key_down_cb, view);
-    evas_object_show(win);
-    evas_object_event_callback_add(root_bx, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_network_win_mouse_move_cb, view);
+   elm_object_focus_allow_set(tb, EINA_TRUE);
+   elm_object_focus_set(tb, EINA_TRUE);
+   evas_object_event_callback_add(tb, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_network_win_key_down_cb, view);
+   evas_object_show(win);
+   evas_object_event_callback_add(root_bx, EVAS_CALLBACK_MOUSE_MOVE, _evisum_ui_network_win_mouse_move_cb, view);
 
-    view->thread = ecore_thread_feedback_run(_evisum_ui_network_update, _evisum_ui_network_update_feedback_cb, NULL,
-                                             NULL, view, 1);
+   view->thread
+     = ecore_thread_feedback_run(_evisum_ui_network_update, _evisum_ui_network_update_feedback_cb, NULL, NULL, view, 1);
 }

@@ -19,119 +19,138 @@
 #define EVISUM_WIN_HEIGHT            500
 #define EVISUM_PROC_FIELD_WIDTHS_MAX 20
 
-typedef struct _Evisum_Ui {
-    pid_t program_pid;
-    Ecore_Event_Handler *handler_sig;
-    Ecore_Thread *background_poll_thread;
+typedef struct _Evisum_Ui
+{
+   pid_t program_pid;
+   Ecore_Event_Handler *handler_sig;
+   Ecore_Thread *background_poll_thread;
 
-    Eina_Bool effects;
+   Eina_Bool effects;
 
-    double cpu_usage;
-    uint64_t mem_total;
-    uint64_t mem_used;
+   double cpu_usage;
+   uint64_t mem_total;
+   uint64_t mem_used;
 
-    struct {
-        int poll_delay;
-        Eina_Bool history_whole;
-        Eina_Bool monitor_on_exit;
-    } global;
+   struct
+   {
+      int poll_delay;
+      Eina_Bool history_whole;
+      Eina_Bool monitor_on_exit;
+   } global;
 
-    Eina_Bool kthreads_has_rss;
-    struct {
-        Evas_Object *win;
-        int width;
-        int height;
-        int x, y;
-        Eina_Bool restart;
+   Eina_Bool kthreads_has_rss;
+   struct
+   {
+      Evas_Object *win;
+      int width;
+      int height;
+      int x, y;
+      Eina_Bool restart;
 
-        Eina_Bool has_kthreads;
-        Eina_Bool has_wchan;
+      Eina_Bool has_kthreads;
+      Eina_Bool has_wchan;
 
-        int sort_type;
-        unsigned int fields;
-        int field_widths[EVISUM_PROC_FIELD_WIDTHS_MAX];
-        int field_order[EVISUM_PROC_FIELD_WIDTHS_MAX];
-        Eina_Bool sort_reverse;
-        Eina_Bool show_self;
-        Eina_Bool show_kthreads;
-        Eina_Bool show_user;
+      int sort_type;
+      unsigned int fields;
+      int field_widths[EVISUM_PROC_FIELD_WIDTHS_MAX];
+      int field_order[EVISUM_PROC_FIELD_WIDTHS_MAX];
+      Eina_Bool sort_reverse;
+      Eina_Bool show_self;
+      Eina_Bool show_kthreads;
+      Eina_Bool show_user;
 
-        unsigned char alpha;
-        Eina_Bool transparent;
-        Eina_Bool show_statusbar;
-    } proc;
+      unsigned char alpha;
+      Eina_Bool transparent;
+      Eina_Bool show_statusbar;
+   } proc;
 
-    Evas_Object *win_about;
+   Evas_Object *win_about;
 
-    struct {
-        Evas_Object *win;
-        int width;
-        int height;
-        int x, y;
-        Eina_Bool restart;
-        Eina_Stringshare *visual;
-    } cpu;
+   struct
+   {
+      Evas_Object *win;
+      int width;
+      int height;
+      int x, y;
+      Eina_Bool restart;
+      Eina_Stringshare *visual;
+   } cpu;
 
-    struct {
-        Evas_Object *win;
-        int width;
-        int height;
-        int x, y;
-        Eina_Bool restart;
-        Eina_Bool zfs_mounted;
-    } mem;
+   struct
+   {
+      Evas_Object *win;
+      int width;
+      int height;
+      int x, y;
+      Eina_Bool restart;
+      Eina_Bool zfs_mounted;
+   } mem;
 
-    struct {
-        Evas_Object *win;
-        int width;
-        int height;
-        int x, y;
-        Eina_Bool restart;
-        int graph_mode;
-    } disk;
+   struct
+   {
+      Evas_Object *win;
+      int width;
+      int height;
+      int x, y;
+      Eina_Bool restart;
+      int graph_mode;
+   } disk;
 
-    struct {
-        Evas_Object *win;
-        int width;
-        int height;
-        int x, y;
-        Eina_Bool restart;
-    } sensors;
+   struct
+   {
+      Evas_Object *win;
+      int width;
+      int height;
+      int x, y;
+      Eina_Bool restart;
+   } sensors;
 
-    struct {
-        Evas_Object *win;
-        int width;
-        int height;
-        int x, y;
-        Eina_Bool restart;
-    } network;
+   struct
+   {
+      Evas_Object *win;
+      int width;
+      int height;
+      int x, y;
+      Eina_Bool restart;
+   } network;
 
-    struct {
-        int width;
-        int height;
-        int x, y;
-    } proc_view;
+   struct
+   {
+      int width;
+      int height;
+      int x, y;
+   } proc_view;
 
 } Evisum_Ui;
 
-Evisum_Ui *evisum_ui_init(void);
+Evisum_Ui *
+evisum_ui_init(void);
 
-void evisum_ui_shutdown(Evisum_Ui *ui);
+void
+evisum_ui_shutdown(Evisum_Ui *ui);
 
-Evas_Object *evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj);
+Evas_Object *
+evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj);
 
-void evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, pid_t pid);
+void
+evisum_ui_activate(Evisum_Ui *ui, Evisum_Action action, pid_t pid);
 
-const char *evisum_ui_icon_cache_find(Evisum_Ui *ui, const char *cmd);
+const char *
+evisum_ui_icon_cache_find(Evisum_Ui *ui, const char *cmd);
 
-void evisum_ui_config_load(Evisum_Ui *ui);
+void
+evisum_ui_config_load(Evisum_Ui *ui);
 
-void evisum_ui_config_save(Evisum_Ui *ui);
+void
+evisum_ui_config_save(Evisum_Ui *ui);
 
-void evisum_ui_restart(Evisum_Ui *ui);
+void
+evisum_ui_restart(Evisum_Ui *ui);
 
-Eina_Bool evisum_ui_effects_enabled_get(Evisum_Ui *ui);
+Eina_Bool
+evisum_ui_effects_enabled_get(Evisum_Ui *ui);
 
-void evisum_ui_effects_enabled_set(Evisum_Ui *ui, Eina_Bool enabled);
+void
+evisum_ui_effects_enabled_set(Evisum_Ui *ui, Eina_Bool enabled);
 
 #endif
