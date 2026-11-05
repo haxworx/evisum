@@ -388,6 +388,8 @@ _evisum_ui_process_view_manual_init(Evisum_Ui_Process_View *view)
 {
    if (view->manual.init) return;
 
+   if (!view->start) return;
+
    if ((!view->selected_cmd) || (!view->selected_cmd[0])) return;
 
    ecore_thread_feedback_run(_evisum_ui_process_view_manual_init_cb, _evisum_ui_process_view_manual_init_feedback_cb,
@@ -538,6 +540,23 @@ _evisum_ui_process_view_proc_info_feedback_cb(void *data, Ecore_Thread *thread, 
      {
         proc_info_free(proc);
         return;
+     }
+
+   /* The process snapshot may not have arrived when the window was created. */
+   if (!view->start)
+     {
+        char *command = strdup(proc->command);
+        if (!command)
+          {
+             proc_info_free(proc);
+             return;
+          }
+        free(view->selected_cmd);
+        view->selected_cmd = command;
+        view->start = proc->start;
+        elm_win_title_set(view->win, eina_slstr_printf("%s (%i)", view->selected_cmd, view->selected_pid));
+        if (view->current_view == view->manual_view)
+          _evisum_ui_process_view_manual_init(view);
      }
 
    _evisum_ui_process_view_general_view_update(view, proc);

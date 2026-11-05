@@ -82,12 +82,19 @@ _evisum_ui_sensors_legend_toggle_state_apply(Sensor_History *entry)
 {
    if (!entry) return;
 
-   if (entry->legend_swatch)
+   if (entry->legend_btn && entry->legend_swatch)
      {
         if (entry->enabled)
-           evas_object_color_set(entry->legend_swatch, entry->color_r, entry->color_g, entry->color_b, 255);
-        else evas_object_color_set(entry->legend_swatch, 128, 128, 128, 255);
-        evas_object_show(entry->legend_swatch);
+          {
+             if (elm_object_content_get(entry->legend_btn) != entry->legend_swatch)
+                elm_object_content_set(entry->legend_btn, entry->legend_swatch);
+             evas_object_show(entry->legend_swatch);
+          }
+        else
+          {
+             elm_object_content_unset(entry->legend_btn);
+             evas_object_hide(entry->legend_swatch);
+          }
      }
 
    if (entry->legend_pb && evas_object_evas_get(entry->legend_pb))
@@ -213,7 +220,6 @@ _evisum_ui_sensors_history_legend_add(Evisum_Ui_Sensors_View *view, Sensor_Histo
    evas_object_size_hint_min_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
    evas_object_size_hint_max_set(swatch, 12 * elm_config_scale_get(), 12 * elm_config_scale_get());
    evas_object_size_hint_align_set(swatch, 0.0, 0.5);
-   elm_object_content_set(btn, swatch);
 
    lb = elm_label_add(left);
    evas_object_size_hint_weight_set(lb, EVAS_HINT_EXPAND, 0.0);
@@ -243,6 +249,7 @@ _evisum_ui_sensors_history_legend_add(Evisum_Ui_Sensors_View *view, Sensor_Histo
 static void
 _evisum_ui_sensors_history_legend_del(Sensor_History *entry)
 {
+   if (entry->legend_swatch) evas_object_del(entry->legend_swatch);
    if (entry->legend_pb) evas_object_del(entry->legend_pb);
    if (entry->legend_row) evas_object_del(entry->legend_row);
    entry->view = NULL;

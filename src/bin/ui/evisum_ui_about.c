@@ -216,13 +216,13 @@ evisum_about_window_show(void *data)
    ui->win_about = win = elm_win_add(ui->proc.win, "about", ELM_WIN_DIALOG_BASIC);
    elm_win_autodel_set(win, 1);
    evas_object_smart_callback_add(win, "delete,request", _about_delete_request_cb, win);
-   evas_object_size_hint_min_set(win, about_w, about_h);
-   evas_object_size_hint_max_set(win, about_w, about_h);
    elm_win_center(win, 1, 1);
    elm_win_title_set(win, _("About"));
 
    bg = _about_background_create(win);
-   evas_object_size_hint_weight_set(bg, EXPAND, EXPAND);
+   evas_object_size_hint_weight_set(bg, 0.0, 0.0);
+   evas_object_size_hint_min_set(bg, about_w, about_h);
+   evas_object_size_hint_max_set(bg, about_w, about_h);
    evas_object_size_hint_align_set(bg, FILL, FILL);
    elm_win_resize_object_add(win, bg);
    evas_object_show(bg);
