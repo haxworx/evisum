@@ -1,5 +1,4 @@
 #include "evisum_ui_process_view.h"
-#include "evisum_ui_widget_exel.h"
 #include "../engine/evisum_engine.h"
 #include "../background/evisum_background.h"
 #define __STDC_FORMAT_MACROS
@@ -65,9 +64,7 @@ typedef struct
 
    struct
    {
-      Evisum_Ui_Widget_Exel *widget_exel;
-      unsigned int fields_mask;
-      int field_widths[1];
+      Evas_Object *glist;
    } children;
 
    struct
@@ -138,9 +135,9 @@ _evisum_ui_process_view_item_children_clicked_cb(void *data, Evas_Object *obj EI
    view = data;
    it = event_info;
 
-   evisum_ui_widget_exel_genlist_item_selected_set(it, 0);
+   elm_genlist_item_selected_set(it, EINA_FALSE);
 
-   proc = evisum_ui_widget_exel_object_item_data_get(it);
+   proc = elm_object_item_data_get(it);
    if (!proc) return;
 
    evisum_ui_process_view_win_add(view->ui, proc->pid, PROC_VIEW_DEFAULT);
@@ -166,7 +163,7 @@ _evisum_ui_process_view_children_icon_get(void *data, Evas_Object *obj, const ch
    Evas_Object *ic = elm_icon_add(obj);
 
    proc = data;
-   view = evas_object_data_get(obj, "widget_exel_data");
+   view = evas_object_data_get(obj, "view");
 
    if (!strcmp(part, "elm.swallow.icon"))
      {
@@ -205,10 +202,10 @@ _evisum_ui_process_view_children_populate(Evisum_Ui_Process_View *view, Elm_Obje
 
    EINA_LIST_FOREACH (children, l, child)
      {
-        it = evisum_ui_widget_exel_genlist_item_append(
-          view->children.widget_exel, itc, child, parent,
+        it = elm_genlist_item_append(
+          view->children.glist, itc, child, parent,
           (child->children ? ELM_GENLIST_ITEM_TREE : ELM_GENLIST_ITEM_NONE), NULL, NULL);
-        evisum_ui_widget_exel_genlist_item_update(it);
+        elm_genlist_item_update(it);
         if (child->children)
           {
              child->children = eina_list_sort(child->children, eina_list_count(child->children), proc_sort_by_age);
@@ -225,7 +222,7 @@ _evisum_ui_process_view_children_view_update(void *data)
    Proc_Info *child;
    Evisum_Ui_Process_View *view = data;
 
-   evisum_ui_widget_exel_genlist_clear(view->children.widget_exel);
+   elm_genlist_clear(view->children.glist);
 
    if (view->selected_pid == 0) return 0;
 
@@ -906,7 +903,7 @@ _evisum_ui_process_view_general_tab_add(Evas_Object *parent, Evisum_Ui_Process_V
 static Evas_Object *
 _evisum_ui_process_view_children_tab_add(Evas_Object *parent, Evisum_Ui_Process_View *view)
 {
-   Evas_Object *fr, *bx, *glist;
+   Evas_Object *fr, *bx;
 
    fr = elm_frame_add(parent);
    evas_object_size_hint_weight_set(fr, EXPAND, EXPAND);
@@ -919,9 +916,9 @@ _evisum_ui_process_view_children_tab_add(Evas_Object *parent, Evisum_Ui_Process_
    evas_object_show(bx);
    elm_object_content_set(fr, bx);
 
-   glist = evisum_ui_widget_exel_genlist_add(view->children.widget_exel, parent);
-   evas_object_smart_callback_add(glist, "selected", _evisum_ui_process_view_item_children_clicked_cb, view);
-   elm_box_pack_end(bx, glist);
+   evas_object_smart_callback_add(view->children.glist, "selected", _evisum_ui_process_view_item_children_clicked_cb, view);
+   elm_box_pack_end(bx, view->children.glist);
+   evas_object_show(view->children.glist);
 
    return fr;
 }
@@ -1086,7 +1083,7 @@ _evisum_ui_process_view_win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object 
    evisum_ui_config_save(view->ui);
 
    free(view->selected_cmd);
-   if (view->children.widget_exel) evisum_ui_widget_exel_free(view->children.widget_exel);
+   evas_object_del(view->children.glist);
 
    evisum_icon_cache_del(view->icon_cache);
 
@@ -1103,12 +1100,12 @@ _evisum_ui_process_view_win_resize_cb(void *data, Evas *e, Evas_Object *obj, voi
    if (view->ignore_initial_resize)
      {
         view->ignore_initial_resize = 0;
-        evisum_ui_widget_exel_genlist_realized_items_update(view->children.widget_exel);
+        elm_genlist_realized_items_update(view->children.glist);
      }
 
    evas_object_geometry_get(obj, NULL, NULL, &view->ui->proc_view.width, &view->ui->proc_view.height);
 
-   evisum_ui_widget_exel_genlist_realized_items_update(view->children.widget_exel);
+   elm_genlist_realized_items_update(view->children.glist);
 }
 
 static void
@@ -1164,9 +1161,6 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action acti
    if (!view) return;
    view->ui = ui;
    view->selected_pid = pid;
-   view->children.widget_exel = NULL;
-   view->children.fields_mask = 0;
-   view->children.field_widths[0] = 1;
    view->icon_cache = evisum_icon_cache_new();
 
    proc = proc_info_by_pid(pid);
@@ -1186,8 +1180,8 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action acti
 
    elm_win_title_set(view->win, eina_slstr_printf("%s (%i)", view->selected_cmd, view->selected_pid));
 
-   view->children.widget_exel = evisum_ui_widget_exel_create(view->win);
-   if (!view->children.widget_exel)
+   view->children.glist = elm_genlist_add(win);
+   if (!view->children.glist)
      {
         evas_object_del(view->win);
         evisum_icon_cache_del(view->icon_cache);
@@ -1195,11 +1189,12 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action acti
         free(view);
         return;
      }
-   evisum_ui_widget_exel_field_bounds_set(view->children.widget_exel, 0, 1);
-   evisum_ui_widget_exel_resize_hit_width_set(view->children.widget_exel, 0);
-   evisum_ui_widget_exel_state_bind(view->children.widget_exel, &view->children.fields_mask,
-                                    view->children.field_widths);
-   evisum_ui_widget_exel_callbacks_set(view->children.widget_exel, NULL, NULL, NULL, NULL, NULL, NULL, view);
+   elm_genlist_homogeneous_set(view->children.glist, EINA_TRUE);
+   elm_scroller_bounce_set(view->children.glist, EINA_FALSE, EINA_FALSE);
+   elm_scroller_policy_set(view->children.glist, ELM_SCROLLER_POLICY_AUTO, ELM_SCROLLER_POLICY_AUTO);
+   evas_object_size_hint_weight_set(view->children.glist, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(view->children.glist, FILL, FILL);
+   evas_object_data_set(view->children.glist, "view", view);
 
    tabs = _evisum_ui_process_view_tabs_add(win, view);
 

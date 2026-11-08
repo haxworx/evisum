@@ -1,1 +1,2 @@
 subdir('bin')
+subdir('tests')

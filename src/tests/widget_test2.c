@@ -29,7 +29,7 @@ typedef struct {
 } Example2_Row;
 
 typedef struct {
-    Evisum_Ui_Widget_Exel *wx;
+    Evas_Object *wx;
     Ecore_Timer *timer;
     unsigned int tick;
     int sort_field;
@@ -151,7 +151,7 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED) {
 static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source) {
     Example2_Row *row = data;
-    Evisum_Ui_Widget_Exel *wx;
+    Evas_Object *wx;
     Evas_Object *item;
     char buf[64];
 
@@ -217,7 +217,7 @@ _update_timer_cb(void *data) {
 static void
 _fill_rows(Example2_App *app, Elm_Genlist_Item_Class *itc) {
     Elm_Object_Item *it;
-    Evisum_Ui_Widget_Exel *wx;
+    Evas_Object *wx;
 
     if (!app || !app->wx) return;
     wx = app->wx;
@@ -255,7 +255,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void 
 
     if (app->wx) {
         evisum_ui_widget_exel_genlist_clear(app->wx);
-        evisum_ui_widget_exel_free(app->wx);
+        evas_object_del(app->wx);
     }
 
     free(app);
@@ -278,7 +278,7 @@ elm_main(int argc EINA_UNUSED, char **argv EINA_UNUSED) {
     app = calloc(1, sizeof(Example2_App));
     if (!app) return EXIT_FAILURE;
 
-    app->wx = evisum_ui_widget_exel_create(win);
+    app->wx = evisum_ui_widget_exel_add(win);
     if (!app->wx) {
         free(app);
         return EXIT_FAILURE;
@@ -288,8 +288,9 @@ elm_main(int argc EINA_UNUSED, char **argv EINA_UNUSED) {
     app->sort_field = EX2_FIELD_AINT;
     app->sort_reverse = EINA_FALSE;
 
-    root = evisum_ui_widget_exel_object_get(app->wx);
+    root = app->wx;
     elm_win_resize_object_add(win, root);
+    evas_object_show(root);
 
     fp = (Evisum_Ui_Widget_Exel_Field_Params) {
         .id = EX2_FIELD_AINT,
@@ -407,7 +408,6 @@ elm_main(int argc EINA_UNUSED, char **argv EINA_UNUSED) {
 
     evisum_ui_widget_exel_fields_apply(app->wx);
 
-    elm_box_pack_end(root, evisum_ui_widget_exel_genlist_add(app->wx, root));
 
     itc.item_style = "full";
     itc.func.text_get = NULL;

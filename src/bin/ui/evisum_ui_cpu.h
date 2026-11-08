@@ -33,6 +33,8 @@ typedef struct
 {
    const char *name;
    Evisum_Ui_Cpu_Visual_Data *(*func)(Evas_Object *parent);
+   const char *description;
+   const char *author;
 } Evisum_Ui_Cpu_Visual;
 
 void

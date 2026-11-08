@@ -58,11 +58,9 @@ typedef struct
       Eina_Bool visible;
    } loader;
 
-   Evas_Object *tb_main;
-
    Elm_Genlist_Item_Class itc;
    Evas_Object *btn_menu;
-   Evisum_Ui_Widget_Exel *widget_exel;
+   Evas_Object *widget_exel;
 
    struct
    {
@@ -270,12 +268,6 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
 }
 
 static void
-_evisum_ui_process_list_field_proportions_apply(Evisum_Ui_Process_List_View *view)
-{
-   evisum_ui_widget_exel_field_proportions_apply(view->widget_exel);
-}
-
-static void
 _evisum_ui_process_list_content_update_all(Evisum_Ui_Process_List_View *view)
 {
    view->update_every_item = 1;
@@ -306,20 +298,6 @@ _evisum_ui_process_list_fields_cache_reset_done_cb(void *data)
                                                 _evisum_ui_process_list_fields_update_deferred_cb, view);
 }
 
-static void
-_evisum_ui_process_list_fields_mouse_up_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj,
-                                           void *event_info)
-{
-   Evas_Event_Mouse_Up *ev;
-   Evisum_Ui_Process_List_View *view;
-
-   ev = event_info;
-   view = data;
-
-   if (evisum_ui_widget_exel_field_reorder_mouse_up(view->widget_exel, ev)) return;
-   evisum_ui_widget_exel_fields_menu_show(view->widget_exel, obj, ev);
-}
-
 static unsigned int
 _evisum_ui_process_list_fields_reference_mask_get_cb(void *data)
 {
@@ -328,9 +306,10 @@ _evisum_ui_process_list_fields_reference_mask_get_cb(void *data)
 }
 
 static void
-_evisum_ui_process_list_fields_changed_cb(void *data, Eina_Bool changed)
+_evisum_ui_process_list_fields_changed_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evisum_Ui_Process_List_View *view = data;
+   Eina_Bool changed = *(Eina_Bool *) event_info;
 
    view->skip_update = 1;
    (void) changed;
@@ -340,24 +319,16 @@ _evisum_ui_process_list_fields_changed_cb(void *data, Eina_Bool changed)
 static void
 _evisum_ui_process_list_content_reset(Evisum_Ui_Process_List_View *view)
 {
-   int j = 0;
-
-   _evisum_ui_process_list_field_proportions_apply(view);
-
-   elm_table_clear(view->tb_main, 0);
-   elm_table_pack(view->tb_main, view->btn_menu, j++, 0, 1, 1);
-   j = evisum_ui_widget_exel_fields_pack_visible(view->widget_exel, view->tb_main, j);
-   elm_table_pack(view->tb_main, evisum_ui_widget_exel_genlist_obj_get(view->widget_exel), 0, 1, j, 1);
-   elm_table_pack(view->tb_main, view->summary.fr, 0, 2, j, 1);
-   evas_object_show(view->summary.fr);
+   evisum_ui_widget_exel_fields_apply(view->widget_exel);
    evisum_ui_widget_exel_genlist_clear(view->widget_exel);
    evisum_ui_widget_exel_item_cache_reset(view->widget_exel, _evisum_ui_process_list_fields_cache_reset_done_cb, view);
 }
 
 static void
-_evisum_ui_process_list_fields_applied_cb(void *data, Eina_Bool changed)
+_evisum_ui_process_list_fields_applied_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evisum_Ui_Process_List_View *view = data;
+   Eina_Bool changed = *(Eina_Bool *) event_info;
 
    if (!changed) return;
 
@@ -368,21 +339,21 @@ _evisum_ui_process_list_fields_applied_cb(void *data, Eina_Bool changed)
 }
 
 static void
-_evisum_ui_process_list_fields_resize_live_cb(void *data)
+_evisum_ui_process_list_fields_resize_live_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evisum_Ui_Process_List_View *view = data;
    evisum_ui_widget_exel_genlist_realized_items_update(view->widget_exel);
 }
 
 static void
-_evisum_ui_process_list_fields_resize_done_cb(void *data)
+_evisum_ui_process_list_fields_resize_done_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evisum_Ui_Process_List_View *view = data;
    evisum_ui_config_save(view->ui);
 }
 
 static void
-_evisum_ui_process_list_fields_reordered_cb(void *data)
+_evisum_ui_process_list_fields_reordered_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
 {
    Evisum_Ui_Process_List_View *view = data;
    if (!view) return;
@@ -433,24 +404,10 @@ _evisum_ui_process_list_btn_clicked_cb(void *data, Evas_Object *obj, void *event
    view->skip_wait = 1;
 }
 
-static Evas_Object *
-_evisum_ui_process_list_sort_button_add(Evas_Object *parent, Evisum_Ui_Process_List_View *view, Proc_Sort type,
-                                        double weight_x)
-{
-   Evisum_Ui *ui = view->ui;
-   Evas_Object *btn;
-
-   btn = evisum_ui_widget_exel_sort_header_button_add(parent, "",
-                                                      (ui->proc.sort_type == type) ? ui->proc.sort_reverse : 0,
-                                                      weight_x, FILL, _evisum_ui_process_list_btn_clicked_cb, view);
-   evas_object_data_set(btn, "type", (void *) (intptr_t) type);
-   return btn;
-}
-
 static void
-_evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view)
+_evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view, Evas_Object *parent)
 {
-   view->widget_exel = evisum_ui_widget_exel_create(view->win);
+   view->widget_exel = evisum_ui_widget_exel_add(parent);
    if (!view->widget_exel) return;
 
    evisum_ui_widget_exel_field_bounds_set(view->widget_exel, PROC_FIELD_CMD, PROC_FIELD_MAX);
@@ -458,40 +415,51 @@ _evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view)
    evisum_ui_widget_exel_field_reorder_enabled_set(view->widget_exel, EINA_TRUE);
    evisum_ui_widget_exel_resize_hit_width_set(view->widget_exel, PROC_COL_RESIZE_HIT_WIDTH);
    evisum_ui_widget_exel_state_bind(view->widget_exel, &view->ui->proc.fields, view->ui->proc.field_widths);
-   evisum_ui_widget_exel_callbacks_set(
-     view->widget_exel, _evisum_ui_process_list_fields_reference_mask_get_cb, _evisum_ui_process_list_fields_changed_cb,
-     _evisum_ui_process_list_fields_applied_cb, _evisum_ui_process_list_fields_resize_live_cb,
-     _evisum_ui_process_list_fields_resize_done_cb, _evisum_ui_process_list_fields_reordered_cb, view);
+   evas_object_data_set(view->widget_exel, "view", view);
+   evisum_ui_widget_exel_reference_mask_callback_set(view->widget_exel,
+                                                     _evisum_ui_process_list_fields_reference_mask_get_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, EVISUM_UI_WIDGET_EXEL_EVENT_FIELDS_CHANGED,
+                                  _evisum_ui_process_list_fields_changed_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, EVISUM_UI_WIDGET_EXEL_EVENT_FIELDS_APPLIED,
+                                  _evisum_ui_process_list_fields_applied_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, EVISUM_UI_WIDGET_EXEL_EVENT_COLUMNS_RESIZE,
+                                  _evisum_ui_process_list_fields_resize_live_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, EVISUM_UI_WIDGET_EXEL_EVENT_COLUMNS_RESIZED,
+                                  _evisum_ui_process_list_fields_resize_done_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, EVISUM_UI_WIDGET_EXEL_EVENT_FIELDS_REORDERED,
+                                  _evisum_ui_process_list_fields_reordered_cb, view);
 
    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
      {
-        Proc_Sort type;
+        Proc_Sort type = _evisum_ui_process_list_field_sort_get(i);
+        const Proc_Field_Info *meta = _evisum_ui_process_list_field_meta_get(i);
+        Evisum_Ui_Widget_Exel_Item_Cell_Def row_def = { 0 };
+        Evisum_Ui_Widget_Exel_Field_Params params;
         Evas_Object *btn;
-        Evisum_Ui_Widget_Exel_Item_Cell_Def row_def;
-        const Proc_Field_Info *meta;
-        const char *name, *desc;
 
-        type = _evisum_ui_process_list_field_sort_get(i);
-        btn = _evisum_ui_process_list_sort_button_add(view->win, view, type, i == PROC_FIELD_CMD ? 1.0 : 0.0);
-        evas_object_show(btn);
-
-        meta = _evisum_ui_process_list_field_meta_get(i);
-        name = meta ? _(meta->name) : "BUG";
-        desc = meta ? _(meta->desc) : "BUG";
-
-        elm_object_tooltip_text_set(btn, desc);
-        elm_object_text_set(btn, name);
-
-        evisum_ui_widget_exel_field_register(view->widget_exel, i, btn, desc,
-                                             _evisum_ui_process_list_field_default_width_get(i),
-                                             _evisum_ui_process_list_field_min_width_get(i), i == PROC_FIELD_CMD);
-        if (_evisum_ui_process_list_field_row_def_get(i, &row_def))
-          {
-             evisum_ui_widget_exel_field_row_def_set(view->widget_exel, i, &row_def);
-          }
-        evisum_ui_widget_exel_field_resize_attach(view->widget_exel, btn, i);
-        evisum_ui_widget_exel_field_width_apply(view->widget_exel, i);
-        evas_object_event_callback_add(btn, EVAS_CALLBACK_MOUSE_UP, _evisum_ui_process_list_fields_mouse_up_cb, view);
+        _evisum_ui_process_list_field_row_def_get(i, &row_def);
+        params = (Evisum_Ui_Widget_Exel_Field_Params){
+           .id = i,
+           .title = meta ? _(meta->name) : "BUG",
+           .desc = meta ? _(meta->desc) : "BUG",
+           .key = row_def.key,
+           .aux_key = row_def.aux_key,
+           .unit_format = row_def.unit_format,
+           .type = row_def.type,
+           .align_x = row_def.align_x,
+           .weight_x = row_def.weight_x,
+           .boxed = row_def.boxed,
+           .spacer = row_def.spacer,
+           .icon_size = row_def.icon_size,
+           .default_width = _evisum_ui_process_list_field_default_width_get(i),
+           .min_width = _evisum_ui_process_list_field_min_width_get(i),
+           .always_visible = i == PROC_FIELD_CMD,
+           .reverse = (view->ui->proc.sort_type == type) ? view->ui->proc.sort_reverse : 0,
+           .clicked_cb = _evisum_ui_process_list_btn_clicked_cb,
+           .clicked_data = view,
+        };
+        btn = evisum_ui_widget_exel_field_add(view->widget_exel, &params);
+        evas_object_data_set(btn, "type", (void *) (intptr_t) type);
      }
 }
 
@@ -552,7 +520,7 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
    Evisum_Ui_Process_List_View *view;
    const char *icon_name, *icon_old, *icon_new;
 
-   view = evas_object_data_get(obj, "widget_exel_data");
+   view = evas_object_data_get(evas_object_data_get(obj, "widget_exel"), "view");
    if (!view) return NULL;
    ui = view->ui;
    proc = (void *) data;
@@ -1669,19 +1637,6 @@ _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
 }
 
 static void
-_evisum_ui_process_list_field_header_mouse_up_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED,
-                                                 void *event_info)
-{
-   Evisum_Ui_Process_List_View *view = data;
-   Evas_Event_Mouse_Up *ev = event_info;
-   (void) e;
-   (void) obj;
-   if (!view || !ev) return;
-   if (evisum_ui_widget_exel_field_reorder_mouse_up(view->widget_exel, ev)) return;
-   evisum_ui_widget_exel_field_resize_mouse_up(view->widget_exel, ev);
-}
-
-static void
 _evisum_ui_process_list_item_menu_dismissed_cb(void *data EINA_UNUSED, Evas_Object *obj, void *ev EINA_UNUSED)
 {
    Evisum_Ui_Process_List_View *view = data;
@@ -1982,7 +1937,7 @@ _evisum_ui_process_list_btn_menu_clicked_cb(void *data, Evas_Object *obj, void *
 static Evas_Object *
 _evisum_ui_process_list_content_add(Evisum_Ui_Process_List_View *view, Evas_Object *parent)
 {
-   Evas_Object *tb, *btn, *glist, *scr;
+   Evas_Object *btn, *scr;
    Evas_Object *fr, *hbx;
 
    scr = elm_scroller_add(parent);
@@ -1992,22 +1947,14 @@ _evisum_ui_process_list_content_add(Evisum_Ui_Process_List_View *view, Evas_Obje
    elm_scroller_bounce_set(scr, EINA_FALSE, EINA_FALSE);
    evas_object_show(scr);
 
-   tb = elm_table_add(scr);
-   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tb, FILL, FILL);
-   evas_object_show(tb);
-   elm_object_content_set(scr, tb);
-   view->tb_main = tb;
-
-   view->btn_menu = btn = evisum_ui_widget_exel_icon_button_add(tb, "menu", _("Menu"), 0.0, FILL,
-                                                                _evisum_ui_process_list_btn_menu_clicked_cb, view);
-   evas_object_show(btn);
-
-   _evisum_ui_process_list_fields_init(view);
+   _evisum_ui_process_list_fields_init(view, scr);
    if (!view->widget_exel) return scr;
+   elm_object_content_set(scr, view->widget_exel);
+   evas_object_show(view->widget_exel);
 
-   evisum_ui_widget_exel_genlist_add(view->widget_exel, parent);
-   glist = evisum_ui_widget_exel_genlist_obj_get(view->widget_exel);
+   view->btn_menu = btn = evisum_ui_widget_exel_icon_button_add(scr, "menu", _("Menu"), 0.0, FILL,
+                                                                _evisum_ui_process_list_btn_menu_clicked_cb, view);
+   evisum_ui_widget_exel_header_content_set(view->widget_exel, btn);
 
    view->itc.item_style = "full";
    view->itc.func.text_get = NULL;
@@ -2015,12 +1962,12 @@ _evisum_ui_process_list_content_add(Evisum_Ui_Process_List_View *view, Evas_Obje
    view->itc.func.filter_get = NULL;
    view->itc.func.del = _evisum_ui_process_list_item_del;
 
-   evas_object_smart_callback_add(glist, "selected", _evisum_ui_process_list_item_pid_clicked_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, "selected", _evisum_ui_process_list_item_pid_clicked_cb, view);
    evisum_ui_widget_exel_genlist_event_callback_add(view->widget_exel, EVAS_CALLBACK_MOUSE_UP,
                                                     _evisum_ui_process_list_item_pid_secondary_clicked_cb, view);
-   evas_object_smart_callback_add(glist, "scroll", _evisum_ui_process_list_glist_scrolled_cb, view);
-   evas_object_smart_callback_add(glist, "scroll,anim,stop", _evisum_ui_process_list_glist_scroll_stopped_cb, view);
-   evas_object_smart_callback_add(glist, "scroll,drag,stop", _evisum_ui_process_list_glist_scroll_stopped_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, "scroll", _evisum_ui_process_list_glist_scrolled_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, "scroll,anim,stop", _evisum_ui_process_list_glist_scroll_stopped_cb, view);
+   evas_object_smart_callback_add(view->widget_exel, "scroll,drag,stop", _evisum_ui_process_list_glist_scroll_stopped_cb, view);
 
    view->summary.fr = fr = elm_frame_add(parent);
    elm_object_style_set(fr, "pad_small");
@@ -2034,6 +1981,7 @@ _evisum_ui_process_list_content_add(Evisum_Ui_Process_List_View *view, Evas_Obje
    evas_object_show(hbx);
 
    elm_object_content_set(fr, hbx);
+   evisum_ui_widget_exel_footer_set(view->widget_exel, fr);
 
    return scr;
 }
@@ -2324,7 +2272,7 @@ _evisum_ui_process_list_win_alpha_set(Evisum_Ui_Process_List_View *view)
    if (ui->proc.transparent)
      {
         r = b = g = a = 255;
-        evas_object_color_set(view->tb_main, r * fade, g * fade, b * fade, fade * a);
+        evas_object_color_set(view->widget_exel, r * fade, g * fade, b * fade, fade * a);
         r = b = g = a = 255;
         evas_object_color_set(bg, r * fade, g * fade, b * fade, fade * a);
         elm_bg_color_set(bg, -1, -1, -1);
@@ -2332,7 +2280,7 @@ _evisum_ui_process_list_win_alpha_set(Evisum_Ui_Process_List_View *view)
    else
      {
         r = b = g = a = 255;
-        evas_object_color_set(view->tb_main, r, g, b, a);
+        evas_object_color_set(view->widget_exel, r, g, b, a);
         r = b = g = a = 255;
         evas_object_color_set(bg, r, g, b, a);
         elm_bg_color_set(bg, -1, -1, -1);
@@ -2473,7 +2421,7 @@ _evisum_ui_process_list_win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, 
 
    free(view->search.text);
 
-   if (view->widget_exel) evisum_ui_widget_exel_free(view->widget_exel);
+   evas_object_del(view->widget_exel);
 
    if (view->history.lock_init) eina_lock_free(&view->history.lock);
 
@@ -2553,8 +2501,7 @@ evisum_ui_process_list_win_add(Evisum_Ui *ui)
    evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _evisum_ui_process_list_win_del_cb, view);
    evas_object_event_callback_add(win, EVAS_CALLBACK_RESIZE, _evisum_ui_process_list_win_resize_cb, view);
    evas_object_event_callback_add(win, EVAS_CALLBACK_MOVE, _evisum_ui_process_list_win_move_cb, view);
-   evas_object_event_callback_add(win, EVAS_CALLBACK_MOUSE_UP, _evisum_ui_process_list_field_header_mouse_up_cb, view);
-   evas_object_event_callback_add(view->tb_main, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_process_list_win_key_down_cb, view);
+   evas_object_event_callback_add(view->widget_exel, EVAS_CALLBACK_KEY_DOWN, _evisum_ui_process_list_win_key_down_cb, view);
 
    _evisum_ui_process_list_search_add(view);
    _evisum_ui_process_list_loader_add(view);

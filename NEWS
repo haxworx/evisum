@@ -1,8 +1,17 @@
 =============
-Evisum 2.0.14
+Evisum 2.0.15
 =============
 
   * ...
+
+=============
+Evisum 2.0.14
+=============
+
+  * Add a new CPU visualisations and set as default.
+  * Refactor our menu show/hide code to reduce code duplication and simplify.
+  * Move exel widget and make it a smart object.
+  * Credit authors of additional CPU visuals to encourage hackings.
 
 =============
 Evisum 2.0.13

@@ -126,25 +126,9 @@ static void
 _evisum_ui_network_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info)
 {
    Evisum_Ui_Network_View *view = data;
-   Evas_Coord w, h;
-   Evas_Event_Mouse_Move *ev;
 
-   ev = event_info;
-   evas_object_geometry_get(obj, NULL, NULL, &w, &h);
-
-   if ((ev->cur.canvas.x >= (w - 128)) && (ev->cur.canvas.y <= 128))
-     {
-        if (!view->btn_visible)
-          {
-             elm_object_signal_emit(view->btn_menu, "menu,show", "evisum/menu");
-             view->btn_visible = 1;
-          }
-     }
-   else if ((view->btn_visible) && (!view->menu))
-     {
-        elm_object_signal_emit(view->btn_menu, "menu,hide", "evisum/menu");
-        view->btn_visible = 0;
-     }
+   evisum_ui_menu_hover_update(view->btn_menu, obj, view->menu,
+                               &view->btn_visible, event_info);
 }
 
 static void
@@ -594,7 +578,7 @@ void
 evisum_ui_network_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *root_bx, *graph_bx, *graph_tb, *legend_fr;
-   Evas_Object *tb, *btn, *ic;
+   Evas_Object *tb;
    Elm_Layout *lay;
    Evas *evas;
    int scale;
@@ -678,20 +662,7 @@ evisum_ui_network_win_add(Evisum_Ui *ui)
    elm_object_content_set(legend_fr, view->legend_bx);
    evas_object_show(view->legend_bx);
 
-   btn = elm_button_add(win);
-   ic = elm_icon_add(btn);
-   elm_icon_standard_set(ic, "menu");
-   elm_object_part_content_set(btn, "icon", ic);
-   evas_object_show(ic);
-   elm_object_focus_allow_set(btn, 0);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_network_btn_menu_clicked_cb, view);
-
-   view->btn_menu = lay = elm_layout_add(win);
-   evas_object_size_hint_weight_set(lay, 1.0, 1.0);
-   evas_object_size_hint_align_set(lay, 0.99, 0.01);
-   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
-   elm_layout_content_set(lay, "evisum/menu", btn);
+   view->btn_menu = lay = evisum_ui_menu_button_add(win, _evisum_ui_network_btn_menu_clicked_cb, view);
    elm_table_pack(tb, lay, 0, 0, 1, 1);
    evas_object_show(lay);
 

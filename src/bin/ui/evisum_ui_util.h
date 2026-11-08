@@ -13,6 +13,9 @@
 #define BTN_HEIGHT      24
 #define LIST_BTN_HEIGHT 24
 
+/* Size of the top-right menu trigger region, before UI scaling. */
+#define UI_MENU_HOVER_SIZE 192
+
 #define UI_CHILD_WIN_WIDTH  360
 #define UI_CHILD_WIN_HEIGHT 360
 
@@ -46,6 +49,13 @@ evisum_ui_icon_name_get(const char *name);
 
 const char *
 evisum_image_path_get(const char *name);
+
+Evas_Object *
+evisum_ui_menu_button_add(Evas_Object *parent, Evas_Smart_Cb clicked_cb, void *data);
+
+void
+evisum_ui_menu_hover_update(Evas_Object *layout, Evas_Object *region, Evas_Object *menu,
+                            Eina_Bool *visible, const Evas_Event_Mouse_Move *ev);
 
 Evas_Object *
 evisum_ui_background_add(Evas_Object *win);

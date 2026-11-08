@@ -40,3 +40,4 @@ src/bin/ui/visuals/cpu_basic.c
 src/bin/ui/visuals/cpu_basic.h
 src/bin/ui/visuals/cpu_default.c
 src/bin/ui/visuals/cpu_default.h
+src/bin/ui/visuals/visuals.x

@@ -39,7 +39,7 @@ _item_del(void *data, Evas_Object *obj EINA_UNUSED) {
 static Evas_Object *
 _content_get(void *data, Evas_Object *obj, const char *source) {
     Example_Row *row = data;
-    Evisum_Ui_Widget_Exel *wx;
+    Evas_Object *wx;
     Evas_Object *item;
     char buf[64];
 
@@ -66,7 +66,7 @@ _content_get(void *data, Evas_Object *obj, const char *source) {
 
 static Eina_Bool
 _update_timer_cb(void *data) {
-    Evisum_Ui_Widget_Exel *wx = data;
+    Evas_Object *wx = data;
     Elm_Object_Item *it = evisum_ui_widget_exel_genlist_first_item_get(wx);
 
     while (it) {
@@ -85,7 +85,7 @@ _update_timer_cb(void *data) {
 }
 
 static void
-_fill_demo_rows(Evisum_Ui_Widget_Exel *wx, Elm_Genlist_Item_Class *itc) {
+_fill_demo_rows(Evas_Object *wx, Elm_Genlist_Item_Class *itc) {
     Example_Row *rows[3];
     Elm_Object_Item *it;
 
@@ -108,7 +108,7 @@ _fill_demo_rows(Evisum_Ui_Widget_Exel *wx, Elm_Genlist_Item_Class *itc) {
 static void
 _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info EINA_UNUSED) {
     Ecore_Timer *timer;
-    Evisum_Ui_Widget_Exel *wx;
+    Evas_Object *wx;
 
     timer = evas_object_data_get(obj, "timer");
     wx = evas_object_data_get(obj, "wx");
@@ -116,7 +116,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void 
 
     if (wx) {
         evisum_ui_widget_exel_genlist_clear(wx);
-        evisum_ui_widget_exel_free(wx);
+        evas_object_del(wx);
     }
     elm_exit();
 }
@@ -124,7 +124,7 @@ _win_del_cb(void *data EINA_UNUSED, Evas *e EINA_UNUSED, Evas_Object *obj, void 
 EAPI_MAIN int
 elm_main(int argc EINA_UNUSED, char **argv EINA_UNUSED) {
     Evas_Object *win, *root;
-    Evisum_Ui_Widget_Exel *wx;
+    Evas_Object *wx;
     Evisum_Ui_Widget_Exel_Field_Params fp;
     Elm_Genlist_Item_Class itc;
     Ecore_Timer *timer;
@@ -137,13 +137,14 @@ elm_main(int argc EINA_UNUSED, char **argv EINA_UNUSED) {
     elm_win_autodel_set(win, EINA_TRUE);
     evas_object_event_callback_add(win, EVAS_CALLBACK_DEL, _win_del_cb, NULL);
 
-    wx = evisum_ui_widget_exel_create(win);
+    wx = evisum_ui_widget_exel_add(win);
     if (!wx) return EXIT_FAILURE;
 
     evas_object_data_set(win, "wx", wx);
 
-    root = evisum_ui_widget_exel_object_get(wx);
+    root = wx;
     elm_win_resize_object_add(win, root);
+    evas_object_show(root);
 
     fp = (Evisum_Ui_Widget_Exel_Field_Params) {
         .id = EX_FIELD_CMD,
@@ -198,7 +199,6 @@ elm_main(int argc EINA_UNUSED, char **argv EINA_UNUSED) {
 
     evisum_ui_widget_exel_fields_apply(wx);
 
-    elm_box_pack_end(root, evisum_ui_widget_exel_genlist_add(wx, root));
 
     itc.item_style = "full";
     itc.func.text_get = NULL;

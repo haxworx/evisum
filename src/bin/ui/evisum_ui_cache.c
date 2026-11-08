@@ -158,7 +158,7 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj)
              cache->active = eina_list_remove_list(cache->active, l);
              if (n > 10)
                {
-                  //evas_object_del(it->obj);
+                  evas_object_del(it->obj);
                   free(it);
                }
              else
@@ -178,7 +178,9 @@ void
 evisum_ui_item_cache_free(Evisum_Ui_Cache *cache)
 {
    Item_Cache *it;
+   Evas_Object *obj;
 
+   if (!cache) return;
    if (cache->pending_timer)
      {
         ecore_timer_del(cache->pending_timer);
@@ -186,11 +188,18 @@ evisum_ui_item_cache_free(Evisum_Ui_Cache *cache)
         cache->data = NULL;
      }
 
-   if (cache->parent) evas_object_del(cache->parent);
-
-   EINA_LIST_FREE (cache->active, it) free(it);
-   EINA_LIST_FREE (cache->inactive, it) free(it);
-   eina_list_free(cache->pending);
+   /* The cache owns rows, never the genlist that supplied their parent. */
+   EINA_LIST_FREE (cache->active, it)
+     {
+        evas_object_del(it->obj);
+        free(it);
+     }
+   EINA_LIST_FREE (cache->inactive, it)
+     {
+        evas_object_del(it->obj);
+        free(it);
+     }
+   EINA_LIST_FREE (cache->pending, obj) evas_object_del(obj);
 
    free(cache);
 }

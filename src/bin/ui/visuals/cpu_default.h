@@ -1,5 +1,5 @@
-#ifndef CPU_VISUAL_H
-#define CPU_VISUAL_H
+#ifndef CPU_DEFAULT_H
+#define CPU_DEFAULT_H
 
 #include "ui/evisum_ui_cpu.h"
 

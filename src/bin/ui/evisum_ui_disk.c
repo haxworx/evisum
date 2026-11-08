@@ -690,30 +690,9 @@ static void
 _evisum_ui_disk_win_mouse_move_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
    Evisum_Ui_Disk_View *view = data;
-   Evas_Event_Mouse_Move *ev = event_info;
-   Evas_Coord gx, gy, gw, gh;
-   Eina_Bool on_hotzone = EINA_FALSE;
 
-   if (!view->graph_bg || !view->btn_menu || !ev) return;
-
-   evas_object_geometry_get(view->graph_bg, &gx, &gy, &gw, &gh);
-   if ((ev->cur.canvas.x >= (gx + gw - 128)) && (ev->cur.canvas.x <= (gx + gw)) && (ev->cur.canvas.y >= gy)
-       && (ev->cur.canvas.y <= (gy + 128)))
-      on_hotzone = EINA_TRUE;
-
-   if (on_hotzone)
-     {
-        if (!view->btn_visible)
-          {
-             elm_object_signal_emit(view->btn_menu, "menu,show", "evisum/menu");
-             view->btn_visible = 1;
-          }
-     }
-   else if ((view->btn_visible) && (!view->main_menu))
-     {
-        elm_object_signal_emit(view->btn_menu, "menu,hide", "evisum/menu");
-        view->btn_visible = 0;
-     }
+   evisum_ui_menu_hover_update(view->btn_menu, view->graph_bg, view->main_menu,
+                               &view->btn_visible, event_info);
 }
 
 static void
@@ -745,7 +724,6 @@ void
 evisum_ui_disk_win_add(Evisum_Ui *ui)
 {
    Evas_Object *win, *tb, *graph_tb, *legend_fr, *legend_sc;
-   Evas_Object *btn, *ic;
    Elm_Layout *lay;
    Evas *evas;
 
@@ -794,20 +772,7 @@ evisum_ui_disk_win_add(Evisum_Ui *ui)
    evas_object_show(view->graph_img);
    evas_object_stack_above(view->graph_img, view->graph_bg);
 
-   btn = elm_button_add(win);
-   ic = elm_icon_add(btn);
-   elm_icon_standard_set(ic, "menu");
-   elm_object_part_content_set(btn, "icon", ic);
-   evas_object_show(ic);
-   elm_object_focus_allow_set(btn, 0);
-   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
-   evas_object_smart_callback_add(btn, "clicked", _evisum_ui_disk_btn_menu_clicked_cb, view);
-
-   view->btn_menu = lay = elm_layout_add(win);
-   evas_object_size_hint_weight_set(lay, 1.0, 1.0);
-   evas_object_size_hint_align_set(lay, 0.99, 0.01);
-   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
-   elm_layout_content_set(lay, "evisum/menu", btn);
+   view->btn_menu = lay = evisum_ui_menu_button_add(win, _evisum_ui_disk_btn_menu_clicked_cb, view);
    elm_table_pack(graph_tb, lay, 0, 0, 1, 1);
    evas_object_show(lay);
 

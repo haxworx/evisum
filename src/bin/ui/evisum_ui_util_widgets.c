@@ -1,6 +1,7 @@
 #include "evisum_ui_util.h"
 
 #include <Elementary.h>
+#include "config.h"
 
 Evas_Object *
 evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text, Evas_Smart_Cb clicked_cb, void *data)
@@ -106,4 +107,48 @@ evisum_ui_icon_size_set(Evas_Object *ic, int size)
 {
    evas_object_size_hint_min_set(ic, size, size);
    evas_object_size_hint_max_set(ic, size, size);
+}
+
+Evas_Object *
+evisum_ui_menu_button_add(Evas_Object *parent, Evas_Smart_Cb clicked_cb, void *data)
+{
+   Evas_Object *btn, *ic, *lay;
+
+   btn = elm_button_add(parent);
+   ic = elm_icon_add(btn);
+   elm_icon_standard_set(ic, "menu");
+   elm_object_part_content_set(btn, "icon", ic);
+   evas_object_show(ic);
+   elm_object_focus_allow_set(btn, 0);
+   evas_object_size_hint_min_set(btn, ELM_SCALE_SIZE(BTN_HEIGHT), ELM_SCALE_SIZE(BTN_HEIGHT));
+   evas_object_smart_callback_add(btn, "clicked", clicked_cb, data);
+
+   lay = elm_layout_add(parent);
+   evas_object_size_hint_weight_set(lay, 1.0, 1.0);
+   evas_object_size_hint_align_set(lay, 0.99, 0.01);
+   elm_layout_file_set(lay, PACKAGE_DATA_DIR "/themes/evisum.edj", "cpu");
+   elm_layout_content_set(lay, "evisum/menu", btn);
+
+   return lay;
+}
+
+void
+evisum_ui_menu_hover_update(Evas_Object *layout, Evas_Object *region, Evas_Object *menu,
+                            Eina_Bool *visible, const Evas_Event_Mouse_Move *ev)
+{
+   Evas_Coord x, y, w, h, size;
+   Eina_Bool show;
+
+   if (!layout || !region || !visible || !ev) return;
+
+   evas_object_geometry_get(region, &x, &y, &w, &h);
+   size = ELM_SCALE_SIZE(UI_MENU_HOVER_SIZE);
+   show = (w > 0) && (h > 0) && (ev->cur.canvas.x >= x) && (ev->cur.canvas.x >= x + w - size)
+          && (ev->cur.canvas.x <= x + w) && (ev->cur.canvas.y >= y)
+          && (ev->cur.canvas.y <= y + h) && (ev->cur.canvas.y <= y + size);
+   if (menu) show = EINA_TRUE;
+   if (show == *visible) return;
+
+   elm_object_signal_emit(layout, show ? "menu,show" : "menu,hide", "evisum/menu");
+   *visible = show;
 }

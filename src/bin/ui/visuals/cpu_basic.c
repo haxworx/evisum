@@ -170,7 +170,7 @@ _cpu_percent_colors_fill(Evas_Object *colors)
 Evisum_Ui_Cpu_Visual_Data *
 evisum_ui_cpu_visual_basic(Evas_Object *parent_bx)
 {
-   Evas_Object *container, *grid, *fr, *legend_tbl, *colors, *lb, *bg, *desc_fr;
+   Evas_Object *container, *grid, *fr, *legend_tbl, *colors, *lb, *bg;
    Ext *ext;
    uint8_t text_r, text_g, text_b;
    char text_hex[7];
@@ -289,22 +289,6 @@ evisum_ui_cpu_visual_basic(Evas_Object *parent_bx)
    evas_object_size_hint_align_set(lb, 1.0, 0.5);
    evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
    elm_table_pack(legend_tbl, lb, 1, 0, 1, 1);
-   evas_object_show(lb);
-
-   desc_fr = elm_frame_add(parent_bx);
-   elm_object_text_set(desc_fr, _("Description"));
-   evas_object_size_hint_align_set(desc_fr, FILL, FILL);
-   evas_object_size_hint_weight_set(desc_fr, EXPAND, 0.0);
-   elm_box_pack_end(parent_bx, desc_fr);
-   evas_object_show(desc_fr);
-
-   lb = elm_label_add(desc_fr);
-   elm_label_line_wrap_set(lb, ELM_WRAP_WORD);
-   elm_object_text_set(lb, _("<align=left>Size shows activity level (frequency when available, otherwise load). "
-                             "Color and the 0%-100% legend show CPU usage percentage.</align>"));
-   evas_object_size_hint_align_set(lb, 0.0, 0.5);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   elm_object_content_set(desc_fr, lb);
    evas_object_show(lb);
 
    pd->thread = ecore_thread_feedback_run(_core_times_main_cb, _core_times_feedback_cb, NULL, NULL, pd, 1);
