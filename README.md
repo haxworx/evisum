@@ -11,6 +11,7 @@ I'd like to express that schizophrenia doesn't exclude anyone from following
 their dreams as long as you hold onto a touch of realism and your expectations 
 aren't too high.
 
+![Evisum Screenshot](ss3.png "Evisum process list")
 ![Evisum Screenshot](data/images/ss2.jpg "Evisum 2.0")
 ![Evisum Screenshot](data/images/ss.jpg "Evisum on Debian GNU/Linux")
 
@@ -140,6 +141,17 @@ Compile Evisum using `meson` and `ninja`:
 meson setup build
 ninja -C build
 ```
+
+Run the interactive Exel widget example with:
+
+```sh
+./build/src/tests/widget_exel_test
+```
+
+The example shows text and progress-bar columns with sample data. Right-click a
+header to choose columns, drag its edge to resize, or drag a header to reorder.
+Run the automated checks without a display using `meson test -C build`, or invoke
+`./build/src/tests/widget_exel_test --test` directly.
 
 ## 🚀 Installation
 

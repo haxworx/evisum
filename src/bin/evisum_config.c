@@ -150,6 +150,8 @@ config_init(void) {
                                   proc.field_order[PROC_FIELD_TIME], EET_T_INT);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.field_order.cpu_usage",
                                   proc.field_order[PROC_FIELD_CPU_USAGE], EET_T_INT);
+    EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_usage_bars", proc.show_usage_bars,
+                                  EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.show_statusbar", proc.show_statusbar,
                                   EET_T_UCHAR);
     EET_DATA_DESCRIPTOR_ADD_BASIC(_evisum_conf_descriptor, Evisum_Config, "proc.transparent", proc.transparent,
@@ -232,6 +234,7 @@ _config_init() {
     cfg->version = CONFIG_VERSION;
     cfg->proc.show_kthreads = 0;
     cfg->proc.show_statusbar = 1;
+    cfg->proc.show_usage_bars = 1;
     cfg->proc.show_user = 1;
     cfg->proc.show_self = 0;
     cfg->global.poll_delay = 1;
@@ -239,17 +242,19 @@ _config_init() {
     cfg->proc.sort_type = PROC_SORT_BY_CMD;
     cfg->proc.transparent = 0;
     cfg->proc.fields = (1u << PROC_FIELD_CMD)
-                       | (1u << PROC_FIELD_PID)
-                       | (1u << PROC_FIELD_THREADS)
-                       | (1u << PROC_FIELD_DISK_READ)
-                       | (1u << PROC_FIELD_DISK_WRITE)
                        | (1u << PROC_FIELD_NET_IN)
                        | (1u << PROC_FIELD_NET_OUT)
-                       | (1u << PROC_FIELD_FILES)
                        | (1u << PROC_FIELD_SIZE)
                        | (1u << PROC_FIELD_CPU_USAGE);
     cfg->proc.alpha = 100;
-    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++) cfg->proc.field_order[i] = i;
+    int pos = PROC_FIELD_CMD;
+    cfg->proc.field_order[pos++] = PROC_FIELD_CMD;
+    cfg->proc.field_order[pos++] = PROC_FIELD_NET_IN;
+    cfg->proc.field_order[pos++] = PROC_FIELD_NET_OUT;
+    cfg->proc.field_order[pos++] = PROC_FIELD_SIZE;
+    cfg->proc.field_order[pos++] = PROC_FIELD_CPU_USAGE;
+    for (int i = PROC_FIELD_CMD; i < PROC_FIELD_MAX; i++)
+        if (!(cfg->proc.fields & (1u << i))) cfg->proc.field_order[pos++] = i;
 
     cfg->cpu.visual = eina_stringshare_add("default");
     cfg->disk.graph_mode = EVISUM_DISK_GRAPH_USAGE;

@@ -341,4 +341,10 @@ evisum_ui_widget_exel_deferred_call_schedule(Evas_Object *obj, double delay_seco
 void
 evisum_ui_widget_exel_deferred_call_cancel(Evas_Object *obj);
 
+
+/* Set the cell presentation for newly created rows. Reset the row cache after changes. */
+void
+evisum_ui_widget_exel_field_row_def_set(Evas_Object *obj, int id,
+                                       const Evisum_Ui_Widget_Exel_Item_Cell_Def *def);
+
 #endif

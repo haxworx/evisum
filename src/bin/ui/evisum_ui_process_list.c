@@ -10,6 +10,7 @@
 #include <stdio.h>
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/resource.h>
 #include <pwd.h>
@@ -38,6 +39,14 @@ typedef struct
    Ecore_Timer *main_menu_timer;
    Evas_Object *menu;
    Eina_Bool transparent;
+   Eina_Bool show_usage_bars;
+
+   /* Per-column peaks persist until this view is freed. Main-loop access only. */
+   struct
+   {
+      uint64_t net_in, net_out;
+      uint64_t disk_read, disk_write;
+   } transfer_max;
 
    struct
    {
@@ -153,9 +162,12 @@ _evisum_ui_process_list_field_default_width_get(Proc_Field id)
 {
    if (id == PROC_FIELD_CMD) return 2.0 * ELM_SCALE_SIZE(BTN_WIDTH);
    if (id == PROC_FIELD_UID) return 1.8 * ELM_SCALE_SIZE(BTN_WIDTH);
-   if (id == PROC_FIELD_CPU_USAGE) return 1.75 * ELM_SCALE_SIZE(BTN_WIDTH);
-   if (id == PROC_FIELD_NET_IN || id == PROC_FIELD_NET_OUT || id == PROC_FIELD_DISK_READ || id == PROC_FIELD_DISK_WRITE)
-      return 1.5 * ELM_SCALE_SIZE(BTN_WIDTH);
+   if (id == PROC_FIELD_CPU || id == PROC_FIELD_CPU_USAGE ||
+       id == PROC_FIELD_SIZE || id == PROC_FIELD_VIRT ||
+       id == PROC_FIELD_RSS || id == PROC_FIELD_SHARED ||
+       id == PROC_FIELD_NET_IN || id == PROC_FIELD_NET_OUT ||
+       id == PROC_FIELD_DISK_READ || id == PROC_FIELD_DISK_WRITE)
+      return 1.75 * ELM_SCALE_SIZE(BTN_WIDTH);
 
    return ELM_SCALE_SIZE(BTN_WIDTH);
 }
@@ -181,7 +193,7 @@ _evisum_ui_process_list_field_sort_get(Proc_Field id)
 }
 
 static Eina_Bool
-_evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_Item_Cell_Def *def)
+_evisum_ui_process_list_field_row_def_get(Eina_Bool usage_bars, Proc_Field id, Evisum_Ui_Widget_Exel_Item_Cell_Def *def)
 {
    if (!def) return EINA_FALSE;
 
@@ -228,27 +240,43 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
         def->key = "files";
         return EINA_TRUE;
      case PROC_FIELD_NET_IN:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "net_in";
         return EINA_TRUE;
      case PROC_FIELD_NET_OUT:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "net_out";
         return EINA_TRUE;
      case PROC_FIELD_DISK_READ:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "disk_read";
         return EINA_TRUE;
      case PROC_FIELD_DISK_WRITE:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "disk_write";
         return EINA_TRUE;
      case PROC_FIELD_SIZE:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "size";
         return EINA_TRUE;
      case PROC_FIELD_VIRT:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "virt";
         return EINA_TRUE;
      case PROC_FIELD_RSS:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "rss";
         return EINA_TRUE;
      case PROC_FIELD_SHARED:
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        def->unit_format = "";
         def->key = "share";
         return EINA_TRUE;
      case PROC_FIELD_STATE:
@@ -258,7 +286,7 @@ _evisum_ui_process_list_field_row_def_get(Proc_Field id, Evisum_Ui_Widget_Exel_I
         def->key = "time";
         return EINA_TRUE;
      case PROC_FIELD_CPU_USAGE:
-        def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
+        if (usage_bars) def->type = EVISUM_UI_WIDGET_EXEL_ITEM_CELL_PROGRESS;
         def->key = "cpu_u";
         def->unit_format = _("%1.0f %%");
         return EINA_TRUE;
@@ -407,6 +435,7 @@ _evisum_ui_process_list_btn_clicked_cb(void *data, Evas_Object *obj, void *event
 static void
 _evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view, Evas_Object *parent)
 {
+   view->show_usage_bars = view->ui->proc.show_usage_bars;
    view->widget_exel = evisum_ui_widget_exel_add(parent);
    if (!view->widget_exel) return;
 
@@ -437,7 +466,7 @@ _evisum_ui_process_list_fields_init(Evisum_Ui_Process_List_View *view, Evas_Obje
         Evisum_Ui_Widget_Exel_Field_Params params;
         Evas_Object *btn;
 
-        _evisum_ui_process_list_field_row_def_get(i, &row_def);
+        _evisum_ui_process_list_field_row_def_get(view->show_usage_bars, i, &row_def);
         params = (Evisum_Ui_Widget_Exel_Field_Params){
            .id = i,
            .title = meta ? _(meta->name) : "BUG",
@@ -508,6 +537,46 @@ _evisum_ui_process_list_net_rate_set(char *buf, size_t n, uint64_t rate)
    snprintf(buf, n, "%.2f %s", value, unit);
 }
 
+static void
+_evisum_ui_process_list_transfer_progress_set(Evisum_Ui_Process_List_View *view, Evas_Object *row,
+                                             Proc_Field field, const char *key, uint64_t rate,
+                                             uint64_t maximum, Eina_Bool available)
+{
+   char text[64] = "-";
+   double value = 0.0;
+
+   if (available)
+     {
+        _evisum_ui_process_list_net_rate_set(text, sizeof(text), rate);
+        if (maximum) value = (double) rate / (double) maximum;
+        if (value > 1.0) value = 1.0;
+     }
+   if (view->show_usage_bars)
+      evisum_ui_widget_exel_item_field_progress_set(view->widget_exel, row, field, key, value, text);
+   else
+      evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, field, key, text);
+}
+
+static void
+_evisum_ui_process_list_memory_progress_set(Evisum_Ui_Process_List_View *view, Evas_Object *row,
+                                           Proc_Field field, const char *key, uint64_t used,
+                                           uint64_t total, Eina_Bool available)
+{
+   double value = 0.0;
+   const char *text = "-";
+
+   if (available)
+     {
+        text = evisum_size_format(used, 1);
+        if (total) value = (double) used / (double) total;
+        if (value > 1.0) value = 1.0;
+     }
+   if (view->show_usage_bars)
+      evisum_ui_widget_exel_item_field_progress_set(view->widget_exel, row, field, key, value, text);
+   else
+      evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, field, key, text);
+}
+
 static Evas_Object *
 _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *source)
 {
@@ -516,6 +585,8 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
    Evas_Object *cell, *o;
    char buf[128];
    Evas_Coord w, ow, bw;
+   Evisum_Engine_Status status = { 0 };
+   uint64_t mem_total;
    Evisum_Ui *ui;
    Evisum_Ui_Process_List_View *view;
    const char *icon_name, *icon_old, *icon_new;
@@ -535,9 +606,12 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
    w = evisum_ui_widget_exel_field_width_get(view->widget_exel, PROC_FIELD_CMD);
    w += bw;
 
-   snprintf(buf, sizeof(buf), "%s", proc->command ?: "");
    cell = evisum_ui_widget_exel_item_object_get(row, "cmd");
-   evisum_ui_widget_exel_item_text_object_if_changed_set(cell, buf);
+   if (evisum_ui_widget_exel_field_enabled_get(view->widget_exel, PROC_FIELD_PID))
+      evisum_ui_widget_exel_item_text_object_if_changed_set(cell, proc->command ?: "");
+   else
+      evisum_ui_widget_exel_item_text_object_if_changed_set(
+        cell, eina_slstr_printf("%s (%d)", proc->command ?: "", proc->pid));
    evas_object_geometry_get(cell, NULL, NULL, &ow, NULL);
    ow += bw;
    _evisum_ui_process_list_cmd_width_sync(view, ow);
@@ -587,38 +661,19 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
    snprintf(buf, sizeof(buf), "%d", proc->numfiles);
    evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_FILES, "files", buf);
 
-   if (!proc->is_kernel) snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_size, 1));
-   else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_SIZE, "size", buf);
+   mem_total = ui->mem_total;
+   if (evisum_engine_status_get(&status) && status.memory.total) mem_total = status.memory.total;
+   _evisum_ui_process_list_memory_progress_set(view, row, PROC_FIELD_SIZE, "size",
+                                              proc->mem_size, mem_total, !proc->is_kernel);
 
-   if (!proc->is_kernel) snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_virt, 1));
-   else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_VIRT, "virt", buf);
+   _evisum_ui_process_list_memory_progress_set(view, row, PROC_FIELD_VIRT, "virt",
+                                              proc->mem_virt, mem_total, !proc->is_kernel);
 
-   if ((!proc->is_kernel) || (ui->kthreads_has_rss))
-      snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_rss, 1));
-   else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_RSS, "rss", buf);
-
-   if (!proc->is_kernel) snprintf(buf, sizeof(buf), "%s", evisum_size_format(proc->mem_shared, 1));
-   else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_SHARED, "share", buf);
+   _evisum_ui_process_list_memory_progress_set(view, row, PROC_FIELD_RSS, "rss",
+                                              proc->mem_rss, mem_total,
+                                              !proc->is_kernel || ui->kthreads_has_rss);
+   _evisum_ui_process_list_memory_progress_set(view, row, PROC_FIELD_SHARED, "share",
+                                              proc->mem_shared, mem_total, !proc->is_kernel);
 
    if ((ui->proc.has_wchan) && (proc->state[0] == 's' && proc->state[1] == 'l'))
       snprintf(buf, sizeof(buf), "%s", proc->wchan ?: _("-"));
@@ -629,40 +684,23 @@ _evisum_ui_process_list_content_get(void *data, Evas_Object *obj, const char *so
    evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_TIME, "time", buf);
 
    snprintf(buf, sizeof(buf), _("%1.0f %%"), proc->cpu_usage);
-   evisum_ui_widget_exel_item_field_progress_set(view->widget_exel, row, PROC_FIELD_CPU_USAGE, "cpu_u",
-                                                 proc->cpu_usage / 100.0, buf);
-
-   if (!proc->is_kernel) _evisum_ui_process_list_net_rate_set(buf, sizeof(buf), proc->net_in);
+   if (view->show_usage_bars)
+      evisum_ui_widget_exel_item_field_progress_set(view->widget_exel, row, PROC_FIELD_CPU_USAGE, "cpu_u",
+                                                   proc->cpu_usage / 100.0, buf);
    else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_NET_IN, "net_in", buf);
+      evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_CPU_USAGE, "cpu_u", buf);
 
-   if (!proc->is_kernel) _evisum_ui_process_list_net_rate_set(buf, sizeof(buf), proc->net_out);
-   else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_NET_OUT, "net_out", buf);
+   _evisum_ui_process_list_transfer_progress_set(view, row, PROC_FIELD_NET_IN, "net_in",
+                                                proc->net_in, view->transfer_max.net_in, !proc->is_kernel);
 
-   if (!proc->is_kernel) _evisum_ui_process_list_net_rate_set(buf, sizeof(buf), proc->disk_read);
-   else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_DISK_READ, "disk_read", buf);
+   _evisum_ui_process_list_transfer_progress_set(view, row, PROC_FIELD_NET_OUT, "net_out",
+                                                proc->net_out, view->transfer_max.net_out, !proc->is_kernel);
 
-   if (!proc->is_kernel) _evisum_ui_process_list_net_rate_set(buf, sizeof(buf), proc->disk_write);
-   else
-     {
-        buf[0] = '-';
-        buf[1] = '\0';
-     }
-   evisum_ui_widget_exel_item_field_text_set(view->widget_exel, row, PROC_FIELD_DISK_WRITE, "disk_write", buf);
+   _evisum_ui_process_list_transfer_progress_set(view, row, PROC_FIELD_DISK_READ, "disk_read",
+                                                proc->disk_read, view->transfer_max.disk_read, !proc->is_kernel);
+
+   _evisum_ui_process_list_transfer_progress_set(view, row, PROC_FIELD_DISK_WRITE, "disk_write",
+                                                proc->disk_write, view->transfer_max.disk_write, !proc->is_kernel);
 
    return row;
 }
@@ -1392,6 +1430,11 @@ _evisum_ui_process_list_process_ignore(Evisum_Ui_Process_List_View *view, Proc_I
 
    if (!view->search.text || !view->search.len) return 0;
 
+   char *end;
+   errno = 0;
+   intmax_t pid = strtoimax(view->search.text, &end, 10);
+   if (!errno && end != view->search.text && !*end && pid == proc->pid) return 0;
+
    command = proc->command;
    if (!command || !command[0]) return 1;
 
@@ -1569,7 +1612,7 @@ static void
 _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED, void *msg EINA_UNUSED)
 {
    Evisum_Ui_Process_List_View *view;
-   Eina_List *list;
+   Eina_List *list, *l;
    Proc_Info *proc;
    Elm_Object_Item *it;
    unsigned int n;
@@ -1582,6 +1625,21 @@ _evisum_ui_process_list_feedback_cb(void *data, Ecore_Thread *thread EINA_UNUSED
         _evisum_ui_process_list_loader_hide(view);
         _evisum_ui_process_list_summary_update(view);
         return;
+     }
+
+   /* Scan the complete snapshot before rendering: every row uses the same peaks,
+    * including when the busiest process is currently off screen. */
+   EINA_LIST_FOREACH (list, l, proc)
+     {
+        if (proc->is_kernel) continue;
+        if (proc->net_in > view->transfer_max.net_in)
+           view->transfer_max.net_in = proc->net_in;
+        if (proc->net_out > view->transfer_max.net_out)
+           view->transfer_max.net_out = proc->net_out;
+        if (proc->disk_read > view->transfer_max.disk_read)
+           view->transfer_max.disk_read = proc->disk_read;
+        if (proc->disk_write > view->transfer_max.disk_write)
+           view->transfer_max.disk_write = proc->disk_write;
      }
 
    n = eina_list_count(list);
@@ -2301,6 +2359,26 @@ _evisum_ui_process_list_config_changed_cb(void *data, int type EINA_UNUSED, void
 
    view = data;
    ui = view->ui;
+
+   if (view->show_usage_bars != ui->proc.show_usage_bars)
+     {
+        const Proc_Field fields[] = {
+           PROC_FIELD_SIZE, PROC_FIELD_VIRT, PROC_FIELD_RSS, PROC_FIELD_SHARED, PROC_FIELD_CPU_USAGE,
+           PROC_FIELD_NET_IN, PROC_FIELD_NET_OUT, PROC_FIELD_DISK_READ, PROC_FIELD_DISK_WRITE
+        };
+
+        view->skip_update = 1;
+        view->show_usage_bars = ui->proc.show_usage_bars;
+        for (unsigned int i = 0; i < EINA_C_ARRAY_LENGTH(fields); i++)
+          {
+             Evisum_Ui_Widget_Exel_Item_Cell_Def def;
+             _evisum_ui_process_list_field_row_def_get(view->show_usage_bars, fields[i], &def);
+             evisum_ui_widget_exel_field_row_def_set(view->widget_exel, fields[i], &def);
+          }
+        evisum_ui_widget_exel_genlist_clear(view->widget_exel);
+        evisum_ui_widget_exel_item_cache_reset(view->widget_exel,
+                                               _evisum_ui_process_list_fields_update_deferred_cb, view);
+     }
 
    evisum_ui_widget_exel_genlist_policy_set(view->widget_exel, ELM_SCROLLER_POLICY_OFF, ELM_SCROLLER_POLICY_AUTO);
    view->skip_wait = 1;

@@ -2,7 +2,9 @@
 Evisum 2.0.15
 =============
 
-  * ...
+  * Make CPU and Memory (Size, RSS, Shared) and i/o either text or progress bars.
+  * Search by PID.
+  * Fix some small bugs.
 
 =============
 Evisum 2.0.14

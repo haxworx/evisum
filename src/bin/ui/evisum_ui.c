@@ -94,6 +94,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
         if ((config()->proc.show_kthreads != ui->proc.show_kthreads)
             || (config()->proc.show_user != ui->proc.show_user) || (config()->proc.show_self != ui->proc.show_self)
             || (config()->proc.show_statusbar != ui->proc.show_statusbar)
+            || (config()->proc.show_usage_bars != ui->proc.show_usage_bars)
             || (config()->proc.transparent != ui->proc.transparent) || (config()->proc.alpha != ui->proc.alpha))
           {
              notify = 1;
@@ -110,6 +111,7 @@ evisum_ui_config_save(Evisum_Ui *ui)
         config()->proc.show_user = ui->proc.show_user;
         config()->proc.show_self = ui->proc.show_self;
         config()->proc.show_statusbar = ui->proc.show_statusbar;
+        config()->proc.show_usage_bars = ui->proc.show_usage_bars;
         config()->proc.transparent = ui->proc.transparent;
         config()->proc.alpha = ui->proc.alpha;
         config()->proc.fields = ui->proc.fields;
@@ -206,6 +208,7 @@ evisum_ui_config_load(Evisum_Ui *ui)
    if (ui->global.poll_delay < 1) ui->global.poll_delay = INTERVAL_NORMAL;
    else if (ui->global.poll_delay > INTERVAL_SLOW) ui->global.poll_delay = INTERVAL_SLOW;
    ui->proc.show_statusbar = config()->proc.show_statusbar;
+   ui->proc.show_usage_bars = config()->proc.show_usage_bars;
    ui->global.history_whole = config()->global.history_whole;
    ui->global.monitor_on_exit = config()->global.monitor_on_exit;
    ui->proc.transparent = config()->proc.transparent;
@@ -398,6 +401,15 @@ _main_menu_show_threads_changed_cb(void *data EINA_UNUSED, Evas_Object *obj, voi
    Evisum_Ui *ui = data;
 
    ui->proc.show_kthreads = elm_check_state_get(obj);
+   evisum_ui_config_save(ui);
+}
+
+static void
+_main_menu_show_usage_bars_changed_cb(void *data, Evas_Object *obj, void *event_info EINA_UNUSED)
+{
+   Evisum_Ui *ui = data;
+
+   ui->proc.show_usage_bars = elm_check_state_get(obj);
    evisum_ui_config_save(ui);
 }
 
@@ -872,6 +884,15 @@ evisum_ui_main_menu_create(Evisum_Ui *ui, Evas_Object *parent, Evas_Object *obj)
    evas_object_show(chk);
    evas_object_smart_callback_add(chk, "changed", _main_menu_show_self_changed_cb, ui);
    elm_box_pack_end(bx, chk);
+
+   chk = elm_check_add(bx);
+   evas_object_size_hint_weight_set(chk, EXPAND, 0);
+   evas_object_size_hint_align_set(chk, FILL, FILL);
+   elm_object_text_set(chk, _("Show CPU, RAM and I/O as progress bars?"));
+   elm_check_state_set(chk, ui->proc.show_usage_bars);
+   evas_object_smart_callback_add(chk, "changed", _main_menu_show_usage_bars_changed_cb, ui);
+   elm_box_pack_end(bx, chk);
+   evas_object_show(chk);
 
    elm_object_content_set(options_fr, bx);
    elm_box_pack_end(obx, options_fr);

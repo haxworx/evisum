@@ -1,9 +1,52 @@
 #include "evisum_ui_cache.h"
 
+/* Genlist contents may be destroyed before the cache's deferred cleanup. */
+static void
+_cached_object_deleted_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj,
+                          void *event_info EINA_UNUSED)
+{
+   Evisum_Ui_Cache *cache = data;
+   Eina_List *l;
+   Item_Cache *it;
+
+   EINA_LIST_FOREACH (cache->active, l, it)
+     if (it->obj == obj)
+       {
+          cache->active = eina_list_remove_list(cache->active, l);
+          free(it);
+          return;
+       }
+   EINA_LIST_FOREACH (cache->inactive, l, it)
+     if (it->obj == obj)
+       {
+          cache->inactive = eina_list_remove_list(cache->inactive, l);
+          free(it);
+          return;
+       }
+   cache->pending = eina_list_remove(cache->pending, obj);
+}
+
+static Evas_Object *
+_cached_object_create(Evisum_Ui_Cache *cache)
+{
+   Evas_Object *obj = cache->item_create_cb(cache->parent);
+   if (obj) evas_object_event_callback_add(obj, EVAS_CALLBACK_DEL, _cached_object_deleted_cb, cache);
+   return obj;
+}
+
+static void
+_cached_object_delete(Evisum_Ui_Cache *cache, Evas_Object *obj)
+{
+   if (!obj) return;
+   evas_object_event_callback_del_full(obj, EVAS_CALLBACK_DEL, _cached_object_deleted_cb, cache);
+   evas_object_del(obj);
+}
+
+
 Evisum_Ui_Cache *
 evisum_ui_item_cache_new(Evas_Object *parent, Evas_Object *(create_cb) (Evas_Object *), int size)
 {
-   Evisum_Ui_Cache *cache = malloc(sizeof(Evisum_Ui_Cache));
+   Evisum_Ui_Cache *cache = calloc(1, sizeof(Evisum_Ui_Cache));
    if (!cache) return NULL;
 
    cache->parent = parent;
@@ -18,7 +61,7 @@ evisum_ui_item_cache_new(Evas_Object *parent, Evas_Object *(create_cb) (Evas_Obj
         Item_Cache *it = malloc(sizeof(Item_Cache));
         if (it)
           {
-             it->obj = cache->item_create_cb(parent);
+             it->obj = _cached_object_create(cache);
              cache->inactive = eina_list_prepend(cache->inactive, it);
           }
      }
@@ -48,6 +91,7 @@ evisum_ui_item_cache_steal(Evisum_Ui_Cache *cache, Eina_List *objs)
         if (!found)
           {
              cache->active = eina_list_remove_list(cache->active, l);
+             evas_object_event_callback_del_full(it->obj, EVAS_CALLBACK_DEL, _cached_object_deleted_cb, cache);
              free(it);
           }
      }
@@ -69,7 +113,7 @@ evisum_ui_item_cache_item_get(Evisum_Ui_Cache *cache)
    it = calloc(1, sizeof(Item_Cache));
    if (it)
      {
-        it->obj = cache->item_create_cb(cache->parent);
+        it->obj = _cached_object_create(cache);
         cache->active = eina_list_prepend(cache->active, it);
      }
 
@@ -99,7 +143,7 @@ evisum_ui_item_cache_reset(Evisum_Ui_Cache *cache, void (*done_cb)(void *data), 
         it = calloc(1, sizeof(Item_Cache));
         if (it)
           {
-             it->obj = cache->item_create_cb(cache->parent);
+             it->obj = _cached_object_create(cache);
              cache->inactive = eina_list_prepend(cache->inactive, it);
           }
      }
@@ -111,28 +155,25 @@ static Eina_Bool
 _pending_triggered_cb(void *data)
 {
 
-   Eina_List *l, *l_next;
-   Evas_Object *o;
-   Evisum_Ui_Cache *cache;
-   int n, i = 0;
+   Evisum_Ui_Cache *cache = data;
+   int i = 0;
 
-   cache = data;
-
-   n = eina_list_count(cache->pending);
-   EINA_LIST_FOREACH_SAFE (cache->pending, l, l_next, o)
+   while (cache->pending && i++ < 20)
      {
-        cache->pending = eina_list_remove_list(cache->pending, l);
-        evas_object_del(o);
-        i++;
-        n--;
-        if (i == 20) break;
+        Evas_Object *obj = eina_list_data_get(cache->pending);
+        cache->pending = eina_list_remove_list(cache->pending, cache->pending);
+        _cached_object_delete(cache, obj);
      }
-   if (n) return 1;
+   if (cache->pending) return ECORE_CALLBACK_RENEW;
 
-   if (cache->pending_done_cb) cache->pending_done_cb(cache->data);
-
+   void (*done_cb)(void *) = cache->pending_done_cb;
+   void *done_data = cache->data;
    cache->pending_timer = NULL;
-   return 0;
+   cache->pending_done_cb = NULL;
+   cache->data = NULL;
+   /* The completion callback may reset or free the cache. */
+   if (done_cb) done_cb(done_data);
+   return ECORE_CALLBACK_CANCEL;
 }
 
 void
@@ -158,7 +199,7 @@ evisum_ui_item_cache_item_release(Evisum_Ui_Cache *cache, Evas_Object *obj)
              cache->active = eina_list_remove_list(cache->active, l);
              if (n > 10)
                {
-                  evas_object_del(it->obj);
+                  _cached_object_delete(cache, it->obj);
                   free(it);
                }
              else
@@ -191,15 +232,15 @@ evisum_ui_item_cache_free(Evisum_Ui_Cache *cache)
    /* The cache owns rows, never the genlist that supplied their parent. */
    EINA_LIST_FREE (cache->active, it)
      {
-        evas_object_del(it->obj);
+        _cached_object_delete(cache, it->obj);
         free(it);
      }
    EINA_LIST_FREE (cache->inactive, it)
      {
-        evas_object_del(it->obj);
+        _cached_object_delete(cache, it->obj);
         free(it);
      }
-   EINA_LIST_FREE (cache->pending, obj) evas_object_del(obj);
+   EINA_LIST_FREE (cache->pending, obj) _cached_object_delete(cache, obj);
 
    free(cache);
 }

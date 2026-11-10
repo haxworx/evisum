@@ -3,7 +3,7 @@
 
 #include "ui/evisum_ui.h"
 
-#define CONFIG_VERSION 0x0024
+#define CONFIG_VERSION 0x0026
 
 typedef enum {
     EVISUM_DISK_GRAPH_USAGE = 0,
@@ -38,6 +38,7 @@ typedef struct _Evisum_Config {
         int field_order[EVISUM_PROC_FIELD_WIDTHS_MAX];
 
         Eina_Bool show_statusbar;
+        Eina_Bool show_usage_bars;
         Eina_Bool transparent;
         unsigned char alpha;
     } proc;

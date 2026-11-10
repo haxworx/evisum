@@ -62,6 +62,7 @@ typedef struct _Evisum_Ui
       unsigned char alpha;
       Eina_Bool transparent;
       Eina_Bool show_statusbar;
+      Eina_Bool show_usage_bars;
    } proc;
 
    Evas_Object *win_about;
