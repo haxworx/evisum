@@ -3,6 +3,7 @@
 
 #include <Elementary.h>
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -108,6 +109,11 @@ typedef struct
    Evas_Object *top_spacer;
    Evas_Object *bottom_spacer;
    Evas_Object *lb;
+   Evas_Object *dog;
+   Evas_Object *dog_source;
+   Evas_Map *dog_map;
+   double started;
+   Eina_Bool dog_active;
    Ecore_Animator *animator;
    double pos;
 } Animate_Data;
@@ -119,6 +125,9 @@ _win_del_cb(void *data, Evas *e EINA_UNUSED, Evas_Object *obj, void *event_info 
    Evisum_Ui *ui = ad->ui;
 
    if (ad->animator) ecore_animator_del(ad->animator);
+   if (ad->dog) evas_object_del(ad->dog);
+   if (ad->dog_source) evas_object_del(ad->dog_source);
+   if (ad->dog_map) evas_map_free(ad->dog_map);
 
    free(ad);
 
@@ -152,6 +161,82 @@ _about_resize_cb(void *data, Evas *e, Evas_Object *obj EINA_UNUSED, void *event_
    (void) e;
 }
 
+/* Render the theme asset at sprite resolution, then enlarge without filtering. */
+static void
+_about_dog_create(Evas_Object *win, Animate_Data *ad)
+{
+   Evas_Object *source, *dog;
+
+   source = edje_object_add(evas_object_evas_get(win));
+   if (!edje_object_file_set(source, EVISUM_THEME_FILE,
+                            "evisum/icons/lovethisdogharvey") &&
+       !edje_object_file_set(source, EVISUM_THEME_FILE_REL,
+                            "evisum/icons/lovethisdogharvey") &&
+       !edje_object_file_set(source, "build/data/themes/evisum.edj",
+                            "evisum/icons/lovethisdogharvey"))
+     {
+        evas_object_del(source);
+        return;
+     }
+
+   evas_object_resize(source, 42, 55);
+   evas_object_show(source);
+   dog = evas_object_image_filled_add(evas_object_evas_get(win));
+   if (!evas_object_image_source_set(dog, source))
+     {
+        evas_object_del(dog);
+        evas_object_del(source);
+        return;
+     }
+   evas_object_image_source_visible_set(dog, EINA_FALSE);
+   evas_object_image_source_clip_set(dog, EINA_FALSE);
+   evas_object_image_smooth_scale_set(dog, EINA_FALSE);
+   evas_object_pass_events_set(dog, EINA_TRUE);
+   evas_object_size_hint_weight_set(dog, EXPAND, EXPAND);
+   evas_object_size_hint_align_set(dog, FILL, FILL);
+   elm_win_resize_object_add(win, dog);
+   ad->dog = dog;
+   ad->dog_source = source;
+   ad->dog_map = evas_map_new(4);
+}
+
+static void
+_about_dog_animate(Animate_Data *ad)
+{
+   Evas_Coord x, y, w, h;
+   double elapsed, phase, size;
+   int sw, sh, cx, cy;
+
+   if (!ad->dog || !ad->dog_map) return;
+
+   /* A five-second power-up cycle with two complete turns. */
+   elapsed = ecore_loop_time_get() - ad->started;
+   phase = elapsed / 5.0;
+   if (phase < 0.4)
+     size = 0.18 + 0.70 * (0.5 - 0.5 * cos(phase / 0.4 * M_PI));
+   else
+     size = 0.002 + 0.878 * (0.5 + 0.5 * cos((phase - 0.4) / 0.6 * M_PI));
+   evas_object_geometry_get(ad->dog, &x, &y, &w, &h);
+   cx = x + w / 2;
+   cy = y + h / 2;
+   /* Leave room for the corners while spinning. */
+   sh = (int) (size * (w < h ? w : h));
+   if (sh < 1) sh = 1;
+   sw = sh * 42 / 55;
+   if (sw < 1) sw = 1;
+   evas_map_util_points_populate_from_geometry(ad->dog_map,
+                                             cx - sw / 2, cy - sh / 2,
+                                             sw, sh, 0);
+   evas_map_point_image_uv_set(ad->dog_map, 0, 0, 0);
+   evas_map_point_image_uv_set(ad->dog_map, 1, w, 0);
+   evas_map_point_image_uv_set(ad->dog_map, 2, w, h);
+   evas_map_point_image_uv_set(ad->dog_map, 3, 0, h);
+   evas_map_smooth_set(ad->dog_map, EINA_FALSE);
+   evas_map_util_rotate(ad->dog_map, phase * 720.0, cx, cy);
+   evas_object_map_set(ad->dog, ad->dog_map);
+   evas_object_map_enable_set(ad->dog, EINA_TRUE);
+}
+
 static Eina_Bool
 about_anim(void *data)
 {
@@ -161,6 +246,19 @@ about_anim(void *data)
 
    if (!ad || !ad->scroller) return ECORE_CALLBACK_CANCEL;
 
+   if (ad->dog_active)
+     {
+        if (ecore_loop_time_get() - ad->started < 5.0)
+          {
+             _about_dog_animate(ad);
+             return ECORE_CALLBACK_RENEW;
+          }
+        evas_object_hide(ad->dog);
+        ad->dog_active = EINA_FALSE;
+        ad->pos = 0.0;
+        if (ad->lb) elm_object_text_set(ad->lb, eina_slstr_printf(about_text_fmt, _about_random_msg()));
+     }
+
    elm_scroller_region_get(ad->scroller, NULL, NULL, &w, &h);
    elm_scroller_child_size_get(ad->scroller, &cw, &ch);
    if (h <= 0 || ch <= h) return ECORE_CALLBACK_RENEW;
@@ -169,8 +267,20 @@ about_anim(void *data)
    ad->pos += 24.0 * ecore_animator_frametime_get();
    if (ad->pos > max_y)
      {
-        ad->pos = 0.0;
-        if (ad->lb) elm_object_text_set(ad->lb, eina_slstr_printf(about_text_fmt, _about_random_msg()));
+        if (ad->dog && ad->dog_map)
+          {
+             ad->pos = max_y;
+             ad->started = ecore_loop_time_get();
+             ad->dog_active = EINA_TRUE;
+             _about_dog_animate(ad);
+             evas_object_raise(ad->dog);
+             evas_object_show(ad->dog);
+          }
+        else
+          {
+             ad->pos = 0.0;
+             if (ad->lb) elm_object_text_set(ad->lb, eina_slstr_printf(about_text_fmt, _about_random_msg()));
+          }
      }
 
    elm_scroller_region_show(ad->scroller, 0, (int) ad->pos, w, h);
@@ -226,6 +336,15 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_align_set(bg, FILL, FILL);
    elm_win_resize_object_add(win, bg);
    evas_object_show(bg);
+
+   about = calloc(1, sizeof(Animate_Data));
+   if (!about)
+     {
+        evas_object_del(win);
+        ui->win_about = NULL;
+        return;
+     }
+   _about_dog_create(win, about);
 
    root = elm_box_add(win);
    elm_box_horizontal_set(root, EINA_FALSE);
@@ -287,9 +406,6 @@ evisum_about_window_show(void *data)
    evas_object_size_hint_min_set(bottom_spacer, about_w, about_h);
    elm_box_pack_end(scroller_box, bottom_spacer);
    evas_object_show(bottom_spacer);
-
-   about = malloc(sizeof(Animate_Data));
-   if (!about) return;
 
    about->scroller = scroller;
    about->top_spacer = top_spacer;

@@ -2,6 +2,7 @@
 #include "evisum_config.h"
 
 #include "evisum_ui.h"
+#include "evisum_ui_weather.h"
 #include "evisum_ui_widget_exel.h"
 #include "ui/evisum_ui_process_list.h"
 #include "ui/evisum_ui_process_view.h"
@@ -2529,6 +2530,7 @@ _evisum_ui_process_list_effects_add(Evisum_Ui_Process_List_View *view, Evas_Obje
 
    _evisum_ui_process_list_win_alpha_set(view);
    evas_object_show(win);
+   evisum_ui_weather_add(win, view->ui);
 }
 
 void

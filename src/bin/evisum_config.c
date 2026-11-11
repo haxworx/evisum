@@ -242,6 +242,8 @@ _config_init() {
     cfg->proc.sort_type = PROC_SORT_BY_CMD;
     cfg->proc.transparent = 0;
     cfg->proc.fields = (1u << PROC_FIELD_CMD)
+                       | (1u << PROC_FIELD_DISK_READ)
+                       | (1u << PROC_FIELD_DISK_WRITE)
                        | (1u << PROC_FIELD_NET_IN)
                        | (1u << PROC_FIELD_NET_OUT)
                        | (1u << PROC_FIELD_SIZE)
@@ -249,6 +251,8 @@ _config_init() {
     cfg->proc.alpha = 100;
     int pos = PROC_FIELD_CMD;
     cfg->proc.field_order[pos++] = PROC_FIELD_CMD;
+    cfg->proc.field_order[pos++] = PROC_FIELD_DISK_READ;
+    cfg->proc.field_order[pos++] = PROC_FIELD_DISK_WRITE;
     cfg->proc.field_order[pos++] = PROC_FIELD_NET_IN;
     cfg->proc.field_order[pos++] = PROC_FIELD_NET_OUT;
     cfg->proc.field_order[pos++] = PROC_FIELD_SIZE;
