@@ -7,8 +7,6 @@
 #define FILL   EVAS_HINT_FILL
 #define EXPAND EVAS_HINT_EXPAND
 
-#define TAB_BTN_WIDTH   72
-#define TAB_BTN_HEIGHT  24
 #define BTN_WIDTH       48
 #define BTN_HEIGHT      24
 #define LIST_BTN_HEIGHT 24
@@ -27,9 +25,6 @@ evisum_icon_cache_del(Eina_Hash *icon_cache);
 
 const char *
 evisum_icon_cache_find(Eina_Hash *icon_cache, const Proc_Info *proc);
-
-Evas_Object *
-evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text, Evas_Smart_Cb clicked_cb, void *data);
 
 Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text, const char *icon,

@@ -1057,7 +1057,7 @@ evisum_ui_shutdown(Evisum_Ui *ui)
    ecore_thread_wait(ui->background_poll_thread, 0.5);
    evisum_background_shutdown(ui);
    evisum_engine_shutdown();
-   if (!ui->global.monitor_on_exit) enigmatic_terminate();
+   if (!ui->global.monitor_on_exit) enigmatic_terminate_request();
 
    if (ui->cpu.visual) eina_stringshare_del(ui->cpu.visual);
    free(ui);

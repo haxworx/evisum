@@ -184,8 +184,8 @@ _pid_is_enigmatic(pid_t pid)
 #endif
 }
 
-Eina_Bool
-enigmatic_terminate(void)
+static Eina_Bool
+_enigmatic_terminate(Eina_Bool wait)
 {
    char *path = _pidfile_path();
    pid_t pid;
@@ -216,6 +216,12 @@ enigmatic_terminate(void)
         goto done;
      }
 
+   if (!wait)
+     {
+        ok = 1;
+        goto done;
+     }
+
    for (int i = 0; i < 50; i++)
      {
         if (kill(pid, 0) == -1)
@@ -233,6 +239,18 @@ enigmatic_terminate(void)
 done:
    free(path);
    return ok;
+}
+
+Eina_Bool
+enigmatic_terminate(void)
+{
+   return _enigmatic_terminate(EINA_TRUE);
+}
+
+Eina_Bool
+enigmatic_terminate_request(void)
+{
+   return _enigmatic_terminate(EINA_FALSE);
 }
 
 Eina_Bool

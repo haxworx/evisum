@@ -345,17 +345,20 @@ _evisum_ui_memory_series_update_from_memory(Evisum_Ui_Memory_View *view, Meminfo
    _evisum_ui_memory_series_usage_set(view, SERIES_SHARED, memory->shared, memory->total, EINA_TRUE);
    _evisum_ui_memory_series_usage_set(view, SERIES_SWAP, memory->swap_used, memory->swap_total, memory->swap_total > 0);
 
+   for (uint64_t i = 0; i < memory->video_count; i++)
+     {
+        const Meminfo_Video *video = &memory->video[i];
+        if (video->id >= MEM_VIDEO_CARD_MAX) continue;
+        _evisum_ui_memory_series_usage_set(view, SERIES_VIDEO_BASE + video->id,
+                                           video->used, video->total, video->total > 0);
+     }
+
    for (int i = 0; i < MEM_VIDEO_CARD_MAX; i++)
      {
-        if (i < (int) memory->video_count)
-          {
-             _evisum_ui_memory_series_usage_set(view, SERIES_VIDEO_BASE + i, memory->video[i].used,
-                                                memory->video[i].total, memory->video[i].total > 0);
-          }
-        else
-          {
-             _evisum_ui_memory_series_usage_set(view, SERIES_VIDEO_BASE + i, 0, 0, EINA_FALSE);
-          }
+        Memory_Series *entry = &view->series[SERIES_VIDEO_BASE + i];
+        if (entry->sampled) continue;
+        entry->history_count = 0;
+        _evisum_ui_memory_series_usage_set(view, SERIES_VIDEO_BASE + i, 0, 0, EINA_FALSE);
      }
 
    _evisum_ui_memory_legend_repack(view);

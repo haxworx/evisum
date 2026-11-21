@@ -9,9 +9,9 @@ typedef struct
    Evisum_Ui *ui;
    Evas_Object *win;
 
-   Evas_Object *tab_general;
-   Evas_Object *tab_children;
-   Evas_Object *tab_manual;
+   Elm_Object_Item *tab_general;
+   Elm_Object_Item *tab_children;
+   Elm_Object_Item *tab_manual;
 
    Evas_Object *general_view;
    Evas_Object *children_view;
@@ -960,108 +960,53 @@ _evisum_ui_process_view_manual_tab_add(Evas_Object *parent, Evisum_Ui_Process_Vi
 }
 
 static void
-_evisum_ui_process_view_tab_change(Evisum_Ui_Process_View *view, Evas_Object *page, Evas_Object *obj)
+_evisum_ui_process_view_tab_show(Evisum_Ui_Process_View *view, Elm_Object_Item *item)
 {
-   elm_object_disabled_set(view->tab_general, 0);
-   elm_object_disabled_set(view->tab_children, 0);
-   elm_object_disabled_set(view->tab_manual, 0);
-   evas_object_hide(view->general_view);
-   evas_object_hide(view->children_view);
-   evas_object_hide(view->manual_view);
+   Evas_Object *page = view->general_view;
 
+   if (item == view->tab_children)
+     page = view->children_view;
+   else if (item == view->tab_manual)
+     page = view->manual_view;
+
+   if (page == view->current_view) return;
+   if (item == view->tab_children) _evisum_ui_process_view_children_view_update(view);
+
+   if (view->current_view) evas_object_hide(view->current_view);
    view->current_view = page;
    evas_object_show(page);
 
-   elm_object_disabled_set(obj, 1);
+   if (item == view->tab_manual) _evisum_ui_process_view_manual_init(view);
 }
 
 static void
-_evisum_ui_process_view_tab_general_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
+_evisum_ui_process_view_tab_selected_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info)
 {
-   Evisum_Ui_Process_View *view = data;
-
-   _evisum_ui_process_view_tab_change(view, view->general_view, obj);
-   elm_object_focus_set(view->tab_children, 1);
-}
-
-static void
-_evisum_ui_process_view_tab_children_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
-{
-   Evisum_Ui_Process_View *view = data;
-
-   _evisum_ui_process_view_children_view_update(view);
-   _evisum_ui_process_view_tab_change(view, view->children_view, obj);
-   elm_object_focus_set(view->tab_manual, 1);
-}
-
-static void
-_evisum_ui_process_view_tab_manual_clicked_cb(void *data, Evas_Object *obj EINA_UNUSED, void *event_info EINA_UNUSED)
-{
-   Evisum_Ui_Process_View *view = data;
-
-   _evisum_ui_process_view_tab_change(view, view->manual_view, obj);
-   elm_object_focus_set(view->tab_general, 1);
-   _evisum_ui_process_view_manual_init(view);
+   _evisum_ui_process_view_tab_show(data, event_info);
 }
 
 static Evas_Object *
 _evisum_ui_process_view_tabs_add(Evas_Object *parent, Evisum_Ui_Process_View *view)
 {
-   Evas_Object *hbx, *pad, *btn;
+   Evas_Object *toolbar = elm_toolbar_add(parent);
 
-   hbx = elm_box_add(parent);
-   evas_object_size_hint_weight_set(hbx, EXPAND, 0);
-   evas_object_size_hint_align_set(hbx, FILL, 0.5);
-   elm_box_horizontal_set(hbx, 1);
-   evas_object_show(hbx);
+   elm_object_scale_set(toolbar, 1.3);
+   evas_object_size_hint_weight_set(toolbar, EXPAND, 0);
+   evas_object_size_hint_align_set(toolbar, FILL, FILL);
+   elm_toolbar_shrink_mode_set(toolbar, ELM_TOOLBAR_SHRINK_NONE);
+   elm_toolbar_homogeneous_set(toolbar, EINA_TRUE);
+   elm_toolbar_align_set(toolbar, 0.5);
 
-   pad = elm_frame_add(parent);
-   elm_object_style_set(pad, "pad_medium");
-   evas_object_size_hint_weight_set(pad, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(pad, FILL, FILL);
-   evas_object_show(pad);
-   elm_box_pack_end(hbx, pad);
+   view->tab_general = elm_toolbar_item_append(toolbar, NULL, _("Process"),
+                                               _evisum_ui_process_view_tab_selected_cb, view);
+   view->tab_children = elm_toolbar_item_append(toolbar, NULL, _("Children"),
+                                                _evisum_ui_process_view_tab_selected_cb, view);
+   view->tab_manual = elm_toolbar_item_append(toolbar, NULL, _("Manual"),
+                                              _evisum_ui_process_view_tab_selected_cb, view);
 
-   pad = elm_frame_add(parent);
-   elm_object_style_set(pad, "pad_small");
-   evas_object_size_hint_weight_set(pad, 0.0, EXPAND);
-   evas_object_size_hint_align_set(pad, FILL, FILL);
-   evas_object_show(pad);
-
-   btn = evisum_ui_tab_add(parent, &view->tab_general, _("Process"), _evisum_ui_process_view_tab_general_clicked_cb,
-                           view);
-   elm_object_content_set(pad, btn);
-   elm_box_pack_end(hbx, pad);
-
-   pad = elm_frame_add(parent);
-   elm_object_style_set(pad, "pad_small");
-   evas_object_size_hint_weight_set(pad, 0.0, EXPAND);
-   evas_object_size_hint_align_set(pad, FILL, FILL);
-   evas_object_show(pad);
-
-   btn = evisum_ui_tab_add(parent, &view->tab_children, _("Children"), _evisum_ui_process_view_tab_children_clicked_cb,
-                           view);
-   elm_object_content_set(pad, btn);
-   elm_box_pack_end(hbx, pad);
-
-   pad = elm_frame_add(parent);
-   elm_object_style_set(pad, "pad_small");
-   evas_object_size_hint_weight_set(pad, 0.0, EXPAND);
-   evas_object_size_hint_align_set(pad, FILL, FILL);
-   evas_object_show(pad);
-
-   btn = evisum_ui_tab_add(parent, &view->tab_manual, _("Manual"), _evisum_ui_process_view_tab_manual_clicked_cb, view);
-   elm_object_content_set(pad, btn);
-   elm_box_pack_end(hbx, pad);
-
-   pad = elm_frame_add(parent);
-   elm_object_style_set(pad, "pad_medium");
-   evas_object_size_hint_weight_set(pad, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(pad, FILL, FILL);
-   evas_object_show(pad);
-   elm_box_pack_end(hbx, pad);
-
-   return hbx;
+   elm_toolbar_select_mode_set(toolbar, ELM_OBJECT_SELECT_MODE_ALWAYS);
+   evas_object_show(toolbar);
+   return toolbar;
 }
 
 static void
@@ -1133,22 +1078,23 @@ _evisum_ui_process_view_win_key_down_cb(void *data, Evas *e, Evas_Object *obj, v
 static void
 _evisum_ui_process_view_activate(Evisum_Ui_Process_View *view, Evisum_Proc_Action action)
 {
+   Elm_Object_Item *item = view->tab_general;
+
    switch (action)
      {
      case PROC_VIEW_DEFAULT:
-        view->current_view = view->general_view;
-        _evisum_ui_process_view_tab_general_clicked_cb(view, view->tab_general, NULL);
         break;
      case PROC_VIEW_CHILDREN:
-        view->current_view = view->children_view;
-        _evisum_ui_process_view_tab_children_clicked_cb(view, view->tab_children, NULL);
+        item = view->tab_children;
         break;
      case PROC_VIEW_MANUAL:
-        view->current_view = view->manual_view;
-        _evisum_ui_process_view_tab_manual_clicked_cb(view, view->tab_manual, NULL);
+        item = view->tab_manual;
         break;
      }
-   evas_object_show(view->current_view);
+
+   /* Elementary skips the callback if the item is already selected. */
+   elm_toolbar_item_selected_set(item, EINA_TRUE);
+   _evisum_ui_process_view_tab_show(view, item);
 }
 
 void
@@ -1209,9 +1155,9 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action acti
    evas_object_size_hint_align_set(tb, FILL, FILL);
    evas_object_show(tb);
 
-   view->general_view = _evisum_ui_process_view_general_tab_add(tabs, view);
-   view->children_view = _evisum_ui_process_view_children_tab_add(tabs, view);
-   view->manual_view = _evisum_ui_process_view_manual_tab_add(tabs, view);
+   view->general_view = _evisum_ui_process_view_general_tab_add(tb, view);
+   view->children_view = _evisum_ui_process_view_children_tab_add(tb, view);
+   view->manual_view = _evisum_ui_process_view_manual_tab_add(tb, view);
 
    elm_table_pack(tb, view->general_view, 0, 0, 1, 1);
    elm_table_pack(tb, view->children_view, 0, 0, 1, 1);
@@ -1232,9 +1178,8 @@ evisum_ui_process_view_win_add(Evisum_Ui *ui, pid_t pid, Evisum_Proc_Action acti
 
    if ((ui->proc_view.x > 0) && (ui->proc_view.y > 0)) evas_object_move(win, ui->proc_view.x, ui->proc_view.y);
    else elm_win_center(win, 1, 1);
-   evas_object_show(win);
-
    _evisum_ui_process_view_activate(view, action);
+   evas_object_show(win);
 #if defined(__FreeBSD__)
    view->kthreads_has_rss = 1;
 #endif

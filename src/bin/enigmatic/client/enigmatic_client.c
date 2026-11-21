@@ -885,6 +885,63 @@ message_batteries(Enigmatic_Client *client)
 }
 
 static void
+message_memory_video(Enigmatic_Client *client)
+{
+   Message *msg = &client->message;
+   Meminfo *mem = &client->snapshot.meminfo;
+   Meminfo_Video video;
+   size_t i = 0;
+
+   if (msg->number >= MEM_VIDEO_CARD_MAX || mem->video_count > MEM_VIDEO_CARD_MAX)
+     ERROR("Corrupt log stream: invalid video memory device");
+
+   while (i < mem->video_count && mem->video[i].id < msg->number)
+     i++;
+
+   if (msg->type == MESG_ADD)
+     {
+        if (client->buf.index + sizeof(video) > client->buf.length)
+          ERROR("Corrupt log stream: short video memory payload");
+        memcpy(&video, &client->buf.data[client->buf.index], sizeof(video));
+        client->buf.index += sizeof(video);
+        if (video.id != msg->number)
+          ERROR("Corrupt log stream: mismatched video memory device");
+
+        if (mem->video_count == MEM_VIDEO_CARD_MAX ||
+            (i < mem->video_count && mem->video[i].id == msg->number))
+          ERROR("Corrupt log stream: invalid video memory add");
+        memmove(&mem->video[i + 1], &mem->video[i],
+                (mem->video_count - i) * sizeof(video));
+        mem->video[i] = video;
+        mem->video_count++;
+     }
+   else if (msg->type == MESG_DEL)
+     {
+        if (i < mem->video_count && mem->video[i].id == msg->number)
+          {
+             mem->video_count--;
+             memmove(&mem->video[i], &mem->video[i + 1],
+                     (mem->video_count - i) * sizeof(video));
+             memset(&mem->video[mem->video_count], 0, sizeof(video));
+          }
+     }
+   else
+     {
+        int64_t change = change_find(client);
+
+        if (i < mem->video_count && mem->video[i].id == msg->number)
+          {
+             if (msg->object_type == MEMORY_VIDEO_TOTAL)
+               mem->video[i].total += change;
+             else
+               mem->video[i].used += change;
+          }
+     }
+
+   client->changes |= MEMORY;
+}
+
+static void
 message_memory(Enigmatic_Client *client)
 {
    int64_t change;
@@ -896,6 +953,8 @@ message_memory(Enigmatic_Client *client)
    switch (msg->type)
      {
         case MESG_REFRESH:
+           if (client->buf.index + sizeof(Meminfo) > client->buf.length)
+             ERROR("Corrupt log stream: short memory refresh payload");
            memcpy(&snapshot->meminfo, &client->buf.data[client->buf.index], sizeof(Meminfo));
            client->buf.index += sizeof(Meminfo);
            break;
@@ -923,12 +982,6 @@ message_memory(Enigmatic_Client *client)
                    break;
                 case MEMORY_SWAP_USED:
                    snapshot->meminfo.swap_used += (change * 4096);
-                   break;
-                case MEMORY_VIDEO_USED:
-                   snapshot->meminfo.video[msg->number].used += (change * 4096);
-                   break;
-                case MEMORY_VIDEO_TOTAL:
-                   snapshot->meminfo.video[msg->number].total += (change * 4096);
                    break;
                 default:
                    fprintf(stderr, "message_memory!!!\n");
@@ -1092,6 +1145,7 @@ message_add(Enigmatic_Client *client)
            message_cores(client);
            break;
         case MEMORY:
+           message_memory_video(client);
            break;
         case SENSOR:
            message_sensors(client);
@@ -1141,9 +1195,11 @@ message_mod(Enigmatic_Client *client)
         case MEMORY_SHARED:
         case MEMORY_SWAP_TOTAL:
         case MEMORY_SWAP_USED:
+           message_memory(client);
+           break;
         case MEMORY_VIDEO_TOTAL:
         case MEMORY_VIDEO_USED:
-           message_memory(client);
+           message_memory_video(client);
            break;
         case SENSOR_VALUE:
            message_sensors(client);
@@ -1218,6 +1274,7 @@ message_del(Enigmatic_Client *client)
            message_cores(client);
            break;
         case MEMORY:
+           message_memory_video(client);
            break;
         case SENSOR:
            message_sensors(client);

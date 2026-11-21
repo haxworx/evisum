@@ -25,6 +25,10 @@ enigmatic_pidfile_pid_get(const char *path);
 ENIGMATIC_API Eina_Bool
 enigmatic_terminate(void);
 
+/* Send SIGTERM without waiting for the daemon to exit. */
+ENIGMATIC_API Eina_Bool
+enigmatic_terminate_request(void);
+
 ENIGMATIC_API Eina_Bool
 enigmatic_launch(void);
 

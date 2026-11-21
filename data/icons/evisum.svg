@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="256" height="256" viewBox="0 0 256 256">
+  <title>Evisum oscilloscope</title>
+  <defs>
+    <linearGradient id="case" x2="1" y2="1">
+      <stop stop-color="#696650"/>
+      <stop offset=".48" stop-color="#34352e"/>
+      <stop offset="1" stop-color="#192125"/>
+    </linearGradient>
+    <linearGradient id="panel" x2=".7" y2="1">
+      <stop stop-color="#f4e5be"/>
+      <stop offset=".55" stop-color="#c2ab7d"/>
+      <stop offset="1" stop-color="#867454"/>
+    </linearGradient>
+    <linearGradient id="metal" x2=".4" y2="1">
+      <stop stop-color="#fff0bc"/>
+      <stop offset=".42" stop-color="#9f8656"/>
+      <stop offset="1" stop-color="#483e2c"/>
+    </linearGradient>
+    <radialGradient id="glass" cx=".45" cy=".37" r=".66">
+      <stop stop-color="#207b9a"/>
+      <stop offset=".65" stop-color="#10455f"/>
+      <stop offset="1" stop-color="#092537"/>
+    </radialGradient>
+    <clipPath id="screen">
+      <circle cx="128" cy="100" r="46"/>
+    </clipPath>
+    <g id="knob">
+      <circle cy="2" r="12" fill="#302b22"/>
+      <circle r="10.5" fill="url(#metal)" stroke="#5a4a31"/>
+      <path d="M0-7V-2" stroke="#fff1c8" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <g id="socket">
+      <circle r="7" fill="url(#metal)" stroke="#685538"/>
+      <circle r="3.5" fill="#22282a"/>
+    </g>
+  </defs>
+
+  <ellipse cx="128" cy="239" rx="78" ry="7" fill="#121a20" opacity=".2"/>
+  <path d="M58 223h23v15H58zm117 0h23v15h-23z" fill="#262b2a"/>
+  <path d="M105 25V16q0-7 7-7h32q7 0 7 7v9h-8v-8h-30v8z" fill="url(#metal)" stroke="#40382a" stroke-width="2"/>
+  <path d="M43 45l12-20q3-5 10-5h126q7 0 10 5l12 20z" fill="url(#panel)" stroke="#635642" stroke-width="2"/>
+  <rect x="41" y="37" width="174" height="197" rx="14" fill="url(#case)" stroke="#252922" stroke-width="3"/>
+  <rect x="49" y="45" width="158" height="181" rx="8" fill="url(#panel)" stroke="#272a26" stroke-width="2"/>
+  <path d="M55 219V54q0-3 3-3h141" fill="none" stroke="#fff2cc" opacity=".55"/>
+
+  <circle cx="128" cy="101" r="55" fill="#5a4a34" opacity=".35"/>
+  <circle cx="128" cy="100" r="53" fill="url(#metal)" stroke="#5b4d37" stroke-width="2"/>
+  <circle cx="128" cy="100" r="48" fill="#16292e"/>
+  <circle cx="128" cy="100" r="46" fill="url(#glass)"/>
+  <g clip-path="url(#screen)">
+    <path d="M68 76h120M68 88h120M68 100h120M68 112h120M68 124h120M92 48v104m12-104v104m12-104v104m12-104v104m12-104v104m12-104v104m12-104v104"
+          fill="none" stroke="#8dc1cc" opacity=".28"/>
+    <path d="M84 104h13c8 0 11-23 21-23s13 39 23 39c8 0 12-16 19-16h13"
+          fill="none" stroke="#4fffb5" stroke-width="7" opacity=".22"/>
+    <path d="M84 104h13c8 0 11-23 21-23s13 39 23 39c8 0 12-16 19-16h13"
+          fill="none" stroke="#a2ffd0" stroke-width="2.7" stroke-linecap="round"/>
+    <path d="M88 84q12-24 40-25t39 25q-19-14-39-14T88 84" fill="#cfedff" opacity=".12"/>
+  </g>
+  <use xlink:href="#knob" x="68" y="67"/>
+  <use xlink:href="#knob" x="188" y="67"/>
+  <circle cx="188" cy="87" r="3" fill="#a83e24" stroke="#75462d"/>
+  <circle cx="187.5" cy="86" r="1" fill="#ffbc80"/>
+
+  <path d="M61 154h134" stroke="#65563e" opacity=".55"/>
+  <path d="M113 173a15 15 0 0 1 30 0M64 184a15 15 0 0 1 30 0m68 0a15 15 0 0 1 30 0"
+        fill="none" stroke="#6a573b" stroke-width="2" stroke-dasharray="1 3"/>
+  <use xlink:href="#knob" x="79" y="186" transform="rotate(-32 79 186)"/>
+  <use xlink:href="#knob" x="128" y="176"/>
+  <use xlink:href="#knob" x="177" y="186" transform="rotate(34 177 186)"/>
+  <use xlink:href="#socket" x="114" y="210"/>
+  <use xlink:href="#socket" x="142" y="210"/>
+  <rect x="68" y="206" width="17" height="8" rx="2" fill="#514635"/>
+  <rect x="70" y="207" width="7" height="5" rx="1" fill="#eee0b9"/>
+  <path d="M169 207h17m-17 5h17" stroke="#746248" stroke-width="2" stroke-linecap="round"/>
+</svg>

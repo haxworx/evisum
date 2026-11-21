@@ -119,7 +119,11 @@ memory_info(Meminfo *memory)
              fclose(f);
              found = true;
           }
-        if (found) memory->video_count++;
+        if (found)
+          {
+             memory->video[memory->video_count].id = i;
+             memory->video_count++;
+          }
      }
 
 #elif defined(__FreeBSD__) || defined(__DragonFly__)

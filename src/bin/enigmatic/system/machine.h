@@ -32,6 +32,7 @@ typedef struct
 {
    uint64_t total;
    uint64_t used;
+   uint64_t id;
 } Meminfo_Video;
 
 typedef struct

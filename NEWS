@@ -1,4 +1,12 @@
 =============
+Evisum 2.0.17
+=============
+
+  * Don't block the UI on shutting down enigmatic if we don't persist.
+  * Handle video card adding and deletion.
+  * ...
+
+=============
 Evisum 2.0.16
 =============
 

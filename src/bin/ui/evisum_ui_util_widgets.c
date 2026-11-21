@@ -4,41 +4,6 @@
 #include "config.h"
 
 Evas_Object *
-evisum_ui_tab_add(Evas_Object *parent, Evas_Object **alias, const char *text, Evas_Smart_Cb clicked_cb, void *data)
-{
-   Evas_Object *tb, *rect, *btn, *lb;
-
-   tb = elm_table_add(parent);
-   evas_object_size_hint_weight_set(tb, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(tb, FILL, FILL);
-
-   rect = evas_object_rectangle_add(evas_object_evas_get(tb));
-   evas_object_size_hint_weight_set(rect, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(rect, FILL, FILL);
-   evas_object_size_hint_min_set(rect, TAB_BTN_WIDTH * elm_config_scale_get(), TAB_BTN_HEIGHT * elm_config_scale_get());
-
-   btn = elm_button_add(parent);
-   evas_object_size_hint_weight_set(btn, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(btn, FILL, FILL);
-   evas_object_show(btn);
-   evas_object_smart_callback_add(btn, "clicked", clicked_cb, data);
-
-   lb = elm_label_add(parent);
-   evas_object_size_hint_weight_set(lb, EXPAND, EXPAND);
-   evas_object_size_hint_align_set(lb, FILL, FILL);
-   evas_object_show(lb);
-   elm_object_text_set(lb, eina_slstr_printf("%s", text));
-   elm_layout_content_set(btn, "elm.swallow.content", lb);
-
-   elm_table_pack(tb, rect, 0, 0, 1, 1);
-   elm_table_pack(tb, btn, 0, 0, 1, 1);
-
-   if (alias) *alias = btn;
-
-   return tb;
-}
-
-Evas_Object *
 evisum_ui_button_add(Evas_Object *parent, Evas_Object **alias, const char *text, const char *icon,
                      Evas_Smart_Cb clicked_cb, void *data)
 {

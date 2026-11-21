@@ -27,8 +27,7 @@ enigmatic_monitor_memory(Enigmatic *enigmatic, Meminfo *mem)
         return 1;
      }
 
-   Message msg;
-   msg.type = MESG_MOD;
+   Message msg = { .type = MESG_MOD };
    if (mem_now.total != mem->total)
      {
         msg.object_type = MEMORY_TOTAL;
@@ -79,28 +78,46 @@ enigmatic_monitor_memory(Enigmatic *enigmatic, Meminfo *mem)
         mem->swap_used = mem_now.swap_used;
      }
 
-   for (int i = 0; i < mem->video_count; i++)
+   size_t old_index = 0, new_index = 0;
+   for (unsigned int id = 0; id < MEM_VIDEO_CARD_MAX; id++)
      {
-        Meminfo_Video *video = &mem->video[i];
-        Meminfo_Video *video_now = &mem_now.video[i];
-        if (video_now->total != video->total)
-          {
-             msg.object_type = MEMORY_VIDEO_TOTAL;
-             msg.number = i;
-             enigmatic_log_diff(enigmatic, msg, (video_now->total - video->total) / 4096);
+        Meminfo_Video *old = NULL, *now = NULL;
 
-             video->total = video_now->total;
+        if (old_index < mem->video_count && mem->video[old_index].id == id)
+          old = &mem->video[old_index++];
+        if (new_index < mem_now.video_count && mem_now.video[new_index].id == id)
+          now = &mem_now.video[new_index++];
+
+        msg.number = id;
+        if (now && !old)
+          {
+             msg.type = MESG_ADD;
+             msg.object_type = MEMORY;
+             enigmatic_log_obj_write(enigmatic, EVENT_MESSAGE, msg, now, sizeof(*now));
           }
-
-        if (video_now->used != video->used)
+        else if (old && !now)
           {
-             msg.object_type = MEMORY_VIDEO_USED;
-             msg.number = i;
-             enigmatic_log_diff(enigmatic, msg, (video_now->used - video->used) / 4096);
-
-             video->used = video_now->used;
+             msg.type = MESG_DEL;
+             msg.object_type = MEMORY;
+             enigmatic_log_header(enigmatic, EVENT_MESSAGE, msg);
+          }
+        else if (now)
+          {
+             msg.type = MESG_MOD;
+             if (old->total != now->total)
+               {
+                  msg.object_type = MEMORY_VIDEO_TOTAL;
+                  enigmatic_log_diff(enigmatic, msg, now->total - old->total);
+               }
+             if (old->used != now->used)
+               {
+                  msg.object_type = MEMORY_VIDEO_USED;
+                  enigmatic_log_diff(enigmatic, msg, now->used - old->used);
+               }
           }
      }
+   memcpy(mem->video, mem_now.video, sizeof(mem->video));
+   mem->video_count = mem_now.video_count;
 
    return 0;
 }

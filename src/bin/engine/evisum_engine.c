@@ -1164,10 +1164,8 @@ system_memory_usage_get(Meminfo *memory)
     memory->zfs_arc_used = snap->meminfo.zfs_arc_used;
     memory->video_count = snap->meminfo.video_count;
     if (memory->video_count > MEM_VIDEO_CARD_MAX) memory->video_count = MEM_VIDEO_CARD_MAX;
-    for (unsigned int i = 0; i < memory->video_count; i++) {
-        memory->video[i].total = snap->meminfo.video[i].total;
-        memory->video[i].used = snap->meminfo.video[i].used;
-    }
+    for (unsigned int i = 0; i < memory->video_count; i++)
+        memory->video[i] = snap->meminfo.video[i];
     _engine_snapshot_release();
 }
 
@@ -1196,10 +1194,8 @@ evisum_engine_status_get(Evisum_Engine_Status *status)
     status->memory.zfs_arc_used = snap->meminfo.zfs_arc_used;
     status->memory.video_count = snap->meminfo.video_count;
     if (status->memory.video_count > MEM_VIDEO_CARD_MAX) status->memory.video_count = MEM_VIDEO_CARD_MAX;
-    for (unsigned int i = 0; i < status->memory.video_count; i++) {
-        status->memory.video[i].total = snap->meminfo.video[i].total;
-        status->memory.video[i].used = snap->meminfo.video[i].used;
-    }
+    for (unsigned int i = 0; i < status->memory.video_count; i++)
+        status->memory.video[i] = snap->meminfo.video[i];
 
     EINA_LIST_FOREACH(snap->cores, l, core) {
         total += core->percent;
